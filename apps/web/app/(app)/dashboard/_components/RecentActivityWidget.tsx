@@ -1,0 +1,48 @@
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { AuditLogEntry } from "@/lib/queries/dashboard";
+
+function formatTime(value: Date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(value);
+}
+
+export function RecentActivityWidget({
+  entries
+}: {
+  entries: AuditLogEntry[];
+}) {
+  return (
+    <Card className="h-full">
+      <CardHeader>
+        <CardTitle>Recent Activity</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {entries.length === 0 ? (
+          <p className="text-sm text-gray-500">No recent activity recorded.</p>
+        ) : (
+          <ul className="space-y-3">
+            {entries.map((entry) => (
+              <li key={entry.id} className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{entry.action}</Badge>
+                  <span className="text-xs text-gray-400">
+                    {formatTime(entry.createdAt)}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-800">
+                  {entry.resourceType}
+                  {entry.resourceId ? ` • ${entry.resourceId}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

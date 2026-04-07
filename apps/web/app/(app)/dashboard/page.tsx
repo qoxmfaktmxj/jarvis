@@ -1,24 +1,58 @@
-const stats = [
-  { label: "Projects", value: "0" },
-  { label: "Knowledge Pages", value: "0" },
-  { label: "Search Queries", value: "0" },
-  { label: "Ask AI", value: "Ready" }
-];
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSession } from "@jarvis/auth/session";
+import { getDashboardData } from "@/lib/queries/dashboard";
+import { AttendanceSummaryWidget } from "./_components/AttendanceSummaryWidget";
+import { MyTasksWidget } from "./_components/MyTasksWidget";
+import { ProjectStatsWidget } from "./_components/ProjectStatsWidget";
+import { QuickLinksWidget } from "./_components/QuickLinksWidget";
+import { RecentActivityWidget } from "./_components/RecentActivityWidget";
+import { SearchTrendsWidget } from "./_components/SearchTrendsWidget";
+import { StalePagesWidget } from "./_components/StalePagesWidget";
 
-export default function DashboardPage() {
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const headerStore = await headers();
+  const sessionId = headerStore.get("x-session-id");
+
+  if (!sessionId) {
+    redirect("/login");
+  }
+
+  const session = await getSession(sessionId);
+  if (!session) {
+    redirect("/login");
+  }
+
+  const data = await getDashboardData(
+    session.workspaceId,
+    session.userId,
+    session.roles
+  );
+
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold text-gray-900">Dashboard</h1>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-lg border border-gray-200 bg-white p-6"
-          >
-            <p className="text-sm text-gray-500">{item.label}</p>
-            <p className="mt-1 text-3xl font-bold text-gray-900">{item.value}</p>
-          </div>
-        ))}
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+          Dashboard
+        </h1>
+        <p className="text-sm text-gray-500">
+          Welcome back, {session.name}. Here is the current workspace snapshot.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <QuickLinksWidget items={data.quickLinks} />
+        <RecentActivityWidget entries={data.recentActivity} />
+        <MyTasksWidget tasks={data.myTasks} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <ProjectStatsWidget stats={data.projectStats} />
+        <StalePagesWidget pages={data.stalePages} />
+        <SearchTrendsWidget trends={data.searchTrends} />
+        <AttendanceSummaryWidget summary={data.attendanceSummary} />
       </div>
     </div>
   );
