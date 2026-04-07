@@ -3,7 +3,12 @@ import { getOidcConfig, oidcClient } from "@jarvis/auth/oidc";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  // Validate redirect is a safe relative path only (no open redirect)
+  const rawRedirect = searchParams.get("redirect") ?? "/dashboard";
+  const redirectTo =
+    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
+      ? rawRedirect
+      : "/dashboard";
   const appUrl = process.env["NEXTAUTH_URL"] ?? "http://localhost:3000";
   const redirectUri = `${appUrl}/api/auth/callback`;
 
