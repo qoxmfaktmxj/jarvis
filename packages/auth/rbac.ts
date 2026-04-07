@@ -1,3 +1,4 @@
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import type { JarvisSession } from "./types.js";
 
 export function hasPermission(
@@ -12,7 +13,7 @@ export function hasRole(session: JarvisSession, roleCode: string): boolean {
 }
 
 export function isAdmin(session: JarvisSession): boolean {
-  return session.roles.includes("ADMIN");
+  return session.permissions.includes(PERMISSIONS.ADMIN_ALL);
 }
 
 export function canAccessSensitivity(
@@ -26,9 +27,15 @@ export function canAccessSensitivity(
     return session.permissions.length > 0;
   }
   if (sensitivity === "RESTRICTED") {
-    return session.roles.some((role) =>
-      ["ADMIN", "MANAGER", "DEVELOPER"].includes(role)
+    return (
+      session.permissions.includes(PERMISSIONS.SYSTEM_READ) ||
+      session.permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
+      session.permissions.includes(PERMISSIONS.ADMIN_ALL)
     );
   }
-  return session.roles.includes("ADMIN") || session.roles.includes("DEVELOPER");
+  // SECRET_REF_ONLY
+  return (
+    session.permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
+    session.permissions.includes(PERMISSIONS.ADMIN_ALL)
+  );
 }
