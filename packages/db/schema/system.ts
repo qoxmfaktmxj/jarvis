@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { company } from "./company.js";
+import { knowledgePage } from "./knowledge.js";
 import { user } from "./user.js";
 import { workspace } from "./tenant.js";
 
@@ -25,6 +26,9 @@ export const system = pgTable("system", {
   status: varchar("status", { length: 30 }).default("active").notNull(),
   description: text("description"),
   techStack: varchar("tech_stack", { length: 500 }),
+  repositoryUrl: varchar("repository_url", { length: 500 }),
+  dashboardUrl: varchar("dashboard_url", { length: 500 }),
+  knowledgePageId: uuid("knowledge_page_id").references(() => knowledgePage.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });
