@@ -13,9 +13,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionId =
-    request.cookies.get("sessionId")?.value ??
-    request.cookies.get("jarvis_session")?.value;
+  const sessionId = request.cookies.get("sessionId")?.value;
 
   if (!sessionId) {
     const loginUrl = new URL("/login", request.url);

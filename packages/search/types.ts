@@ -1,50 +1,34 @@
-export type SearchSortBy =
-  | "relevance"
-  | "date"
-  | "popularity"
-  | "newest"
-  | "freshness"
-  | "hybrid";
+export type SearchSortBy = 'relevance' | 'date' | 'popularity';
+export type ResourceType = 'knowledge' | 'project' | 'system';
+export type QueryMode = 'phrase' | 'web' | 'prefix';
 
 export interface SearchQuery {
-  query?: string;
-  q?: string;
+  q: string;
   workspaceId: string;
   userId: string;
   userRoles: string[];
-  filters?: {
-    pageType?: string[];
-    sensitivity?: string[];
-    dateFrom?: string;
-    dateTo?: string;
-  };
   pageType?: string;
   sensitivity?: string;
   dateFrom?: string;
   dateTo?: string;
-  sort?: "relevance" | "newest" | "freshness" | "hybrid";
   sortBy?: SearchSortBy;
   page?: number;
-  pageSize?: number;
   limit?: number;
-  highlight?: boolean;
-  explain?: boolean;
 }
 
 export interface SearchHit {
   id: string;
-  resourceType?: "knowledge" | "project" | "system";
-  pageType?: string;
+  resourceType: ResourceType;
   title: string;
-  headline?: string;
-  snippet?: string;
+  headline: string;       // ts_headline snippet with <mark> tags
+  pageType?: string;
   sensitivity?: string;
   updatedAt: string;
-  ftsRank?: number;
-  trgmSim?: number;
-  freshness?: number;
-  hybridScore?: number;
-  url?: string;
+  ftsRank: number;
+  trgmSim: number;
+  freshness: number;
+  hybridScore: number;
+  url: string;
 }
 
 export interface SearchFacets {
@@ -52,35 +36,37 @@ export interface SearchFacets {
   bySensitivity: Record<string, number>;
 }
 
-export interface ScoreBreakdown {
-  keyword: number;
-  vector: number;
-  trgm: number;
-  freshness: number;
-  final: number;
-}
-
-export interface SearchResultItem {
-  id: string;
-  pageType: string;
-  title: string;
-  snippet: string;
-  sensitivity: string;
-  score: number;
-  scores?: ScoreBreakdown;
-  updatedAt: string;
-  owners: string[];
-  tags: string[];
-}
-
 export interface SearchResult {
-  hits?: SearchHit[];
-  items?: SearchResultItem[];
+  hits: SearchHit[];
   total: number;
-  page?: number;
-  pageSize?: number;
   facets: SearchFacets;
-  suggestions: string[];
-  query?: string;
-  durationMs?: number;
+  suggestions: string[];   // "did you mean" for zero results
+  query: string;
+  durationMs: number;
+  explain?: ScoreExplain[];  // admin only
+}
+
+export interface ScoreExplain {
+  id: string;
+  ftsRank: number;
+  trgmSim: number;
+  freshness: number;
+  hybridScore: number;
+}
+
+export interface ParsedQuery {
+  tsquery: string;
+  mode: QueryMode;
+  sanitized: string;
+}
+
+export interface SynonymEntry {
+  term: string;
+  synonyms: string[];
+}
+
+export interface FallbackStep {
+  name: 'fts' | 'trgm' | 'synonymExpand' | 'popular';
+  used: boolean;
+  resultCount: number;
 }

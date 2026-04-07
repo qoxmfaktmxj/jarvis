@@ -1,6 +1,7 @@
 "use client";
 
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, ReactElement } from "react";
+import { cloneElement, isValidElement } from "react";
 import { cn } from "@/lib/utils";
 
 const variantStyles = {
@@ -42,16 +43,27 @@ export function Button({
   variant = "default",
   size = "default",
   type = "button",
+  asChild = false,
+  children,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: keyof typeof variantStyles;
   size?: keyof typeof sizeStyles;
+  asChild?: boolean;
 }) {
+  const classes = buttonClasses({ className, variant, size });
+  if (asChild && isValidElement(children)) {
+    return cloneElement(children as ReactElement<{ className?: string }>, {
+      className: cn(classes, (children as ReactElement<{ className?: string }>).props.className),
+    });
+  }
   return (
     <button
       type={type}
-      className={buttonClasses({ className, variant, size })}
+      className={classes}
       {...props}
-    />
+    >
+      {children}
+    </button>
   );
 }
