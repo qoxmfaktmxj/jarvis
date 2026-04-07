@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+.next/
+dist/
+out/
+coverage/
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.production
+
+# Turbo
+.turbo/
+
+# Drizzle
+drizzle/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

@@ -1,0 +1,25 @@
+{
+  "name": "jarvis",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "db:generate": "pnpm --filter=@jarvis/db generate",
+    "db:migrate": "pnpm --filter=@jarvis/db migrate",
+    "db:studio": "pnpm --filter=@jarvis/db studio",
+    "db:push": "pnpm --filter=@jarvis/db push"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
