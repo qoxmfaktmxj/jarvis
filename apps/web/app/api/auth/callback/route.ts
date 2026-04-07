@@ -12,8 +12,6 @@ export async function GET(request: NextRequest) {
   const expectedState = request.cookies.get("oidc_state")?.value;
   const expectedNonce = request.cookies.get("oidc_nonce")?.value;
   const redirectTo = request.cookies.get("oidc_redirect")?.value ?? "/dashboard";
-  const appUrl = process.env["NEXTAUTH_URL"] ?? "http://localhost:3000";
-  const redirectUri = `${appUrl}/api/auth/callback`;
 
   if (!codeVerifier || !expectedState || !expectedNonce) {
     return NextResponse.redirect(new URL("/login?error=missing_oidc_cookies", request.url));
