@@ -1,34 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getOidcConfig, oidcClient } from "@jarvis/auth/oidc";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
-
-  const issuer =
-    process.env["OIDC_ISSUER"] ?? "http://localhost:8080/realms/jarvis";
-  const clientId = process.env["OIDC_CLIENT_ID"] ?? "jarvis-web";
   const appUrl = process.env["NEXTAUTH_URL"] ?? "http://localhost:3000";
+  const redirectUri = `${appUrl}/api/auth/callback`;
 
-  const state = Buffer.from(
-    JSON.stringify({ redirect: redirectTo }),
-    "utf8"
-  ).toString("base64url");
+  try {
+    const config = await getOidcConfig();
 
-  const authUrl = new URL(`${issuer}/protocol/openid-connect/auth`);
-  authUrl.searchParams.set("client_id", clientId);
-  authUrl.searchParams.set("redirect_uri", `${appUrl}/api/auth/callback`);
-  authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", "openid profile email");
-  authUrl.searchParams.set("state", state);
+    // PKCE S256
+    const codeVerifier = oidcClient.randomPKCECodeVerifier();
+    const codeChallenge = await oidcClient.calculatePKCECodeChallenge(codeVerifier);
 
-  const response = NextResponse.redirect(authUrl.toString());
-  response.cookies.set("oidc_state", state, {
-    httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
-    maxAge: 60 * 10,
-    sameSite: "lax",
-    path: "/"
-  });
+    // state and nonce
+    const state = oidcClient.randomState();
+    const nonce = oidcClient.randomNonce();
 
-  return response;
+    const authUrl = oidcClient.buildAuthorizationUrl(config, {
+      redirect_uri: redirectUri,
+      scope: "openid profile email",
+      state,
+      nonce,
+      code_challenge: codeChallenge,
+      code_challenge_method: "S256",
+    });
+
+    const response = NextResponse.redirect(authUrl.toString());
+
+    const cookieOpts = {
+      httpOnly: true,
+      secure: process.env["NODE_ENV"] === "production",
+      maxAge: 60 * 10,
+      sameSite: "lax" as const,
+      path: "/",
+    };
+
+    response.cookies.set("oidc_pkce", codeVerifier, cookieOpts);
+    response.cookies.set("oidc_state", state, cookieOpts);
+    response.cookies.set("oidc_nonce", nonce, cookieOpts);
+    response.cookies.set("oidc_redirect", redirectTo, cookieOpts);
+
+    return response;
+  } catch (error) {
+    console.error("[auth] login error:", error);
+    return NextResponse.redirect(new URL("/login?error=auth_init_failed", request.url));
+  }
 }
