@@ -95,3 +95,30 @@ export function DialogClose({
     </button>
   );
 }
+
+export function DialogTrigger({
+  children,
+  asChild,
+}: {
+  children: ReactNode;
+  asChild?: boolean;
+}) {
+  // DialogTrigger is typically used alongside a controlled Dialog (open/onOpenChange).
+  // Here we render the child element as-is; the parent controls open state.
+  if (asChild) {
+    return <>{children}</>;
+  }
+  return <>{children}</>;
+}
+
+export function DialogFooter({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn("flex justify-end gap-2 mt-4", className)}
+      {...props}
+    />
+  );
+}
