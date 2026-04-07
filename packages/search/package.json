@@ -6,12 +6,25 @@
   "exports": {
     ".": "./index.ts",
     "./types": "./types.ts",
-    "./adapter": "./adapter.ts"
+    "./adapter": "./adapter.ts",
+    "./pg-search": "./pg-search.ts",
+    "./query-parser": "./query-parser.ts",
+    "./hybrid-ranker": "./hybrid-ranker.ts",
+    "./highlighter": "./highlighter.ts",
+    "./explain": "./explain.ts",
+    "./facet-counter": "./facet-counter.ts",
+    "./synonym-resolver": "./synonym-resolver.ts",
+    "./fallback-chain": "./fallback-chain.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@jarvis/db": "workspace:*",
+    "drizzle-orm": "^0.40.1"
+  },
   "devDependencies": {
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
   }
 }

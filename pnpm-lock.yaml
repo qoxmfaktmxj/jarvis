@@ -197,10 +197,20 @@ importers:
         version: 5.9.3
 
   packages/search:
+    dependencies:
+      '@jarvis/db':
+        specifier: workspace:*
+        version: link:../db
+      drizzle-orm:
+        specifier: ^0.40.1
+        version: 0.40.1(@types/pg@8.20.0)(pg@8.20.0)
     devDependencies:
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
+      vitest:
+        specifier: ^3.1.1
+        version: 3.2.4(@types/debug@4.1.13)(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/secret:
     devDependencies:
