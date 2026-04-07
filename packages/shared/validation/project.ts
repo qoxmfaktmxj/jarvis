@@ -18,5 +18,28 @@ export const createTaskSchema = z.object({
   assigneeId: z.string().uuid().optional().or(z.literal(""))
 });
 
+export const assignProjectStaffSchema = z.object({
+  userId: z.string().uuid(),
+  role: z.string().max(100).optional().or(z.literal("")),
+  startDate: z.string().date().optional().or(z.literal("")),
+  endDate: z.string().date().optional().or(z.literal(""))
+});
+
+export const createProjectInquirySchema = z.object({
+  title: z.string().min(1).max(500),
+  content: z.string().max(4000).optional().or(z.literal("")),
+  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium")
+});
+
+export const updateProjectInquiryStatusSchema = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["open", "in-progress", "resolved", "closed"])
+});
+
 export type CreateProject = z.infer<typeof createProjectSchema>;
 export type CreateTask = z.infer<typeof createTaskSchema>;
+export type AssignProjectStaff = z.infer<typeof assignProjectStaffSchema>;
+export type CreateProjectInquiry = z.infer<typeof createProjectInquirySchema>;
+export type UpdateProjectInquiryStatus = z.infer<
+  typeof updateProjectInquiryStatusSchema
+>;

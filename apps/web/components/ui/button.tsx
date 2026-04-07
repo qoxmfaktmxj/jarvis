@@ -1,10 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes } from "react";
-
-function joinClassNames(...values: Array<string | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
 
 const variantStyles = {
   default:
@@ -12,7 +9,9 @@ const variantStyles = {
   secondary:
     "bg-gray-100 text-gray-900 hover:bg-gray-200 disabled:bg-gray-100 disabled:text-gray-400",
   ghost:
-    "bg-transparent text-gray-700 hover:bg-gray-100 disabled:text-gray-400"
+    "bg-transparent text-gray-700 hover:bg-gray-100 disabled:text-gray-400",
+  outline:
+    "border border-gray-300 bg-white text-gray-900 hover:bg-gray-50 disabled:border-gray-200 disabled:text-gray-400"
 } as const;
 
 const sizeStyles = {
@@ -20,6 +19,23 @@ const sizeStyles = {
   sm: "h-9 px-3 text-sm",
   icon: "h-8 w-8"
 } as const;
+
+export function buttonClasses({
+  className,
+  variant = "default",
+  size = "default"
+}: {
+  className?: string;
+  variant?: keyof typeof variantStyles;
+  size?: keyof typeof sizeStyles;
+}) {
+  return cn(
+    "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed",
+    variantStyles[variant],
+    sizeStyles[size],
+    className
+  );
+}
 
 export function Button({
   className,
@@ -34,12 +50,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={joinClassNames(
-        "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:cursor-not-allowed",
-        variantStyles[variant],
-        sizeStyles[size],
-        className
-      )}
+      className={buttonClasses({ className, variant, size })}
       {...props}
     />
   );

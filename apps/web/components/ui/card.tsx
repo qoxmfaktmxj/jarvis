@@ -1,8 +1,5 @@
 import type { HTMLAttributes } from "react";
-
-function joinClassNames(...values: Array<string | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
+import { cn } from "@/lib/utils";
 
 export function Card({
   className,
@@ -10,7 +7,7 @@ export function Card({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={joinClassNames(
+      className={cn(
         "rounded-2xl border border-gray-200 bg-white shadow-sm",
         className
       )}
@@ -25,7 +22,7 @@ export function CardHeader({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={joinClassNames(
+      className={cn(
         "flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4",
         className
       )}
@@ -40,7 +37,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={joinClassNames("text-sm font-semibold text-gray-900", className)}
+      className={cn("text-sm font-semibold text-gray-900", className)}
       {...props}
     />
   );
@@ -50,7 +47,7 @@ export function CardContent({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={joinClassNames("px-5 py-4", className)} {...props} />;
+  return <div className={cn("px-5 py-4", className)} {...props} />;
 }
 
 export function CardFooter({
@@ -59,7 +56,7 @@ export function CardFooter({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={joinClassNames(
+      className={cn(
         "border-t border-gray-100 px-5 py-4",
         className
       )}
