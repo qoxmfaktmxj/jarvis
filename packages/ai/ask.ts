@@ -18,9 +18,10 @@ export async function retrieveRelevantClaims(
   const embedding = await generateEmbedding(question);
   const embeddingLiteral = `[${embedding.join(',')}]`;
 
-  // 2. Sensitivity filter: SECRET_REF_ONLY excluded unless admin/secret-viewer
+  // 2. Sensitivity filter: SECRET_REF_ONLY excluded unless ADMIN or DEVELOPER
+  // Roles are stored uppercase in session (e.g. 'ADMIN', 'DEVELOPER') — must match exactly
   const canViewSecret =
-    userRoles.includes('admin') || userRoles.includes('secret_viewer');
+    userRoles.includes('ADMIN') || userRoles.includes('DEVELOPER');
   const sensitivityFilter = canViewSecret
     ? sql`TRUE`
     : sql`kp.sensitivity NOT IN ('SECRET_REF_ONLY')`;

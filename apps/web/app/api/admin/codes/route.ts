@@ -4,7 +4,7 @@ import { db } from '@jarvis/db/client';
 import { codeGroup, codeItem } from '@jarvis/db/schema';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { and, eq, asc } from 'drizzle-orm';
+import { and, eq, asc, inArray } from 'drizzle-orm';
 
 const createItemSchema = z.object({
   groupId:   z.string().uuid(),
@@ -64,15 +64,23 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const auth = await requireApiSession(req, PERMISSIONS.ADMIN_ALL);
   if (auth.response) return auth.response;
+  const { session } = auth;
 
   const parsed = updateItemSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const { id, ...data } = parsed.data;
 
+  // Verify the codeItem belongs to this workspace via codeGroup FK
+  const ownerGroups = await db
+    .select({ id: codeGroup.id })
+    .from(codeGroup)
+    .where(eq(codeGroup.workspaceId, session.workspaceId));
+  const groupIds = ownerGroups.map((g) => g.id);
+
   const [updated] = await db
     .update(codeItem)
     .set(data)
-    .where(eq(codeItem.id, id))
+    .where(and(eq(codeItem.id, id), inArray(codeItem.groupId, groupIds)))
     .returning();
 
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -82,10 +90,18 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const auth = await requireApiSession(req, PERMISSIONS.ADMIN_ALL);
   if (auth.response) return auth.response;
+  const { session } = auth;
 
   const id = req.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  await db.delete(codeItem).where(eq(codeItem.id, id));
+  // Verify the codeItem belongs to this workspace via codeGroup FK
+  const ownerGroups = await db
+    .select({ id: codeGroup.id })
+    .from(codeGroup)
+    .where(eq(codeGroup.workspaceId, session.workspaceId));
+  const groupIds = ownerGroups.map((g) => g.id);
+
+  await db.delete(codeItem).where(and(eq(codeItem.id, id), inArray(codeItem.groupId, groupIds)));
   return NextResponse.json({ success: true });
 }

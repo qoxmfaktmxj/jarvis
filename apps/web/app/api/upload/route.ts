@@ -14,8 +14,20 @@ const uploadSchema = z.object({
   resourceId: z.string().uuid().optional(),
 });
 
-function getBoss(): PgBoss {
-  return new PgBoss({ connectionString: process.env['DATABASE_URL']! });
+// Module-level singleton — PgBoss must not be instantiated per-request
+// (each instance opens its own connection pool)
+let _boss: PgBoss | null = null;
+let _bossStarted = false;
+
+async function getBoss(): Promise<PgBoss> {
+  if (!_boss) {
+    _boss = new PgBoss({ connectionString: process.env['DATABASE_URL']! });
+  }
+  if (!_bossStarted) {
+    await _boss.start();
+    _bossStarted = true;
+  }
+  return _boss;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -58,11 +70,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     });
   }
 
-  // Enqueue ingest job
-  const boss = getBoss();
-  await boss.start();
+  // Enqueue ingest job (singleton PgBoss — no per-request start/stop)
+  const boss = await getBoss();
   await boss.send('ingest', { rawSourceId });
-  await boss.stop();
 
   return NextResponse.json({ rawSourceId }, { status: 201 });
 }

@@ -345,20 +345,33 @@ export class PgSearchAdapter implements SearchAdapter {
 
   /**
    * Build SQL WHERE fragments for optional filters: pageType, sensitivity, dateRange.
+   * All user-supplied values are validated/whitelisted before interpolation to prevent SQL injection.
    */
   private buildExtraFilters(query: SearchQuery): string {
     const parts: string[] = [];
 
-    if (query.pageType) {
-      parts.push(`AND page_type = '${query.pageType.replace(/'/g, "''")}'`);
+    // Whitelist known page types — reject anything not in the list
+    const VALID_PAGE_TYPES = new Set([
+      'project', 'system', 'access', 'runbook', 'onboarding',
+      'hr-policy', 'tool-guide', 'faq', 'decision', 'incident', 'analysis', 'glossary',
+    ]);
+    if (query.pageType && VALID_PAGE_TYPES.has(query.pageType)) {
+      parts.push(`AND page_type = '${query.pageType}'`);
     }
-    if (query.sensitivity) {
-      parts.push(`AND sensitivity = '${query.sensitivity.replace(/'/g, "''")}'`);
+
+    // Whitelist known sensitivity values
+    const VALID_SENSITIVITIES = new Set(['PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY']);
+    if (query.sensitivity && VALID_SENSITIVITIES.has(query.sensitivity)) {
+      parts.push(`AND sensitivity = '${query.sensitivity}'`);
     }
-    if (query.dateFrom) {
+
+    // Strict ISO date validation — only allow YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ patterns
+    // This regex allows no SQL special characters
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)?$/;
+    if (query.dateFrom && ISO_DATE_RE.test(query.dateFrom)) {
       parts.push(`AND updated_at >= '${query.dateFrom}'::timestamptz`);
     }
-    if (query.dateTo) {
+    if (query.dateTo && ISO_DATE_RE.test(query.dateTo)) {
       parts.push(`AND updated_at <= '${query.dateTo}'::timestamptz`);
     }
 
