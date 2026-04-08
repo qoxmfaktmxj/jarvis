@@ -5,6 +5,8 @@ import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 const adapter = new PgSearchAdapter();
+// Suggest responses depend on the caller's session and query string.
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
