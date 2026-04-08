@@ -1,58 +1,158 @@
-services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: jarvis-postgres
-    environment:
-      POSTGRES_DB: jarvis
-      POSTGRES_USER: jarvis
-      POSTGRES_PASSWORD: jarvispass
-    ports:
-      - "127.0.0.1:5436:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U jarvis -d jarvis"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+# docker/docker-compose.yml — PRODUCTION
+# Services communicate via internal Docker network (no host port exposure for DB/Redis/MinIO)
+# Only Nginx exposes 80/443 externally
+# Run: docker compose -f docker/docker-compose.yml up -d
 
-  redis:
-    image: redis:7-alpine
-    container_name: jarvis-redis
-    ports:
-      - "127.0.0.1:6380:6379"
-    volumes:
-      - redisdata:/data
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    restart: unless-stopped
-
-  minio:
-    image: minio/minio:latest
-    container_name: jarvis-minio
-    command: server /data --console-address ":9101"
-    environment:
-      MINIO_ROOT_USER: jarvisadmin
-      MINIO_ROOT_PASSWORD: jarvispassword
-    ports:
-      - "127.0.0.1:9100:9000"
-      - "127.0.0.1:9101:9001"
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
+networks:
+  jarvis-network:
+    driver: bridge
 
 volumes:
   pgdata:
   redisdata:
   miniodata:
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: jarvis-postgres
+    restart: unless-stopped
+    networks: [jarvis-network]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_DB: jarvis
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_password
+    secrets: [pg_password]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis -d jarvis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    container_name: jarvis-redis
+    restart: unless-stopped
+    networks: [jarvis-network]
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    container_name: jarvis-minio
+    restart: unless-stopped
+    networks: [jarvis-network]
+    volumes:
+      - miniodata:/data
+    environment:
+      MINIO_ROOT_USER_FILE: /run/secrets/minio_user
+      MINIO_ROOT_PASSWORD_FILE: /run/secrets/minio_password
+    secrets: [minio_user, minio_password]
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  web:
+    image: jarvis-web:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: jarvis-web
+    restart: unless-stopped
+    networks: [jarvis-network]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://jarvis@postgres:5432/jarvis
+      REDIS_URL: redis://redis:6379
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: jarvis-files
+    secrets: [pg_password, session_secret, openai_api_key]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  worker:
+    image: jarvis-worker:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.worker
+    container_name: jarvis-worker
+    restart: unless-stopped
+    networks: [jarvis-network]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://jarvis@postgres:5432/jarvis
+      REDIS_URL: redis://redis:6379
+    secrets: [pg_password, openai_api_key]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: jarvis-nginx
+    restart: unless-stopped
+    networks: [jarvis-network]
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+secrets:
+  pg_password:
+    file: ./secrets/pg_password.txt
+  minio_user:
+    file: ./secrets/minio_user.txt
+  minio_password:
+    file: ./secrets/minio_password.txt
+  session_secret:
+    file: ./secrets/session_secret.txt
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt

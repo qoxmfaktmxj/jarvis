@@ -1,19 +1,41 @@
-include:
-  - docker-compose.yml
+# docker/docker-compose.dev.yml — DEVELOPMENT OVERRIDE
+# Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio
+# Next.js runs outside Docker (pnpm dev) for hot reload
+
+# Override secrets to use env vars instead of files in dev
+secrets:
+  pg_password:
+    environment: PG_PASSWORD
+  minio_user:
+    environment: MINIO_USER
+  minio_password:
+    environment: MINIO_PASSWORD
+  session_secret:
+    environment: SESSION_SECRET
+  openai_api_key:
+    environment: OPENAI_API_KEY
 
 services:
   postgres:
     ports:
       - "127.0.0.1:5436:5432"
+    environment:
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-jarvispass}
+
   redis:
     ports:
       - "127.0.0.1:6380:6379"
+
   minio:
     ports:
       - "127.0.0.1:9100:9000"
       - "127.0.0.1:9101:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-jarvisadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-jarvispassword}
 
-  # 로컬 개발용 Keycloak (운영 시 외부 Keycloak URL만 env에 지정하면 불필요)
+  # Keycloak — local OIDC provider for dev only
+  # In production, use external Keycloak URL in OIDC_ISSUER env var
   keycloak:
     image: quay.io/keycloak/keycloak:24.0
     container_name: jarvis-keycloak
@@ -24,3 +46,14 @@ services:
     ports:
       - "127.0.0.1:18080:8080"
     restart: unless-stopped
+
+  # web + worker: run via pnpm dev outside Docker for hot reload
+  # Only start nginx if explicitly needed: docker compose ... --profile nginx up nginx
+  web:
+    profiles: ["docker-dev"]
+
+  worker:
+    profiles: ["docker-dev"]
+
+  nginx:
+    profiles: ["nginx"]

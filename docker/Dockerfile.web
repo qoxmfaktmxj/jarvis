@@ -1,0 +1,69 @@
+# ============================================================
+# Stage 1: deps — production dependencies only
+# ============================================================
+FROM node:22-alpine AS deps
+RUN corepack enable pnpm
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/db/package.json         ./packages/db/
+COPY packages/shared/package.json     ./packages/shared/
+COPY packages/auth/package.json       ./packages/auth/
+COPY packages/search/package.json     ./packages/search/
+COPY packages/ai/package.json         ./packages/ai/
+COPY packages/secret/package.json     ./packages/secret/
+COPY apps/web/package.json            ./apps/web/
+
+RUN pnpm install --frozen-lockfile --prod
+
+# ============================================================
+# Stage 2: builder — compile Next.js
+# ============================================================
+FROM node:22-alpine AS builder
+RUN corepack enable pnpm
+
+WORKDIR /app
+
+COPY --from=deps /app/node_modules           ./node_modules
+COPY --from=deps /app/packages/db/node_modules     ./packages/db/node_modules
+COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY --from=deps /app/packages/auth/node_modules   ./packages/auth/node_modules
+COPY --from=deps /app/packages/search/node_modules ./packages/search/node_modules
+COPY --from=deps /app/packages/ai/node_modules     ./packages/ai/node_modules
+COPY --from=deps /app/packages/secret/node_modules ./packages/secret/node_modules
+COPY --from=deps /app/apps/web/node_modules        ./apps/web/node_modules
+
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN pnpm -F web build
+
+# ============================================================
+# Stage 3: runner — minimal production image
+# ============================================================
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static    ./apps/web/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public          ./apps/web/public
+
+USER nextjs
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget -qO- http://localhost:3000/api/health || exit 1
+
+CMD ["node", "apps/web/server.js"]
