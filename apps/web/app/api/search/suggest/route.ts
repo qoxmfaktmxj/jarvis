@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const suggestions = await adapter.suggest(q.trim(), auth.session.workspaceId);
+    const suggestions = await adapter.suggest(q.trim(), auth.session.workspaceId, auth.session.permissions ?? []);
     return NextResponse.json<string[]>(suggestions, {
       headers: {
         // Cache suggest responses briefly to reduce DB load

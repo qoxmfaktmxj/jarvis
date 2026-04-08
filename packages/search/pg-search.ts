@@ -56,7 +56,7 @@ export class PgSearchAdapter implements SearchAdapter {
     }
 
     // 5. Run facets in parallel (use original query for facet counts)
-    const facets = await countFacets(query.workspaceId, parsed.tsquery).catch(() => ({
+    const facets = await countFacets(query.workspaceId, parsed.tsquery, query.userPermissions).catch(() => ({
       byPageType: {},
       bySensitivity: {},
     }));
@@ -82,13 +82,14 @@ export class PgSearchAdapter implements SearchAdapter {
   // Public: suggest (autocomplete)
   // -----------------------------------------------------------------------
 
-  async suggest(prefix: string, workspaceId: string): Promise<string[]> {
+  async suggest(prefix: string, workspaceId: string, userPermissions: string[] = []): Promise<string[]> {
     if (!prefix || prefix.trim().length < 2) return [];
 
     const sanitizedPrefix = prefix.trim().replace(/[^\w\s]/g, '').substring(0, 100);
+    const sensitivityFilter = this.buildSecretFilter(userPermissions);
 
     const [titleRows, popularRows] = await Promise.all([
-      // Match page titles with prefix
+      // Match page titles with prefix — apply same sensitivity filter as main search
       db.execute<{ title: string }>(sql`
         SELECT DISTINCT title
         FROM knowledge_page
@@ -96,6 +97,7 @@ export class PgSearchAdapter implements SearchAdapter {
           workspace_id = ${workspaceId}::uuid
           AND publish_status != 'deleted'
           AND title ILIKE ${sanitizedPrefix + '%'}
+          ${sql.raw(sensitivityFilter)}
         ORDER BY title
         LIMIT 6
       `),

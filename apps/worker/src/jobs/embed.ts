@@ -13,6 +13,9 @@ export interface EmbedJobData {
 
 const EMBED_MODEL = 'text-embedding-3-small';
 const BATCH_SIZE = 10;
+// Guard against unbounded memory: pages with >500 chunks (≈150 KB text) are truncated.
+// Typical knowledge pages are well under this limit.
+const MAX_CHUNKS = 500;
 
 async function embedBatch(texts: string[]): Promise<number[][]> {
   const response = await openai.embeddings.create({
@@ -63,7 +66,11 @@ async function processEmbed(
   const mdxContent = latestVersion.mdxContent;
 
   // Chunk the content
-  const chunks = chunkText(mdxContent, 300, 50);
+  let chunks = chunkText(mdxContent, 300, 50);
+  if (chunks.length > MAX_CHUNKS) {
+    console.warn(`[embed] pageId=${pageId} truncating ${chunks.length} chunks to ${MAX_CHUNKS}`);
+    chunks = chunks.slice(0, MAX_CHUNKS);
+  }
   console.log(`[embed] pageId=${pageId} chunks=${chunks.length}`);
 
   // Embed all chunks first (outside the transaction — OpenAI calls can be slow/fail)

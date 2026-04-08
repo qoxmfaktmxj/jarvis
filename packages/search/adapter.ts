@@ -2,7 +2,7 @@ import type { SearchQuery, SearchResult } from "./types.js";
 
 export interface SearchAdapter {
   search(query: SearchQuery): Promise<SearchResult>;
-  suggest(prefix: string, workspaceId: string): Promise<string[]>;
+  suggest(prefix: string, workspaceId: string, userPermissions?: string[]): Promise<string[]>;
   indexPage(pageId: string): Promise<void>;
   deletePage(pageId: string): Promise<void>;
 }

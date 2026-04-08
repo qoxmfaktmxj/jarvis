@@ -2,18 +2,32 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SearchQuery } from '../types.js';
 
+// Build a where-mock that is both awaitable (for resolveSynonyms) and
+// chainable with .orderBy().limit() (for FallbackChain.fetchPopularSuggestions).
+function makeWhereMock(resolvedValue: unknown[] = []) {
+  return vi.fn().mockImplementation(() =>
+    Object.assign(Promise.resolve(resolvedValue), {
+      orderBy: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue([]),
+      }),
+    }),
+  );
+}
+
+function makeSelectChain() {
+  return {
+    from: vi.fn().mockReturnValue({
+      where: makeWhereMock(),
+    }),
+  };
+}
+
 // Mock @jarvis/db/client so we don't need a real DB in unit tests
 vi.mock('@jarvis/db/client', () => ({
   db: {
     execute: vi.fn(),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue(undefined) }),
-    select: vi.fn().mockReturnValue({
-      from: vi.fn().mockReturnValue({
-        where: vi.fn().mockReturnValue({
-          orderBy: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) }),
-        }),
-      }),
-    }),
+    select: vi.fn().mockImplementation(() => makeSelectChain()),
   },
 }));
 
@@ -43,6 +57,8 @@ describe('PgSearchAdapter', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Re-apply the select mock after clearAllMocks resets it
+    (db.select as ReturnType<typeof vi.fn>).mockImplementation(() => makeSelectChain());
     adapter = new PgSearchAdapter();
   });
 
@@ -81,14 +97,7 @@ describe('PgSearchAdapter', () => {
 
   describe('search', () => {
     it('returns empty result when FTS and fallbacks all return nothing', async () => {
-      // All db.execute calls return empty rows
       mockDb.execute.mockResolvedValue({ rows: [] });
-      // Mock synonym resolver db.select chain
-      (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-      });
 
       const result = await adapter.search(baseQuery);
       expect(result.hits).toEqual([]);
@@ -112,12 +121,6 @@ describe('PgSearchAdapter', () => {
         ],
       });
 
-      (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-      });
-
       const adminQuery: SearchQuery = { ...baseQuery, userRoles: ['ADMIN'] };
       const result = await adapter.search(adminQuery);
       expect(result.explain).toBeDefined();
@@ -126,11 +129,6 @@ describe('PgSearchAdapter', () => {
 
     it('does not include explain for non-admin users', async () => {
       mockDb.execute.mockResolvedValue({ rows: [] });
-      (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
-        from: vi.fn().mockReturnValue({
-          where: vi.fn().mockResolvedValue([]),
-        }),
-      });
 
       const result = await adapter.search(baseQuery); // userRoles: ['MEMBER']
       expect(result.explain).toBeUndefined();

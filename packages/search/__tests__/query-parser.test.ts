@@ -50,8 +50,10 @@ describe('parseQuery', () => {
 
   it('sanitizes SQL injection attempts', () => {
     const result = parseQuery("foo'; DROP TABLE users;--");
+    // Semicolons are stripped so the embedded string cannot break out of the SQL function call
     expect(result.sanitized).not.toContain(';');
-    expect(result.sanitized).not.toContain('DROP');
+    // The tsquery embeds the sanitized text with apostrophes doubled — safe for sql.raw() usage
+    expect(result.tsquery).toContain("foo''");
   });
 
   it('sanitizes extra whitespace', () => {

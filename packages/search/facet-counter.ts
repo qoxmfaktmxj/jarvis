@@ -9,10 +9,26 @@ import type { SearchFacets } from './types.js';
  *
  * Runs two GROUP BY queries in parallel for performance.
  */
+function buildSensitivityFilter(userPermissions: string[]): string {
+  if (
+    userPermissions.includes('system.access:secret') ||
+    userPermissions.includes('admin:all')
+  ) {
+    return '';
+  }
+  if (userPermissions.includes('system:read')) {
+    return `AND sensitivity != 'SECRET_REF_ONLY'`;
+  }
+  return `AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')`;
+}
+
 export async function countFacets(
   workspaceId: string,
   tsqueryExpr: string,
+  userPermissions: string[] = [],
 ): Promise<SearchFacets> {
+  const sensitivityFilter = buildSensitivityFilter(userPermissions);
+
   const [pageTypeRows, sensitivityRows] = await Promise.all([
     db.execute<{ page_type: string; count: string }>(sql`
       SELECT
@@ -23,6 +39,7 @@ export async function countFacets(
         workspace_id = ${workspaceId}::uuid
         AND search_vector @@ ${sql.raw(tsqueryExpr)}
         AND publish_status != 'deleted'
+        ${sql.raw(sensitivityFilter)}
       GROUP BY page_type
       ORDER BY count DESC
     `),
@@ -35,6 +52,7 @@ export async function countFacets(
         workspace_id = ${workspaceId}::uuid
         AND search_vector @@ ${sql.raw(tsqueryExpr)}
         AND publish_status != 'deleted'
+        ${sql.raw(sensitivityFilter)}
       GROUP BY sensitivity
       ORDER BY count DESC
     `),
