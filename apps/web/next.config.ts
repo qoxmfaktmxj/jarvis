@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // standalone output for Docker production builds (Linux only)
+  // Disabled on Windows due to symlink permission limitations (EPERM)
+  output: process.env.DOCKER_BUILD === '1' ? 'standalone' : undefined,
   transpilePackages: [
     "@jarvis/db",
     "@jarvis/shared",
@@ -10,9 +12,6 @@ const nextConfig: NextConfig = {
     "@jarvis/ai",
     "@jarvis/secret"
   ],
-  experimental: {
-    typedRoutes: true,
-  },
   webpack(config) {
     config.resolve.extensionAlias = {
       ...(config.resolve.extensionAlias ?? {}),
