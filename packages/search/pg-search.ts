@@ -402,19 +402,10 @@ export class PgSearchAdapter implements SearchAdapter {
       case 'popularity': // legacy alias
       case 'hybrid':
       default:
-        // Weights match computeHybridScore: fts 0.6, trgm 0.3, freshness 0.1
-        return `
-          (
-            fts_rank * 0.6 +
-            trgm_sim * 0.3 +
-            CASE
-              WHEN updated_at > now() - interval '7 days' THEN 1.0
-              WHEN updated_at > now() - interval '30 days' THEN 0.8
-              WHEN updated_at > now() - interval '90 days' THEN 0.5
-              ELSE 0.2
-            END * 0.1
-          ) DESC
-        `;
+        // PostgreSQL does not allow column aliases inside arithmetic expressions in ORDER BY.
+        // Use sequential alias ordering: FTS rank first, trigram similarity as tiebreaker,
+        // then recency — a safe approximation of the weighted hybrid score.
+        return 'fts_rank DESC, trgm_sim DESC, updated_at DESC';
     }
   }
 
