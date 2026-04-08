@@ -172,6 +172,7 @@ export class PgSearchAdapter implements SearchAdapter {
       updated_at: Date;
       fts_rank: number;
       trgm_sim: number;
+      hybrid_score: number;
       headline: string;
       total_count: string;
     }>(sql`
@@ -183,6 +184,16 @@ export class PgSearchAdapter implements SearchAdapter {
         updated_at,
         ts_rank_cd(search_vector, ${sql.raw(parsed.tsquery)}, 4)   AS fts_rank,
         similarity(title, ${term})                                   AS trgm_sim,
+        (
+          ts_rank_cd(search_vector, ${sql.raw(parsed.tsquery)}, 4) * 0.6 +
+          similarity(title, ${term}) * 0.3 +
+          CASE
+            WHEN updated_at > now() - interval '7 days' THEN 1.0
+            WHEN updated_at > now() - interval '30 days' THEN 0.8
+            WHEN updated_at > now() - interval '90 days' THEN 0.5
+            ELSE 0.2
+          END * 0.1
+        )                                                            AS hybrid_score,
         ts_headline(
           'simple',
           coalesce(summary, ''),
@@ -301,11 +312,11 @@ export class PgSearchAdapter implements SearchAdapter {
       updated_at: Date;
       fts_rank: number;
       trgm_sim: number;
+      hybrid_score: number;
       headline: string;
     },
     _term: string,
   ): SearchHit {
-    const days = daysSince(row.updated_at);
     const freshness = this.computeFreshness(row.updated_at);
     return {
       id: row.id,
@@ -318,7 +329,8 @@ export class PgSearchAdapter implements SearchAdapter {
       ftsRank: row.fts_rank,
       trgmSim: row.trgm_sim,
       freshness,
-      hybridScore: computeHybridScore(row.fts_rank, row.trgm_sim, days),
+      // Use the DB-computed score so hybridScore matches the actual sort order
+      hybridScore: row.hybrid_score,
       url: `/knowledge/${row.id}`,
     };
   }
@@ -402,10 +414,10 @@ export class PgSearchAdapter implements SearchAdapter {
       case 'popularity': // legacy alias
       case 'hybrid':
       default:
-        // PostgreSQL does not allow column aliases inside arithmetic expressions in ORDER BY.
-        // Use sequential alias ordering: FTS rank first, trigram similarity as tiebreaker,
-        // then recency — a safe approximation of the weighted hybrid score.
-        return 'fts_rank DESC, trgm_sim DESC, updated_at DESC';
+        // hybrid_score is computed in the SELECT as the weighted formula
+        // (fts*0.6 + trgm*0.3 + freshness*0.1). Referencing a standalone alias
+        // in ORDER BY is valid PostgreSQL — only alias arithmetic is disallowed.
+        return 'hybrid_score DESC';
     }
   }
 
