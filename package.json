@@ -10,6 +10,7 @@
     "type-check": "turbo type-check",
     "db:generate": "pnpm --filter=@jarvis/db generate",
     "db:migrate": "pnpm --filter=@jarvis/db migrate",
+    "db:seed": "pnpm --filter=@jarvis/db seed",
     "db:studio": "pnpm --filter=@jarvis/db studio",
     "db:push": "pnpm --filter=@jarvis/db push"
   },
