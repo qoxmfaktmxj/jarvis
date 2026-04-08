@@ -201,6 +201,9 @@ export async function getQuickLinks(
     .slice(0, 8);
 }
 
+// Alias for spec compatibility
+export const getQuickLinksWithRoleFilter = getQuickLinks;
+
 export async function getRecentActivity(
   workspaceId: string,
   database: DashboardDb = db
