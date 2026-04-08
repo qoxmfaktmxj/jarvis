@@ -11,7 +11,7 @@ echo "============================================"
 
 # 1. Validate secrets
 SECRETS_DIR="$PROJECT_ROOT/docker/secrets"
-REQUIRED=(pg_password minio_user minio_password session_secret openai_api_key)
+REQUIRED=(pg_password minio_user minio_password session_secret anthropic_api_key)
 for secret in "${REQUIRED[@]}"; do
   if [[ ! -f "$SECRETS_DIR/$secret.txt" ]]; then
     echo "ERROR: Missing $SECRETS_DIR/$secret.txt"

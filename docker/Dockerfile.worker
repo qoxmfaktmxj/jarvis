@@ -1,5 +1,5 @@
 # ============================================================
-# Stage 1: deps
+# Stage 1: deps — ALL dependencies (devDeps needed for build)
 # ============================================================
 FROM node:22-alpine AS deps
 RUN corepack enable pnpm
@@ -13,10 +13,10 @@ COPY packages/shared/package.json  ./packages/shared/
 COPY packages/secret/package.json  ./packages/secret/
 COPY apps/worker/package.json      ./apps/worker/
 
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 # ============================================================
-# Stage 2: builder
+# Stage 2: builder — type-check only (tsx runs source at runtime)
 # ============================================================
 FROM node:22-alpine AS builder
 RUN corepack enable pnpm
@@ -32,10 +32,12 @@ COPY --from=deps /app/apps/worker/node_modules  ./apps/worker/node_modules
 
 COPY . .
 
-RUN pnpm -F worker build
+# Type-check to catch errors at build time (no emit needed — tsx runs TS directly)
+RUN node_modules/.bin/tsc -p apps/worker/tsconfig.json --noEmit
 
 # ============================================================
-# Stage 3: runner
+# Stage 3: runner — tsx runs TypeScript source directly
+# Workspace packages export .ts files, tsx resolves them at runtime.
 # ============================================================
 FROM node:22-alpine AS runner
 
@@ -46,16 +48,36 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 worker
 
-COPY --from=builder --chown=worker:nodejs /app/apps/worker/dist         ./dist
+# Root node_modules (includes tsx, pnpm workspace links to packages/)
 COPY --from=builder --chown=worker:nodejs /app/node_modules              ./node_modules
+
+# Workspace package node_modules (runtime deps for each package)
 COPY --from=builder --chown=worker:nodejs /app/packages/db/node_modules  ./packages/db/node_modules
 COPY --from=builder --chown=worker:nodejs /app/packages/ai/node_modules  ./packages/ai/node_modules
 COPY --from=builder --chown=worker:nodejs /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY --from=builder --chown=worker:nodejs /app/packages/secret/node_modules ./packages/secret/node_modules
+COPY --from=builder --chown=worker:nodejs /app/apps/worker/node_modules  ./apps/worker/node_modules
+
+# Workspace package source files (resolved by pnpm symlinks at runtime)
+COPY --from=builder --chown=worker:nodejs /app/packages/db      ./packages/db
+COPY --from=builder --chown=worker:nodejs /app/packages/ai      ./packages/ai
+COPY --from=builder --chown=worker:nodejs /app/packages/shared  ./packages/shared
+COPY --from=builder --chown=worker:nodejs /app/packages/secret  ./packages/secret
+
+# Worker source + workspace config for pnpm symlink resolution
+COPY --from=builder --chown=worker:nodejs /app/apps/worker/src          ./apps/worker/src
+COPY --from=builder --chown=worker:nodejs /app/apps/worker/package.json ./apps/worker/
+COPY --from=builder --chown=worker:nodejs /app/package.json             ./
+COPY --from=builder --chown=worker:nodejs /app/pnpm-workspace.yaml      ./
+
+# Entrypoint reads Docker secrets into env vars before starting worker
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 USER worker
 
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
   CMD node -e "process.exit(0)" || exit 1
 
-CMD ["node", "dist/src/index.js"]
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["node_modules/.bin/tsx", "apps/worker/src/index.ts"]

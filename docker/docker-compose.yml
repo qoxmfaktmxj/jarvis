@@ -77,13 +77,24 @@ services:
     networks: [jarvis-network]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://jarvis@postgres:5432/jarvis
+      # DATABASE_URL is constructed by entrypoint.sh from pg_password secret
       REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
-    secrets: [pg_password, session_secret, openai_api_key]
+      # OIDC — set to your production Keycloak/OIDC provider
+      OIDC_ISSUER: ${OIDC_ISSUER:?required}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?required}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?required}
+      APP_URL: ${APP_URL:-http://localhost}
+    # entrypoint.sh reads these secret files and exports as env vars:
+    #   pg_password     → DATABASE_URL
+    #   session_secret  → SESSION_SECRET
+    #   anthropic_api_key → ANTHROPIC_API_KEY
+    #   minio_user      → MINIO_ACCESS_KEY
+    #   minio_password  → MINIO_SECRET_KEY
+    secrets: [pg_password, session_secret, anthropic_api_key, minio_user, minio_password]
     depends_on:
       postgres:
         condition: service_healthy
@@ -108,9 +119,18 @@ services:
     networks: [jarvis-network]
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://jarvis@postgres:5432/jarvis
+      # DATABASE_URL is constructed by entrypoint.sh from pg_password secret
       REDIS_URL: redis://redis:6379
-    secrets: [pg_password, openai_api_key]
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET: jarvis-files
+    # entrypoint.sh reads these secret files and exports as env vars:
+    #   pg_password       → DATABASE_URL
+    #   anthropic_api_key → ANTHROPIC_API_KEY
+    #   minio_user        → MINIO_ACCESS_KEY
+    #   minio_password    → MINIO_SECRET_KEY
+    secrets: [pg_password, anthropic_api_key, minio_user, minio_password]
     depends_on:
       postgres:
         condition: service_healthy
@@ -154,5 +174,5 @@ secrets:
     file: ./secrets/minio_password.txt
   session_secret:
     file: ./secrets/session_secret.txt
-  openai_api_key:
-    file: ./secrets/openai_api_key.txt
+  anthropic_api_key:
+    file: ./secrets/anthropic_api_key.txt

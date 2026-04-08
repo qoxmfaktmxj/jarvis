@@ -1,5 +1,5 @@
 # ============================================================
-# Stage 1: deps — production dependencies only
+# Stage 1: deps — ALL dependencies (devDeps needed for build)
 # ============================================================
 FROM node:22-alpine AS deps
 RUN corepack enable pnpm
@@ -15,10 +15,10 @@ COPY packages/ai/package.json         ./packages/ai/
 COPY packages/secret/package.json     ./packages/secret/
 COPY apps/web/package.json            ./apps/web/
 
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
 # ============================================================
-# Stage 2: builder — compile Next.js
+# Stage 2: builder — compile Next.js (standalone output)
 # ============================================================
 FROM node:22-alpine AS builder
 RUN corepack enable pnpm
@@ -37,6 +37,8 @@ COPY --from=deps /app/apps/web/node_modules        ./apps/web/node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# Required: enables standalone output in next.config.ts
+ENV DOCKER_BUILD=1
 
 RUN pnpm -F web build
 
@@ -59,6 +61,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static    ./apps/web/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public          ./apps/web/public
 
+# Entrypoint reads Docker secrets into env vars before starting Next.js
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -66,4 +72,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget -qO- http://localhost:3000/api/health || exit 1
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "apps/web/server.js"]

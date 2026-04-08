@@ -63,7 +63,7 @@ export async function loginAsAdmin(page: Page): Promise<void> {
     name: '관리자',
     email: 'admin@jarvis.internal',
     roles: ['ADMIN'],
-    permissions: [],
+    permissions: ['admin:all'],
     orgId: undefined,
     ssoSubject: 'test-admin-id-001',
     createdAt: now,
