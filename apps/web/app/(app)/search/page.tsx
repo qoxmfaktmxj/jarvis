@@ -39,7 +39,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
     );
   }
 
-  const validSortBy = ['relevance', 'date', 'popularity'].includes(params.sortBy ?? '')
+  const validSortBy = ['relevance', 'newest', 'freshness', 'hybrid'].includes(params.sortBy ?? '')
     ? (params.sortBy as SearchSortBy)
     : 'relevance';
 

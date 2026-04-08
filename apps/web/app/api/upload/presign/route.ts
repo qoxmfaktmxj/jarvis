@@ -4,7 +4,7 @@ import { requireApiSession } from '@/lib/server/api-auth';
 import { Client } from 'minio';
 import { nanoid } from 'nanoid';
 
-const BUCKET = 'jarvis-files';
+const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 
 const ALLOWED_MIME_TYPES = new Set([

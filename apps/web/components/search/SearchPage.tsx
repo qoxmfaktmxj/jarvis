@@ -67,7 +67,7 @@ export function SearchPage({
               {/* Sort controls */}
               <div className="mb-4 flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">정렬:</span>
-                {(['relevance', 'date', 'popularity'] as const).map((s) => (
+                {(['relevance', 'newest', 'hybrid'] as const).map((s) => (
                   <Link
                     key={s}
                     href={`/search?q=${encodeURIComponent(currentQuery)}&sortBy=${s}`}
@@ -77,7 +77,7 @@ export function SearchPage({
                         : 'text-muted-foreground hover:text-foreground'
                     }
                   >
-                    {{ relevance: '관련도', date: '최신순', popularity: '인기순' }[s]}
+                    {{ relevance: '관련도', newest: '최신순', hybrid: '하이브리드' }[s]}
                   </Link>
                 ))}
               </div>
