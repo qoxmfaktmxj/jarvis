@@ -159,7 +159,7 @@ export class PgSearchAdapter implements SearchAdapter {
     const term = extractTerm(query.q);
 
     // Build optional permission filter clause
-    const secretFilter = this.buildSecretFilter(query.userRoles);
+    const secretFilter = this.buildSecretFilter(query.userPermissions);
 
     // Build optional page type / sensitivity / date range filters
     const extraFilters = this.buildExtraFilters(query);
@@ -239,7 +239,7 @@ export class PgSearchAdapter implements SearchAdapter {
     const offset = opts?.offset ?? 0;
     const term = extractTerm(query.q);
 
-    const secretFilter = this.buildSecretFilter(query.userRoles);
+    const secretFilter = this.buildSecretFilter(query.userPermissions);
     const extraFilters = this.buildExtraFilters(query);
 
     const rows = await db.execute<{
@@ -344,15 +344,24 @@ export class PgSearchAdapter implements SearchAdapter {
   }
 
   /**
-   * Returns additional SQL WHERE fragment to exclude SECRET_REF_ONLY pages
-   * for users without DEVELOPER+ role.
+   * Returns SQL WHERE fragment to exclude pages the user cannot access,
+   * based on session.permissions (mirrors canAccessSensitivity in packages/auth/rbac.ts).
+   *
+   * - SYSTEM_ACCESS_SECRET or ADMIN_ALL → no filter (can see everything)
+   * - SYSTEM_READ only                  → exclude SECRET_REF_ONLY
+   * - no elevated permission            → exclude RESTRICTED + SECRET_REF_ONLY
    */
-  private buildSecretFilter(userRoles: string[]): string {
-    const hasSystemRead = userRoles.some((r) =>
-      ['DEVELOPER', 'ADMIN', 'SYSTEM_ADMIN', 'SYSTEM_READ'].includes(r.toUpperCase()),
-    );
-    if (hasSystemRead) return '';
-    return `AND sensitivity != 'SECRET_REF_ONLY'`;
+  private buildSecretFilter(userPermissions: string[]): string {
+    if (
+      userPermissions.includes('system.access:secret') ||
+      userPermissions.includes('admin:all')
+    ) {
+      return ''; // can see all sensitivities
+    }
+    if (userPermissions.includes('system:read')) {
+      return `AND sensitivity != 'SECRET_REF_ONLY'`;
+    }
+    return `AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')`;
   }
 
   /**

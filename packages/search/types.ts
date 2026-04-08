@@ -7,6 +7,7 @@ export interface SearchQuery {
   workspaceId: string;
   userId: string;
   userRoles: string[];
+  userPermissions: string[];
   pageType?: string;
   sensitivity?: string;
   dateFrom?: string;

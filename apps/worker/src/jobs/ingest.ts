@@ -33,15 +33,12 @@ async function extractText(buffer: Buffer, mimeType: string): Promise<string> {
     return result.value;
   }
 
-  if (
-    mimeType.startsWith('text/') ||
-    mimeType === 'application/json' ||
-    mimeType === 'application/zip'
-  ) {
+  if (mimeType.startsWith('text/') || mimeType === 'application/json') {
     return buffer.toString('utf-8');
   }
 
-  // Images and unsupported types: return placeholder
+  // ZIP and other binary types: return placeholder
+  // (ZIP requires extraction — reading as UTF-8 produces garbage)
   return `[Binary file: ${mimeType}]`;
 }
 

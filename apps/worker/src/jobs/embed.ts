@@ -66,32 +66,31 @@ async function processEmbed(
   const chunks = chunkText(mdxContent, 300, 50);
   console.log(`[embed] pageId=${pageId} chunks=${chunks.length}`);
 
-  // Idempotent: delete existing claims for this page before inserting new ones
-  await db.delete(knowledgeClaim).where(eq(knowledgeClaim.pageId, pageId));
-
-  // Embed in batches of BATCH_SIZE to avoid rate limits
+  // Embed all chunks first (outside the transaction — OpenAI calls can be slow/fail)
+  const allRows: { pageId: string; chunkIndex: number; claimText: string; embedding: number[] | undefined }[] = [];
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     const batchChunks = chunks.slice(i, i + BATCH_SIZE);
     const embeddings = await embedBatch(batchChunks);
-
-    const rows = batchChunks.map((chunk, idx) => ({
-      pageId,
-      chunkIndex: i + idx,
-      claimText: chunk,
-      embedding: embeddings[idx],
-    }));
-
-    await db.insert(knowledgeClaim).values(rows);
-    console.log(
-      `[embed] Inserted batch ${i / BATCH_SIZE + 1} (${rows.length} claims)`,
-    );
+    for (let j = 0; j < batchChunks.length; j++) {
+      allRows.push({ pageId, chunkIndex: i + j, claimText: batchChunks[j]!, embedding: embeddings[j] });
+    }
+    console.log(`[embed] Embedded batch ${Math.floor(i / BATCH_SIZE) + 1} (${batchChunks.length} chunks)`);
   }
 
-  // Touch updated_at to trigger search_vector refresh
-  await db
-    .update(knowledgePage)
-    .set({ updatedAt: new Date() })
-    .where(eq(knowledgePage.id, pageId));
+  // Atomic swap: delete old claims + insert new ones in a single transaction.
+  // If insert fails, old claims are preserved (no partial state).
+  await db.transaction(async (tx) => {
+    await tx.delete(knowledgeClaim).where(eq(knowledgeClaim.pageId, pageId));
+
+    for (let i = 0; i < allRows.length; i += BATCH_SIZE) {
+      await tx.insert(knowledgeClaim).values(allRows.slice(i, i + BATCH_SIZE));
+    }
+
+    await tx
+      .update(knowledgePage)
+      .set({ updatedAt: new Date() })
+      .where(eq(knowledgePage.id, pageId));
+  });
 
   console.log(`[embed] Done pageId=${pageId} total_claims=${chunks.length}`);
 }

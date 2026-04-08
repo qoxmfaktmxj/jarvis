@@ -51,6 +51,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
     workspaceId: session.workspaceId,
     userId: session.userId,
     userRoles: session.roles ?? [],
+    userPermissions: session.permissions ?? [],
     pageType: params.pageType,
     sensitivity: params.sensitivity,
     dateFrom: params.dateFrom,

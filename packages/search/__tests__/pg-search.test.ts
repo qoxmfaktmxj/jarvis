@@ -35,6 +35,7 @@ const baseQuery: SearchQuery = {
   workspaceId: '00000000-0000-0000-0000-000000000001',
   userId: '00000000-0000-0000-0000-000000000002',
   userRoles: ['MEMBER'],
+  userPermissions: [],
 };
 
 describe('PgSearchAdapter', () => {

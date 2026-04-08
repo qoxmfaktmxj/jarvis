@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
       workspaceId: session.workspaceId,
       userId: session.userId,
       userRoles: session.roles ?? [],
+      userPermissions: session.permissions ?? [],
       pageType: parsed.data.pageType,
       sensitivity: parsed.data.sensitivity,
       dateFrom: parsed.data.dateFrom,
