@@ -4,11 +4,23 @@ include:
 services:
   postgres:
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5436:5432"
   redis:
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6380:6379"
   minio:
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "127.0.0.1:9100:9000"
+      - "127.0.0.1:9101:9001"
+
+  # 로컬 개발용 Keycloak (운영 시 외부 Keycloak URL만 env에 지정하면 불필요)
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: jarvis-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "127.0.0.1:18080:8080"
+    restart: unless-stopped
