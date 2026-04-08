@@ -34,7 +34,7 @@ describe('Search types', () => {
   });
 
   it('SearchSortBy is union of valid values', () => {
-    const valid: SearchSortBy[] = ['relevance', 'date', 'popularity'];
+    const valid: SearchSortBy[] = ['relevance', 'newest', 'freshness', 'hybrid'];
     expectTypeOf(valid).toEqualTypeOf<SearchSortBy[]>();
   });
 

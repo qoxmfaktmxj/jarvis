@@ -1,4 +1,4 @@
-export type SearchSortBy = 'relevance' | 'date' | 'popularity';
+export type SearchSortBy = 'relevance' | 'newest' | 'freshness' | 'hybrid';
 export type ResourceType = 'knowledge' | 'project' | 'system';
 export type QueryMode = 'phrase' | 'web' | 'prefix';
 

@@ -383,22 +383,30 @@ export class PgSearchAdapter implements SearchAdapter {
    */
   private buildOrderBy(sortBy: string): string {
     switch (sortBy) {
-      case 'date':
+      case 'newest':
         return 'updated_at DESC';
-      case 'popularity':
-        return 'updated_at DESC';
+      case 'freshness':
+        return `
+          CASE
+            WHEN updated_at > now() - interval '7 days' THEN 1.0
+            WHEN updated_at > now() - interval '30 days' THEN 0.8
+            WHEN updated_at > now() - interval '90 days' THEN 0.5
+            ELSE 0.2
+          END DESC
+        `;
       case 'relevance':
+        return 'fts_rank DESC, trgm_sim DESC';
+      case 'hybrid':
       default:
-        // Hybrid score: fts_rank * 0.6 + trgm_sim * 0.3 + freshness * 0.1
-        // Note: freshness approximated in SQL as a CASE expression
         return `
           (
+            fts_rank * 0.6 +
             CASE
               WHEN updated_at > now() - interval '7 days' THEN 1.0
               WHEN updated_at > now() - interval '30 days' THEN 0.8
               WHEN updated_at > now() - interval '90 days' THEN 0.5
               ELSE 0.2
-            END * 0.1
+            END * 0.4
           ) DESC
         `;
     }
