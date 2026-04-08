@@ -1,10 +1,11 @@
 // apps/web/app/api/ask/route.ts
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { getSession } from '@jarvis/auth/session';
 import { getRedis } from '@jarvis/db/redis';
 import { askAI } from '@jarvis/ai/ask';
 import type { SSEEvent } from '@jarvis/ai/types';
+import { requireApiSession } from '@/lib/server/api-auth';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 const bodySchema = z.object({
   question: z.string().min(1).max(2000),
@@ -22,15 +23,10 @@ function formatSSE(event: SSEEvent): string {
 }
 
 export async function POST(request: NextRequest) {
-  // 1. Auth
-  const sessionId = request.cookies.get('sessionId')?.value;
-  const session = sessionId ? await getSession(sessionId) : null;
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  // 1. Auth + permission check
+  const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_READ);
+  if (auth.response) return auth.response;
+  const { session } = auth;
 
   // 2. Parse + validate body
   let body: { question: string };
