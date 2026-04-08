@@ -42,21 +42,21 @@ async function seed() {
   const roles = await db
     .insert(role)
     .values([
-      { workspaceId: wsId, code: 'admin', name: 'Admin' },
-      { workspaceId: wsId, code: 'editor', name: 'Editor' },
-      { workspaceId: wsId, code: 'viewer', name: 'Viewer' },
-      { workspaceId: wsId, code: 'developer', name: 'Developer' },
-      { workspaceId: wsId, code: 'manager', name: 'Manager' },
+      { workspaceId: wsId, code: 'ADMIN', name: 'Admin' },
+      { workspaceId: wsId, code: 'MANAGER', name: 'Manager' },
+      { workspaceId: wsId, code: 'VIEWER', name: 'Viewer' },
+      { workspaceId: wsId, code: 'DEVELOPER', name: 'Developer' },
+      { workspaceId: wsId, code: 'HR', name: 'HR' },
     ])
     .returning();
 
   console.log(`[seed] Created ${roles.length} roles`);
-  const [adminRole, editorRole, viewerRole] = roles as [typeof roles[0], typeof roles[0], typeof roles[0]];
+  const [adminRole, managerRole, viewerRole] = roles as [typeof roles[0], typeof roles[0], typeof roles[0]];
 
   // Assign roles
   await db.insert(userRole).values([
     { userId: adminUser.id, roleId: adminRole.id },
-    { userId: aliceUser.id, roleId: editorRole.id },
+    { userId: aliceUser.id, roleId: managerRole.id },
     { userId: bobUser.id, roleId: viewerRole.id },
   ]);
 
@@ -118,22 +118,27 @@ async function seed() {
   const knowledgeData = [
     {
       title: 'Employee Onboarding Guide',
+      pageType: 'onboarding' as const,
       mdx: '# Employee Onboarding Guide\n\nWelcome to Jarvis! This guide walks you through your first week.\n\n## Day 1\n\nSet up your workstation and review the company handbook.\n\n## Day 2-5\n\nMeet your team, complete compliance training, and get access to all required systems.',
     },
     {
       title: 'HR Policies Overview',
+      pageType: 'hr-policy' as const,
       mdx: '# HR Policies\n\n## Leave Policy\n\nAll full-time employees receive 20 days of paid annual leave.\n\n## Remote Work\n\nRemote work is allowed up to 3 days per week with manager approval.',
     },
     {
       title: 'Development Tools & Setup',
+      pageType: 'tool-guide' as const,
       mdx: '# Development Tools\n\n## Required Software\n\n- Node.js 22\n- pnpm 9\n- Docker Desktop\n- VS Code or Cursor\n\n## Repository Access\n\nRequest access to the jarvis GitHub org from your manager.',
     },
     {
       title: 'FAQ: Common Questions',
+      pageType: 'faq' as const,
       mdx: '# Frequently Asked Questions\n\n## How do I reset my password?\n\nVisit /auth/reset and follow the instructions.\n\n## Who do I contact for IT support?\n\nEmail it@jarvis.dev or open a ticket in the portal.',
     },
     {
       title: 'Glossary of Terms',
+      pageType: 'glossary' as const,
       mdx: '# Glossary\n\n**RAG** — Retrieval-Augmented Generation. AI technique combining search with LLM generation.\n\n**pgvector** — PostgreSQL extension for vector similarity search.\n\n**MDX** — Markdown with JSX components embedded.',
     },
   ];
@@ -143,7 +148,7 @@ async function seed() {
       .insert(knowledgePage)
       .values({
         workspaceId: wsId,
-        pageType: 'article',
+        pageType: kd.pageType,
         title: kd.title,
         slug: kd.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         publishStatus: 'published',

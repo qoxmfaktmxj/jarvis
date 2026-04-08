@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
       .innerJoin(role, eq(userRole.roleId, role.id))
       .where(eq(userRole.userId, dbUser.id));
 
-    const roles = userRoleRows.map((row) => row.roleCode);
+    const roles = userRoleRows.map((row) => row.roleCode.toUpperCase());
     const permissions = [
       ...new Set(roles.flatMap((roleCode) => ROLE_PERMISSIONS[roleCode] ?? []))
     ];
