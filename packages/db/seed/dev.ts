@@ -66,7 +66,7 @@ async function seed() {
     .values([
       { workspaceId: wsId, code: 'PORTAL', name: 'Portal Rewrite', description: 'Jarvis enterprise portal v2', status: 'active', createdBy: adminUser.id },
       { workspaceId: wsId, code: 'AUTH', name: 'Auth Migration', description: 'Migrate to SSO', status: 'active', createdBy: aliceUser.id },
-      { workspaceId: wsId, code: 'SEARCH', name: 'Search Upgrade', description: 'Add OpenSearch full-text search', status: 'planning', createdBy: bobUser.id },
+      { workspaceId: wsId, code: 'SEARCH', name: 'Search Upgrade', description: 'Improve PostgreSQL hybrid search relevance', status: 'planning', createdBy: bobUser.id },
     ])
     .returning();
 
@@ -80,10 +80,10 @@ async function seed() {
     { projectId: projects[0]!.id, title: 'File upload', status: 'todo', assigneeId: bobUser.id },
     { projectId: projects[1]!.id, title: 'SSO provider setup', status: 'in_progress', assigneeId: aliceUser.id },
     { projectId: projects[1]!.id, title: 'User migration script', status: 'todo', assigneeId: adminUser.id },
-    { projectId: projects[2]!.id, title: 'OpenSearch cluster', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[2]!.id, title: 'Index knowledge pages', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[2]!.id, title: 'Semantic search API', status: 'todo', assigneeId: aliceUser.id },
-    { projectId: projects[2]!.id, title: 'Search UI', status: 'todo', assigneeId: bobUser.id },
+    { projectId: projects[2]!.id, title: 'Tune PostgreSQL ranking weights', status: 'todo', assigneeId: bobUser.id },
+    { projectId: projects[2]!.id, title: 'Backfill knowledge embeddings', status: 'todo', assigneeId: bobUser.id },
+    { projectId: projects[2]!.id, title: 'Expand hybrid search filters', status: 'todo', assigneeId: aliceUser.id },
+    { projectId: projects[2]!.id, title: 'Polish search UI and explain mode', status: 'todo', assigneeId: bobUser.id },
   ];
 
   await db.insert(projectTask).values(
@@ -99,7 +99,7 @@ async function seed() {
       { workspaceId: wsId, name: 'PostgreSQL', description: 'Primary database', category: 'database', status: 'healthy', ownerId: adminUser.id },
       { workspaceId: wsId, name: 'Redis', description: 'Cache + session store', category: 'cache', status: 'healthy', ownerId: adminUser.id },
       { workspaceId: wsId, name: 'MinIO', description: 'Object storage', category: 'storage', status: 'healthy', ownerId: adminUser.id },
-      { workspaceId: wsId, name: 'OpenSearch', description: 'Full-text search engine', category: 'search', status: 'healthy', ownerId: aliceUser.id },
+      { workspaceId: wsId, name: 'PostgreSQL Search', description: 'FTS + pg_trgm + pgvector hybrid search', category: 'search', status: 'healthy', ownerId: aliceUser.id },
       { workspaceId: wsId, name: 'OpenAI API', description: 'AI embeddings + chat', category: 'ai', status: 'healthy', ownerId: aliceUser.id },
     ])
     .returning();

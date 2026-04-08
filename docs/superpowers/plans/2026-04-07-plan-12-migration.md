@@ -1852,7 +1852,7 @@ The rollback does NOT affect Oracle — it is read-only throughout.
 7. Monitor for 2 hours:
    - Application logs: no 500 errors
    - pg_stat_activity: no long-running queries
-   - OpenSearch indexing queue draining
+   - Search indexing queue draining
 
 ## Rollback (if issues detected post-DNS switch)
 
