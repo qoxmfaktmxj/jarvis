@@ -3,9 +3,13 @@ import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { getRedis } from '@jarvis/db/redis';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return _openai;
+}
 
 const EMBED_MODEL = 'text-embedding-3-small';
 const EMBED_DIMENSIONS = 1536;
@@ -27,7 +31,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   }
 
   // Generate embedding via OpenAI
-  const response = await openai.embeddings.create({
+  const response = await getOpenAI().embeddings.create({
     model: EMBED_MODEL,
     input: text.trim(),
     dimensions: EMBED_DIMENSIONS,
