@@ -25,7 +25,8 @@ export const PERMISSIONS = {
   USER_READ: "admin:users:read",
   USER_WRITE: "admin:users:write",
   AUDIT_READ: "admin:audit:read",
-  ADMIN_ALL: "admin:all"
+  ADMIN_ALL: "admin:all",
+  FILES_WRITE: "files:write"
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -45,7 +46,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.SYSTEM_UPDATE,
     PERMISSIONS.ATTENDANCE_READ,
     PERMISSIONS.ATTENDANCE_ADMIN,
-    PERMISSIONS.USER_READ
+    PERMISSIONS.USER_READ,
+    PERMISSIONS.FILES_WRITE
   ],
   DEVELOPER: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -57,7 +59,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.SYSTEM_READ,
     PERMISSIONS.SYSTEM_ACCESS_SECRET,
     PERMISSIONS.ATTENDANCE_READ,
-    PERMISSIONS.ATTENDANCE_WRITE
+    PERMISSIONS.ATTENDANCE_WRITE,
+    PERMISSIONS.FILES_WRITE
   ],
   HR: [
     PERMISSIONS.KNOWLEDGE_READ,
