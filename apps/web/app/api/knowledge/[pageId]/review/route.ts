@@ -4,7 +4,7 @@ import { db } from '@jarvis/db/client';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
 import { reviewRequest } from '@jarvis/db/schema/review';
 import { requireApiSession } from '@/lib/server/api-auth';
-import { hasPermission } from '@jarvis/auth/rbac';
+import { canAccessKnowledgeSensitivity, hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { and, eq, desc } from 'drizzle-orm';
 
@@ -33,6 +33,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     .limit(1);
 
   if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!canAccessKnowledgeSensitivity(session, page.sensitivity ?? 'INTERNAL')) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   let body: unknown;
   try { body = await request.json(); } catch {

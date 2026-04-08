@@ -45,4 +45,5 @@ export interface AskQuery {
   workspaceId: string;
   userId: string;
   userRoles: string[];
+  userPermissions: string[];
 }

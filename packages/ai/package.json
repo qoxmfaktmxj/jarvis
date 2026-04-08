@@ -14,8 +14,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.0",
+    "@jarvis/auth": "workspace:*",
     "@jarvis/db": "workspace:*",
-    "drizzle-orm": "^0.40.0",
+    "drizzle-orm": "^0.45.2",
     "openai": "^4.0.0"
   },
   "devDependencies": {

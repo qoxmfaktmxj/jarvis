@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
           workspaceId: session.workspaceId,
           userId: session.userId,
           userRoles: session.roles ?? [],
+          userPermissions: session.permissions ?? [],
         });
 
         for await (const event of generator) {

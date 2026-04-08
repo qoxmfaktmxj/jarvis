@@ -17,7 +17,7 @@ export default async function ReviewPage({ params }: Props) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
 
   const { pageId } = await params;
-  const page = await getKnowledgePage(pageId, session.workspaceId);
+  const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
 
   const canReview = hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW);

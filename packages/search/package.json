@@ -20,8 +20,9 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@jarvis/auth": "workspace:*",
     "@jarvis/db": "workspace:*",
-    "drizzle-orm": "^0.40.1"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@jarvis/db/client';
-import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { requireApiSession } from '@/lib/server/api-auth';
+import { getVersionContent } from '@/lib/queries/knowledge';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { and, eq } from 'drizzle-orm';
 
 type Params = { params: Promise<{ pageId: string; versionId: string }> };
 
@@ -15,22 +13,15 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
   const { pageId, versionId } = await params;
 
-  // Verify page belongs to workspace
-  const [page] = await db
-    .select({ id: knowledgePage.id })
-    .from(knowledgePage)
-    .where(and(eq(knowledgePage.id, pageId), eq(knowledgePage.workspaceId, session.workspaceId)))
-    .limit(1);
+  const version = await getVersionContent(
+    versionId,
+    session.workspaceId,
+    session.permissions ?? [],
+  );
 
-  if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const [version] = await db
-    .select()
-    .from(knowledgePageVersion)
-    .where(and(eq(knowledgePageVersion.id, versionId), eq(knowledgePageVersion.pageId, pageId)))
-    .limit(1);
-
-  if (!version) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!version || version.pageId !== pageId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   return NextResponse.json({
     versionNumber: version.versionNumber,

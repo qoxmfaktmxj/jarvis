@@ -29,7 +29,12 @@ export default async function KnowledgeHomePage() {
   const sectionData = await Promise.all(
     HUB_SECTIONS.map(async (section) => ({
       ...section,
-      pages: await getPagesByType(session.workspaceId, section.type, 4),
+      pages: await getPagesByType(
+        session.workspaceId,
+        session.permissions ?? [],
+        section.type,
+        4,
+      ),
     })),
   );
 

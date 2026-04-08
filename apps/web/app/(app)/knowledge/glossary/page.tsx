@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 export default async function GlossaryPage() {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
 
-  const { data: pages } = await getKnowledgePages(session.workspaceId, {
+  const { data: pages } = await getKnowledgePages(session.workspaceId, session.permissions ?? [], {
     pageType: 'glossary',
     publishStatus: 'published',
     limit: 200,

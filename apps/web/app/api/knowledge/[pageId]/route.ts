@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { requireApiSession } from '@/lib/server/api-auth';
+import { getKnowledgePage } from '@/lib/queries/knowledge';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { and, eq, desc, max } from 'drizzle-orm';
+import { and, eq, max } from 'drizzle-orm';
 
 type Params = { params: Promise<{ pageId: string }> };
 
@@ -33,18 +34,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const { session } = auth;
 
   const { pageId } = await params;
-  const page = await resolvePage(pageId, session.workspaceId);
+  const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  // Fetch latest version
-  const [version] = await db
-    .select()
-    .from(knowledgePageVersion)
-    .where(eq(knowledgePageVersion.pageId, pageId))
-    .orderBy(desc(knowledgePageVersion.versionNumber))
-    .limit(1);
-
-  return NextResponse.json({ page, version: version ?? null });
+  return NextResponse.json({ page, version: page.currentVersion ?? null });
 }
 
 // PUT /api/knowledge/[pageId] — save a new version (increments version number)

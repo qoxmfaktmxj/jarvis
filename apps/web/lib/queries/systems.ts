@@ -5,7 +5,10 @@ import {
   isSecretRef,
   type SecretResolver
 } from "@jarvis/secret";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import {
+  canAccessSystemAccessEntry,
+  canResolveSystemSecrets
+} from "@jarvis/auth/rbac";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
 type SystemsDb = typeof db;
@@ -250,33 +253,6 @@ export async function deleteSystem({
   return deleted ?? null;
 }
 
-function canResolveSecrets({
-  sensitivity,
-  sessionRoles,
-  sessionPermissions
-}: {
-  sensitivity: string;
-  sessionRoles: string[];
-  sessionPermissions: string[];
-}) {
-  if (sessionRoles.includes("ADMIN")) {
-    return true;
-  }
-
-  if (sensitivity === "SECRET_REF_ONLY") {
-    return (
-      sessionPermissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
-      sessionPermissions.includes(PERMISSIONS.SYSTEM_UPDATE)
-    );
-  }
-
-  return (
-    sessionPermissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
-    sessionPermissions.includes(PERMISSIONS.SYSTEM_UPDATE) ||
-    sessionPermissions.includes(PERMISSIONS.SYSTEM_READ)
-  );
-}
-
 async function resolveSecretField(
   value: string | null,
   allowResolve: boolean,
@@ -346,14 +322,17 @@ export async function listSystemAccessEntries({
     )
     .orderBy(systemAccess.sortOrder);
 
-  const allowResolve = canResolveSecrets({
-    sensitivity: sys.sensitivity,
-    sessionRoles,
-    sessionPermissions
-  });
+  const visibleRows = rows.filter((row: SystemAccessRow) =>
+    canAccessSystemAccessEntry(sessionRoles, row.requiredRole)
+  );
+
+  const allowResolve = canResolveSystemSecrets(
+    sessionPermissions,
+    sys.sensitivity
+  );
 
   return Promise.all(
-    rows.map(async (row: SystemAccessRow) => ({
+    visibleRows.map(async (row: SystemAccessRow) => ({
       id: row.id,
       accessType: row.accessType,
       label: row.label,

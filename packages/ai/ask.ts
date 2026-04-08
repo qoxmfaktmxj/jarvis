@@ -1,4 +1,5 @@
 // packages/ai/ask.ts  (retrieval section — Task 4 adds generation)
+import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
@@ -12,7 +13,7 @@ const FTS_WEIGHT = 0.3;
 export async function retrieveRelevantClaims(
   question: string,
   workspaceId: string,
-  userRoles: string[],
+  userPermissions: string[],
 ): Promise<RetrievedClaim[]> {
   // 1. Embed query
   const embedding = await generateEmbedding(question);
@@ -20,11 +21,12 @@ export async function retrieveRelevantClaims(
 
   // 2. Sensitivity filter: SECRET_REF_ONLY excluded unless ADMIN or DEVELOPER
   // Roles are stored uppercase in session (e.g. 'ADMIN', 'DEVELOPER') — must match exactly
-  const canViewSecret =
-    userRoles.includes('ADMIN') || userRoles.includes('DEVELOPER');
-  const sensitivityFilter = canViewSecret
-    ? sql`TRUE`
-    : sql`kp.sensitivity NOT IN ('SECRET_REF_ONLY')`;
+  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
+    .replace(/\bsensitivity\b/g, 'kp.sensitivity')
+    .trim();
+  const sensitivityClause = sensitivityFilter
+    ? sql.raw(` ${sensitivityFilter}`)
+    : sql.empty();
 
   // 3. Vector similarity search (top 10)
   const vectorRows = await db.execute<{
@@ -45,7 +47,7 @@ export async function retrieveRelevantClaims(
       JOIN knowledge_page kp ON kp.id = kc.page_id
       WHERE kp.workspace_id = ${workspaceId}::uuid
         AND kp.publish_status = 'published'
-        AND ${sensitivityFilter}
+        ${sensitivityClause}
         AND kc.embedding IS NOT NULL
       ORDER BY kc.embedding <=> ${embeddingLiteral}::vector
       LIMIT ${TOP_K_VECTOR}
@@ -203,11 +205,11 @@ export async function* generateAnswer(
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
-  const { question, workspaceId, userRoles } = query;
+  const { question, workspaceId, userPermissions } = query;
 
   let claims: RetrievedClaim[];
   try {
-    claims = await retrieveRelevantClaims(question, workspaceId, userRoles);
+    claims = await retrieveRelevantClaims(question, workspaceId, userPermissions);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';
     yield { type: 'error', message };

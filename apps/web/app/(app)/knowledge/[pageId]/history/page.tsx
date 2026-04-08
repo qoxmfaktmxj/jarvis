@@ -19,10 +19,10 @@ export default async function VersionHistoryPage({ params }: Props) {
   }
 
   const { pageId } = await params;
-  const page = await getKnowledgePage(pageId, session.workspaceId);
+  const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
 
-  const versions = await getPageVersions(pageId, session.workspaceId);
+  const versions = await getPageVersions(pageId, session.workspaceId, session.permissions ?? []);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">

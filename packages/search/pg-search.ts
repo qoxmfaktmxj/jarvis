@@ -1,4 +1,5 @@
 // packages/search/pg-search.ts
+import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
 import { sql } from 'drizzle-orm';
@@ -354,16 +355,7 @@ export class PgSearchAdapter implements SearchAdapter {
    * - no elevated permission            → exclude RESTRICTED + SECRET_REF_ONLY
    */
   private buildSecretFilter(userPermissions: string[]): string {
-    if (
-      userPermissions.includes('system.access:secret') ||
-      userPermissions.includes('admin:all')
-    ) {
-      return ''; // can see all sensitivities
-    }
-    if (userPermissions.includes('system:read')) {
-      return `AND sensitivity != 'SECRET_REF_ONLY'`;
-    }
-    return `AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')`;
+    return buildKnowledgeSensitivitySqlFilter(userPermissions);
   }
 
   /**

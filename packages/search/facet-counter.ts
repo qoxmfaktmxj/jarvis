@@ -1,4 +1,5 @@
 // packages/search/facet-counter.ts
+import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchFacets } from './types.js';
@@ -9,25 +10,12 @@ import type { SearchFacets } from './types.js';
  *
  * Runs two GROUP BY queries in parallel for performance.
  */
-function buildSensitivityFilter(userPermissions: string[]): string {
-  if (
-    userPermissions.includes('system.access:secret') ||
-    userPermissions.includes('admin:all')
-  ) {
-    return '';
-  }
-  if (userPermissions.includes('system:read')) {
-    return `AND sensitivity != 'SECRET_REF_ONLY'`;
-  }
-  return `AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')`;
-}
-
 export async function countFacets(
   workspaceId: string,
   tsqueryExpr: string,
   userPermissions: string[] = [],
 ): Promise<SearchFacets> {
-  const sensitivityFilter = buildSensitivityFilter(userPermissions);
+  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions);
 
   const [pageTypeRows, sensitivityRows] = await Promise.all([
     db.execute<{ page_type: string; count: string }>(sql`

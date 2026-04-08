@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export default async function HRHubPage() {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
 
-  const { data: pages } = await getKnowledgePages(session.workspaceId, {
+  const { data: pages } = await getKnowledgePages(session.workspaceId, session.permissions ?? [], {
     pageType: 'hr-policy',
     publishStatus: 'published',
     limit: 50,

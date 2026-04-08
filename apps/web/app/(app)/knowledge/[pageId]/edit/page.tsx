@@ -12,7 +12,7 @@ export default async function EditKnowledgePage({ params }: Props) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_UPDATE, '/knowledge');
 
   const { pageId } = await params;
-  const page = await getKnowledgePage(pageId, session.workspaceId);
+  const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
 
   const frontmatter = (page.currentVersion?.frontmatter ?? {}) as Record<string, unknown>;

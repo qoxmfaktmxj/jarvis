@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { requireApiSession } from '@/lib/server/api-auth';
+import { getKnowledgePages } from '@/lib/queries/knowledge';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { and, eq, ilike, desc, count } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 const PAGE_TYPES = [
   'project', 'system', 'access', 'runbook', 'onboarding',
@@ -36,35 +37,16 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q') ?? undefined;
   const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
   const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? '20')));
-  const offset = (page - 1) * limit;
-
-  const workspaceId = session.workspaceId;
-
-  const conditions = [eq(knowledgePage.workspaceId, workspaceId)];
-  if (pageType) conditions.push(eq(knowledgePage.pageType, pageType));
-  if (publishStatus) conditions.push(eq(knowledgePage.publishStatus, publishStatus));
-  if (sensitivity) conditions.push(eq(knowledgePage.sensitivity, sensitivity));
-  if (q) conditions.push(ilike(knowledgePage.title, `%${q}%`));
-
-  const where = and(...conditions);
-
-  const [rows, totalRows] = await Promise.all([
-    db
-      .select()
-      .from(knowledgePage)
-      .where(where)
-      .orderBy(desc(knowledgePage.updatedAt))
-      .limit(limit)
-      .offset(offset),
-    db.select({ total: count() }).from(knowledgePage).where(where),
-  ]);
-
-  const total = Number(totalRows[0]?.total ?? 0);
-
-  return NextResponse.json({
-    data: rows,
-    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  const result = await getKnowledgePages(session.workspaceId, session.permissions ?? [], {
+    pageType,
+    publishStatus,
+    sensitivity,
+    q,
+    page,
+    limit,
   });
+
+  return NextResponse.json(result);
 }
 
 // POST /api/knowledge — create page + first version in a single transaction
