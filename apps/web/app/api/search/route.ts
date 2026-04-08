@@ -13,7 +13,7 @@ const searchSchema = z.object({
   sensitivity: z.string().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
-  sortBy: z.enum(['relevance', 'date', 'popularity']).optional(),
+  sortBy: z.enum(['relevance', 'newest', 'freshness', 'hybrid']).optional(),
   page: z.number().int().min(1).max(100).optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
