@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   transpilePackages: [
     "@jarvis/db",
     "@jarvis/shared",
@@ -9,6 +10,9 @@ const nextConfig: NextConfig = {
     "@jarvis/ai",
     "@jarvis/secret"
   ],
+  experimental: {
+    typedRoutes: true,
+  },
   webpack(config) {
     config.resolve.extensionAlias = {
       ...(config.resolve.extensionAlias ?? {}),
@@ -20,6 +24,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      { protocol: 'http', hostname: 'minio' },
       {
         protocol: "http",
         hostname: "localhost",
