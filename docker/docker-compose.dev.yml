@@ -1,25 +1,17 @@
 # docker/docker-compose.dev.yml — DEVELOPMENT OVERRIDE
 # Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio
 # Next.js runs outside Docker (pnpm dev) for hot reload
-
-# Override secrets to use env vars instead of files in dev
-secrets:
-  pg_password:
-    environment: PG_PASSWORD
-  minio_user:
-    environment: MINIO_USER
-  minio_password:
-    environment: MINIO_PASSWORD
-  session_secret:
-    environment: SESSION_SECRET
-  anthropic_api_key:
-    environment: ANTHROPIC_API_KEY
+#
+# Dev secrets: placeholder files are created by scripts/setup-dev.sh
+# (docker/secrets/*.txt is gitignored — never commit real secrets)
 
 services:
   postgres:
     ports:
       - "127.0.0.1:5436:5432"
+    # Override: use POSTGRES_PASSWORD directly so secret file content doesn't matter
     environment:
+      POSTGRES_PASSWORD_FILE: ""
       POSTGRES_PASSWORD: ${PG_PASSWORD:-jarvispass}
 
   redis:
@@ -30,7 +22,10 @@ services:
     ports:
       - "127.0.0.1:9100:9000"
       - "127.0.0.1:9101:9001"
+    # Override: use direct env vars so secret file content doesn't matter
     environment:
+      MINIO_ROOT_USER_FILE: ""
+      MINIO_ROOT_PASSWORD_FILE: ""
       MINIO_ROOT_USER: ${MINIO_USER:-jarvisadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-jarvispassword}
 
