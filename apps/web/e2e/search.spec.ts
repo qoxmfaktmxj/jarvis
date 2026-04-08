@@ -111,8 +111,8 @@ test.describe('Search', () => {
 
     if (hasResults) {
       await page.getByText('최신순').click();
-      await page.waitForURL('**/search?**sortBy=date**', { timeout: 3000 });
-      expect(page.url()).toContain('sortBy=date');
+      await page.waitForURL('**/search?**sortBy=newest**', { timeout: 3000 });
+      expect(page.url()).toContain('sortBy=newest');
     }
   });
 

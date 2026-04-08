@@ -383,19 +383,23 @@ export class PgSearchAdapter implements SearchAdapter {
    */
   private buildOrderBy(sortBy: string): string {
     switch (sortBy) {
+      case 'date':     // legacy alias
       case 'newest':
         return 'updated_at DESC';
       case 'freshness':
+        // Tie-breaker: updated_at DESC ensures stable pagination within each bucket
         return `
           CASE
             WHEN updated_at > now() - interval '7 days' THEN 1.0
             WHEN updated_at > now() - interval '30 days' THEN 0.8
             WHEN updated_at > now() - interval '90 days' THEN 0.5
             ELSE 0.2
-          END DESC
+          END DESC,
+          updated_at DESC
         `;
       case 'relevance':
         return 'fts_rank DESC, trgm_sim DESC';
+      case 'popularity': // legacy alias
       case 'hybrid':
       default:
         // Weights match computeHybridScore: fts 0.6, trgm 0.3, freshness 0.1

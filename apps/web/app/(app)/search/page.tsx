@@ -39,9 +39,12 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
     );
   }
 
-  const validSortBy = ['relevance', 'newest', 'freshness', 'hybrid'].includes(params.sortBy ?? '')
-    ? (params.sortBy as SearchSortBy)
-    : 'relevance';
+  // Accept legacy aliases: 'date' → 'newest', 'popularity' → 'hybrid'
+  const sortAliases: Record<string, SearchSortBy> = { date: 'newest', popularity: 'hybrid' };
+  const rawSort = params.sortBy ?? '';
+  const validSortBy: SearchSortBy = ['relevance', 'newest', 'freshness', 'hybrid'].includes(rawSort)
+    ? (rawSort as SearchSortBy)
+    : sortAliases[rawSort] ?? 'relevance';
 
   const result = await executeSearch({
     q,

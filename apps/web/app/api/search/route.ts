@@ -13,7 +13,7 @@ const searchSchema = z.object({
   sensitivity: z.string().optional(),
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
-  sortBy: z.enum(['relevance', 'newest', 'freshness', 'hybrid']).optional(),
+  sortBy: z.enum(['relevance', 'newest', 'freshness', 'hybrid', 'date', 'popularity']).optional(),
   page: z.number().int().min(1).max(100).optional(),
   limit: z.number().int().min(1).max(100).optional(),
 });
@@ -77,6 +77,16 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Execute search
+  // Normalize legacy aliases before passing to adapter
+  const legacySortAliases: Record<string, import('@jarvis/search/types').SearchSortBy> = {
+    date: 'newest',
+    popularity: 'hybrid',
+  };
+  const rawSort = parsed.data.sortBy;
+  const normalizedSort = rawSort
+    ? legacySortAliases[rawSort] ?? (rawSort as import('@jarvis/search/types').SearchSortBy)
+    : undefined;
+
   try {
     const result: SearchResult = await adapter.search({
       q: parsed.data.q,
@@ -87,7 +97,7 @@ export async function POST(request: NextRequest) {
       sensitivity: parsed.data.sensitivity,
       dateFrom: parsed.data.dateFrom,
       dateTo: parsed.data.dateTo,
-      sortBy: parsed.data.sortBy,
+      sortBy: normalizedSort,
       page: parsed.data.page,
       limit: parsed.data.limit,
     });
