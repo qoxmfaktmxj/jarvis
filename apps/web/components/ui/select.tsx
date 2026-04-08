@@ -1,6 +1,5 @@
 "use client";
 
-import type { SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { createContext, useContext, useState, useRef, useEffect, type ReactNode } from "react";
 
@@ -67,17 +66,8 @@ export function SelectTrigger({
 
 export function SelectValue({ placeholder }: { placeholder?: string }) {
   const { value } = useSelect();
-  const ctx = useContext(SelectContext);
-  // We need to render the label from the context
   return <span className={cn(!value && "text-gray-400")}>{value || placeholder}</span>;
 }
-
-interface ItemData {
-  value: string;
-  label: string;
-}
-
-const ItemsContext = createContext<{ items: ItemData[]; register: (item: ItemData) => void } | null>(null);
 
 export function SelectContent({ children, className }: { children: ReactNode; className?: string }) {
   const { open, setOpen } = useSelect();

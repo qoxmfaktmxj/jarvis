@@ -1,7 +1,7 @@
 import { db } from '@jarvis/db/client';
 import {
   user, organization, userRole, role,
-  menuItem, codeGroup, codeItem, company,
+  menuItem, codeGroup, codeItem,
   auditLog, searchLog, popularSearch,
 } from '@jarvis/db/schema';
 import { and, eq, asc, desc, count, gte, lte, sql } from 'drizzle-orm';

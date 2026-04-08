@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, type HTMLAttributes } from "react";
+import { type ReactNode, useEffect, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 

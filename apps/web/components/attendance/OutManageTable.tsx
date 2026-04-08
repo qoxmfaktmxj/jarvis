@@ -38,6 +38,8 @@ const OUT_TYPE_LABELS: Record<string, string> = {
   other:          'Other',
 };
 
+const helper = createColumnHelper<OutManageRecord>();
+
 interface OutManageTableProps {
   records: OutManageRecord[];
   isManager?: boolean;
@@ -49,7 +51,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'outDate', desc: true }]);
   const [actionLoading, setActionLoading] = React.useState<string | null>(null);
 
-  async function handleApproval(id: string, action: 'approve' | 'reject') {
+  const handleApproval = React.useCallback(async (id: string, action: 'approve' | 'reject') => {
     setActionLoading(id + action);
     try {
       const res = await fetch('/api/attendance/out-manage', {
@@ -66,9 +68,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
     } finally {
       setActionLoading(null);
     }
-  }
-
-  const helper = createColumnHelper<OutManageRecord>();
+  }, [router]);
 
   const columns = React.useMemo(
     () => [
@@ -162,7 +162,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
         },
       }),
     ],
-    [isManager, actionLoading, onViewDetails],
+    [actionLoading, handleApproval, isManager, onViewDetails],
   );
 
   const table = useReactTable({

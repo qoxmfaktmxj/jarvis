@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { cn } from '@/lib/utils';
 import type { AttendanceRecord } from '@/lib/queries/attendance';
 
 const STATUS_BADGE: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {

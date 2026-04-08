@@ -169,7 +169,7 @@ export function Calendar({
                         key={di}
                         className={cn(
                           "relative h-16 w-full p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                          isSelected && "[&:has([aria-selected])]:bg-accent",
+                          isSelected && "[&:has([data-selected='true'])]:bg-accent",
                           classNames.cell
                         )}
                       >
@@ -181,7 +181,7 @@ export function Calendar({
                         ) : (
                           <button
                             type="button"
-                            aria-selected={isSelected}
+                            data-selected={isSelected}
                             disabled={isDisabled}
                             onClick={() => !isDisabled && onSelect?.(date)}
                             className={cn(

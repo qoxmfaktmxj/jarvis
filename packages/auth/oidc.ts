@@ -2,6 +2,18 @@ import * as oidc from "openid-client";
 
 let _config: oidc.Configuration | null = null;
 
+export function shouldAllowInsecureDiscovery(issuer: URL): boolean {
+  if (process.env["NODE_ENV"] === "production") {
+    return false;
+  }
+
+  if (issuer.protocol !== "http:") {
+    return false;
+  }
+
+  return ["localhost", "127.0.0.1", "::1"].includes(issuer.hostname);
+}
+
 /**
  * Returns a cached openid-client Configuration.
  * Performs discovery on first call (fetches /.well-known/openid-configuration).
@@ -20,7 +32,18 @@ export async function getOidcConfig(): Promise<oidc.Configuration> {
     );
   }
 
-  _config = await oidc.discovery(new URL(issuer), clientId, clientSecret);
+  const issuerUrl = new URL(issuer);
+  const discoveryOptions = shouldAllowInsecureDiscovery(issuerUrl)
+    ? { execute: [oidc.allowInsecureRequests] }
+    : undefined;
+
+  _config = await oidc.discovery(
+    issuerUrl,
+    clientId,
+    clientSecret,
+    undefined,
+    discoveryOptions
+  );
   return _config;
 }
 

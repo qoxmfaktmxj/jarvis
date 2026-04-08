@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
       ? rawRedirect
       : "/dashboard";
-  const appUrl = process.env["NEXTAUTH_URL"] ?? "http://localhost:3000";
+  const appUrl = new URL(request.url).origin;
   const redirectUri = `${appUrl}/api/auth/callback`;
 
   try {

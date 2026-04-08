@@ -3,10 +3,9 @@
 import * as React from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { AttendanceRecord } from '@/lib/queries/attendance';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 
 type StatusColor = {
   bg: string;

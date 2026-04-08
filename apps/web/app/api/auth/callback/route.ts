@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { getOidcConfig, oidcClient } from "@jarvis/auth/oidc";
 import { createSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
@@ -41,14 +41,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=invalid_token_claims", request.url));
     }
 
+    const tokenEmail =
+      typeof claims["email"] === "string" && claims["email"].length > 0
+        ? claims["email"]
+        : undefined;
+
     const [dbUser] = await db
       .select()
       .from(user)
-      .where(eq(user.ssoSubject, claims.sub))
+      .where(
+        tokenEmail
+          ? or(eq(user.ssoSubject, claims.sub), eq(user.email, tokenEmail))
+          : eq(user.ssoSubject, claims.sub)
+      )
       .limit(1);
 
     if (!dbUser) {
       return NextResponse.redirect(new URL("/login?error=user_not_found", request.url));
+    }
+
+    if (!dbUser.ssoSubject || dbUser.ssoSubject !== claims.sub) {
+      await db
+        .update(user)
+        .set({ ssoSubject: claims.sub })
+        .where(eq(user.id, dbUser.id));
     }
 
     const userRoleRows = await db
@@ -71,7 +87,7 @@ export async function GET(request: NextRequest) {
       workspaceId: dbUser.workspaceId,
       employeeId: dbUser.employeeId,
       name: dbUser.name ?? (claims["name"] as string | undefined) ?? "User",
-      email: dbUser.email ?? (claims["email"] as string | undefined),
+      email: dbUser.email ?? tokenEmail,
       roles,
       permissions,
       orgId: dbUser.orgId ?? undefined,
