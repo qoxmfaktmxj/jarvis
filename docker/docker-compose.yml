@@ -84,9 +84,9 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
       # OIDC — set to your production Keycloak/OIDC provider
-      OIDC_ISSUER: ${OIDC_ISSUER:?required}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:?required}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:?required}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       APP_URL: ${APP_URL:-http://localhost}
     # entrypoint.sh reads these secret files and exports as env vars:
     #   pg_password     → DATABASE_URL
