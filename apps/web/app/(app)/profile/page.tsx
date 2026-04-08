@@ -1,24 +1,12 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { getSession } from "@jarvis/auth/session";
 import { getQuickLinks } from "@/lib/queries/dashboard";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { ProfileInfo } from "./_components/ProfileInfo";
 import { QuickMenuEditor } from "./_components/QuickMenuEditor";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id");
-
-  if (!sessionId) {
-    redirect("/login");
-  }
-
-  const session = await getSession(sessionId);
-  if (!session) {
-    redirect("/login");
-  }
+  const session = await requirePageSession();
 
   const quickLinks = await getQuickLinks(session.workspaceId, session.roles);
 

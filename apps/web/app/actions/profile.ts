@@ -38,24 +38,29 @@ export async function updateQuickMenuOrder(
 
   const uniqueMenuIds = normalizeMenuIds(menuIds);
 
-  await Promise.all(
-    uniqueMenuIds.map((id, index) =>
-      db
-        .update(menuItem)
-        .set({
-          sortOrder: index,
-          updatedAt: new Date()
-        })
-        .where(
-          and(
-            eq(menuItem.id, id),
-            eq(menuItem.workspaceId, session.workspaceId),
-            isNull(menuItem.parentId),
-            eq(menuItem.isVisible, true)
+  try {
+    await Promise.all(
+      uniqueMenuIds.map((id, index) =>
+        db
+          .update(menuItem)
+          .set({
+            sortOrder: index,
+            updatedAt: new Date()
+          })
+          .where(
+            and(
+              eq(menuItem.id, id),
+              eq(menuItem.workspaceId, session.workspaceId),
+              isNull(menuItem.parentId),
+              eq(menuItem.isVisible, true)
+            )
           )
-        )
-    )
-  );
+      )
+    );
+  } catch (err) {
+    console.error("updateQuickMenuOrder failed:", err);
+    return { success: false, error: "Failed to update menu order" };
+  }
 
   revalidatePath("/dashboard");
   revalidatePath("/profile");

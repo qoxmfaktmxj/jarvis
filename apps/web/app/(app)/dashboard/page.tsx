@@ -1,7 +1,5 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { getSession } from "@jarvis/auth/session";
 import { getDashboardData } from "@/lib/queries/dashboard";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { AttendanceSummaryWidget } from "./_components/AttendanceSummaryWidget";
 import { MyTasksWidget } from "./_components/MyTasksWidget";
 import { ProjectStatsWidget } from "./_components/ProjectStatsWidget";
@@ -13,17 +11,7 @@ import { StalePagesWidget } from "./_components/StalePagesWidget";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id");
-
-  if (!sessionId) {
-    redirect("/login");
-  }
-
-  const session = await getSession(sessionId);
-  if (!session) {
-    redirect("/login");
-  }
+  const session = await requirePageSession();
 
   const data = await getDashboardData(
     session.workspaceId,
