@@ -8,7 +8,7 @@ export const minioClient = new Client({
   secretKey: process.env['MINIO_SECRET_KEY']!,
 });
 
-export const BUCKET = 'jarvis-files';
+export const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 
 export async function ensureBucket(): Promise<void> {
   const exists = await minioClient.bucketExists(BUCKET);
