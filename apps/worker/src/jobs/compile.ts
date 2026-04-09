@@ -1,3 +1,5 @@
+// apps/worker/src/jobs/compile.ts
+
 import type PgBoss from 'pg-boss';
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
@@ -5,23 +7,21 @@ import { eq, desc } from 'drizzle-orm';
 
 export interface CompileJobData {
   pageId: string;
+  skipEmbed?: boolean; // Skip embed chain (e.g. in tests)
 }
 
-/**
- * Strips common Markdown/MDX syntax to produce a plain-text summary.
- */
 function stripMarkdown(mdx: string): string {
   return mdx
-    .replace(/^#{1,6}\s+/gm, '') // headings
-    .replace(/\*\*(.+?)\*\*/g, '$1') // bold
-    .replace(/\*(.+?)\*/g, '$1') // italic
-    .replace(/`{1,3}[^`]*`{1,3}/g, '') // inline code / code blocks
-    .replace(/^```[\s\S]*?```/gm, '') // fenced code blocks
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // links
-    .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // images
-    .replace(/^[-*+]\s+/gm, '') // list items
-    .replace(/^\d+\.\s+/gm, '') // ordered list items
-    .replace(/\n{2,}/g, '\n\n') // collapse excess blank lines
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`{1,3}[^`]*`{1,3}/g, '')
+    .replace(/^```[\s\S]*?```/gm, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/\n{2,}/g, '\n\n')
     .trim();
 }
 
@@ -36,10 +36,9 @@ export async function compileHandler(
 async function processCompile(
   job: PgBoss.Job<CompileJobData>,
 ): Promise<void> {
-  const { pageId } = job.data;
+  const { pageId, skipEmbed } = job.data;
   console.log(`[compile] Starting job for pageId=${pageId}`);
 
-  // Fetch knowledge_page
   const [page] = await db
     .select()
     .from(knowledgePage)
@@ -50,7 +49,6 @@ async function processCompile(
     throw new Error(`knowledge_page not found: ${pageId}`);
   }
 
-  // Fetch latest version for summary generation
   const [latestVersion] = await db
     .select()
     .from(knowledgePageVersion)
@@ -62,8 +60,6 @@ async function processCompile(
     ? stripMarkdown(latestVersion.mdxContent).slice(0, 500)
     : '';
 
-  // Force search_vector refresh — the tsvector update trigger fires on updated_at change.
-  // Also store the generated summary.
   await db
     .update(knowledgePage)
     .set({
@@ -73,4 +69,11 @@ async function processCompile(
     .where(eq(knowledgePage.id, pageId));
 
   console.log(`[compile] Done pageId=${pageId} summary_length=${summary.length}`);
+
+  // Chain: enqueue embed job so the page becomes vector-searchable
+  if (!skipEmbed && latestVersion?.mdxContent) {
+    const { boss } = await import('../lib/boss.js');
+    await boss.send('embed', { pageId });
+    console.log(`[compile] Enqueued embed job for pageId=${pageId}`);
+  }
 }
