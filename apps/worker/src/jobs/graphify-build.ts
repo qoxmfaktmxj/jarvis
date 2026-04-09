@@ -145,9 +145,13 @@ async function processGraphifyBuild(
       timeout: GRAPHIFY_TIMEOUT_MS,
       maxBuffer: 50 * 1024 * 1024,
       env: {
-        ...process.env,
-        ANTHROPIC_API_KEY: GRAPHIFY_API_KEY,
+        // Explicit allowlist — do not pass DB/MinIO credentials to subprocess
+        PATH: process.env['PATH'] ?? '/usr/local/bin:/usr/bin:/bin',
+        HOME: process.env['HOME'] ?? '/root',
+        TMPDIR: process.env['TMPDIR'] ?? '/tmp',
+        ANTHROPIC_API_KEY: GRAPHIFY_API_KEY ?? '',
         GRAPHIFY_MODEL: GRAPHIFY_MODEL,
+        LANG: process.env['LANG'] ?? 'en_US.UTF-8',
       },
     });
 

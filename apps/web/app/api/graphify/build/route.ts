@@ -4,25 +4,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireApiSession } from '@/lib/server/api-auth';
 import PgBoss from 'pg-boss';
+import { db } from '@jarvis/db/client';
+import { rawSource } from '@jarvis/db/schema/file';
+import { eq } from 'drizzle-orm';
 
 const buildSchema = z.object({
   rawSourceId: z.string().uuid(),
   mode: z.enum(['standard', 'deep']).optional(),
 });
 
-// Module-level PgBoss singleton for job enqueue (web server side)
-let _boss: PgBoss | null = null;
-let _bossStarted = false;
+// Use globalThis to survive HMR reloads in Next.js development
+declare global {
+  // eslint-disable-next-line no-var
+  var _graphifyBoss: PgBoss | undefined;
+  // eslint-disable-next-line no-var
+  var _graphifyBossStarted: boolean | undefined;
+}
 
 async function getBoss(): Promise<PgBoss> {
-  if (!_boss) {
-    _boss = new PgBoss({ connectionString: process.env['DATABASE_URL']! });
+  if (!globalThis._graphifyBoss) {
+    globalThis._graphifyBoss = new PgBoss({
+      connectionString: process.env['DATABASE_URL']!,
+    });
   }
-  if (!_bossStarted) {
-    await _boss.start();
-    _bossStarted = true;
+  if (!globalThis._graphifyBossStarted) {
+    await globalThis._graphifyBoss.start();
+    globalThis._graphifyBossStarted = true;
   }
-  return _boss;
+  return globalThis._graphifyBoss;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -46,6 +55,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const { rawSourceId, mode } = parsed.data;
+
+  // Authorization: verify rawSourceId belongs to the session's workspace
+  const [source] = await db
+    .select({ workspaceId: rawSource.workspaceId })
+    .from(rawSource)
+    .where(eq(rawSource.id, rawSourceId))
+    .limit(1);
+
+  if (!source) {
+    return NextResponse.json({ error: 'File not found' }, { status: 404 });
+  }
+
+  if (source.workspaceId !== session.workspaceId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
 
   const boss = await getBoss();
   const jobId = await boss.send('graphify-build', {
