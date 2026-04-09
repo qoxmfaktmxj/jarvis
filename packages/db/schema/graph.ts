@@ -76,3 +76,64 @@ export const graphSnapshot = pgTable('graph_snapshot', {
   // Single-column workspace index for listing all snapshots in a workspace
   workspaceIdx: index('idx_graph_snapshot_workspace').on(table.workspaceId),
 }));
+
+export const graphNode = pgTable('graph_node', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  snapshotId: uuid('snapshot_id')
+    .notNull()
+    .references(() => graphSnapshot.id, { onDelete: 'cascade' }),
+  nodeId: varchar('node_id', { length: 500 }).notNull(),
+  label: varchar('label', { length: 500 }).notNull(),
+  fileType: varchar('file_type', { length: 50 }),
+  sourceFile: varchar('source_file', { length: 1000 }),
+  sourceLocation: varchar('source_location', { length: 50 }),
+  communityId: integer('community_id'),
+  metadata: jsonb('metadata')
+    .$type<Record<string, unknown>>()
+    .default({})
+    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  snapshotNodeIdx: index('idx_graph_node_snapshot_node').on(table.snapshotId, table.nodeId),
+  communityIdx: index('idx_graph_node_community').on(table.snapshotId, table.communityId),
+  labelIdx: index('idx_graph_node_label').on(table.label),
+}));
+
+export const graphEdge = pgTable('graph_edge', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  snapshotId: uuid('snapshot_id')
+    .notNull()
+    .references(() => graphSnapshot.id, { onDelete: 'cascade' }),
+  sourceNodeId: varchar('source_node_id', { length: 500 }).notNull(),
+  targetNodeId: varchar('target_node_id', { length: 500 }).notNull(),
+  relation: varchar('relation', { length: 100 }).notNull(),
+  confidence: varchar('confidence', { length: 20 }).notNull(),
+  confidenceScore: varchar('confidence_score', { length: 10 }),
+  sourceFile: varchar('source_file', { length: 1000 }),
+  weight: varchar('weight', { length: 10 }).default('1.0'),
+  metadata: jsonb('metadata')
+    .$type<Record<string, unknown>>()
+    .default({})
+    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  snapshotSourceIdx: index('idx_graph_edge_snapshot_source').on(table.snapshotId, table.sourceNodeId),
+  snapshotTargetIdx: index('idx_graph_edge_snapshot_target').on(table.snapshotId, table.targetNodeId),
+  relationIdx: index('idx_graph_edge_relation').on(table.snapshotId, table.relation),
+}));
+
+export const graphCommunity = pgTable('graph_community', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  snapshotId: uuid('snapshot_id')
+    .notNull()
+    .references(() => graphSnapshot.id, { onDelete: 'cascade' }),
+  communityId: integer('community_id').notNull(),
+  label: varchar('label', { length: 500 }),
+  nodeCount: integer('node_count').notNull(),
+  cohesionScore: varchar('cohesion_score', { length: 10 }),
+  topNodes: jsonb('top_nodes')
+    .$type<string[]>()
+    .default([])
+    .notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
