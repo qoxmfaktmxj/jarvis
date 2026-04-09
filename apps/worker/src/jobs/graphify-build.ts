@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { minioClient, BUCKET } from '../lib/minio-client.js';
 import { unarchive, countFiles } from '../helpers/unarchive.js';
 import { importAsKnowledgePage, slugify } from '../helpers/import-knowledge.js';
+import { materializeGraph, type GraphJson } from '../helpers/materialize-graph.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -245,27 +246,26 @@ async function processGraphifyBuild(
 
     try {
       const graphJsonRaw = await readFile(join(outDir, 'graph.json'), 'utf-8');
-      const graphJson = JSON.parse(graphJsonRaw) as {
-        nodes?: Array<{ id: string; label?: string; community?: number }>;
-        links?: Array<{ source: string; target: string }>;
+      const graphJson = JSON.parse(graphJsonRaw) as GraphJson & {
         graph?: { suggested_questions?: string[] };
       };
 
-      nodeCount = graphJson.nodes?.length ?? 0;
-      edgeCount = graphJson.links?.length ?? 0;
-
-      const communities = new Set(
-        (graphJson.nodes ?? [])
-          .map((n) => n.community)
-          .filter((c): c is number => c != null),
-      );
-      communityCount = communities.size;
+      // Materialize to DB for graph-aware Ask AI
+      const stats = await materializeGraph(snapshotId, {
+        nodes: graphJson.nodes ?? [],
+        links: graphJson.links ?? [],
+      });
+      nodeCount = stats.nodeCount;
+      edgeCount = stats.edgeCount;
+      communityCount = stats.communityCount;
 
       // Top 5 nodes by edge degree (god nodes)
       const edgeCounts = new Map<string, number>();
       for (const link of graphJson.links ?? []) {
-        edgeCounts.set(link.source, (edgeCounts.get(link.source) ?? 0) + 1);
-        edgeCounts.set(link.target, (edgeCounts.get(link.target) ?? 0) + 1);
+        const src = link._src ?? link.source;
+        const tgt = link._tgt ?? link.target;
+        edgeCounts.set(src, (edgeCounts.get(src) ?? 0) + 1);
+        edgeCounts.set(tgt, (edgeCounts.get(tgt) ?? 0) + 1);
       }
       const godNodes = [...edgeCounts.entries()]
         .sort((a, b) => b[1] - a[1])
@@ -277,7 +277,7 @@ async function processGraphifyBuild(
 
       analysisMetadata = {
         godNodes,
-        communityLabels: [...communities].map(String),
+        communityLabels: [...Array.from(new Set((graphJson.nodes ?? []).map((n) => n.community).filter((c): c is number => c != null)))].map(String),
         suggestedQuestions: graphJson.graph?.suggested_questions ?? [],
       };
     } catch {
