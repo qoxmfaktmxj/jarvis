@@ -3,7 +3,7 @@
 import type PgBoss from 'pg-boss';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -200,6 +200,35 @@ async function processGraphifyBuild(
     } catch {
       console.warn(
         '[graphify-build] GRAPH_REPORT.md not found — skipping knowledge import',
+      );
+    }
+
+    // 8b. wiki/*.md → individual knowledge pages
+    try {
+      const wikiDir = join(outDir, 'wiki');
+      const wikiFiles = await readdir(wikiDir).catch(() => [] as string[]);
+      const mdFiles = wikiFiles.filter((f) => f.endsWith('.md'));
+
+      console.log(`[graphify-build] Found ${mdFiles.length} wiki files`);
+
+      for (const wikiFile of mdFiles) {
+        const content = await readFile(join(wikiDir, wikiFile), 'utf-8');
+        const title = wikiFile.replace(/\.md$/, '').replace(/_/g, ' ');
+
+        await importAsKnowledgePage({
+          workspaceId,
+          title: `[Graph] ${title}`,
+          slug: slugify(`graph-wiki-${snapshotId.slice(0, 8)}-${title}`),
+          mdxContent: content,
+          pageType: 'analysis',
+          sensitivity: 'INTERNAL',
+          createdBy: requestedBy,
+        });
+      }
+    } catch (err) {
+      // Wiki import failure should not fail the entire build
+      console.warn(
+        `[graphify-build] Wiki import error: ${err instanceof Error ? err.message : err}`,
       );
     }
 

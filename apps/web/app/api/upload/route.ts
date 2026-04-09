@@ -74,5 +74,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const boss = await getBoss();
   await boss.send('ingest', { rawSourceId });
 
+  // If archive type and auto-build enabled, enqueue graphify-build for structural analysis
+  const ARCHIVE_MIME_TYPES = new Set([
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-tar',
+    'application/gzip',
+    'application/x-gzip',
+    'application/x-7z-compressed',
+  ]);
+  const autoGraphify = process.env['GRAPHIFY_AUTO_BUILD'] !== 'false';
+  if (autoGraphify && ARCHIVE_MIME_TYPES.has(mimeType)) {
+    await boss.send('graphify-build', {
+      rawSourceId,
+      workspaceId: session.workspaceId,
+      requestedBy: session.userId,
+      mode: 'standard',
+    });
+    console.log(
+      `[upload] Enqueued graphify-build for archive rawSourceId=${rawSourceId}`,
+    );
+  }
+
   return NextResponse.json({ rawSourceId }, { status: 201 });
 }
