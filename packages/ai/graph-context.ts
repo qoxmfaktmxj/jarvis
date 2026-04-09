@@ -142,6 +142,9 @@ export async function retrieveRelevantGraphContext(
     const fromId = matchedRows.rows[0]!.node_id;
     const toId = matchedRows.rows[1]!.node_id;
 
+    // Depth limit 5: prevents runaway queries on dense graphs.
+    // A 5-hop path covers most architectural relationships (caller → module → service → API → consumer).
+    // Reduce to 3 if query latency is too high on graphs with >10k edges.
     const pathRows = await db.execute<{ path: string[]; depth: number }>(sql`
       WITH RECURSIVE path_search AS (
         SELECT
