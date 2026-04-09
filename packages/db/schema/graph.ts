@@ -10,6 +10,7 @@ import {
   varchar,
   jsonb,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { workspace } from './tenant.js';
 import { rawSource } from './file.js';
@@ -94,7 +95,7 @@ export const graphNode = pgTable('graph_node', {
     .notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-  snapshotNodeIdx: index('idx_graph_node_snapshot_node').on(table.snapshotId, table.nodeId),
+  snapshotNodeIdx: uniqueIndex('idx_graph_node_snapshot_node').on(table.snapshotId, table.nodeId),
   communityIdx: index('idx_graph_node_community').on(table.snapshotId, table.communityId),
   labelIdx: index('idx_graph_node_label').on(table.label),
 }));
