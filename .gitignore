@@ -28,3 +28,9 @@ Thumbs.db
 # Editor
 .vscode/
 .idea/
+
+# API keys and secrets (never commit these)
+*_key.txt
+*_api_key*
+*.key
+secrets/

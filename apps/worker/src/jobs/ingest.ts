@@ -37,9 +37,9 @@ async function extractText(buffer: Buffer, mimeType: string): Promise<string> {
     return buffer.toString('utf-8');
   }
 
-  // ZIP and other binary types: return placeholder
-  // (ZIP requires extraction — reading as UTF-8 produces garbage)
-  return `[Binary file: ${mimeType}]`;
+  // ZIP and other binary formats: return a structured placeholder.
+  // Raw extraction produces garbage; the Graphify pipeline handles archives.
+  return `[Archive: ${mimeType}] This file contains a code/document archive. Use the Graphify analysis pipeline for structural analysis.`;
 }
 
 export async function ingestHandler(
