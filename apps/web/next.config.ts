@@ -4,6 +4,10 @@ const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
   distDir: isDev ? ".next-dev" : ".next",
+  allowedDevOrigins: [
+    "http://localhost:3010",
+    "http://127.0.0.1:3010"
+  ],
   // standalone output for Docker production builds (Linux only)
   // Disabled on Windows due to symlink permission limitations (EPERM)
   output: process.env.DOCKER_BUILD === '1' ? 'standalone' : undefined,

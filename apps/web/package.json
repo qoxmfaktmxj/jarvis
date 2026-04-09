@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start --port 3010",
     "lint": "next lint",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --incremental false",
     "test": "vitest run",
     "test:watch": "vitest"
   },
