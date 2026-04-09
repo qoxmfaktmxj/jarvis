@@ -162,7 +162,6 @@ flowchart LR
 - pnpm **9+**
 - Docker / Docker Compose
 - PostgreSQL, Redis, MinIO를 직접 띄우지 않는다면 Docker Compose 사용 권장
-- OIDC Provider (예: Keycloak)
 - Anthropic API Key
 - OpenAI API Key
 
@@ -188,12 +187,6 @@ cp .env.example .env
 docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio
 ```
 
-Keycloak(로컬 OIDC 개발용)까지 포함하려면:
-
-```bash
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio keycloak
-```
-
 개발 환경에서 실행되는 서비스 (호스트 포트):
 
 | 서비스 | 호스트 포트 |
@@ -202,7 +195,6 @@ docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up 
 | Redis | `6380` |
 | MinIO API | `9100` |
 | MinIO Console | `9101` |
-| Keycloak | `18080` |
 
 > 프로덕션 배포는 [17. 운영/배포 시 고려사항](#17-운영배포-시-고려사항) 참고.
 
@@ -223,19 +215,17 @@ pnpm db:migrate
 
 ### 7.5 애플리케이션 실행
 
-웹 앱 (포트 `3010`):
+루트에서 web과 worker를 동시에 실행합니다 (Turbo가 자동으로 처리):
 
 ```bash
-pnpm --filter @jarvis/web dev
+pnpm dev
 ```
 
-워커:
+포트: web → `3010`, worker는 별도 포트 없음 (pg-boss 기반 백그라운드 워커).
 
-```bash
-pnpm --filter @jarvis/worker dev
-```
-
-루트에서 동시 실행이 필요하면 작업 환경에 맞는 별도 스크립트를 추가하는 것을 권장합니다.
+개별 실행이 필요한 경우:
+- 웹만: `pnpm --filter @jarvis/web dev`
+- 워커만: `pnpm --filter @jarvis/worker dev`
 
 ---
 
@@ -275,8 +265,8 @@ MINIO_ACCESS_KEY=jarvisadmin
 MINIO_SECRET_KEY=jarvispassword
 MINIO_BUCKET=jarvis-files
 
-# 로컬 Keycloak 기준 — 운영은 외부 URL로 교체
-OIDC_ISSUER=http://localhost:18080/realms/jarvis
+# 운영: 회사 IdP URL 입력 (Okta, Azure AD, Entra 등) / 로컬 개발: dev 계정 로그인 사용 (OIDC 불필요)
+OIDC_ISSUER=https://auth.example.com/realms/your-org
 OIDC_CLIENT_ID=jarvis-web
 OIDC_CLIENT_SECRET=change-me
 NEXTAUTH_URL=http://localhost:3010
@@ -524,7 +514,7 @@ bash scripts/start-prod.sh
 
 ### 권장 사항
 
-- OIDC Provider는 별도 운영 환경(Keycloak 등)으로 분리
+- OIDC Provider는 별도 운영 환경(Okta, Azure AD, Entra 등)으로 분리
 - Redis는 세션/레이트리밋 용도로 안정적으로 운영
 - PostgreSQL에는 `pgvector`, `pg_trgm`, `unaccent` 확장 설치 필요
 - MinIO 또는 S3 호환 스토리지 사용

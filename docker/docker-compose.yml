@@ -83,7 +83,7 @@ services:
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
-      # OIDC — set to your production Keycloak/OIDC provider
+      # OIDC — set to your production OIDC provider (Okta, Azure AD, Entra, etc.)
       OIDC_ISSUER: ${OIDC_ISSUER:-}
       OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
       OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}

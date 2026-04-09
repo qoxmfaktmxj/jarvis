@@ -29,19 +29,6 @@ services:
       MINIO_ROOT_USER: ${MINIO_USER:-jarvisadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-jarvispassword}
 
-  # Keycloak — local OIDC provider for dev only
-  # In production, use external Keycloak URL in OIDC_ISSUER env var
-  keycloak:
-    image: quay.io/keycloak/keycloak:24.0
-    container_name: jarvis-keycloak
-    command: start-dev
-    environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-    ports:
-      - "127.0.0.1:18080:8080"
-    restart: unless-stopped
-
   # web + worker: run via pnpm dev outside Docker for hot reload
   # Only start nginx if explicitly needed: docker compose ... --profile nginx up nginx
   web:
