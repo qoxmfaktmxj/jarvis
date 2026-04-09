@@ -11,3 +11,4 @@ export * from "./code.js";
 export * from "./search.js";
 export * from "./audit.js";
 export * from "./review.js";
+export * from "./graph.js";
