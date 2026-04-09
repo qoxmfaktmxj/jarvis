@@ -95,6 +95,11 @@ export async function retrieveRelevantClaims(
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { SSEEvent, SourceRef } from './types.js';
+import {
+  retrieveRelevantGraphContext,
+  formatGraphContextXml,
+  type GraphContext,
+} from './graph-context.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -122,11 +127,13 @@ function escapeXml(str: string): string {
 }
 
 const SYSTEM_PROMPT = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
-Answer ONLY based on the provided context sources. Do not use outside knowledge.
+Answer ONLY based on the provided context sources and graph context. Do not use outside knowledge.
 For each factual claim in your answer, cite the source using [source:N] notation where N is the source id.
 If multiple sources support a claim, cite all relevant ones: [source:1][source:2].
 If the context doesn't contain enough information to answer the question, say so explicitly and suggest the user search the knowledge base or contact the relevant team.
-Keep answers concise and professional. Use the same language as the user's question.`;
+Keep answers concise and professional. Use the same language as the user's question.
+For structure-based answers (architecture, dependencies, connections), reference the graph context.
+When a question asks about relationships, dependencies, or "how does X connect to Y", prefer the graph context over text sources.`;
 
 export async function* generateAnswer(
   question: string,
@@ -207,16 +214,22 @@ export async function* askAI(
 ): AsyncGenerator<SSEEvent> {
   const { question, workspaceId, userPermissions } = query;
 
+  // Parallel retrieval: text claims + graph context
   let claims: RetrievedClaim[];
+  let graphCtx: GraphContext | null;
+
   try {
-    claims = await retrieveRelevantClaims(question, workspaceId, userPermissions);
+    [claims, graphCtx] = await Promise.all([
+      retrieveRelevantClaims(question, workspaceId, userPermissions),
+      retrieveRelevantGraphContext(question, workspaceId).catch(() => null),
+    ]);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';
     yield { type: 'error', message };
     return;
   }
 
-  if (claims.length === 0) {
+  if (claims.length === 0 && !graphCtx) {
     yield {
       type: 'text',
       content:
@@ -227,6 +240,11 @@ export async function* askAI(
     return;
   }
 
-  const context = assembleContext(claims);
+  // Assemble combined context: text sources + graph structure
+  let context = assembleContext(claims);
+  if (graphCtx && graphCtx.matchedNodes.length > 0) {
+    context += '\n\n' + formatGraphContextXml(graphCtx);
+  }
+
   yield* generateAnswer(question, context, claims);
 }
