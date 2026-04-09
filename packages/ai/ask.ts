@@ -221,7 +221,10 @@ export async function* askAI(
   try {
     [claims, graphCtx] = await Promise.all([
       retrieveRelevantClaims(question, workspaceId, userPermissions),
-      retrieveRelevantGraphContext(question, workspaceId).catch(() => null),
+      retrieveRelevantGraphContext(question, workspaceId).catch((err) => {
+        console.error('[ask] Graph context retrieval failed (degraded gracefully):', err instanceof Error ? err.message : err);
+        return null;
+      }),
     ]);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';
