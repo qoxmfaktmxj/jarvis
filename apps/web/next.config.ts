@@ -4,9 +4,9 @@ const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
   distDir: isDev ? ".next-dev" : ".next",
+  // Next 15.5 compares allowedDevOrigins against the request hostname, not the full origin URL.
   allowedDevOrigins: [
-    "http://localhost:3010",
-    "http://127.0.0.1:3010"
+    "127.0.0.1"
   ],
   // standalone output for Docker production builds (Linux only)
   // Disabled on Windows due to symlink permission limitations (EPERM)
