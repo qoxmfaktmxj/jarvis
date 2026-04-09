@@ -54,12 +54,9 @@ export async function GET(
     );
   }
 
-  // Presigned URL valid for 60 seconds, then redirect
-  const presignedUrl = await minioClient.presignedGetObject(
-    BUCKET,
-    storagePath,
-    60,
-  );
+  // Return presigned URL as JSON (60s validity)
+  // Client loads it directly into iframe src
+  const url = await minioClient.presignedGetObject(BUCKET, storagePath, 60);
 
-  return NextResponse.redirect(presignedUrl);
+  return NextResponse.json({ url });
 }
