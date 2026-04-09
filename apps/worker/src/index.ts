@@ -5,6 +5,7 @@ import { boss } from './lib/boss.js';
 import { ingestHandler } from './jobs/ingest.js';
 import { embedHandler } from './jobs/embed.js';
 import { compileHandler } from './jobs/compile.js';
+import { graphifyBuildHandler } from './jobs/graphify-build.js';
 import { staleCheckHandler } from './jobs/stale-check.js';
 import { aggregatePopularHandler } from './jobs/aggregate-popular.js';
 import { cleanupHandler } from './jobs/cleanup.js';
@@ -19,6 +20,7 @@ async function main() {
   await boss.work('ingest', { batchSize: 5 }, ingestHandler);
   await boss.work('embed', { batchSize: 3 }, embedHandler);
   await boss.work('compile', { batchSize: 3 }, compileHandler);
+  await boss.work('graphify-build', { batchSize: 1 }, graphifyBuildHandler);
 
   await boss.schedule('check-freshness', '0 9 * * *', {});
   await boss.work('check-freshness', staleCheckHandler);
