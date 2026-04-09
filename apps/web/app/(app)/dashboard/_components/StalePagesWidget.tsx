@@ -1,18 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { StalePage } from "@/lib/queries/dashboard";
 
 export function StalePagesWidget({ pages }: { pages: StalePage[] }) {
+  const t = useTranslations("Dashboard.StalePages");
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Stale Pages</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         {pages.length > 0 ? <Badge variant="destructive">{pages.length}</Badge> : null}
       </CardHeader>
       <CardContent>
         {pages.length === 0 ? (
-          <p className="text-sm text-gray-500">All published pages are fresh.</p>
+          <p className="text-sm text-gray-500">{t("allFresh")}</p>
         ) : (
           <ul className="space-y-3">
             {pages.map((page) => (
@@ -24,7 +29,7 @@ export function StalePagesWidget({ pages }: { pages: StalePage[] }) {
                   {page.title}
                 </Link>
                 <p className="text-xs text-rose-600">
-                  {page.overdueDays}d overdue since {page.lastReviewedAt.toISOString().slice(0, 10)}
+                  {t("overdueNote", { date: page.lastReviewedAt.toISOString().slice(0, 10), days: page.overdueDays })}
                 </p>
               </li>
             ))}

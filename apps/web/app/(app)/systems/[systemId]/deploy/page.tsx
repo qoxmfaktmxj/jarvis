@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ export default async function SystemDeployPage({
 }: {
   params: Promise<{ systemId: string }>;
 }) {
+  const t = await getTranslations("Systems.detail");
   const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/systems");
   const { systemId } = await params;
   const system = await getSystem({
@@ -27,12 +29,12 @@ export default async function SystemDeployPage({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Deploy Guide</CardTitle>
+        <CardTitle>{t("deployGuide")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-gray-600">
         {system.knowledgePageId ? (
           <>
-            <p>The deployment guide is linked from the knowledge platform.</p>
+            <p>{t("deployLinked")}</p>
             <Link
               href={`/knowledge/${system.knowledgePageId}`}
               className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 px-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"

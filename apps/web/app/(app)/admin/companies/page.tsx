@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useReactTable, getCoreRowModel, flexRender, createColumnHelper,
   type PaginationState,
@@ -23,6 +24,7 @@ type Company = {
 const col = createColumnHelper<Company>();
 
 export default function AdminCompaniesPage() {
+  const t = useTranslations('Admin.Companies');
   const [data, setData]         = useState<Company[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(false);
@@ -70,13 +72,13 @@ export default function AdminCompaniesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Companies</h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage client, vendor, and partner companies.</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Input
-          placeholder="Search company..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -109,11 +111,11 @@ export default function AdminCompaniesPage() {
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Total: {total}</span>
+        <span>{t('total', { count: total })}</span>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>Previous</Button>
+          <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>{t('pagination.previous')}</Button>
           <span className="self-center">Page {pagination.pageIndex + 1} / {table.getPageCount()}</span>
-          <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>Next</Button>
+          <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>{t('pagination.next')}</Button>
         </div>
       </div>
     </div>

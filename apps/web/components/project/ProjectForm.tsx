@@ -4,6 +4,7 @@ import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useTranslations } from "next-intl";
 import { z } from "zod";
 import { createProjectSchema } from "@jarvis/shared/validation/project";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ function normalizeDefaultValues(values?: Partial<FormValues>): FormValues {
 }
 
 export function ProjectForm({ mode, projectId, defaultValues }: Props) {
+  const t = useTranslations("Projects.create");
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
 
@@ -58,7 +60,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
         payload?.error?.formErrors?.[0] ??
         payload?.error?.fieldErrors?.name?.[0] ??
         payload?.error ??
-        "An error occurred while saving the project.";
+        t("saveError");
       setServerError(message);
       return;
     }
@@ -84,23 +86,23 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Project Code</span>
-          <Input placeholder="PROJ-001" {...register("code")} />
+          <span className="text-sm font-medium text-gray-700">{t("fields.code")}</span>
+          <Input placeholder={t("codePlaceholder")} {...register("code")} />
           {errors.code ? (
             <span className="text-sm text-rose-600">{errors.code.message}</span>
           ) : null}
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Status</span>
+          <span className="text-sm font-medium text-gray-700">{t("fields.status")}</span>
           <select
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
             {...register("status")}
           >
-            <option value="active">active</option>
-            <option value="on-hold">on-hold</option>
-            <option value="completed">completed</option>
-            <option value="archived">archived</option>
+            <option value="active">{t("statuses.active")}</option>
+            <option value="on-hold">{t("statuses.onHold")}</option>
+            <option value="completed">{t("statuses.completed")}</option>
+            <option value="archived">{t("statuses.archived")}</option>
           </select>
           {errors.status ? (
             <span className="text-sm text-rose-600">{errors.status.message}</span>
@@ -109,15 +111,15 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
       </div>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">Project Name</span>
-        <Input placeholder="Customer Portal Renewal" {...register("name")} />
+        <span className="text-sm font-medium text-gray-700">{t("fields.name")}</span>
+        <Input placeholder={t("namePlaceholder")} {...register("name")} />
         {errors.name ? (
           <span className="text-sm text-rose-600">{errors.name.message}</span>
         ) : null}
       </label>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">Description</span>
+        <span className="text-sm font-medium text-gray-700">{t("fields.description")}</span>
         <Textarea
           placeholder="Summarize the scope, stakeholders, and delivery goals."
           {...register("description")}

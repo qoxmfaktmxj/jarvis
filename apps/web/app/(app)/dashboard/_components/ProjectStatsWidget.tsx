@@ -1,23 +1,27 @@
+"use client";
+
 import { FolderKanban } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ProjectStats } from "@/lib/queries/dashboard";
 
 export function ProjectStatsWidget({ stats }: { stats: ProjectStats }) {
+  const t = useTranslations("Dashboard.ProjectStats");
   const entries = Object.entries(stats.byStatus);
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Project Stats</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <FolderKanban className="h-4 w-4 text-gray-400" />
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
           <p className="text-3xl font-semibold text-gray-900">{stats.total}</p>
-          <p className="text-sm text-gray-500">Total tracked projects</p>
+          <p className="text-sm text-gray-500">{t("description")}</p>
         </div>
         {entries.length === 0 ? (
-          <p className="text-sm text-gray-500">No project data yet.</p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         ) : (
           <ul className="space-y-2">
             {entries.map(([status, count]) => {

@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { getSession } from '@jarvis/auth/session';
 import { getUsers, getOrgTree } from '@/lib/queries/admin';
 import { UserTable } from '@/components/admin/UserTable';
@@ -12,6 +13,7 @@ function flattenTree(nodes: Array<{ id: string; name: string; children: typeof n
 }
 
 export default async function AdminUsersPage() {
+  const t = await getTranslations('Admin.Users');
   const headersList = await headers();
   const session = await getSession(headersList.get('x-session-id') ?? '');
   const workspaceId = session!.workspaceId;
@@ -27,9 +29,9 @@ export default async function AdminUsersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Users</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Manage workspace members, roles, and organization assignments.
+          {t('description')}
         </p>
       </div>
       <UserTable orgOptions={orgOptions} />

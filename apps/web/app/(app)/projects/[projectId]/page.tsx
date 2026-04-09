@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ export default async function ProjectOverviewPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
+  const t = await getTranslations("Projects.detail");
   const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
   const { projectId } = await params;
   const project = await getProjectDetail({
@@ -51,7 +53,7 @@ export default async function ProjectOverviewPage({
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle>Tasks</CardTitle>
+            <CardTitle>{t("tasks")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-gray-900">
@@ -61,7 +63,7 @@ export default async function ProjectOverviewPage({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Staff</CardTitle>
+            <CardTitle>{t("staff")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-gray-900">
@@ -71,7 +73,7 @@ export default async function ProjectOverviewPage({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Inquiries</CardTitle>
+            <CardTitle>{t("inquiries")}</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold text-gray-900">
@@ -83,7 +85,7 @@ export default async function ProjectOverviewPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Project Summary</CardTitle>
+          <CardTitle>{t("summary")}</CardTitle>
         </CardHeader>
         <CardContent>
           <dl className="grid gap-4 md:grid-cols-2">

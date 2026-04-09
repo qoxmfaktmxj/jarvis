@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { SystemCard } from "@/components/system/SystemCard";
@@ -26,6 +27,7 @@ export default async function SystemsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const t = await getTranslations("Systems");
   const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/dashboard");
   const params = await searchParams;
   const page = parsePage(params.page);
@@ -45,10 +47,9 @@ export default async function SystemsPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Systems</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500">
-            Maintain infrastructure records and access metadata ({result.pagination.total}{" "}
-            total)
+            {t("description", { total: result.pagination.total })}
           </p>
         </div>
 
@@ -57,19 +58,19 @@ export default async function SystemsPage({
             href="/systems/new"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
-            Register System
+            {t("registerSystem")}
           </Link>
         ) : null}
       </div>
 
       <form className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_180px_180px_auto]">
-        <Input name="q" defaultValue={params.q} placeholder="Search by system name" />
+        <Input name="q" defaultValue={params.q} placeholder={t("searchPlaceholder")} />
         <select
           name="category"
           defaultValue={params.category ?? ""}
           className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
         >
-          <option value="">All categories</option>
+          <option value="">{t("allCategories")}</option>
           <option value="web">web</option>
           <option value="db">db</option>
           <option value="server">server</option>
@@ -81,7 +82,7 @@ export default async function SystemsPage({
           defaultValue={params.environment ?? ""}
           className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
         >
-          <option value="">All environments</option>
+          <option value="">{t("allEnvironments")}</option>
           <option value="prod">prod</option>
           <option value="staging">staging</option>
           <option value="dev">dev</option>
@@ -90,13 +91,13 @@ export default async function SystemsPage({
           type="submit"
           className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          Apply Filters
+          {t("applyFilters")}
         </button>
       </form>
 
       {result.data.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-sm text-gray-500">
-          No systems found.
+          {t("empty")}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

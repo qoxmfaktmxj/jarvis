@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronRight, ChevronDown, Plus, Pencil, Trash2 } from 'lucide-react';
 import { Button }  from '@/components/ui/button';
 import { Input }   from '@/components/ui/input';
@@ -16,6 +17,7 @@ type NodeProps = {
 };
 
 function OrgNodeRow({ node, onSave, onDelete, onAddChild, depth = 0 }: NodeProps) {
+  const t = useTranslations('Admin.Organizations');
   const [expanded, setExpanded] = useState(true);
   const [editing,  setEditing]  = useState(false);
   const [name,     setName]     = useState(node.name);
@@ -54,8 +56,8 @@ function OrgNodeRow({ node, onSave, onDelete, onAddChild, depth = 0 }: NodeProps
               }}
               autoFocus
             />
-            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={handleSave}>Save</Button>
-            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditing(false)}>Cancel</Button>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={handleSave}>{t('save')}</Button>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setEditing(false)}>{t('cancel')}</Button>
           </>
         ) : (
           <>
@@ -105,6 +107,7 @@ type Props = {
 };
 
 export function OrgTree({ initialTree, onRefresh }: Props) {
+  const t = useTranslations('Admin.Organizations');
   const [tree] = useState(initialTree);
 
   const handleSave = async (id: string, name: string) => {
@@ -117,7 +120,7 @@ export function OrgTree({ initialTree, onRefresh }: Props) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this organization node?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     const res = await fetch(`/api/admin/organizations?id=${id}`, { method: 'DELETE' });
     if (!res.ok) {
       const json = await res.json();

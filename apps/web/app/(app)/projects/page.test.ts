@@ -66,9 +66,9 @@ describe("ProjectsPage", () => {
       await ProjectsPage({ searchParams: Promise.resolve({}) })
     );
 
-    expect(html).toContain("Projects");
-    expect(html).toContain("4 total");
-    expect(html).toContain("New Project");
+    expect(html).toContain("Projects.title");
+    expect(html).toContain("Projects.description");
+    expect(html).toContain("Projects.newProject");
   });
 
   it("redirects to dashboard when the session lacks permission", async () => {

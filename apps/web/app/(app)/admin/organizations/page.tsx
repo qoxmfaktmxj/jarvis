@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { OrgTree } from '@/components/admin/OrgTree';
 import { Button }  from '@/components/ui/button';
 import type { OrgNode } from '@/lib/queries/admin';
 
 export default function AdminOrgsPage() {
+  const t = useTranslations('Admin.Organizations');
   const [tree, setTree]       = useState<OrgNode[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,10 +37,10 @@ export default function AdminOrgsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Organizations</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage the organizational hierarchy.</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
         </div>
-        <Button onClick={handleAddRoot}>+ Add Root Node</Button>
+        <Button onClick={handleAddRoot}>{t('addRoot')}</Button>
       </div>
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>

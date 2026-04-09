@@ -1,17 +1,21 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TrendItem } from "@/lib/queries/dashboard";
 
 export function SearchTrendsWidget({ trends }: { trends: TrendItem[] }) {
+  const t = useTranslations("Dashboard.SearchTrends");
   const maxCount = trends[0]?.count ?? 1;
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Search Trends</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {trends.length === 0 ? (
-          <p className="text-sm text-gray-500">No search trend data this week.</p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         ) : (
           <ol className="space-y-3">
             {trends.map((trend, index) => (

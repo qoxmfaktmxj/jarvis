@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   useReactTable,
   getCoreRowModel,
@@ -24,6 +25,7 @@ type Props = {
 const columnHelper = createColumnHelper<UserWithOrg>();
 
 export function UserTable({ orgOptions }: Props) {
+  const t = useTranslations('Admin.Users');
   const [data, setData]         = useState<UserWithOrg[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(false);
@@ -65,12 +67,12 @@ export function UserTable({ orgOptions }: Props) {
   };
 
   const columns = [
-    columnHelper.accessor('employeeId', { header: 'Employee ID' }),
-    columnHelper.accessor('name',       { header: 'Name' }),
-    columnHelper.accessor('email',      { header: 'Email', cell: (i) => i.getValue() ?? '—' }),
-    columnHelper.accessor('orgName',    { header: 'Organization', cell: (i) => i.getValue() ?? '—' }),
+    columnHelper.accessor('employeeId', { header: t('columns.employeeId') }),
+    columnHelper.accessor('name',       { header: t('columns.name') }),
+    columnHelper.accessor('email',      { header: t('columns.email'), cell: (i) => i.getValue() ?? '—' }),
+    columnHelper.accessor('orgName',    { header: t('columns.organization'), cell: (i) => i.getValue() ?? '—' }),
     columnHelper.accessor('roles', {
-      header: 'Roles',
+      header: t('columns.roles'),
       cell: (i) => (
         <div className="flex flex-wrap gap-1">
           {(i.getValue() as string[]).map((r) => (
@@ -80,16 +82,16 @@ export function UserTable({ orgOptions }: Props) {
       ),
     }),
     columnHelper.accessor('isActive', {
-      header: 'Status',
+      header: t('columns.status'),
       cell: (i) => (
         <Badge variant={i.getValue() ? 'default' : 'destructive'}>
-          {i.getValue() ? 'Active' : 'Inactive'}
+          {i.getValue() ? t('status.active') : t('status.inactive')}
         </Badge>
       ),
     }),
     columnHelper.display({
       id: 'actions',
-      header: 'Actions',
+      header: t('columns.actions'),
       cell: ({ row }) => (
         <div className="flex gap-2">
           <Button
@@ -97,7 +99,7 @@ export function UserTable({ orgOptions }: Props) {
             size="sm"
             onClick={() => { setEditTarget(row.original); setFormOpen(true); }}
           >
-            Edit
+            {t('actions.edit')}
           </Button>
           <Button
             variant="secondary"
@@ -105,7 +107,7 @@ export function UserTable({ orgOptions }: Props) {
             disabled={!row.original.isActive}
             onClick={() => handleDeactivate(row.original.id)}
           >
-            Deactivate
+            {t('actions.deactivate')}
           </Button>
         </div>
       ),
@@ -126,13 +128,13 @@ export function UserTable({ orgOptions }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Input
-          placeholder="Search by name, employee ID, email..."
+          placeholder={t('searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
         />
         <Button onClick={() => { setEditTarget(null); setFormOpen(true); }}>
-          + Add User
+          {t('addUser')}
         </Button>
       </div>
 

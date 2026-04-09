@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { SearchAnalytics } from '@/lib/queries/admin';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -18,39 +19,40 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 export function SearchAnalyticsDashboard({ data }: Props) {
+  const t = useTranslations('Admin.SearchAnalytics');
   return (
     <div className="space-y-8">
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
-        <StatCard label="Searches Today"    value={data.totalToday} />
+        <StatCard label={t('searchesToday')}    value={data.totalToday} />
         <StatCard
-          label="Zero-Result Rate"
+          label={t('zeroResultRate')}
           value={`${data.zeroResultRate}%`}
-          sub="Queries returning no results"
+          sub={t('zeroResultDesc')}
         />
         <StatCard
-          label="Avg Response"
+          label={t('avgResponse')}
           value={`${data.avgResponseMs} ms`}
-          sub="Mean search latency today"
+          sub={t('avgResponseDesc')}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-8">
         {/* Popular searches */}
         <div className="space-y-3">
-          <h2 className="text-base font-semibold">Top 10 Popular Searches</h2>
+          <h2 className="text-base font-semibold">{t('topSearches')}</h2>
           <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Term</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
+                  <TableHead>{t('columns.term')}</TableHead>
+                  <TableHead className="text-right">{t('columns.count')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.popularTerms.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">No data</TableCell>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">{t('noData')}</TableCell>
                   </TableRow>
                 ) : (
                   data.popularTerms.map((item, i) => (
@@ -70,20 +72,20 @@ export function SearchAnalyticsDashboard({ data }: Props) {
 
         {/* Zero-result queries */}
         <div className="space-y-3">
-          <h2 className="text-base font-semibold">Zero-Result Queries</h2>
-          <p className="text-xs text-muted-foreground">These terms need synonym rules or new content (last 7 days).</p>
+          <h2 className="text-base font-semibold">{t('zeroResultQueries')}</h2>
+          <p className="text-xs text-muted-foreground">{t('zeroResultNote')}</p>
           <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Term</TableHead>
-                  <TableHead className="text-right">Count</TableHead>
+                  <TableHead>{t('columns.term')}</TableHead>
+                  <TableHead className="text-right">{t('columns.count')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.zeroResultTerms.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">No zero-result queries — great!</TableCell>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground py-4">{t('noZeroResults')}</TableCell>
                   </TableRow>
                 ) : (
                   data.zeroResultTerms.map((item) => (

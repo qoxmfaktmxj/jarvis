@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { getSession } from '@jarvis/auth/session';
 import { getAuditLogs } from '@/lib/queries/admin';
 import { AuditTable } from '@/components/admin/AuditTable';
@@ -8,6 +9,7 @@ export default async function AdminAuditPage({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
+  const t = await getTranslations('Admin.Audit');
   const headersList = await headers();
   const session     = await getSession(headersList.get('x-session-id') ?? '');
   const params      = await searchParams;
@@ -25,9 +27,9 @@ export default async function AdminAuditPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Immutable record of all admin and data-change actions.
+          {t('description')}
         </p>
       </div>
       <AuditTable initialData={data} meta={{ ...meta, limit: meta.limit ?? 50 }} />

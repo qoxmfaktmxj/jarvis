@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Eye } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ProjectListItem } from "@/lib/queries/projects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,13 +46,14 @@ function formatDate(value: string | null) {
 }
 
 export function ProjectTable({ data, page, totalPages, total }: Props) {
+  const t = useTranslations("Projects.table");
   const router = useRouter();
   const searchParams = useSearchParams();
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
   const columns = [
     columnHelper.accessor("code", {
-      header: "Code",
+      header: t("code"),
       cell: (info) => (
         <span className="font-mono text-xs font-semibold text-gray-600">
           {info.getValue()}
@@ -59,30 +61,30 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
       )
     }),
     columnHelper.accessor("name", {
-      header: "Name",
+      header: t("name"),
       cell: (info) => <span className="font-medium text-gray-900">{info.getValue()}</span>
     }),
     columnHelper.accessor("status", {
-      header: "Status",
+      header: t("status"),
       cell: (info) => {
         const value = info.getValue() ?? "active";
         return <Badge variant={statusVariant[value] ?? "default"}>{value}</Badge>;
       }
     }),
     columnHelper.accessor("startDate", {
-      header: "Start",
+      header: t("start"),
       cell: (info) => formatDate(info.getValue())
     }),
     columnHelper.accessor("endDate", {
-      header: "End",
+      header: t("end"),
       cell: (info) => formatDate(info.getValue())
     }),
     columnHelper.accessor("taskCount", {
-      header: "Tasks",
+      header: t("tasks"),
       cell: (info) => info.getValue()
     }),
     columnHelper.accessor("staffCount", {
-      header: "Staff",
+      header: t("staff"),
       cell: (info) => info.getValue()
     }),
     columnHelper.display({
@@ -96,7 +98,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
           onClick={() => router.push(`/projects/${row.original.id}`)}
         >
           <Eye className="h-4 w-4" />
-          View
+          {t("view")}
         </Button>
       )
     })
@@ -155,6 +157,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="py-10 text-center text-gray-500">
+                  {/* No projects found translation not in spec, using English for now */}
                   No projects found.
                 </TableCell>
               </TableRow>

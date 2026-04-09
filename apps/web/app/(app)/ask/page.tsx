@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { desc, count, sql } from "drizzle-orm";
 import { Sparkles } from "lucide-react";
 import { getSession } from "@jarvis/auth/session";
@@ -28,6 +29,7 @@ async function getPopularQuestions(workspaceId: string): Promise<string[]> {
 }
 
 export default async function AskPage() {
+  const t = await getTranslations("Ask");
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
   const session = sessionId ? await getSession(sessionId) : null;
@@ -45,7 +47,7 @@ export default async function AskPage() {
           <Sparkles className="h-4 w-4 text-white" />
         </div>
         <div>
-          <h1 className="text-lg font-semibold leading-tight">Ask AI</h1>
+          <h1 className="text-lg font-semibold leading-tight">{t("title")}</h1>
           <p className="text-xs text-muted-foreground">
             지식 베이스 기반 AI 답변, 출처 인용, 실시간 스트리밍
           </p>

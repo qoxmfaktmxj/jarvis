@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { LogIn, LogOut, Loader2 } from 'lucide-react';
@@ -13,6 +14,7 @@ interface CheckInButtonProps {
 }
 
 export function CheckInButton({ todayRecord }: CheckInButtonProps) {
+  const t = useTranslations("Attendance");
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState<string>('');
@@ -59,7 +61,7 @@ export function CheckInButton({ todayRecord }: CheckInButtonProps) {
     return (
       <div className="flex items-center gap-2 rounded-lg border bg-gray-50 px-4 py-2 text-sm text-gray-500">
         <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span>Checked out at {format(new Date(todayRecord!.checkOut!), 'HH:mm')}</span>
+        <span>{t("checkedOut", { time: format(new Date(todayRecord!.checkOut!), 'HH:mm') })}</span>
       </div>
     );
   }
@@ -80,7 +82,7 @@ export function CheckInButton({ todayRecord }: CheckInButtonProps) {
       ) : (
         <LogOut className="h-4 w-4" aria-hidden="true" />
       )}
-      {hovered ? currentTime : action === 'check-in' ? 'Check In' : 'Check Out'}
+      {hovered ? currentTime : action === 'check-in' ? t("checkIn") : t("checkOut")}
     </Button>
   );
 }

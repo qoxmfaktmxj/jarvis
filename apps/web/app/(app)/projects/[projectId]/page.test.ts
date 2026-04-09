@@ -77,8 +77,8 @@ describe("ProjectOverviewPage", () => {
 
     expect(html).toContain("Project description");
     expect(html).toContain("P-001");
-    expect(html).toContain("Tasks");
-    expect(html).toContain("Inquiries");
+    expect(html).toContain("Projects.detail.tasks");
+    expect(html).toContain("Projects.detail.inquiries");
   });
 
   it("throws notFound when the project does not exist", async () => {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectTable } from "@/components/project/ProjectTable";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ export default async function ProjectsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
+  const t = await getTranslations("Projects");
   const session = await requirePageSession(
     PERMISSIONS.PROJECT_READ,
     "/dashboard"
@@ -44,10 +46,10 @@ export default async function ProjectsPage({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Projects
+            {t("title")}
           </h1>
           <p className="text-sm text-gray-500">
-            Manage your workspace projects ({result.meta.total} total)
+            {t("description", { total: result.meta.total })}
           </p>
         </div>
 
@@ -56,7 +58,7 @@ export default async function ProjectsPage({
             href="/projects/new"
             className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
           >
-            New Project
+            {t("newProject")}
           </Link>
         ) : null}
       </div>
@@ -65,24 +67,24 @@ export default async function ProjectsPage({
         <Input
           name="q"
           defaultValue={q}
-          placeholder="Search projects by name"
+          placeholder={t("title")}
         />
         <select
           name="status"
           defaultValue={status ?? ""}
           className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
         >
-          <option value="">All statuses</option>
-          <option value="active">active</option>
-          <option value="on-hold">on-hold</option>
-          <option value="completed">completed</option>
-          <option value="archived">archived</option>
+          <option value="">{t("allStatuses")}</option>
+          <option value="active">{t("statuses.active")}</option>
+          <option value="on-hold">{t("statuses.onHold")}</option>
+          <option value="completed">{t("statuses.completed")}</option>
+          <option value="archived">{t("statuses.archived")}</option>
         </select>
         <button
           type="submit"
           className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
         >
-          Apply Filters
+          {t("applyFilters")}
         </button>
       </form>
 

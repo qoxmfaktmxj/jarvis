@@ -1,0 +1,311 @@
+{
+  "Admin": {
+    "nav": {
+      "title": "관리자",
+      "users": "사용자",
+      "organizations": "조직",
+      "menus": "메뉴",
+      "codes": "코드",
+      "companies": "회사",
+      "reviewQueue": "검토 대기",
+      "auditLog": "감사 로그",
+      "searchAnalytics": "검색 분석",
+      "settings": "설정"
+    },
+    "Users": {
+      "title": "사용자",
+      "description": "워크스페이스 멤버, 역할, 조직을 관리합니다.",
+      "searchPlaceholder": "이름, 사번, 이메일로 검색...",
+      "addUser": "+ 사용자 추가",
+      "columns": {
+        "employeeId": "사번",
+        "name": "이름",
+        "email": "이메일",
+        "organization": "조직",
+        "roles": "역할",
+        "status": "상태",
+        "actions": "작업"
+      },
+      "status": {
+        "active": "활성",
+        "inactive": "비활성"
+      },
+      "actions": {
+        "edit": "수정",
+        "deactivate": "비활성화"
+      }
+    },
+    "Audit": {
+      "title": "감사 로그",
+      "description": "모든 관리자 및 데이터 변경 작업의 불변 기록.",
+      "filters": {
+        "action": "작업",
+        "actionPlaceholder": "CREATE / UPDATE / DELETE",
+        "resourceType": "리소스 유형",
+        "resourceTypePlaceholder": "user / page / ...",
+        "from": "시작일",
+        "to": "종료일",
+        "apply": "적용"
+      },
+      "columns": {
+        "time": "시간",
+        "user": "사용자",
+        "action": "작업",
+        "resource": "리소스",
+        "ip": "IP"
+      },
+      "empty": "감사 기록이 없습니다.",
+      "total": "전체 {count}건",
+      "pagination": {
+        "previous": "이전",
+        "next": "다음",
+        "page": "{page} / {total} 페이지"
+      }
+    },
+    "Menus": {
+      "title": "메뉴 설정",
+      "description": "메뉴 순서, 표시 여부, 역할 요구사항을 관리합니다.",
+      "visible": "표시",
+      "anyRole": "모든 역할",
+      "anyRoleOption": "— 모든 역할 —",
+      "saving": "저장 중...",
+      "saved": "저장됨!",
+      "saveAll": "전체 저장"
+    },
+    "Organizations": {
+      "title": "조직",
+      "description": "조직 계층 구조를 관리합니다.",
+      "addRoot": "+ 최상위 조직 추가",
+      "save": "저장",
+      "cancel": "취소",
+      "deleteConfirm": "이 조직을 삭제하시겠습니까?"
+    },
+    "Codes": {
+      "title": "코드 마스터",
+      "description": "시스템 코드 그룹과 값을 관리합니다.",
+      "loading": "로딩 중...",
+      "codeLabel": "코드",
+      "itemsLabel": "항목",
+      "save": "저장",
+      "cancel": "취소",
+      "status": {
+        "active": "활성",
+        "inactive": "비활성"
+      }
+    },
+    "Companies": {
+      "title": "회사",
+      "description": "고객사, 협력사, 파트너사를 관리합니다.",
+      "searchPlaceholder": "회사 검색...",
+      "total": "전체: {count}",
+      "pagination": {
+        "previous": "이전",
+        "next": "다음"
+      }
+    },
+    "ReviewQueue": {
+      "title": "검토 대기",
+      "descriptionPending": "검토 대기 중인 지식 페이지 — {count}건 처리 필요.",
+      "empty": "대기 중인 검토 없음. 대기열이 비어 있습니다.",
+      "untitled": "제목 없음",
+      "requestedBy": "요청자",
+      "pending": "대기 중",
+      "approve": "승인",
+      "reject": "반려"
+    },
+    "SearchAnalytics": {
+      "title": "검색 분석",
+      "description": "쿼리 수, 무결과 비율, 인기 검색어를 분석합니다.",
+      "searchesToday": "오늘 검색 수",
+      "zeroResultRate": "무결과 비율",
+      "zeroResultDesc": "결과 없는 쿼리 비율",
+      "avgResponse": "평균 응답",
+      "avgResponseDesc": "오늘 평균 검색 지연",
+      "topSearches": "인기 검색어 TOP 10",
+      "columns": {
+        "term": "검색어",
+        "count": "횟수"
+      },
+      "noData": "데이터 없음",
+      "zeroResultQueries": "무결과 쿼리",
+      "zeroResultNote": "동의어 규칙 또는 새 콘텐츠가 필요한 검색어 (최근 7일).",
+      "noZeroResults": "무결과 쿼리 없음 — 훌륭합니다!"
+    },
+    "Settings": {
+      "title": "설정",
+      "description": "워크스페이스 수준의 설정.",
+      "workspaceCode": "워크스페이스 코드",
+      "workspaceCodeNote": "코드는 생성 후 변경할 수 없습니다.",
+      "workspaceName": "워크스페이스 이름",
+      "saving": "저장 중...",
+      "save": "저장"
+    },
+    "UserForm": {
+      "editTitle": "사용자 수정",
+      "addTitle": "사용자 추가",
+      "employeeId": "사번",
+      "name": "이름",
+      "email": "이메일",
+      "organization": "조직",
+      "selectOrg": "조직 선택",
+      "noOrg": "— 없음 —",
+      "cancel": "취소",
+      "saving": "저장 중...",
+      "saveChanges": "변경 사항 저장",
+      "createUser": "사용자 생성"
+    }
+  },
+  "Dashboard": {
+    "title": "대시보드",
+    "welcome": "{name}님, 반갑습니다. 현재 워크스페이스 현황입니다.",
+    "Attendance": {
+      "title": "이번 달 출퇴근",
+      "present": "출근",
+      "late": "지각",
+      "absent": "결근",
+      "totalDays": "총 일수"
+    },
+    "MyTasks": {
+      "title": "내 작업",
+      "empty": "담당 작업이 없습니다.",
+      "due": "마감 {date}",
+      "noDueDate": "마감일 없음"
+    },
+    "QuickLinks": {
+      "title": "빠른 링크",
+      "empty": "빠른 링크가 아직 없습니다."
+    },
+    "ProjectStats": {
+      "title": "프로젝트 현황",
+      "description": "전체 추적 중인 프로젝트",
+      "empty": "프로젝트 데이터가 없습니다."
+    },
+    "RecentActivity": {
+      "title": "최근 활동",
+      "empty": "최근 기록된 활동이 없습니다."
+    },
+    "StalePages": {
+      "title": "만료된 페이지",
+      "allFresh": "모든 게시 페이지가 최신 상태입니다.",
+      "overdueNote": "일 이상 오래됨 ({date} 이후)"
+    },
+    "SearchTrends": {
+      "title": "검색 트렌드",
+      "empty": "이번 주 검색 트렌드 데이터가 없습니다."
+    }
+  },
+  "Profile": {
+    "title": "프로필",
+    "description": "계정 정보 및 개인 빠른 메뉴 순서를 관리합니다.",
+    "UserInfo": {
+      "title": "사용자 정보",
+      "name": "이름",
+      "email": "이메일",
+      "employeeId": "사번",
+      "workspace": "워크스페이스",
+      "roles": "역할",
+      "noRoles": "역할이 없습니다"
+    },
+    "QuickMenu": {
+      "title": "빠른 메뉴 순서",
+      "empty": "현재 역할에 사용 가능한 빠른 메뉴 항목이 없습니다.",
+      "moveUp": "{label} 위로 이동",
+      "moveDown": "{label} 아래로 이동",
+      "saved": "순서가 저장되었습니다.",
+      "saveFailed": "저장에 실패했습니다.",
+      "saving": "저장 중...",
+      "save": "순서 저장"
+    }
+  },
+  "Projects": {
+    "title": "프로젝트",
+    "description": "워크스페이스 프로젝트를 관리합니다 (전체 {total}개)",
+    "newProject": "새 프로젝트",
+    "allStatuses": "전체 상태",
+    "statuses": {
+      "active": "진행 중",
+      "onHold": "보류",
+      "completed": "완료",
+      "archived": "보관"
+    },
+    "applyFilters": "필터 적용",
+    "table": {
+      "code": "코드",
+      "name": "이름",
+      "status": "상태",
+      "start": "시작일",
+      "end": "종료일",
+      "tasks": "작업",
+      "staff": "담당자",
+      "view": "보기"
+    },
+    "detail": {
+      "tasks": "작업",
+      "staff": "담당자",
+      "inquiries": "문의",
+      "summary": "프로젝트 요약"
+    },
+    "create": {
+      "title": "프로젝트 생성",
+      "description": "작업, 인력, 문의 사항을 추가하기 전에 기본 납품 범위를 입력하세요.",
+      "saveError": "프로젝트 저장 중 오류가 발생했습니다.",
+      "codePlaceholder": "PROJ-001",
+      "namePlaceholder": "고객 포털 갱신",
+      "fields": {
+        "code": "프로젝트 코드",
+        "status": "상태",
+        "name": "프로젝트 이름",
+        "description": "설명"
+      }
+    }
+  },
+  "Systems": {
+    "title": "시스템",
+    "description": "인프라 기록 및 접속 메타데이터를 관리합니다 (전체 {total}개)",
+    "registerSystem": "시스템 등록",
+    "searchPlaceholder": "시스템 이름으로 검색",
+    "allCategories": "전체 카테고리",
+    "allEnvironments": "전체 환경",
+    "applyFilters": "필터 적용",
+    "empty": "시스템이 없습니다.",
+    "create": {
+      "title": "시스템 등록",
+      "description": "운영 컨텍스트, 소유권, 보안 접속 참조 정보를 입력하세요."
+    },
+    "detail": {
+      "deployGuide": "배포 가이드",
+      "deployLinked": "배포 가이드는 지식 플랫폼에 연결되어 있습니다.",
+      "runbook": "런북",
+      "runbookLinked": "운영 런북 내용은 지식 플랫폼에 연결되어 있습니다."
+    }
+  },
+  "Attendance": {
+    "title": "출퇴근",
+    "description": "출퇴근 기록을 확인합니다.",
+    "todayFormat": "오늘, {date}",
+    "checkedIn": "{time}에 출근",
+    "monthlyOverview": "월간 현황",
+    "dailyRecords": "일별 기록",
+    "checkIn": "출근",
+    "checkOut": "퇴근",
+    "checkedOut": "{time}에 퇴근"
+  },
+  "Ask": {
+    "title": "AI 질문"
+  },
+  "Common": {
+    "loading": "로딩 중...",
+    "save": "저장",
+    "cancel": "취소",
+    "edit": "수정",
+    "delete": "삭제",
+    "confirm": "확인",
+    "close": "닫기",
+    "search": "검색",
+    "apply": "적용",
+    "previous": "이전",
+    "next": "다음",
+    "noData": "데이터가 없습니다.",
+    "error": "오류가 발생했습니다."
+  }
+}

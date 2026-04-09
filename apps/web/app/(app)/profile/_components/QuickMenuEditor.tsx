@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { updateQuickMenuOrder } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ export function QuickMenuEditor({
 }: {
   initialItems: MenuItem[];
 }) {
+  const t = useTranslations("Profile.QuickMenu");
   const [items, setItems] = useState(initialItems);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,19 +40,19 @@ export function QuickMenuEditor({
   function saveOrder() {
     startTransition(async () => {
       const result = await updateQuickMenuOrder(items.map((item) => item.id));
-      setMessage(result.success ? "Order saved." : result.error ?? "Save failed.");
+      setMessage(result.success ? t("saved") : result.error ?? t("saveFailed"));
     });
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Quick Menu Order</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? (
           <p className="text-sm text-gray-500">
-            No quick menu items are available for your current roles.
+            {t("empty")}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -65,7 +67,7 @@ export function QuickMenuEditor({
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
-                    aria-label={`Move ${item.label} up`}
+                    aria-label={t("moveUp", { label: item.label })}
                     variant="ghost"
                     size="icon"
                     disabled={index === 0 || isPending}
@@ -74,7 +76,7 @@ export function QuickMenuEditor({
                     <ArrowUp className="h-4 w-4" />
                   </Button>
                   <Button
-                    aria-label={`Move ${item.label} down`}
+                    aria-label={t("moveDown", { label: item.label })}
                     variant="ghost"
                     size="icon"
                     disabled={index === items.length - 1 || isPending}
@@ -90,7 +92,7 @@ export function QuickMenuEditor({
         {message ? (
           <p
             className={`text-sm ${
-              message === "Order saved." ? "text-emerald-600" : "text-rose-600"
+              message === t("saved") ? "text-emerald-600" : "text-rose-600"
             }`}
           >
             {message}
@@ -99,7 +101,7 @@ export function QuickMenuEditor({
       </CardContent>
       <CardFooter className="flex justify-end">
         <Button disabled={isPending || items.length === 0} onClick={saveOrder}>
-          {isPending ? "Saving..." : "Save Order"}
+          {isPending ? t("saving") : t("save")}
         </Button>
       </CardFooter>
     </Card>

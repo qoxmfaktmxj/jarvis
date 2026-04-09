@@ -4,6 +4,16 @@ import { FormEvent, Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { TEMP_DEV_ACCOUNTS } from '@/lib/auth/dev-accounts';
 
+const ERROR_MESSAGES: Record<string, string> = {
+  auth_init_failed: '인증 서버 연결에 실패했습니다. 잠시 후 다시 시도해주세요.',
+  missing_oidc_cookies: '인증 세션이 만료되었습니다. 다시 시도해주세요.',
+  invalid_token_claims: '유효하지 않은 인증 토큰입니다.',
+  user_not_found: '등록되지 않은 계정입니다. 관리자에게 문의하세요.',
+  auth_failed: '로그인에 실패했습니다. 다시 시도해주세요.',
+  invalid_credentials: '아이디 또는 비밀번호가 올바르지 않습니다.',
+  missing_email: '이메일 또는 아이디/비밀번호를 입력해주세요.',
+};
+
 function LoginContent() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/dashboard';
@@ -59,7 +69,7 @@ function LoginContent() {
 
       {error && (
         <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          로그인 오류: {error}
+          {ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`}
         </div>
       )}
 

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TaskSummary } from "@/lib/queries/dashboard";
@@ -14,14 +17,16 @@ function getTaskVariant(status: string) {
 }
 
 export function MyTasksWidget({ tasks }: { tasks: TaskSummary[] }) {
+  const t = useTranslations("Dashboard.MyTasks");
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>My Tasks</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {tasks.length === 0 ? (
-          <p className="text-sm text-gray-500">No open tasks assigned to you.</p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         ) : (
           <ul className="space-y-3">
             {tasks.map((task) => (
@@ -35,7 +40,7 @@ export function MyTasksWidget({ tasks }: { tasks: TaskSummary[] }) {
                       {task.title}
                     </Link>
                     <p className="text-xs text-gray-500">
-                      {task.dueDate ? `Due ${task.dueDate}` : "No due date"}
+                      {task.dueDate ? t("due", { date: task.dueDate }) : t("noDueDate")}
                     </p>
                   </div>
                   <Badge variant={getTaskVariant(task.status)}>{task.status}</Badge>

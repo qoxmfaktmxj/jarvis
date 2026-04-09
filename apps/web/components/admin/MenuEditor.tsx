@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,6 +22,7 @@ const ROLE_OPTIONS = ['', 'ADMIN', 'MANAGER', 'DEVELOPER', 'HR', 'VIEWER'];
 type Props = { initialItems: MenuItem[] };
 
 export function MenuEditor({ initialItems }: Props) {
+  const t = useTranslations('Admin.Menus');
   const [items, setItems]   = useState(() =>
     [...initialItems].sort((a, b) => a.sortOrder - b.sortOrder),
   );
@@ -93,7 +95,7 @@ export function MenuEditor({ initialItems }: Props) {
 
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <Label htmlFor={`visible-${item.id}`} className="text-xs">Visible</Label>
+                <Label htmlFor={`visible-${item.id}`} className="text-xs">{t('visible')}</Label>
                 <input
                   id={`visible-${item.id}`}
                   type="checkbox"
@@ -108,11 +110,11 @@ export function MenuEditor({ initialItems }: Props) {
                 onValueChange={(v) => setRole(item.id, v)}
               >
                 <SelectTrigger className="h-8 w-36 text-xs">
-                  <SelectValue placeholder="Any role" />
+                  <SelectValue placeholder={t('anyRole')} />
                 </SelectTrigger>
                 <SelectContent>
                   {ROLE_OPTIONS.map((r) => (
-                    <SelectItem key={r} value={r}>{r || '— Any role —'}</SelectItem>
+                    <SelectItem key={r} value={r}>{r || t('anyRoleOption')}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -123,7 +125,7 @@ export function MenuEditor({ initialItems }: Props) {
 
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save All Changes'}
+          {saving ? t('saving') : saved ? t('saved') : t('saveAll')}
         </Button>
       </div>
     </div>

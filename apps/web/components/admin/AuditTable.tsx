@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -21,6 +22,7 @@ const ACTION_COLORS: Record<string, 'default' | 'secondary' | 'destructive' | 'o
 };
 
 export function AuditTable({ initialData, meta }: Props) {
+  const t = useTranslations('Admin.Audit');
   const router      = useRouter();
   const pathname    = usePathname();
   const searchParams = useSearchParams();
@@ -52,25 +54,25 @@ export function AuditTable({ initialData, meta }: Props) {
       {/* Filter bar */}
       <div className="flex flex-wrap gap-2 items-end">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Action</p>
+          <p className="text-xs text-muted-foreground">{t('filters.action')}</p>
           <Input
             value={filters.action}
             onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))}
-            placeholder="CREATE / UPDATE / DELETE"
+            placeholder={t('filters.actionPlaceholder')}
             className="h-8 w-44 text-xs"
           />
         </div>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Resource Type</p>
+          <p className="text-xs text-muted-foreground">{t('filters.resourceType')}</p>
           <Input
             value={filters.resourceType}
             onChange={(e) => setFilters((f) => ({ ...f, resourceType: e.target.value }))}
-            placeholder="user / page / ..."
+            placeholder={t('filters.resourceTypePlaceholder')}
             className="h-8 w-36 text-xs"
           />
         </div>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">From</p>
+          <p className="text-xs text-muted-foreground">{t('filters.from')}</p>
           <Input
             type="date"
             value={filters.dateFrom}
@@ -79,7 +81,7 @@ export function AuditTable({ initialData, meta }: Props) {
           />
         </div>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">To</p>
+          <p className="text-xs text-muted-foreground">{t('filters.to')}</p>
           <Input
             type="date"
             value={filters.dateTo}
@@ -87,25 +89,25 @@ export function AuditTable({ initialData, meta }: Props) {
             className="h-8 w-36 text-xs"
           />
         </div>
-        <Button size="sm" onClick={applyFilters} className="mb-0.5">Apply</Button>
+        <Button size="sm" onClick={applyFilters} className="mb-0.5">{t('filters.apply')}</Button>
       </div>
 
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Time</TableHead>
-              <TableHead>User</TableHead>
-              <TableHead>Action</TableHead>
-              <TableHead>Resource</TableHead>
-              <TableHead>IP</TableHead>
+              <TableHead>{t('columns.time')}</TableHead>
+              <TableHead>{t('columns.user')}</TableHead>
+              <TableHead>{t('columns.action')}</TableHead>
+              <TableHead>{t('columns.resource')}</TableHead>
+              <TableHead>{t('columns.ip')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {initialData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  No audit entries found.
+                  {t('empty')}
                 </TableCell>
               </TableRow>
             ) : (
@@ -136,14 +138,14 @@ export function AuditTable({ initialData, meta }: Props) {
       </div>
 
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>Total: {meta.total} entries</span>
+        <span>{t('total', { count: meta.total })}</span>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" disabled={meta.page <= 1} onClick={() => goPage(meta.page - 1)}>
-            Previous
+            {t('pagination.previous')}
           </Button>
-          <span className="self-center">Page {meta.page} / {meta.totalPages}</span>
+          <span className="self-center">{t('pagination.page', { page: meta.page, total: meta.totalPages })}</span>
           <Button variant="outline" size="sm" disabled={meta.page >= meta.totalPages} onClick={() => goPage(meta.page + 1)}>
-            Next
+            {t('pagination.next')}
           </Button>
         </div>
       </div>

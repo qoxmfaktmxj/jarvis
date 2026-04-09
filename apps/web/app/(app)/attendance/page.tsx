@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { getSession } from '@jarvis/auth/session';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -19,6 +20,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
   userId: string;
   workspaceId: string;
 }) {
+  const t = await getTranslations("Attendance");
   const records = await getMonthlyAttendance(workspaceId, userId, month);
   const today = format(new Date(), 'yyyy-MM-dd');
   const todayRecord = records.find((r) => r.attendDate === today) ?? null;
@@ -28,10 +30,10 @@ async function AttendanceContent({ month, userId, workspaceId }: {
       {/* Check-in/out action */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">Today, {format(new Date(), 'MMMM d, yyyy')}</p>
+          <p className="text-sm text-gray-500">{t("todayFormat", { date: format(new Date(), 'MMMM d, yyyy') })}</p>
           {todayRecord?.checkIn && (
             <p className="text-xs text-gray-400 mt-0.5">
-              Checked in at {format(new Date(todayRecord.checkIn), 'HH:mm')}
+              {t("checkedIn", { time: format(new Date(todayRecord.checkIn), 'HH:mm') })}
             </p>
           )}
         </div>
@@ -41,7 +43,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
       {/* Calendar */}
       <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Monthly Overview
+          {t("monthlyOverview")}
         </h2>
         <AttendanceCalendar records={records} month={month} />
       </section>
@@ -49,7 +51,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
       {/* Table */}
       <section>
         <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
-          Daily Records
+          {t("dailyRecords")}
         </h2>
         <AttendanceTable records={records} month={month} />
       </section>
@@ -58,6 +60,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
 }
 
 export default async function AttendancePage({ searchParams }: PageProps) {
+  const t = await getTranslations("Attendance");
   const cookieStore = await cookies();
   const sessionId = cookieStore.get('sessionId')?.value;
   const session = sessionId ? await getSession(sessionId) : null;
@@ -76,8 +79,8 @@ export default async function AttendancePage({ searchParams }: PageProps) {
     <div className="container mx-auto max-w-5xl py-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
-          <p className="text-sm text-gray-500">Track your check-in / check-out records.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-gray-500">{t("description")}</p>
         </div>
       </div>
 

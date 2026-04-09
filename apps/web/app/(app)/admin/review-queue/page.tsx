@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { db } from '@jarvis/db/client';
 import { reviewRequest, user, knowledgePage } from '@jarvis/db/schema';
 import { getSession } from '@jarvis/auth/session';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import Link       from 'next/link';
 
 export default async function ReviewQueuePage() {
+  const t = await getTranslations('Admin.ReviewQueue');
   const headersList = await headers();
   const session     = await getSession(headersList.get('x-session-id') ?? '');
 
@@ -34,15 +36,15 @@ export default async function ReviewQueuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Review Queue</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Pending knowledge page review requests — {pending.length} awaiting action.
+          {t('descriptionPending', { count: pending.length })}
         </p>
       </div>
 
       {pending.length === 0 ? (
         <div className="border rounded-md p-8 text-center text-muted-foreground">
-          No pending reviews. Queue is clear.
+          {t('empty')}
         </div>
       ) : (
         <div className="border rounded-md divide-y">
@@ -53,19 +55,19 @@ export default async function ReviewQueuePage() {
                   href={`/knowledge/${item.pageId}`}
                   className="text-sm font-medium hover:underline truncate block"
                 >
-                  {item.pageTitle ?? 'Untitled'}
+                  {item.pageTitle ?? t('untitled')}
                 </Link>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Requested by {item.requesterName ?? 'Unknown'}
+                  {t('requestedBy')} {item.requesterName ?? 'Unknown'}
                 </p>
               </div>
-              <Badge variant="outline" className="shrink-0">PENDING</Badge>
+              <Badge variant="outline" className="shrink-0">{t('pending')}</Badge>
               <div className="flex gap-2 shrink-0">
                 <form action={`/api/review/${item.id}/approve`} method="POST">
-                  <Button type="submit" size="sm" variant="default">Approve</Button>
+                  <Button type="submit" size="sm" variant="default">{t('approve')}</Button>
                 </form>
                 <form action={`/api/review/${item.id}/reject`} method="POST">
-                  <Button type="submit" size="sm" variant="secondary">Reject</Button>
+                  <Button type="submit" size="sm" variant="secondary">{t('reject')}</Button>
                 </form>
               </div>
             </div>

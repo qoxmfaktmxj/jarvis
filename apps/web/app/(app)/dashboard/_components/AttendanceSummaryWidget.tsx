@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AttendanceSummary } from "@/lib/queries/dashboard";
@@ -7,6 +10,7 @@ export function AttendanceSummaryWidget({
 }: {
   summary: AttendanceSummary;
 }) {
+  const t = useTranslations("Dashboard.Attendance");
   const attendanceRate =
     summary.totalDays > 0
       ? Math.round(
@@ -17,7 +21,7 @@ export function AttendanceSummaryWidget({
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Attendance This Month</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
         <Badge variant={attendanceRate >= 90 ? "success" : "warning"}>
           {attendanceRate}%
         </Badge>
@@ -31,19 +35,19 @@ export function AttendanceSummaryWidget({
         </div>
         <ul className="space-y-2 text-sm">
           <li className="flex items-center justify-between">
-            <span className="text-gray-500">Present</span>
+            <span className="text-gray-500">{t("present")}</span>
             <span className="font-medium text-gray-900">{summary.presentDays}d</span>
           </li>
           <li className="flex items-center justify-between">
-            <span className="text-gray-500">Late</span>
+            <span className="text-gray-500">{t("late")}</span>
             <span className="font-medium text-amber-700">{summary.lateDays}d</span>
           </li>
           <li className="flex items-center justify-between">
-            <span className="text-gray-500">Absent</span>
+            <span className="text-gray-500">{t("absent")}</span>
             <span className="font-medium text-rose-700">{summary.absentDays}d</span>
           </li>
           <li className="flex items-center justify-between border-t border-gray-100 pt-2">
-            <span className="text-gray-500">Total Days</span>
+            <span className="text-gray-500">{t("totalDays")}</span>
             <span className="font-medium text-gray-900">{summary.totalDays}d</span>
           </li>
         </ul>

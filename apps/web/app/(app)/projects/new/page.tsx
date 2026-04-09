@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectForm } from "@/components/project/ProjectForm";
 import { requirePageSession } from "@/lib/server/page-auth";
@@ -5,17 +6,17 @@ import { requirePageSession } from "@/lib/server/page-auth";
 export const dynamic = "force-dynamic";
 
 export default async function NewProjectPage() {
+  const t = await getTranslations("Projects.create");
   await requirePageSession(PERMISSIONS.PROJECT_CREATE, "/projects");
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          Create Project
+          {t("title")}
         </h1>
         <p className="text-sm text-gray-500">
-          Capture the basic delivery scope before adding tasks, staffing, and
-          inquiries.
+          {t("description")}
         </p>
       </div>
 

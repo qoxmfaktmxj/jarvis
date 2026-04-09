@@ -61,9 +61,9 @@ describe("ProfilePage", () => {
 
     const html = renderToStaticMarkup(await ProfilePage());
 
-    expect(html).toContain("Profile");
-    expect(html).toContain("User Information");
-    expect(html).toContain("Quick Menu Order");
+    expect(html).toContain("Profile.title");
+    expect(html).toContain("Profile.UserInfo.title");
+    expect(html).toContain("Profile.QuickMenu.title");
     expect(html).toContain("kim@example.com");
   });
 });

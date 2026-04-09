@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -34,6 +35,7 @@ type Props = {
 };
 
 export function UserForm({ open, onOpenChange, defaultValues, orgOptions, onSuccess }: Props) {
+  const t = useTranslations('Admin.UserForm');
   const isEdit = !!defaultValues?.id;
 
   const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } =
@@ -80,40 +82,40 @@ export function UserForm({ open, onOpenChange, defaultValues, orgOptions, onSucc
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit User' : 'Add User'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('editTitle') : t('addTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-1">
-            <Label htmlFor="employeeId">Employee ID</Label>
+            <Label htmlFor="employeeId">{t('employeeId')}</Label>
             <Input id="employeeId" {...register('employeeId')} disabled={isEdit} />
             {errors.employeeId && <p className="text-xs text-destructive">{errors.employeeId.message}</p>}
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="name">{t('name')}</Label>
             <Input id="name" {...register('name')} />
             {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input id="email" type="email" {...register('email')} />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-1">
-            <Label>Organization</Label>
+            <Label>{t('organization')}</Label>
             <Controller
               name="orgId"
               control={control}
               render={({ field }) => (
                 <Select value={field.value ?? ''} onValueChange={field.onChange}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select organization" />
+                    <SelectValue placeholder={t('selectOrg')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">— None —</SelectItem>
+                    <SelectItem value="">{t('noOrg')}</SelectItem>
                     {orgOptions.map((o) => (
                       <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
                     ))}
@@ -155,10 +157,10 @@ export function UserForm({ open, onOpenChange, defaultValues, orgOptions, onSucc
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create User'}
+              {isSubmitting ? t('saving') : isEdit ? t('saveChanges') : t('createUser')}
             </Button>
           </DialogFooter>
         </form>

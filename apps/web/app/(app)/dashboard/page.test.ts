@@ -64,14 +64,14 @@ describe("DashboardPage", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).toContain("Dashboard");
-    expect(html).toContain("Quick Links");
-    expect(html).toContain("Recent Activity");
-    expect(html).toContain("My Tasks");
-    expect(html).toContain("Project Stats");
-    expect(html).toContain("Stale Pages");
-    expect(html).toContain("Search Trends");
-    expect(html).toContain("Attendance This Month");
+    expect(html).toContain("Dashboard.title");
+    expect(html).toContain("Dashboard.QuickLinks.title");
+    expect(html).toContain("Dashboard.RecentActivity.title");
+    expect(html).toContain("Dashboard.MyTasks.title");
+    expect(html).toContain("Dashboard.ProjectStats.title");
+    expect(html).toContain("Dashboard.StalePages.title");
+    expect(html).toContain("Dashboard.SearchTrends.title");
+    expect(html).toContain("Dashboard.Attendance.title");
   });
 
   it("redirects to login when the session header is missing", async () => {

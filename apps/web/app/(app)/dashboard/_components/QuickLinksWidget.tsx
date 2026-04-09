@@ -1,17 +1,22 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MenuItem } from "@/lib/queries/dashboard";
 
 export function QuickLinksWidget({ items }: { items: MenuItem[] }) {
+  const t = useTranslations("Dashboard.QuickLinks");
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Quick Links</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
-          <p className="text-sm text-gray-500">No quick links available yet.</p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         ) : (
           <ul className="space-y-2">
             {items.map((item) => (

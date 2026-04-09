@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuditLogEntry } from "@/lib/queries/dashboard";
@@ -16,14 +19,16 @@ export function RecentActivityWidget({
 }: {
   entries: AuditLogEntry[];
 }) {
+  const t = useTranslations("Dashboard.RecentActivity");
+
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Recent Activity</CardTitle>
+        <CardTitle>{t("title")}</CardTitle>
       </CardHeader>
       <CardContent>
         {entries.length === 0 ? (
-          <p className="text-sm text-gray-500">No recent activity recorded.</p>
+          <p className="text-sm text-gray-500">{t("empty")}</p>
         ) : (
           <ul className="space-y-3">
             {entries.map((entry) => (
