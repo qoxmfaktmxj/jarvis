@@ -99,4 +99,3 @@ Check these flows on `http://localhost:3010`:
 - `Profile` navigates to `/profile`
 - `로그아웃` clears session and returns to `/login`
 - Ask AI empty state shows bottom-anchored composer
-
