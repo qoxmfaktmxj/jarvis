@@ -10,8 +10,7 @@ import {
   MessageSquare,
   Search,
   Server,
-  ShieldCheck,
-  User
+  ShieldCheck
 } from "lucide-react";
 
 const navItems: ReadonlyArray<{
@@ -25,8 +24,7 @@ const navItems: ReadonlyArray<{
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
   { href: "/search", label: "Search", icon: Search },
   { href: "/ask", label: "Ask AI", icon: MessageSquare },
-  { href: "/attendance", label: "Attendance", icon: Calendar },
-  { href: "/profile", label: "Profile", icon: User }
+  { href: "/attendance", label: "Attendance", icon: Calendar }
 ];
 
 const adminItems: ReadonlyArray<{

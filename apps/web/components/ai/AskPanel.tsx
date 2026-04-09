@@ -1,16 +1,16 @@
-// apps/web/components/ai/AskPanel.tsx
-'use client';
+"use client";
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Send, RotateCcw } from 'lucide-react';
-import { useAskAI } from '@/lib/hooks/useAskAI';
-import { SourceRefCard } from './SourceRefCard';
-import { ClaimBadge } from './ClaimBadge';
-import type { SourceRef } from '@jarvis/ai/types';
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { BotMessageSquare, Loader2, RotateCcw, Send, Sparkles } from "lucide-react";
+import type { SourceRef } from "@jarvis/ai/types";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { useAskAI } from "@/lib/hooks/useAskAI";
+import { ClaimBadge } from "./ClaimBadge";
+import { SourceRefCard } from "./SourceRefCard";
 
 interface HistoryEntry {
   question: string;
@@ -23,36 +23,36 @@ interface AskPanelProps {
   popularQuestions?: string[];
 }
 
-// Render answer text, replacing [source:N] with ClaimBadge components
 function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
   const parts = text.split(/(\[source:\d+\])/g);
+
   return (
     <span>
-      {parts.map((part, i) => {
+      {parts.map((part, index) => {
         const match = part.match(/^\[source:(\d+)\]$/);
-        if (match && match[1]) {
+        if (match?.[1]) {
           return (
             <ClaimBadge
-              key={i}
+              key={index}
               sourceNumber={parseInt(match[1], 10)}
               sources={sources}
             />
           );
         }
-        return <span key={i}>{part}</span>;
+
+        return <span key={index}>{part}</span>;
       })}
     </span>
   );
 }
 
-export function AskPanel({ initialQuestion = '', popularQuestions = [] }: AskPanelProps) {
+export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPanelProps) {
   const [input, setInput] = useState(initialQuestion);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const { isStreaming, answer, sources, error, question, ask, reset } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-submit when initialQuestion is provided (chip click)
   useEffect(() => {
     if (initialQuestion && initialQuestion.trim()) {
       setInput(initialQuestion);
@@ -61,192 +61,257 @@ export function AskPanel({ initialQuestion = '', popularQuestions = [] }: AskPan
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuestion]);
 
-  // Scroll to bottom while streaming
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [answer]);
 
-  // Archive current answer when stream completes
   useEffect(() => {
     if (!isStreaming && answer && question) {
       setHistory((prev) => {
-        // Avoid duplicate on re-render
-        if (prev[prev.length - 1]?.question === question) return prev;
+        if (prev[prev.length - 1]?.question === question) {
+          return prev;
+        }
+
         return [...prev, { question, answer, sources }];
       });
     }
   }, [isStreaming, answer, question, sources]);
 
-  function handleAsk(q: string) {
-    const trimmed = q.trim();
-    if (!trimmed || isStreaming) return;
+  function handleAsk(rawQuestion: string) {
+    const trimmed = rawQuestion.trim();
+    if (!trimmed || isStreaming) {
+      return;
+    }
+
     ask(trimmed);
   }
 
-  function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
       handleAsk(input);
     }
   }
 
   function handleReset() {
     reset();
-    setInput('');
+    setInput("");
     setHistory([]);
     textareaRef.current?.focus();
   }
 
-  const hasContent = history.length > 0 || isStreaming || answer;
+  const hasConversation = history.length > 0 || isStreaming || answer;
+  const featuredPrompts = popularQuestions.slice(0, 3);
+
+  const composer = (
+    <div className="space-y-2">
+      <div className="relative flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+        <Textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="질문을 입력하세요... (Ctrl+Enter로 전송)"
+          className="min-h-[84px] max-h-[240px] resize-none border-0 bg-transparent px-1 py-1 pr-2 text-sm shadow-none focus-visible:ring-0"
+          disabled={isStreaming}
+        />
+        <div className="flex shrink-0 gap-1.5 pb-0.5">
+          {hasConversation && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={handleReset}
+              title="대화 초기화"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            size="icon"
+            className="h-9 w-9 rounded-xl"
+            onClick={() => handleAsk(input)}
+            disabled={isStreaming || !input.trim()}
+            title="전송 (Ctrl+Enter)"
+          >
+            {isStreaming ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        Jarvis는 지식 베이스에 등록된 내용을 바탕으로만 답변합니다.
+      </p>
+    </div>
+  );
 
   return (
-    <div className="flex flex-col h-full max-w-3xl mx-auto gap-4">
-      {/* Popular questions chips */}
-      {!hasContent && popularQuestions.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {popularQuestions.map((q) => (
-            <button
-              key={q}
-              onClick={() => {
-                setInput(q);
-                handleAsk(q);
-              }}
-              className="text-sm px-3 py-1.5 rounded-full border border-border bg-muted/50 hover:bg-muted transition-colors text-left"
-            >
-              {q}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Conversation history */}
-      {hasContent && (
-        <ScrollArea className="flex-1 rounded-lg border bg-background">
-          <div className="p-4 space-y-6">
-            {history.map((entry, i) => (
-              <div key={i} className="space-y-3">
-                {/* Question */}
-                <div className="flex justify-end">
-                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm">
-                    {entry.question}
-                  </div>
-                </div>
-                {/* Answer */}
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                    J
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
-                      <AnswerText text={entry.answer} sources={entry.sources} />
+    <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col">
+      {hasConversation ? (
+        <>
+          <ScrollArea className="min-h-0 flex-1 rounded-[28px] border border-gray-200 bg-white shadow-sm">
+            <div className="space-y-6 p-5">
+              {history.map((entry, index) => (
+                <div key={`${entry.question}-${index}`} className="space-y-3">
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-2.5 text-sm text-white">
+                      {entry.question}
                     </div>
-                    {entry.sources.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
-                        {entry.sources.map((src, si) => (
-                          <SourceRefCard key={src.pageId} source={src} index={si} />
-                        ))}
-                      </div>
-                    )}
                   </div>
-                </div>
-                {i < history.length - 1 && <Separator />}
-              </div>
-            ))}
 
-            {/* Streaming answer */}
-            {(isStreaming || (answer && !history.find((h) => h.question === question))) && (
-              <div className="space-y-3">
-                <div className="flex justify-end">
-                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-2.5 text-sm">
-                    {question}
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                    J
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm leading-relaxed">
-                      {answer ? (
-                        <AnswerText text={answer} sources={sources} />
-                      ) : (
-                        <span className="text-muted-foreground text-xs animate-pulse">
-                          답변을 생성하는 중...
-                        </span>
-                      )}
-                      {isStreaming && (
-                        <span className="inline-block w-0.5 h-4 bg-primary ml-0.5 animate-pulse align-text-bottom" />
+                  <div className="flex gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+                      J
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="prose prose-sm max-w-none text-sm leading-relaxed">
+                        <AnswerText text={entry.answer} sources={entry.sources} />
+                      </div>
+
+                      {entry.sources.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
+                          {entry.sources.map((source, sourceIndex) => (
+                            <SourceRefCard key={`${source.pageId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                          ))}
+                        </div>
                       )}
                     </div>
-                    {!isStreaming && sources.length > 0 && (
-                      <div className="space-y-1.5 pt-1">
-                        <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
-                        {sources.map((src, si) => (
-                          <SourceRefCard key={src.pageId} source={src} index={si} />
-                        ))}
+                  </div>
+
+                  {index < history.length - 1 && <Separator />}
+                </div>
+              ))}
+
+              {(isStreaming || (answer && !history.find((item) => item.question === question))) && (
+                <div className="space-y-3">
+                  <div className="flex justify-end">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-2.5 text-sm text-white">
+                      {question}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+                      J
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="prose prose-sm max-w-none text-sm leading-relaxed">
+                        {answer ? (
+                          <AnswerText text={answer} sources={sources} />
+                        ) : (
+                          <span className="animate-pulse text-xs text-muted-foreground">
+                            답변을 생성하는 중...
+                          </span>
+                        )}
+                        {isStreaming && (
+                          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse align-text-bottom bg-blue-600" />
+                        )}
                       </div>
-                    )}
+
+                      {!isStreaming && sources.length > 0 && (
+                        <div className="space-y-1.5 pt-1">
+                          <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
+                          {sources.map((source, sourceIndex) => (
+                            <SourceRefCard key={`${source.pageId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Error */}
-            {error && (
-              <div className="rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            )}
-
-            <div ref={bottomRef} />
-          </div>
-        </ScrollArea>
-      )}
-
-      {/* Input area */}
-      <div className="space-y-2">
-        <div className="relative flex items-end gap-2 rounded-xl border bg-background shadow-sm p-2">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="질문을 입력하세요... (Ctrl+Enter로 전송)"
-            className="min-h-[60px] max-h-[200px] resize-none border-0 shadow-none focus-visible:ring-0 pr-2 text-sm"
-            disabled={isStreaming}
-          />
-          <div className="flex gap-1.5 flex-shrink-0 pb-0.5">
-            {hasContent && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={handleReset}
-                title="대화 초기화"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            )}
-            <Button
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handleAsk(input)}
-              disabled={isStreaming || !input.trim()}
-              title="전송 (Ctrl+Enter)"
-            >
-              {isStreaming ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Send className="h-3.5 w-3.5" />
               )}
-            </Button>
+
+              {error && (
+                <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {error}
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="pt-4">{composer}</div>
+        </>
+      ) : (
+        <div className="flex min-h-0 flex-1 flex-col justify-end gap-6 pb-4">
+          <div className="rounded-[32px] border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 px-6 py-7 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
+                <BotMessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">문서 기반 AI 어시스턴트</p>
+                <p className="text-sm text-gray-600">
+                  사내 문서와 운영 기록을 바탕으로 답변하고, 근거 문서를 바로 보여줍니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-violet-500" />
+                  <p className="text-sm font-semibold text-gray-900">빠른 요약</p>
+                </div>
+                <p className="text-sm text-gray-600">
+                  운영 정책, 프로젝트 문서, 런북 내용을 한 번에 요약합니다.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-indigo-500" />
+                  <p className="text-sm font-semibold text-gray-900">출처 인용</p>
+                </div>
+                <p className="text-sm text-gray-600">
+                  답변마다 참고 문서를 붙여서 근거를 바로 확인할 수 있습니다.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-sky-500" />
+                  <p className="text-sm font-semibold text-gray-900">실시간 응답</p>
+                </div>
+                <p className="text-sm text-gray-600">
+                  스트리밍으로 답변을 받아서 길게 기다리지 않고 바로 읽기 시작합니다.
+                </p>
+              </div>
+            </div>
           </div>
+
+          {featuredPrompts.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">추천 질문</Badge>
+                <p className="text-xs text-muted-foreground">자주 쓰는 질문으로 바로 시작하세요.</p>
+              </div>
+
+              <div className="grid gap-2 md:grid-cols-3">
+                {featuredPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => {
+                      setInput(prompt);
+                      handleAsk(prompt);
+                    }}
+                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {composer}
         </div>
-        <p className="text-xs text-muted-foreground text-center">
-          Jarvis는 지식 베이스에 등록된 내용만을 바탕으로 답변합니다.
-        </p>
-      </div>
+      )}
     </div>
   );
 }

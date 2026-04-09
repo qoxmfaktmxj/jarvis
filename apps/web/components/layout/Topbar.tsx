@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, ChevronDown, Search } from "lucide-react";
+import { Bell, Search } from "lucide-react";
+import { UserMenu } from "./UserMenu";
 
 export function Topbar({ userName }: { userName: string }) {
   return (
@@ -33,16 +34,7 @@ export function Topbar({ userName }: { userName: string }) {
         >
           <Bell className="h-5 w-5 text-gray-600" />
         </button>
-        <Link
-          href="/profile"
-          className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-gray-100"
-        >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
-            {userName.charAt(0)}
-          </div>
-          <span className="text-sm text-gray-700">{userName}</span>
-          <ChevronDown className="h-4 w-4 text-gray-400" />
-        </Link>
+        <UserMenu userName={userName} />
       </div>
     </header>
   );
