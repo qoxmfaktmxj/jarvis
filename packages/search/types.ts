@@ -1,5 +1,5 @@
 export type SearchSortBy = 'relevance' | 'newest' | 'freshness' | 'hybrid';
-export type ResourceType = 'knowledge' | 'project' | 'system';
+export type ResourceType = 'knowledge' | 'project' | 'system' | 'graph';
 export type QueryMode = 'phrase' | 'web' | 'prefix';
 
 export interface SearchQuery {
