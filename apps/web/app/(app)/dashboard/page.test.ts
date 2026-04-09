@@ -64,14 +64,14 @@ describe("DashboardPage", () => {
 
     const html = renderToStaticMarkup(await DashboardPage());
 
-    expect(html).toContain("Dashboard.title");
-    expect(html).toContain("Dashboard.QuickLinks.title");
-    expect(html).toContain("Dashboard.RecentActivity.title");
-    expect(html).toContain("Dashboard.MyTasks.title");
-    expect(html).toContain("Dashboard.ProjectStats.title");
-    expect(html).toContain("Dashboard.StalePages.title");
-    expect(html).toContain("Dashboard.SearchTrends.title");
-    expect(html).toContain("Dashboard.Attendance.title");
+    expect(html).toContain("대시보드");
+    expect(html).toContain("빠른 링크");
+    expect(html).toContain("최근 활동");
+    expect(html).toContain("내 작업");
+    expect(html).toContain("프로젝트 현황");
+    expect(html).toContain("만료된 페이지");
+    expect(html).toContain("검색 트렌드");
+    expect(html).toContain("이번 달 출퇴근");
   });
 
   it("redirects to login when the session header is missing", async () => {

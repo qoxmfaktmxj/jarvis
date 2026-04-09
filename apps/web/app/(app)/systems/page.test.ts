@@ -62,9 +62,9 @@ describe("SystemsPage", () => {
   it("renders the systems registry", async () => {
     const html = renderToStaticMarkup(await SystemsPage({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain("Systems.title");
+    expect(html).toContain("시스템");
     expect(html).toContain("Payroll");
-    expect(html).toContain("Systems.registerSystem");
+    expect(html).toContain("시스템 등록");
   });
 
   it("redirects when permission is missing", async () => {

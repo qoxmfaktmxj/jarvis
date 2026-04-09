@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +23,7 @@ interface VersionHistoryProps {
 }
 
 export function VersionHistory({ versions, pageId }: VersionHistoryProps) {
+  const t = useTranslations('Knowledge.VersionHistory');
   const [compareA, setCompareA] = useState<string | null>(null);
   const [compareB, setCompareB] = useState<string | null>(null);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -66,9 +68,9 @@ export function VersionHistory({ versions, pageId }: VersionHistoryProps) {
         <TableHeader>
           <TableRow>
             <TableHead className="w-16">Version</TableHead>
-            <TableHead>Change Note</TableHead>
-            <TableHead>Author</TableHead>
-            <TableHead>Date</TableHead>
+            <TableHead>{t('changeNote')}</TableHead>
+            <TableHead>{t('author')}</TableHead>
+            <TableHead>{t('date')}</TableHead>
             <TableHead className="w-24" />
           </TableRow>
         </TableHeader>

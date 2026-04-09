@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Palette, UserCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function UserMenu({ userName }: { userName: string }) {
+  const t = useTranslations("Common");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,7 @@ export function UserMenu({ userName }: { userName: string }) {
             className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
           >
             <UserCircle2 className="h-4 w-4 text-gray-500" />
-            <span>Profile</span>
+            <span>{t("profile")}</span>
           </Link>
 
           <button

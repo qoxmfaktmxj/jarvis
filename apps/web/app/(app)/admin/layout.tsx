@@ -33,7 +33,7 @@ export default async function AdminLayout({
 
   const NAV_ITEMS = NAV_ROUTES.map((route) => ({
     href: route.href,
-    label: t(route.key as any),
+    label: t(route.key as 'users' | 'organizations' | 'menus' | 'codes' | 'companies' | 'reviewQueue' | 'auditLog' | 'searchAnalytics' | 'settings'),
   }));
 
   return (

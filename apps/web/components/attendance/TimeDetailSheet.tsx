@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Sheet,
   SheetContent,
@@ -33,6 +34,7 @@ interface TimeDetailSheetProps {
 }
 
 export function TimeDetailSheet({ record, open, onOpenChange }: TimeDetailSheetProps) {
+  const t = useTranslations('OutManage');
   if (!record) return null;
 
   const statusCfg = STATUS_BADGE[record.status ?? 'pending'] ?? { variant: 'secondary' as const, label: record.status };
@@ -41,7 +43,7 @@ export function TimeDetailSheet({ record, open, onOpenChange }: TimeDetailSheetP
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader className="space-y-1">
-          <SheetTitle>Out-of-Office Details</SheetTitle>
+          <SheetTitle>{t('detailTitle')}</SheetTitle>
           <SheetDescription>
             {format(new Date(record.outDate), 'MMMM d, yyyy')} &mdash;{' '}
             {OUT_TYPE_LABELS[record.outType] ?? record.outType}

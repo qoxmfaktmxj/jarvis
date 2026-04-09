@@ -2,6 +2,7 @@
 
 import { useCallback, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { KnowledgeMarkdown } from '@/components/knowledge/KnowledgeMarkdown';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +97,7 @@ export function PageEditor({
   pageId,
   initialValues = {},
 }: PageEditorProps) {
+  const t = useTranslations('Knowledge.PageEditor');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -241,7 +243,7 @@ export function PageEditor({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
+          <Label htmlFor="title">{t('title')}</Label>
           <Input
             id="title"
             value={title}
@@ -252,7 +254,7 @@ export function PageEditor({
 
         {mode === 'create' && (
           <div className="space-y-2">
-            <Label htmlFor="slug">Slug</Label>
+            <Label htmlFor="slug">{t('slug')}</Label>
             <Input
               id="slug"
               value={slug}
@@ -264,7 +266,7 @@ export function PageEditor({
         )}
 
         <div className="space-y-2">
-          <Label>Page Type</Label>
+          <Label>{t('pageType')}</Label>
           <Select
             value={pageType}
             onValueChange={setPageType}
@@ -284,7 +286,7 @@ export function PageEditor({
         </div>
 
         <div className="space-y-2">
-          <Label>Sensitivity</Label>
+          <Label>{t('sensitivity')}</Label>
           <Select value={sensitivity} onValueChange={setSensitivity}>
             <SelectTrigger>
               <SelectValue />
@@ -300,7 +302,7 @@ export function PageEditor({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="summary">Summary</Label>
+          <Label htmlFor="summary">{t('summary')}</Label>
           <Textarea
             id="summary"
             value={summary}
@@ -311,7 +313,7 @@ export function PageEditor({
         </div>
 
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="tags">Tags (comma-separated)</Label>
+          <Label htmlFor="tags">{t('tags')}</Label>
           <Input
             id="tags"
             value={tagsInput}
@@ -333,7 +335,7 @@ export function PageEditor({
 
         {mode === 'edit' && (
           <div className="space-y-2 md:col-span-2">
-            <Label htmlFor="changeNote">Change Note</Label>
+            <Label htmlFor="changeNote">{t('changeNote')}</Label>
             <Input
               id="changeNote"
               value={changeNote}
@@ -345,7 +347,7 @@ export function PageEditor({
       </div>
 
       <div className="space-y-2">
-        <Label>Content (Markdown)</Label>
+        <Label>{t('content')}</Label>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-2 flex items-center justify-between">

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ProjectTaskItem, WorkspaceUserOption } from "@/lib/queries/projects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ function formatDate(value: string | null) {
 
 export function TaskTable({ projectId, items, assignees }: Props) {
   const router = useRouter();
+  const t = useTranslations("Projects.TaskTable");
   const [isPending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
@@ -161,7 +163,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
               value={form.assigneeId}
               onChange={(event) => updateField("assigneeId", event.target.value)}
             >
-              <option value="">Unassigned</option>
+              <option value="">{t("unassigned")}</option>
               {assignees.map((assignee) => (
                 <option key={assignee.id} value={assignee.id}>
                   {assignee.name} ({assignee.employeeId})
@@ -184,11 +186,11 @@ export function TaskTable({ projectId, items, assignees }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Assignee</TableHead>
-              <TableHead>Due Date</TableHead>
+              <TableHead>{t("columns.title")}</TableHead>
+              <TableHead>{t("columns.status")}</TableHead>
+              <TableHead>{t("columns.priority")}</TableHead>
+              <TableHead>{t("columns.assignee")}</TableHead>
+              <TableHead>{t("columns.dueDate")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -218,7 +220,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
                   <TableCell>
                     {item.assigneeName
                       ? `${item.assigneeName} (${item.assigneeEmployeeId})`
-                      : "Unassigned"}
+                      : t("unassigned")}
                   </TableCell>
                   <TableCell>{formatDate(item.dueDate)}</TableCell>
                 </TableRow>

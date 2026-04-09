@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,7 @@ function formatDuration(checkIn: Date | string | null, checkOut: Date | string |
 }
 
 export function AttendanceCalendar({ records, month }: AttendanceCalendarProps) {
+  const t = useTranslations('AttendanceCalendar');
   const parts = month.split('-');
   const year = Number(parts[0]);
   const mon = Number(parts[1]);
@@ -97,15 +99,15 @@ export function AttendanceCalendar({ records, month }: AttendanceCalendarProps) 
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-500">
-                <span>Check-in</span>
+                <span>{t('checkIn')}</span>
                 <span className="font-medium text-gray-900">
                   {formatTime(record.checkIn)}
                 </span>
-                <span>Check-out</span>
+                <span>{t('checkOut')}</span>
                 <span className="font-medium text-gray-900">
                   {formatTime(record.checkOut)}
                 </span>
-                <span>Duration</span>
+                <span>{t('duration')}</span>
                 <span className="font-medium text-gray-900">
                   {formatDuration(record.checkIn, record.checkOut)}
                 </span>

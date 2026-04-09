@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { OutManageTable } from '@/components/attendance/OutManageTable';
 import { OutManageForm } from '@/components/attendance/OutManageForm';
 import { TimeDetailSheet } from '@/components/attendance/TimeDetailSheet';
@@ -14,6 +15,7 @@ interface OutManagePageClientProps {
 }
 
 export function OutManagePageClient({ initialRecords, isManager }: OutManagePageClientProps) {
+  const t = useTranslations('OutManage');
   const [selectedRecord, setSelectedRecord] = React.useState<OutManageRecord | null>(null);
   const [sheetOpen, setSheetOpen] = React.useState(false);
 
@@ -26,8 +28,8 @@ export function OutManagePageClient({ initialRecords, isManager }: OutManagePage
     <div className="container mx-auto max-w-5xl py-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Out-of-Office</h1>
-          <p className="text-sm text-gray-500">Manage out-of-office requests and approvals.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-gray-500">{t('description')}</p>
         </div>
         <OutManageForm>
           <Button>

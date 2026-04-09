@@ -53,7 +53,7 @@ describe("NewProjectPage", () => {
   it("renders the create project form", async () => {
     const html = renderToStaticMarkup(await NewProjectPage());
 
-    expect(html).toContain("Projects.create.title");
+    expect(html).toContain("프로젝트 생성");
     expect(html).toContain("&lt;form&gt;create&lt;/form&gt;");
   });
 

@@ -2,12 +2,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface GraphViewerProps {
   snapshotId: string;
 }
 
 export function GraphViewer({ snapshotId }: GraphViewerProps) {
+  const t = useTranslations('Architecture.Graph');
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function GraphViewer({ snapshotId }: GraphViewerProps) {
   if (loading) {
     return (
       <div className="border rounded-lg h-[600px] flex items-center justify-center bg-gray-50">
-        <span className="text-gray-400">Loading graph...</span>
+        <span className="text-gray-400">{t('loading')}</span>
       </div>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -33,6 +34,7 @@ function normalizeDefaultValues(values?: Partial<FormValues>): FormValues {
 }
 
 export function SystemForm({ mode, systemId, defaultValues }: Props) {
+  const t = useTranslations("System.Form");
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const form = useForm<FormValues>({
@@ -88,7 +90,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">System Name</span>
+          <span className="text-sm font-medium text-gray-700">{t("name")}</span>
           <Input placeholder="Payroll API" {...register("name")} />
           {errors.name ? (
             <span className="text-sm text-rose-600">{errors.name.message}</span>
@@ -96,12 +98,12 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Category</span>
+          <span className="text-sm font-medium text-gray-700">{t("category")}</span>
           <select
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
             {...register("category")}
           >
-            <option value="">Select category</option>
+            <option value="">{t("selectCategory")}</option>
             <option value="web">web</option>
             <option value="db">db</option>
             <option value="server">server</option>
@@ -116,7 +118,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-3">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Environment</span>
+          <span className="text-sm font-medium text-gray-700">{t("environment")}</span>
           <select
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
             {...register("environment")}
@@ -131,7 +133,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Sensitivity</span>
+          <span className="text-sm font-medium text-gray-700">{t("sensitivity")}</span>
           <select
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
             {...register("sensitivity")}
@@ -147,7 +149,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Status</span>
+          <span className="text-sm font-medium text-gray-700">{t("status")}</span>
           <select
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
             {...register("status")}
@@ -163,9 +165,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
       </div>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">Description</span>
+        <span className="text-sm font-medium text-gray-700">{t("description")}</span>
         <Textarea
-          placeholder="Document the system purpose, business owner, and operational notes."
+          placeholder={t("descriptionPlaceholder")}
           {...register("description")}
         />
         {errors.description ? (
@@ -174,9 +176,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
       </label>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">Tech Stack</span>
+        <span className="text-sm font-medium text-gray-700">{t("techStack")}</span>
         <Input
-          placeholder="Next.js, PostgreSQL, Redis"
+          placeholder={t("techStackPlaceholder")}
           {...register("techStack")}
         />
         {errors.techStack ? (
@@ -186,7 +188,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Repository URL</span>
+          <span className="text-sm font-medium text-gray-700">{t("repositoryUrl")}</span>
           <Input
             placeholder="https://github.com/acme/payroll"
             {...register("repositoryUrl")}
@@ -199,7 +201,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Dashboard URL</span>
+          <span className="text-sm font-medium text-gray-700">{t("dashboardUrl")}</span>
           <Input
             placeholder="https://grafana.example.com/payroll"
             {...register("dashboardUrl")}
@@ -216,14 +218,14 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         <Button type="submit" disabled={isSubmitting}>
           {isSubmitting
             ? mode === "create"
-              ? "Creating..."
-              : "Saving..."
+              ? t("creating")
+              : t("saving")
             : mode === "create"
-              ? "Register System"
-              : "Save Changes"}
+              ? t("register")
+              : t("save")}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancel
+          {t("cancel")}
         </Button>
       </div>
     </form>

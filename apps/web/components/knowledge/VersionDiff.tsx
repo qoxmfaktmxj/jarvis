@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { diffLines, type Change } from 'diff';
 import {
   Dialog,
@@ -55,6 +56,7 @@ function DiffLine({ change }: { change: Change }) {
 }
 
 export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: VersionDiffProps) {
+  const t = useTranslations('Knowledge.VersionDiff');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [changes, setChanges] = useState<Change[]>([]);
@@ -94,7 +96,7 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
       <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
         <DialogHeader className="flex-none">
           <div className="flex items-center justify-between">
-            <DialogTitle>Version Comparison</DialogTitle>
+            <DialogTitle>{t('title')}</DialogTitle>
             <DialogClose asChild>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />

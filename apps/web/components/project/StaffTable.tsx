@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ProjectStaffItem, WorkspaceUserOption } from "@/lib/queries/projects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ function formatDate(value: string | null) {
 
 export function StaffTable({ projectId, items, userOptions }: Props) {
   const router = useRouter();
+  const t = useTranslations("Projects.StaffTable");
   const [isPending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
@@ -111,7 +113,7 @@ export function StaffTable({ projectId, items, userOptions }: Props) {
               value={form.userId}
               onChange={(event) => updateField("userId", event.target.value)}
             >
-              <option value="">Select a user</option>
+              <option value="">{t("selectUser")}</option>
               {userOptions.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.name} ({user.employeeId})
@@ -161,9 +163,9 @@ export function StaffTable({ projectId, items, userOptions }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Schedule</TableHead>
+              <TableHead>{t("columns.member")}</TableHead>
+              <TableHead>{t("columns.role")}</TableHead>
+              <TableHead>{t("columns.schedule")}</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

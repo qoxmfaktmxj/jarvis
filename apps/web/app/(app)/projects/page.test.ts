@@ -66,9 +66,9 @@ describe("ProjectsPage", () => {
       await ProjectsPage({ searchParams: Promise.resolve({}) })
     );
 
-    expect(html).toContain("Projects.title");
-    expect(html).toContain("Projects.description");
-    expect(html).toContain("Projects.newProject");
+    expect(html).toContain("프로젝트");
+    expect(html).toContain("워크스페이스 프로젝트를 관리합니다");
+    expect(html).toContain("새 프로젝트");
   });
 
   it("redirects to dashboard when the session lacks permission", async () => {

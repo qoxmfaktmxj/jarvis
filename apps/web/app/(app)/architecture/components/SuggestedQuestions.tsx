@@ -2,19 +2,21 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface SuggestedQuestionsProps {
   questions: string[];
 }
 
 export function SuggestedQuestions({ questions }: SuggestedQuestionsProps) {
+  const t = useTranslations('Architecture.SuggestedQuestions');
   const router = useRouter();
 
   return (
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2">Suggested Questions</h3>
+      <h3 className="font-semibold mb-2">{t('title')}</h3>
       {questions.length === 0 ? (
-        <p className="text-sm text-gray-400">No suggestions available</p>
+        <p className="text-sm text-gray-400">{t('empty')}</p>
       ) : (
         <ul className="space-y-2">
           {questions.slice(0, 5).map((q, i) => (

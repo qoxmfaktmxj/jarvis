@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ProjectInquiryItem } from "@/lib/queries/projects";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ const priorityVariant: Record<string, "secondary" | "warning" | "destructive"> =
 
 export function InquiryTable({ projectId, items }: Props) {
   const router = useRouter();
+  const t = useTranslations("Projects.InquiryTable");
   const [isPending, startTransition] = React.useTransition();
   const [error, setError] = React.useState<string | null>(null);
   const [draftStatuses, setDraftStatuses] = React.useState<Record<string, string>>(
@@ -154,10 +156,10 @@ export function InquiryTable({ projectId, items }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Title</TableHead>
-              <TableHead>Priority</TableHead>
-              <TableHead>Author</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>{t("columns.title")}</TableHead>
+              <TableHead>{t("columns.priority")}</TableHead>
+              <TableHead>{t("columns.author")}</TableHead>
+              <TableHead>{t("columns.status")}</TableHead>
               <TableHead></TableHead>
             </TableRow>
           </TableHeader>

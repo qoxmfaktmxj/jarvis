@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -34,6 +35,7 @@ const STATUS_VARIANTS: Record<PublishStatus, 'default' | 'secondary' | 'outline'
 };
 
 export function ReviewPanel({ pageId, publishStatus, canReview, canEdit }: ReviewPanelProps) {
+  const t = useTranslations('Knowledge.ReviewPanel');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [comment, setComment] = useState('');
@@ -119,7 +121,7 @@ export function ReviewPanel({ pageId, publishStatus, canReview, canEdit }: Revie
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="review-comment">Comment</Label>
+              <Label htmlFor="review-comment">{t('comment')}</Label>
               <Textarea
                 id="review-comment"
                 value={comment}

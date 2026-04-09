@@ -1,5 +1,6 @@
 // apps/web/app/(app)/architecture/page.tsx
 
+import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default async function ArchitecturePage({ searchParams }: Props) {
+  const t = await getTranslations('Architecture');
   const session = await requirePageSession();
   const workspaceId = session.workspaceId;
   const { snapshot: selectedId } = await searchParams;
@@ -38,7 +40,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   if (!current) {
     return (
       <main className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Architecture Viewer</h1>
+        <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
         <p className="text-gray-500">
           아직 Graphify 분석 결과가 없습니다. ZIP 파일을 업로드하거나 수동으로 빌드를 트리거하세요.
         </p>
@@ -62,7 +64,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   return (
     <main className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Architecture Viewer</h1>
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
         <SnapshotSelector snapshots={serializedSnapshots} currentId={current.id} />
       </div>
 
@@ -85,14 +87,14 @@ export default async function ArchitecturePage({ searchParams }: Props) {
         />
 
         <div className="border rounded-lg p-4">
-          <h3 className="font-semibold mb-2">Build Info</h3>
+          <h3 className="font-semibold mb-2">{t('buildInfo')}</h3>
           <dl className="text-sm space-y-1">
             <div className="flex justify-between">
-              <dt className="text-gray-500">Mode</dt>
+              <dt className="text-gray-500">{t('mode')}</dt>
               <dd>{current.buildMode}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Duration</dt>
+              <dt className="text-gray-500">{t('duration')}</dt>
               <dd>
                 {current.buildDurationMs
                   ? `${(current.buildDurationMs / 1000).toFixed(1)}s`
@@ -100,7 +102,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-gray-500">Files</dt>
+              <dt className="text-gray-500">{t('files')}</dt>
               <dd>{current.fileCount ?? '-'}</dd>
             </div>
           </dl>

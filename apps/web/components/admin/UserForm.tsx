@@ -126,7 +126,7 @@ export function UserForm({ open, onOpenChange, defaultValues, orgOptions, onSucc
           </div>
 
           <div className="space-y-2">
-            <Label>Roles</Label>
+            <Label>{t("roles")}</Label>
             <Controller
               name="roleCodes"
               control={control}

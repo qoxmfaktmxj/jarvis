@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -65,6 +66,7 @@ interface OutManageFormProps {
 }
 
 export function OutManageForm({ children }: OutManageFormProps) {
+  const t = useTranslations('OutManage');
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
@@ -124,7 +126,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Out-of-Office Request</DialogTitle>
+          <DialogTitle>{t('newRequest')}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -134,7 +136,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
                 name="outDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel>{t('date')}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -147,7 +149,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
                 name="outType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Type</FormLabel>
+                    <FormLabel>{t('type')}</FormLabel>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
@@ -185,7 +187,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
               name="purpose"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Purpose</FormLabel>
+                  <FormLabel>{t('purpose')}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} placeholder="Describe the purpose of this out-of-office..." {...field} />
                   </FormControl>

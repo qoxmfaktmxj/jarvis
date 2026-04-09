@@ -1,5 +1,9 @@
 // apps/web/app/(app)/architecture/components/GodNodesCard.tsx
 
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 interface GodNodesCardProps {
   godNodes: string[];
   nodeCount: number;
@@ -13,14 +17,15 @@ export function GodNodesCard({
   edgeCount,
   communityCount,
 }: GodNodesCardProps) {
+  const t = useTranslations('Architecture.GodNodes');
   return (
     <div className="border rounded-lg p-4">
-      <h3 className="font-semibold mb-2">God Nodes</h3>
+      <h3 className="font-semibold mb-2">{t('title')}</h3>
       <p className="text-xs text-gray-500 mb-3">
         {nodeCount} nodes / {edgeCount} edges / {communityCount} communities
       </p>
       {godNodes.length === 0 ? (
-        <p className="text-sm text-gray-400">No god nodes detected</p>
+        <p className="text-sm text-gray-400">{t('empty')}</p>
       ) : (
         <ul className="space-y-1">
           {godNodes.map((node, i) => (

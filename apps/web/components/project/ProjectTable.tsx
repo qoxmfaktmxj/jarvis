@@ -157,8 +157,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length} className="py-10 text-center text-gray-500">
-                  {/* No projects found translation not in spec, using English for now */}
-                  No projects found.
+                  {t("noResults")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -178,7 +177,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
 
       <div className="flex items-center justify-between text-sm text-gray-500">
         <span>
-          Showing page {page} of {totalPages} · {total} total
+          {t("pagination", { page, totalPages, total })}
         </span>
         <div className="flex gap-2">
           <Button
