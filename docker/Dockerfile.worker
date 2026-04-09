@@ -45,6 +45,16 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+# Python 3 + graphifyy for Graphify subprocess
+# Build deps (gcc, musl-dev) are needed for native extensions; remove after install
+RUN apk add --no-cache python3 py3-pip python3-dev gcc musl-dev \
+ && python3 -m venv /opt/graphify-venv \
+ && /opt/graphify-venv/bin/pip install --no-cache-dir graphifyy \
+ && apk del python3-dev gcc musl-dev
+
+# Tell the worker where the graphify binary lives
+ENV GRAPHIFY_BIN=/opt/graphify-venv/bin/graphify
+
 RUN addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 worker
 
