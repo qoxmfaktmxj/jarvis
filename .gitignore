@@ -31,6 +31,10 @@ Thumbs.db
 
 # API keys and secrets (never commit these)
 *_key.txt
-*_api_key*
-*.key
+*_api_key
+*_api_key.*
+*.pem
+*.p8
+*.p12
+*.pfx
 secrets/
