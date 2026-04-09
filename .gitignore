@@ -4,6 +4,7 @@ node_modules/
 
 # Build
 .next/
+.next-dev/
 dist/
 out/
 coverage/

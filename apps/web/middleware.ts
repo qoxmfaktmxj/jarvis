@@ -17,7 +17,7 @@ export function middleware(request: NextRequest) {
 
   if (!sessionId) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
+    loginUrl.searchParams.set("redirect", pathname === "/" ? "/dashboard" : pathname);
     return NextResponse.redirect(loginUrl);
   }
 

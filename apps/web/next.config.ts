@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
+  distDir: isDev ? ".next-dev" : ".next",
   // standalone output for Docker production builds (Linux only)
   // Disabled on Windows due to symlink permission limitations (EPERM)
   output: process.env.DOCKER_BUILD === '1' ? 'standalone' : undefined,

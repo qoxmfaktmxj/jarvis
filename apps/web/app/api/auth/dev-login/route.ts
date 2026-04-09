@@ -5,6 +5,7 @@ import { createSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { role, user, userRole } from "@jarvis/db/schema";
 import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { findTempDevAccount } from "@/lib/auth/dev-accounts";
 
 // Dev-only login bypass — disabled in production
 export async function POST(request: NextRequest) {
@@ -12,15 +13,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { email } = await request.json() as { email?: string };
-  if (!email) {
-    return NextResponse.json({ error: "email required" }, { status: 400 });
+  const payload = await request.json() as {
+    email?: string;
+    username?: string;
+    password?: string;
+  };
+
+  let loginEmail = payload.email;
+
+  if (!loginEmail && payload.username && payload.password) {
+    const account = findTempDevAccount(payload.username, payload.password);
+    if (!account) {
+      return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
+    }
+    loginEmail = account.email;
+  }
+
+  if (!loginEmail) {
+    return NextResponse.json({ error: "email or username/password required" }, { status: 400 });
   }
 
   const [dbUser] = await db
     .select()
     .from(user)
-    .where(eq(user.email, email))
+    .where(eq(user.email, loginEmail))
     .limit(1);
 
   if (!dbUser) {
@@ -47,7 +63,7 @@ export async function POST(request: NextRequest) {
     workspaceId: dbUser.workspaceId,
     employeeId: dbUser.employeeId,
     name: dbUser.name ?? "Dev User",
-    email: dbUser.email ?? email,
+    email: dbUser.email ?? loginEmail,
     roles,
     permissions,
     orgId: dbUser.orgId ?? undefined,
