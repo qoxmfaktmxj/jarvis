@@ -1,10 +1,32 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { db } from '@jarvis/db/client';
-import { knowledgePage } from '@jarvis/db/schema/knowledge';
-import { sql, eq } from 'drizzle-orm';
-import { importAsKnowledgePage } from './import-knowledge.js';
-import { boss } from '../lib/boss.js';
+
+// These are integration tests that require a live Postgres database.
+// Skip the entire suite when DATABASE_URL is not configured so CI can
+// run unit tests without a running DB. Set DATABASE_URL to run locally.
+const HAS_DB = Boolean(process.env.DATABASE_URL);
+
+// boss.ts throws at module-load time without DATABASE_URL.
+// Mock it before importing anything that transitively imports boss.
+vi.mock('../lib/boss.js', () => ({
+  boss: { send: vi.fn().mockResolvedValue('') },
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let db: any, knowledgePage: any, sql: any, eq: any, importAsKnowledgePage: any, boss: any;
+if (HAS_DB) {
+  const dbMod = await import('@jarvis/db/client');
+  const schemaMod = await import('@jarvis/db/schema/knowledge');
+  const ormMod = await import('drizzle-orm');
+  const importMod = await import('./import-knowledge.js');
+  const bossMod = await import('../lib/boss.js');
+  db = dbMod.db;
+  knowledgePage = schemaMod.knowledgePage;
+  sql = ormMod.sql;
+  eq = ormMod.eq;
+  importAsKnowledgePage = importMod.importAsKnowledgePage;
+  boss = bossMod.boss;
+}
 
 async function seedWs(): Promise<string> {
   const id = randomUUID();
@@ -16,7 +38,7 @@ async function seedWs(): Promise<string> {
   return id;
 }
 
-describe('importAsKnowledgePage — upsert', () => {
+describe.skipIf(!HAS_DB)('importAsKnowledgePage — upsert (integration)', () => {
   let wsId: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let sendSpy: ReturnType<typeof vi.spyOn<any, any>>;
