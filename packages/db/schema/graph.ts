@@ -23,6 +23,13 @@ export const buildStatusEnum = pgEnum('build_status', [
   'error',
 ]);
 
+export const graphScopeTypeEnum = pgEnum('graph_scope_type', [
+  'attachment',
+  'project',
+  'system',
+  'workspace',
+]);
+
 export const graphSnapshot = pgTable('graph_snapshot', {
   id: uuid('id').primaryKey().defaultRandom(),
   workspaceId: uuid('workspace_id')
@@ -31,6 +38,11 @@ export const graphSnapshot = pgTable('graph_snapshot', {
   rawSourceId: uuid('raw_source_id').references(() => rawSource.id, {
     onDelete: 'set null',
   }),
+  scopeType: graphScopeTypeEnum('scope_type').notNull().default('workspace'),
+  scopeId: uuid('scope_id').notNull(),
+  sensitivity: varchar('sensitivity', { length: 30 })
+    .default('INTERNAL')
+    .notNull(),
   title: varchar('title', { length: 500 }).notNull(),
 
   // MinIO storage paths
@@ -76,6 +88,13 @@ export const graphSnapshot = pgTable('graph_snapshot', {
   ),
   // Single-column workspace index for listing all snapshots in a workspace
   workspaceIdx: index('idx_graph_snapshot_workspace').on(table.workspaceId),
+  // Composite index for scope-filtered picker queries
+  scopeIdx: index('idx_graph_snapshot_scope').on(
+    table.workspaceId,
+    table.scopeType,
+    table.scopeId,
+    table.buildStatus,
+  ),
 }));
 
 export const graphNode = pgTable('graph_node', {

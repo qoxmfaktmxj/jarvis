@@ -16,6 +16,7 @@
     "@anthropic-ai/sdk": "^0.30.0",
     "@jarvis/auth": "workspace:*",
     "@jarvis/db": "workspace:*",
+    "@jarvis/shared": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "openai": "^4.0.0"
   },

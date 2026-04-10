@@ -14,6 +14,7 @@ import { eq } from 'drizzle-orm';
 import { minioClient, BUCKET } from '../lib/minio-client.js';
 import { unarchive, countFiles } from '../helpers/unarchive.js';
 import { importAsKnowledgePage, slugify } from '../helpers/import-knowledge.js';
+import { resolveLineageFromRawSource } from '../helpers/resolve-lineage.js';
 import { materializeGraph, type GraphJson } from '../helpers/materialize-graph.js';
 
 const execFileAsync = promisify(execFile);
@@ -63,11 +64,19 @@ async function processGraphifyBuild(
     `[graphify-build] Starting snapshotId=${snapshotId} rawSourceId=${rawSourceId}`,
   );
 
+  const lineage = await resolveLineageFromRawSource(rawSourceId);
+  console.log(
+    `[graphify-build] Resolved lineage scopeType=${lineage.scopeType} scopeId=${lineage.scopeId} sensitivity=${lineage.sensitivity}`,
+  );
+
   // Create snapshot record with 'running' status
   await db.insert(graphSnapshot).values({
     id: snapshotId,
     workspaceId,
     rawSourceId,
+    scopeType: lineage.scopeType,
+    scopeId: lineage.scopeId,
+    sensitivity: lineage.sensitivity,
     title: 'Building...',
     buildMode: mode ?? 'standard',
     buildStatus: 'running',
@@ -195,8 +204,10 @@ async function processGraphifyBuild(
         slug: slugify(`graph-report-${snapshotId.slice(0, 8)}`),
         mdxContent: reportContent,
         pageType: 'analysis',
-        sensitivity: 'INTERNAL',
+        sensitivity: lineage.sensitivity,
         createdBy: requestedBy,
+        sourceType: 'graphify',
+        sourceKey: `attachment:${rawSourceId}:GRAPH_REPORT.md`,
       });
     } catch {
       console.warn(
@@ -222,8 +233,10 @@ async function processGraphifyBuild(
           slug: slugify(`graph-wiki-${snapshotId.slice(0, 8)}-${title}`),
           mdxContent: content,
           pageType: 'analysis',
-          sensitivity: 'INTERNAL',
+          sensitivity: lineage.sensitivity,
           createdBy: requestedBy,
+          sourceType: 'graphify',
+          sourceKey: `attachment:${rawSourceId}:wiki/${wikiFile}`,
         });
       }
     } catch (err) {

@@ -2,11 +2,13 @@ import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { desc, count, sql } from "drizzle-orm";
+import { and, eq, desc, count, sql } from "drizzle-orm";
 import { Sparkles } from "lucide-react";
 import { getSession } from "@jarvis/auth/session";
+import { canAccessGraphSnapshotSensitivity } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
 import { searchLog } from "@jarvis/db/schema";
+import { graphSnapshot } from "@jarvis/db/schema/graph";
 import { AskPanel } from "@/components/ai/AskPanel";
 
 async function getPopularQuestions(workspaceId: string): Promise<string[]> {
@@ -28,7 +30,11 @@ async function getPopularQuestions(workspaceId: string): Promise<string[]> {
   }
 }
 
-export default async function AskPage() {
+interface Props {
+  searchParams: Promise<{ q?: string; snapshot?: string }>;
+}
+
+export default async function AskPage({ searchParams }: Props) {
   const t = await getTranslations("Ask");
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
@@ -38,7 +44,39 @@ export default async function AskPage() {
     redirect("/login");
   }
 
+  const { q, snapshot: snapshotIdParam } = await searchParams;
   const popularQuestions = await getPopularQuestions(session.workspaceId);
+
+  const canReadGraph =
+    session.permissions.includes('graph:read') ||
+    session.permissions.includes('admin:all');
+
+  let initialScope: { id: string; title: string } | null = null;
+  if (snapshotIdParam && canReadGraph) {
+    try {
+      const [row] = await db
+        .select({
+          id: graphSnapshot.id,
+          title: graphSnapshot.title,
+          sensitivity: graphSnapshot.sensitivity,
+          buildStatus: graphSnapshot.buildStatus,
+        })
+        .from(graphSnapshot)
+        .where(
+          and(
+            eq(graphSnapshot.id, snapshotIdParam),
+            eq(graphSnapshot.workspaceId, session.workspaceId),
+            eq(graphSnapshot.buildStatus, 'done'),
+          ),
+        )
+        .limit(1);
+      if (row && canAccessGraphSnapshotSensitivity(session.permissions, row.sensitivity)) {
+        initialScope = { id: row.id, title: row.title };
+      }
+    } catch {
+      // invalid uuid or DB issue — fall through with null
+    }
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col gap-5 p-6">
@@ -55,7 +93,11 @@ export default async function AskPage() {
       </div>
 
       <Suspense fallback={null}>
-        <AskPanel popularQuestions={popularQuestions} />
+        <AskPanel
+          initialQuestion={q ?? ""}
+          initialScope={initialScope}
+          popularQuestions={popularQuestions}
+        />
       </Suspense>
     </div>
   );

@@ -12,7 +12,7 @@ export interface AskAIState {
 }
 
 export interface UseAskAIReturn extends AskAIState {
-  ask: (question: string) => void;
+  ask: (question: string, opts?: { snapshotId?: string }) => void;
   reset: () => void;
 }
 
@@ -33,7 +33,7 @@ export function useAskAI(): UseAskAIReturn {
     setState(initialState);
   }, []);
 
-  const ask = useCallback((question: string) => {
+  const ask = useCallback((question: string, opts?: { snapshotId?: string }) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -51,7 +51,7 @@ export function useAskAI(): UseAskAIReturn {
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question }),
+          body: JSON.stringify({ question, snapshotId: opts?.snapshotId }),
           signal: controller.signal,
         });
 

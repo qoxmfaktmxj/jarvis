@@ -24,6 +24,11 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
     );
   }
 
+  const isGraph = source.kind === 'graph';
+  const label = isGraph ? `G${sourceNumber}` : String(sourceNumber);
+  const hoverTitle = isGraph ? `Graph: ${source.nodeLabel}` : source.title;
+  const hoverDetail = isGraph ? source.snapshotTitle : source.excerpt;
+
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
@@ -31,17 +36,21 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
           <sup>
             <Link
               href={source.url}
-              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors"
+              className={
+                isGraph
+                  ? 'inline-flex items-center justify-center rounded-full bg-blue-100 px-1 text-blue-800 text-[10px] font-bold hover:bg-blue-200 transition-colors dark:bg-blue-900 dark:text-blue-100'
+                  : 'inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors'
+              }
             >
-              {sourceNumber}
+              {label}
             </Link>
           </sup>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
-          <p className="font-medium text-xs">{source.title}</p>
-          {source.excerpt && (
+          <p className="font-medium text-xs">{hoverTitle}</p>
+          {hoverDetail && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-              {source.excerpt}
+              {hoverDetail}
             </p>
           )}
         </TooltipContent>

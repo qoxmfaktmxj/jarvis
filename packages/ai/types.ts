@@ -1,12 +1,28 @@
 // packages/ai/types.ts
 
-export interface SourceRef {
+export interface TextSourceRef {
+  kind: 'text';
   pageId: string;
   title: string;
   url: string;
   excerpt: string;
-  confidence: number; // 0-1
+  confidence: number;
 }
+
+export interface GraphSourceRef {
+  kind: 'graph';
+  snapshotId: string;
+  snapshotTitle: string;
+  nodeId: string;
+  nodeLabel: string;
+  sourceFile: string | null;
+  communityLabel: string | null;
+  relationPath?: string[];
+  url: string;
+  confidence: number;
+}
+
+export type SourceRef = TextSourceRef | GraphSourceRef;
 
 export interface Claim {
   text: string;
@@ -46,4 +62,5 @@ export interface AskQuery {
   userId: string;
   userRoles: string[];
   userPermissions: string[];
+  snapshotId?: string;     // NEW — explicit graph scope
 }

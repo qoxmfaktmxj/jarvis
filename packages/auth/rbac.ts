@@ -117,6 +117,55 @@ export function canAccessSystemAccessEntry(
   return highestRank >= requiredRank;
 }
 
+const GRAPH_RESTRICTED_SENSITIVITIES = [
+  "RESTRICTED",
+  "SECRET_REF_ONLY"
+] as const;
+
+/**
+ * Can the caller see a graph_snapshot with this sensitivity?
+ * PUBLIC/INTERNAL require graph:read. RESTRICTED/SECRET_REF_ONLY require admin:all
+ * in P0 (a graph:review permission may be added in P1).
+ * null/undefined sensitivity is treated as INTERNAL.
+ */
+export function canAccessGraphSnapshotSensitivity(
+  permissions: string[],
+  sensitivity: string | null | undefined
+): boolean {
+  const effective = sensitivity ?? "INTERNAL";
+
+  if (
+    GRAPH_RESTRICTED_SENSITIVITIES.includes(
+      effective as (typeof GRAPH_RESTRICTED_SENSITIVITIES)[number]
+    )
+  ) {
+    return permissions.includes(PERMISSIONS.ADMIN_ALL);
+  }
+
+  return (
+    permissions.includes(PERMISSIONS.GRAPH_READ) ||
+    permissions.includes(PERMISSIONS.ADMIN_ALL)
+  );
+}
+
+/**
+ * SQL fragment to append to a WHERE clause that already references
+ * `graph_snapshot`. Returns empty string for admin (no filter needed),
+ * a sensitivity NOT IN clause for graph:read holders, or "AND 1 = 0"
+ * for callers who lack graph:read entirely.
+ */
+export function buildGraphSnapshotSensitivitySqlFragment(
+  permissions: string[]
+): string {
+  if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
+    return "";
+  }
+  if (permissions.includes(PERMISSIONS.GRAPH_READ)) {
+    return "AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')";
+  }
+  return "AND 1 = 0";
+}
+
 export function canAccessSensitivity(
   session: JarvisSession,
   sensitivity: "PUBLIC" | "INTERNAL" | "RESTRICTED" | "SECRET_REF_ONLY"

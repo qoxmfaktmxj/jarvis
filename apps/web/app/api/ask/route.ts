@@ -9,6 +9,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 const bodySchema = z.object({
   question: z.string().min(1).max(2000),
+  snapshotId: z.string().uuid().optional(),
 });
 
 const RATE_LIMIT_MAX = 20;         // requests
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   const { session } = auth;
 
   // 2. Parse + validate body
-  let body: { question: string };
+  let body: { question: string; snapshotId?: string };
   try {
     const raw = await request.json();
     body = bodySchema.parse(raw);
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
           userId: session.userId,
           userRoles: session.roles ?? [],
           userPermissions: session.permissions ?? [],
+          snapshotId: body.snapshotId,
         });
 
         for await (const event of generator) {

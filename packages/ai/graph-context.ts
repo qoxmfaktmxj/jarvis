@@ -2,7 +2,14 @@
 
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, notInArray, sql } from 'drizzle-orm';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
+
+export interface RetrieveGraphContextOptions {
+  explicitSnapshotId?: string;
+  minMatchThreshold?: number;
+  permissions?: string[];
+}
 
 export interface GraphNodeResult {
   nodeId: string;
@@ -20,6 +27,8 @@ export interface GraphPath {
 }
 
 export interface GraphContext {
+  snapshotId: string;
+  snapshotTitle: string;
   matchedNodes: GraphNodeResult[];
   paths: GraphPath[];
   communityContext: string;
@@ -48,28 +57,108 @@ function extractKeywords(question: string): string[] {
 export async function retrieveRelevantGraphContext(
   question: string,
   workspaceId: string,
+  options: RetrieveGraphContextOptions = {},
 ): Promise<GraphContext | null> {
-  // 1. Find latest completed snapshot (status: 'done')
-  const [snapshot] = await db
-    .select({ id: graphSnapshot.id })
-    .from(graphSnapshot)
-    .where(
-      and(
-        eq(graphSnapshot.workspaceId, workspaceId),
-        eq(graphSnapshot.buildStatus, 'done'),
-      ),
-    )
-    .orderBy(desc(graphSnapshot.createdAt))
-    .limit(1);
+  // 1. Extract keywords — needed for both node-matching and auto-pick scoring.
+  //    For the explicit-snapshot path, zero keywords just means we skip node
+  //    matching (return a snapshot with empty matchedNodes + paths) rather than
+  //    bailing out entirely.
+  const keywords = extractKeywords(question);
+  // Guard only applies to auto-pick: if there are no keywords we cannot score
+  // snapshots, so we'd return null anyway.  Explicit path continues below.
+  if (keywords.length === 0 && !options.explicitSnapshotId) return null;
+  const likePatterns = keywords.map((k) => `%${k}%`);
+
+  // 2. Resolve the target snapshot.
+  //    Explicit path: caller named a specific snapshotId — verify it exists,
+  //    belongs to this workspace, and is in 'done' status.
+  //    Auto-pick path: score every done snapshot in the workspace by the number
+  //    of distinct nodes whose label matches any of the extracted keywords,
+  //    pick the top match (with createdAt DESC tiebreak), require
+  //    >= minMatchThreshold (default 2).
+  const permissions = options.permissions ?? [];
+  const hasGraphAccess =
+    permissions.includes(PERMISSIONS.GRAPH_READ) || permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
+
+  // Fast exit: caller has no graph permission at all
+  if (!hasGraphAccess) return null;
+
+  let snapshot: { id: string; title: string } | null = null;
+
+  if (options.explicitSnapshotId) {
+    // For the explicit path, apply sensitivity filter via Drizzle notInArray
+    // when the caller is not an admin.
+    const conditions: Parameters<typeof and>[0][] = [
+      eq(graphSnapshot.id, options.explicitSnapshotId),
+      eq(graphSnapshot.workspaceId, workspaceId),
+      eq(graphSnapshot.buildStatus, 'done'),
+    ];
+    if (!hasAdminAll) {
+      conditions.push(notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']));
+    }
+    const [row] = await db
+      .select({ id: graphSnapshot.id, title: graphSnapshot.title })
+      .from(graphSnapshot)
+      .where(and(...conditions))
+      .limit(1);
+    if (!row) {
+      console.warn(
+        `[graph-context] explicit snapshotId=${options.explicitSnapshotId} not found or not accessible for workspace=${workspaceId}`,
+      );
+      return null;
+    }
+    snapshot = row;
+  } else {
+    // Auto-pick by keyword match score across all done snapshots in workspace
+    const threshold = options.minMatchThreshold ?? 2;
+    const sensitivityConditions: Parameters<typeof and>[0][] = [
+      eq(graphSnapshot.workspaceId, workspaceId),
+      eq(graphSnapshot.buildStatus, 'done'),
+    ];
+    if (!hasAdminAll) {
+      sensitivityConditions.push(
+        notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']),
+      );
+    }
+    // Collect eligible snapshot IDs via Drizzle (consistent with explicit path)
+    const eligibleSnapshots = await db
+      .select({ id: graphSnapshot.id })
+      .from(graphSnapshot)
+      .where(and(...sensitivityConditions));
+    if (eligibleSnapshots.length === 0) return null;
+    const eligibleIds = eligibleSnapshots.map((s) => s.id);
+
+    const pickRows = await db.execute<{
+      snapshot_id: string;
+      title: string;
+      match_count: number;
+    }>(sql`
+      WITH keyword_matches AS (
+        SELECT gn.snapshot_id,
+               COUNT(DISTINCT gn.node_id) AS match_count
+        FROM graph_node gn
+        WHERE gn.snapshot_id = ANY(${eligibleIds}::uuid[])
+          AND gn.label ILIKE ANY(${likePatterns}::text[])
+        GROUP BY gn.snapshot_id
+      )
+      SELECT km.snapshot_id, gs.title, km.match_count
+      FROM keyword_matches km
+      JOIN graph_snapshot gs ON gs.id = km.snapshot_id
+      WHERE km.match_count >= ${threshold}
+      ORDER BY km.match_count DESC, gs.created_at DESC
+      LIMIT 1
+    `);
+    if (pickRows.rows.length === 0) return null;
+    snapshot = {
+      id: pickRows.rows[0]!.snapshot_id,
+      title: pickRows.rows[0]!.title,
+    };
+  }
 
   if (!snapshot) return null;
 
-  // 2. Extract keywords
-  const keywords = extractKeywords(question);
-  if (keywords.length === 0) return null;
-
   // 3. Match graph nodes via label ILIKE
-  const likePatterns = keywords.map((k) => `%${k}%`);
   const matchedRows = await db.execute<{
     node_id: string;
     label: string;
@@ -90,7 +179,21 @@ export async function retrieveRelevantGraphContext(
     LIMIT 10
   `);
 
-  if (matchedRows.rows.length === 0) return null;
+  // For explicit snapshot path: if no node labels match, return a minimal context
+  // (snapshot metadata only) rather than null. This preserves the user-selected scope
+  // for broad/summary questions that don't reference specific node names.
+  if (matchedRows.rows.length === 0) {
+    if (options.explicitSnapshotId) {
+      return {
+        snapshotId: snapshot.id,
+        snapshotTitle: snapshot.title,
+        matchedNodes: [],
+        paths: [],
+        communityContext: '',
+      };
+    }
+    return null;
+  }
 
   // 4. Get 1-hop neighbors
   const nodeIds = matchedRows.rows.map((r) => r.node_id);
@@ -223,41 +326,18 @@ export async function retrieveRelevantGraphContext(
       .join('\n');
   }
 
-  return { matchedNodes, paths, communityContext };
+  return {
+    snapshotId: snapshot.id,
+    snapshotTitle: snapshot.title,
+    matchedNodes,
+    paths,
+    communityContext,
+  };
 }
 
-export function formatGraphContextXml(ctx: GraphContext): string {
-  const nodesXml = ctx.matchedNodes
-    .map((n) => {
-      const conns = n.connections
-        .slice(0, 5)
-        .map(
-          (c) =>
-            `      <connection relation="${c.relation}" target="${c.targetLabel}" confidence="${c.confidence}" />`,
-        )
-        .join('\n');
-      return `    <node label="${n.label}" type="${n.fileType ?? 'unknown'}" file="${n.sourceFile ?? ''}" community="${n.communityLabel ?? ''}">
-${conns}
-    </node>`;
-    })
-    .join('\n');
-
-  const pathsXml = ctx.paths
-    .map(
-      (p) =>
-        `    <path from="${p.from}" to="${p.to}">\n      ${p.hops.join(' --> ')}\n    </path>`,
-    )
-    .join('\n');
-
-  return `<graph_context>
-  <matched_nodes>
-${nodesXml}
-  </matched_nodes>
-  <paths>
-${pathsXml}
-  </paths>
-  <community_context>
-    ${ctx.communityContext}
-  </community_context>
-</graph_context>`;
-}
+// NOTE: The legacy `formatGraphContextXml(ctx)` helper was removed as part of
+// Task 5 (2026-04-10). The Ask pipeline now unifies text and graph sources
+// through `toGraphSourceRefs` + `assembleContext` in `ask.ts`, which share a
+// single `<source idx="N" kind="text|graph">` index space. If you need an
+// XML dump of a snapshot for debugging, query `graph_node`/`graph_edge`
+// directly — this helper was the only surviving caller.
