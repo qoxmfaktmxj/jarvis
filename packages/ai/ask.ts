@@ -325,7 +325,9 @@ export async function* askAI(
 
   const graphSources: GraphSourceRef[] = graphCtx ? toGraphSourceRefs(graphCtx) : [];
 
-  if (claims.length === 0 && graphSources.length === 0) {
+  // Only bail if there's truly nothing — graphCtx (even with no matched nodes)
+  // still carries community summaries that the model can use for broad questions.
+  if (claims.length === 0 && graphSources.length === 0 && !graphCtx) {
     yield {
       type: 'text',
       content:

@@ -3,9 +3,10 @@
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { canAccessGraphSnapshotSensitivity } from '@jarvis/auth/rbac';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, notInArray, and } from 'drizzle-orm';
 import { GraphViewer } from './components/GraphViewer';
 import { SnapshotSelector } from './components/SnapshotSelector';
 import { GodNodesCard } from './components/GodNodesCard';
@@ -23,17 +24,23 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   const workspaceId = session.workspaceId;
   const { snapshot: selectedId } = await searchParams;
 
-  // Fetch ALL snapshots (all statuses) so the selector can show in-progress builds
-  const allSnapshots = await db
+  // Build sensitivity filter at DB level so the limit applies after authorization,
+  // not before — otherwise 20 newer unauthorized snapshots could hide older done ones.
+  const hasAdminAll = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const sensitivityCondition = hasAdminAll
+    ? undefined
+    : notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']);
+
+  const authorizedSnapshots = await db
     .select()
     .from(graphSnapshot)
-    .where(eq(graphSnapshot.workspaceId, workspaceId))
+    .where(
+      sensitivityCondition
+        ? and(eq(graphSnapshot.workspaceId, workspaceId), sensitivityCondition)
+        : eq(graphSnapshot.workspaceId, workspaceId),
+    )
     .orderBy(desc(graphSnapshot.createdAt))
-    .limit(20);
-
-  const authorizedSnapshots = allSnapshots.filter((s) =>
-    canAccessGraphSnapshotSensitivity(session.permissions, s.sensitivity),
-  );
+    .limit(100);
 
   // Prefer the explicitly selected snapshot; fall back to the most recent completed one
   const current = selectedId
