@@ -192,6 +192,7 @@ export async function* generateAnswer(
       const claim = claims[idx];
       if (!claim) return [];
       return [{
+        kind: 'text',
         pageId: claim.pageId,
         title: claim.pageTitle,
         url: claim.pageUrl,

@@ -24,6 +24,13 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
     );
   }
 
+  // TODO(Task 11): render graph variant properly; text-only for now
+  if (source.kind !== 'text') {
+    return (
+      <sup className="text-xs text-muted-foreground">[{sourceNumber}]</sup>
+    );
+  }
+
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>

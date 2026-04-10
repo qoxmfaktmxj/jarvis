@@ -175,7 +175,7 @@ export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPan
                         <div className="space-y-1.5 pt-1">
                           <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
                           {entry.sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.pageId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.nodeId}-${sourceIndex}`} source={source} index={sourceIndex} />
                           ))}
                         </div>
                       )}
@@ -216,7 +216,7 @@ export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPan
                         <div className="space-y-1.5 pt-1">
                           <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
                           {sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.pageId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.nodeId}-${sourceIndex}`} source={source} index={sourceIndex} />
                           ))}
                         </div>
                       )}

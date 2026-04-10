@@ -16,6 +16,8 @@ function confidenceLabel(score: number): { label: string; variant: 'default' | '
 }
 
 export function SourceRefCard({ source, index }: SourceRefCardProps) {
+  // TODO(Task 11): render graph variant properly; text-only for now
+  if (source.kind !== 'text') return null;
   const { label, variant } = confidenceLabel(source.confidence);
 
   return (
