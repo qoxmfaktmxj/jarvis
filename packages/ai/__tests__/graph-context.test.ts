@@ -130,3 +130,92 @@ describe('retrieveRelevantGraphContext — explicit scope', () => {
     expect(ctx).toBeNull();
   });
 });
+
+describe('retrieveRelevantGraphContext — auto-pick', () => {
+  let wsA: string;
+
+  beforeEach(async () => {
+    wsA = await seedWorkspace();
+  });
+
+  afterEach(async () => {
+    await db.execute(sql`DELETE FROM graph_snapshot WHERE workspace_id = ${wsA}`);
+    await db.execute(sql`DELETE FROM workspace WHERE id = ${wsA}`);
+  });
+
+  it('picks snapshot with highest keyword match count', async () => {
+    const low = await seedSnapshot({
+      workspaceId: wsA,
+      title: 'low',
+      nodes: [{ nodeId: 'x', label: 'UserService' }],
+    });
+    const high = await seedSnapshot({
+      workspaceId: wsA,
+      title: 'high',
+      nodes: [
+        { nodeId: 'a', label: 'UserService' },
+        { nodeId: 'b', label: 'UserRepository' },
+        { nodeId: 'c', label: 'UserController' },
+      ],
+    });
+
+    const ctx = await retrieveRelevantGraphContext('tell me about user service and user repository', wsA);
+
+    expect(ctx).not.toBeNull();
+    expect(ctx?.snapshotId).toBe(high);
+  });
+
+  it('returns null when all snapshots are below threshold', async () => {
+    await seedSnapshot({
+      workspaceId: wsA,
+      nodes: [{ nodeId: 'a', label: 'OnlyOne' }],
+    });
+
+    const ctx = await retrieveRelevantGraphContext('onlyone', wsA, { minMatchThreshold: 5 });
+
+    expect(ctx).toBeNull();
+  });
+
+  it('tiebreak: picks most recent createdAt when match count ties', async () => {
+    const older = await seedSnapshot({
+      workspaceId: wsA,
+      title: 'older',
+      nodes: [
+        { nodeId: 'a', label: 'AuthService' },
+        { nodeId: 'b', label: 'AuthToken' },
+      ],
+    });
+    await new Promise((r) => setTimeout(r, 10));
+    const newer = await seedSnapshot({
+      workspaceId: wsA,
+      title: 'newer',
+      nodes: [
+        { nodeId: 'c', label: 'AuthService' },
+        { nodeId: 'd', label: 'AuthToken' },
+      ],
+    });
+
+    const ctx = await retrieveRelevantGraphContext('auth service token', wsA);
+
+    expect(ctx?.snapshotId).toBe(newer);
+  });
+
+  it('returns null when no snapshots exist in workspace', async () => {
+    const ctx = await retrieveRelevantGraphContext('anything', wsA);
+    expect(ctx).toBeNull();
+  });
+
+  it('ignores snapshots in non-done status during auto-pick', async () => {
+    await seedSnapshot({
+      workspaceId: wsA,
+      buildStatus: 'running',
+      nodes: [
+        { nodeId: 'x', label: 'Widget' },
+        { nodeId: 'y', label: 'WidgetFactory' },
+      ],
+    });
+
+    const ctx = await retrieveRelevantGraphContext('widget factory', wsA);
+    expect(ctx).toBeNull();
+  });
+});

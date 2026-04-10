@@ -57,10 +57,18 @@ export async function retrieveRelevantGraphContext(
   workspaceId: string,
   options: RetrieveGraphContextOptions = {},
 ): Promise<GraphContext | null> {
-  // 1. Resolve the target snapshot.
+  // 1. Extract keywords (moved up — needed for both explicit and auto-pick paths)
+  const keywords = extractKeywords(question);
+  if (keywords.length === 0) return null;
+  const likePatterns = keywords.map((k) => `%${k}%`);
+
+  // 2. Resolve the target snapshot.
   //    Explicit path: caller named a specific snapshotId — verify it exists,
   //    belongs to this workspace, and is in 'done' status.
-  //    Otherwise: Task 3 will implement auto-pick. For now, return null.
+  //    Auto-pick path: score every done snapshot in the workspace by the number
+  //    of distinct nodes whose label matches any of the extracted keywords,
+  //    pick the top match (with createdAt DESC tiebreak), require
+  //    >= minMatchThreshold (default 2).
   let snapshot: { id: string; title: string } | null = null;
 
   if (options.explicitSnapshotId) {
@@ -83,18 +91,40 @@ export async function retrieveRelevantGraphContext(
     }
     snapshot = row;
   } else {
-    // TASK 3에서 auto-pick 구현 — 현재는 placeholder
-    snapshot = null;
+    // Auto-pick by keyword match score across all done snapshots in workspace
+    const threshold = options.minMatchThreshold ?? 2;
+    const pickRows = await db.execute<{
+      snapshot_id: string;
+      title: string;
+      match_count: number;
+    }>(sql`
+      WITH keyword_matches AS (
+        SELECT gn.snapshot_id,
+               COUNT(DISTINCT gn.node_id) AS match_count
+        FROM graph_node gn
+        JOIN graph_snapshot gs ON gs.id = gn.snapshot_id
+        WHERE gs.workspace_id = ${workspaceId}::uuid
+          AND gs.build_status = 'done'
+          AND gn.label ILIKE ANY(${likePatterns}::text[])
+        GROUP BY gn.snapshot_id
+      )
+      SELECT km.snapshot_id, gs.title, km.match_count
+      FROM keyword_matches km
+      JOIN graph_snapshot gs ON gs.id = km.snapshot_id
+      WHERE km.match_count >= ${threshold}
+      ORDER BY km.match_count DESC, gs.created_at DESC
+      LIMIT 1
+    `);
+    if (pickRows.rows.length === 0) return null;
+    snapshot = {
+      id: pickRows.rows[0]!.snapshot_id,
+      title: pickRows.rows[0]!.title,
+    };
   }
 
   if (!snapshot) return null;
 
-  // 2. Extract keywords
-  const keywords = extractKeywords(question);
-  if (keywords.length === 0) return null;
-
   // 3. Match graph nodes via label ILIKE
-  const likePatterns = keywords.map((k) => `%${k}%`);
   const matchedRows = await db.execute<{
     node_id: string;
     label: string;
