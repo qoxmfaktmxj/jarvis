@@ -77,8 +77,9 @@ export async function retrieveRelevantGraphContext(
   //    pick the top match (with createdAt DESC tiebreak), require
   //    >= minMatchThreshold (default 2).
   const permissions = options.permissions ?? [];
-  const hasGraphAccess = permissions.includes('graph:read') || permissions.includes('admin:all');
-  const hasAdminAll = permissions.includes('admin:all');
+  const hasGraphAccess =
+    permissions.includes(PERMISSIONS.GRAPH_READ) || permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
 
   // Fast exit: caller has no graph permission at all
   if (!hasGraphAccess) return null;
