@@ -294,18 +294,27 @@ export async function* askAI(
   let claims: RetrievedClaim[];
   let graphCtx: GraphContext | null;
 
+  // Graph context is gated on graph:read permission. Users without this permission
+  // (e.g. HR staff with only knowledge:read) still get text answers but no graph
+  // citations or /architecture links in the response.
+  const canReadGraph =
+    userPermissions.includes('graph:read') ||
+    userPermissions.includes('admin:all');
+
   try {
     [claims, graphCtx] = await Promise.all([
       retrieveRelevantClaims(question, workspaceId, userPermissions),
-      retrieveRelevantGraphContext(question, workspaceId, {
-        explicitSnapshotId: snapshotId,
-      }).catch((err) => {
-        console.error(
-          '[ask] Graph context retrieval failed (degraded gracefully):',
-          err instanceof Error ? err.message : err,
-        );
-        return null;
-      }),
+      canReadGraph
+        ? retrieveRelevantGraphContext(question, workspaceId, {
+            explicitSnapshotId: snapshotId,
+          }).catch((err) => {
+            console.error(
+              '[ask] Graph context retrieval failed (degraded gracefully):',
+              err instanceof Error ? err.message : err,
+            );
+            return null;
+          })
+        : Promise.resolve(null),
     ]);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';

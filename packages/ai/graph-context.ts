@@ -57,9 +57,14 @@ export async function retrieveRelevantGraphContext(
   workspaceId: string,
   options: RetrieveGraphContextOptions = {},
 ): Promise<GraphContext | null> {
-  // 1. Extract keywords (moved up — needed for both explicit and auto-pick paths)
+  // 1. Extract keywords — needed for both node-matching and auto-pick scoring.
+  //    For the explicit-snapshot path, zero keywords just means we skip node
+  //    matching (return a snapshot with empty matchedNodes + paths) rather than
+  //    bailing out entirely.
   const keywords = extractKeywords(question);
-  if (keywords.length === 0) return null;
+  // Guard only applies to auto-pick: if there are no keywords we cannot score
+  // snapshots, so we'd return null anyway.  Explicit path continues below.
+  if (keywords.length === 0 && !options.explicitSnapshotId) return null;
   const likePatterns = keywords.map((k) => `%${k}%`);
 
   // 2. Resolve the target snapshot.
