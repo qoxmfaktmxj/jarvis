@@ -20,6 +20,7 @@ interface HistoryEntry {
 
 interface AskPanelProps {
   initialQuestion?: string;
+  initialScope?: { id: string; title: string } | null;
   popularQuestions?: string[];
 }
 
@@ -46,8 +47,9 @@ function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
   );
 }
 
-export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPanelProps) {
+export function AskPanel({ initialQuestion = "", initialScope = null, popularQuestions = [] }: AskPanelProps) {
   const [input, setInput] = useState(initialQuestion);
+  const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const { isStreaming, answer, sources, error, question, ask, reset } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -83,7 +85,7 @@ export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPan
       return;
     }
 
-    ask(trimmed);
+    ask(trimmed, { snapshotId: activeScope?.id });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -105,6 +107,22 @@ export function AskPanel({ initialQuestion = "", popularQuestions = [] }: AskPan
 
   const composer = (
     <div className="space-y-2">
+      {activeScope && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="gap-1 py-1">
+            <BotMessageSquare className="h-3 w-3 text-violet-500" />
+            <span className="text-xs">그래프 범위: {activeScope.title}</span>
+            <button
+              type="button"
+              onClick={() => setActiveScope(null)}
+              aria-label="범위 해제"
+              className="ml-1 rounded-sm opacity-60 hover:opacity-100"
+            >
+              ✕
+            </button>
+          </Badge>
+        </div>
+      )}
       <div className="relative flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
         <Textarea
           ref={textareaRef}
