@@ -7,7 +7,7 @@ import { getOutManageList } from '@/lib/queries/attendance';
 import { OutManagePageClient } from './OutManagePageClient';
 import type { PageProps } from '@jarvis/shared/types/page';
 
-export const metadata = { title: 'Out-of-Office Management' };
+export const metadata = { title: '외근 관리' };
 
 export default async function OutManagePage({ searchParams }: PageProps) {
   const cookieStore = await cookies();

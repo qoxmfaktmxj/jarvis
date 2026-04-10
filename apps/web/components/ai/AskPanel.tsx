@@ -102,7 +102,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
     textareaRef.current?.focus();
   }
 
-  const hasConversation = history.length > 0 || isStreaming || answer;
+  const hasConversation = history.length > 0 || isStreaming || answer || !!error;
   const featuredPrompts = popularQuestions.slice(0, 3);
 
   const composer = (
