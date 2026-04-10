@@ -62,7 +62,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
       </div>
 
       {/* Build lifecycle overview — always visible if workspace has any snapshots */}
-      <BuildLifecycleSection workspaceId={workspaceId} />
+      <BuildLifecycleSection workspaceId={workspaceId} permissions={session.permissions} />
 
       {/* No snapshots at all */}
       {authorizedSnapshots.length === 0 && (

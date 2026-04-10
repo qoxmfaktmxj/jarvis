@@ -5,6 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { and, eq, desc, count, sql } from "drizzle-orm";
 import { Sparkles } from "lucide-react";
 import { getSession } from "@jarvis/auth/session";
+import { canAccessGraphSnapshotSensitivity } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
 import { searchLog } from "@jarvis/db/schema";
 import { graphSnapshot } from "@jarvis/db/schema/graph";
@@ -46,20 +47,32 @@ export default async function AskPage({ searchParams }: Props) {
   const { q, snapshot: snapshotIdParam } = await searchParams;
   const popularQuestions = await getPopularQuestions(session.workspaceId);
 
+  const canReadGraph =
+    session.permissions.includes('graph:read') ||
+    session.permissions.includes('admin:all');
+
   let initialScope: { id: string; title: string } | null = null;
-  if (snapshotIdParam) {
+  if (snapshotIdParam && canReadGraph) {
     try {
       const [row] = await db
-        .select({ id: graphSnapshot.id, title: graphSnapshot.title })
+        .select({
+          id: graphSnapshot.id,
+          title: graphSnapshot.title,
+          sensitivity: graphSnapshot.sensitivity,
+          buildStatus: graphSnapshot.buildStatus,
+        })
         .from(graphSnapshot)
         .where(
           and(
             eq(graphSnapshot.id, snapshotIdParam),
             eq(graphSnapshot.workspaceId, session.workspaceId),
+            eq(graphSnapshot.buildStatus, 'done'),
           ),
         )
         .limit(1);
-      if (row) initialScope = row;
+      if (row && canAccessGraphSnapshotSensitivity(session.permissions, row.sensitivity)) {
+        initialScope = { id: row.id, title: row.title };
+      }
     } catch {
       // invalid uuid or DB issue — fall through with null
     }

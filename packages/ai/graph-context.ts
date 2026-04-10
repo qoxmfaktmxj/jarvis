@@ -179,7 +179,21 @@ export async function retrieveRelevantGraphContext(
     LIMIT 10
   `);
 
-  if (matchedRows.rows.length === 0) return null;
+  // For explicit snapshot path: if no node labels match, return a minimal context
+  // (snapshot metadata only) rather than null. This preserves the user-selected scope
+  // for broad/summary questions that don't reference specific node names.
+  if (matchedRows.rows.length === 0) {
+    if (options.explicitSnapshotId) {
+      return {
+        snapshotId: snapshot.id,
+        snapshotTitle: snapshot.title,
+        matchedNodes: [],
+        paths: [],
+        communityContext: '',
+      };
+    }
+    return null;
+  }
 
   // 4. Get 1-hop neighbors
   const nodeIds = matchedRows.rows.map((r) => r.node_id);

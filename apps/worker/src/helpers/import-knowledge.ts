@@ -94,10 +94,11 @@ export async function importAsKnowledgePage(
         authorId: params.createdBy,
       });
 
-      // Update title + updatedAt, but do NOT touch publishStatus
+      // Update title, sensitivity, and updatedAt — do NOT touch publishStatus.
+      // Sensitivity must be refreshed so tightened source access takes effect immediately.
       await tx
         .update(knowledgePage)
-        .set({ title: params.title, updatedAt: new Date() })
+        .set({ title: params.title, sensitivity: params.sensitivity, updatedAt: new Date() })
         .where(eq(knowledgePage.id, existing.id));
 
       return {
