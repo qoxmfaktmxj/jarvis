@@ -40,6 +40,9 @@ export const graphSnapshot = pgTable('graph_snapshot', {
   }),
   scopeType: graphScopeTypeEnum('scope_type').notNull().default('workspace'),
   scopeId: uuid('scope_id').notNull(),
+  sensitivity: varchar('sensitivity', { length: 30 })
+    .default('INTERNAL')
+    .notNull(),
   title: varchar('title', { length: 500 }).notNull(),
 
   // MinIO storage paths

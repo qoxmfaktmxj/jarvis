@@ -1,0 +1,1 @@
+ALTER TABLE "graph_snapshot" ADD COLUMN "sensitivity" varchar(30) DEFAULT 'INTERNAL' NOT NULL;
