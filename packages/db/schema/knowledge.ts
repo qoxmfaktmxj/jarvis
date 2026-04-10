@@ -8,10 +8,11 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { user } from "./user.js";
 import { workspace } from "./tenant.js";
 
@@ -42,8 +43,14 @@ export const knowledgePage = pgTable("knowledge_page", {
   createdBy: uuid("created_by").references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  sourceType: varchar("source_type", { length: 50 }),
+  sourceKey: varchar("source_key", { length: 1000 }),
   searchVector: tsvectorType("search_vector")
-});
+}, (table) => ({
+  externalKeyIdx: uniqueIndex('idx_knowledge_page_external_key')
+    .on(table.workspaceId, table.sourceType, table.sourceKey)
+    .where(sql`source_type IS NOT NULL`),
+}));
 
 export const knowledgePageVersion = pgTable("knowledge_page_version", {
   id: uuid("id").primaryKey().defaultRandom(),

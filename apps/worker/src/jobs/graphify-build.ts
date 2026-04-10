@@ -68,6 +68,8 @@ async function processGraphifyBuild(
     id: snapshotId,
     workspaceId,
     rawSourceId,
+    scopeType: 'attachment',
+    scopeId: rawSourceId,
     title: 'Building...',
     buildMode: mode ?? 'standard',
     buildStatus: 'running',
