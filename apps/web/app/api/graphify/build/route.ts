@@ -35,7 +35,7 @@ async function getBoss(): Promise<PgBoss> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, 'knowledge:create');
+  const auth = await requireApiSession(req, 'graph:build');
   if (auth.response) return auth.response;
   const { session } = auth;
 
