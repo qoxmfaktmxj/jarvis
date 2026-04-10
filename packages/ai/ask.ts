@@ -226,7 +226,6 @@ export async function* generateAnswer(
   claims: RetrievedClaim[],
   graphSources: GraphSourceRef[],
 ): AsyncGenerator<SSEEvent> {
-  let fullText = '';
   let inputTokens = 0;
   let outputTokens = 0;
 
@@ -261,7 +260,6 @@ export async function* generateAnswer(
         chunk.type === 'content_block_delta' &&
         chunk.delta.type === 'text_delta'
       ) {
-        fullText += chunk.delta.text;
         yield { type: 'text', content: chunk.delta.text };
       }
 
@@ -274,28 +272,11 @@ export async function* generateAnswer(
       }
     }
 
-    // Parse [source:N] citations from full text (1-based) and map to
-    // the unified sources array (0-based).
-    const citationPattern = /\[source:(\d+)\]/g;
-    const citedIndexes = new Set<number>();
-    let match: RegExpExecArray | null;
-    while ((match = citationPattern.exec(fullText)) !== null) {
-      const raw = match[1];
-      if (!raw) continue;
-      const idx = parseInt(raw, 10) - 1; // 1-based → 0-based
-      if (idx >= 0 && idx < allSources.length) {
-        citedIndexes.add(idx);
-      }
-    }
-
-    // Emit only the cited sources, preserving original order
-    // (text entries first, then graph entries).
-    const emitted: SourceRef[] = [];
-    for (let i = 0; i < allSources.length; i++) {
-      if (citedIndexes.has(i)) emitted.push(allSources[i]!);
-    }
-
-    yield { type: 'sources', sources: emitted };
+    // Emit all sources in unified order (text first, then graph).
+    // The LLM's [source:N] citations use 1-based indexes into this same array,
+    // so we must preserve original positions — compacting to cited-only would
+    // break ClaimBadge lookups (e.g. [source:6] → sources[5] undefined).
+    yield { type: 'sources', sources: allSources };
     yield { type: 'done', totalTokens: inputTokens + outputTokens };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

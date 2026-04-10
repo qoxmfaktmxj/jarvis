@@ -61,7 +61,8 @@ describe('retrieveRelevantClaims', () => {
 });
 
 describe('askAI snapshotId propagation', () => {
-  let graphSpy: ReturnType<typeof vi.spyOn>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let graphSpy: ReturnType<typeof vi.spyOn<any, any>>;
 
   beforeEach(async () => {
     const { db } = await import('@jarvis/db/client');
