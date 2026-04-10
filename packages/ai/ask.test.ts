@@ -1,6 +1,7 @@
 // packages/ai/ask.test.ts
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { retrieveRelevantClaims } from './ask.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { askAI, retrieveRelevantClaims } from './ask.js';
+import * as graphContextModule from './graph-context.js';
 
 vi.mock('./embed.js', () => ({
   generateEmbedding: vi.fn().mockResolvedValue(new Array(1536).fill(0.1)),
@@ -56,5 +57,75 @@ describe('retrieveRelevantClaims', () => {
     const c1 = claims.find((c) => c.id === 'c1')!;
     // vectorSim = 1 - 0.1 = 0.9, ftsRank = 0.8
     expect(c1.hybridScore).toBeCloseTo(0.9 * 0.7 + 0.8 * 0.3, 5);
+  });
+});
+
+describe('askAI snapshotId propagation', () => {
+  let graphSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(async () => {
+    const { db } = await import('@jarvis/db/client');
+    // Stub vector + fts queries with empty rows so retrieveRelevantClaims
+    // returns [] without hitting a real DB.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    vi.mocked(db.execute).mockResolvedValue({ rows: [] } as any);
+
+    // Stub graph retriever so the orchestrator doesn't hit graph_snapshot.
+    // We only care about the call shape, not the returned value.
+    graphSpy = vi
+      .spyOn(graphContextModule, 'retrieveRelevantGraphContext')
+      .mockResolvedValue(null);
+  });
+
+  afterEach(async () => {
+    graphSpy.mockRestore();
+    const { db } = await import('@jarvis/db/client');
+    vi.mocked(db.execute).mockReset();
+  });
+
+  it('passes query.snapshotId into retrieveRelevantGraphContext options', async () => {
+    const generator = askAI({
+      question: 'how is the auth service wired?',
+      workspaceId: 'ws-test',
+      userId: 'user-test',
+      userRoles: ['MEMBER'],
+      userPermissions: ['knowledge.read'],
+      snapshotId: 'explicit-snap-1',
+    });
+
+    // Drain the generator. With both retrieval results empty, askAI emits the
+    // "no info found" fallback (text → sources → done) and never invokes the
+    // Anthropic SDK. That keeps the test hermetic.
+    for await (const _event of generator) {
+      // no-op — we just want the spy to register
+    }
+
+    expect(graphSpy).toHaveBeenCalledTimes(1);
+    expect(graphSpy).toHaveBeenCalledWith(
+      'how is the auth service wired?',
+      'ws-test',
+      { explicitSnapshotId: 'explicit-snap-1' },
+    );
+  });
+
+  it('still calls retrieveRelevantGraphContext with undefined explicitSnapshotId when query.snapshotId is omitted', async () => {
+    const generator = askAI({
+      question: 'what is jarvis?',
+      workspaceId: 'ws-test',
+      userId: 'user-test',
+      userRoles: ['MEMBER'],
+      userPermissions: ['knowledge.read'],
+    });
+
+    for await (const _event of generator) {
+      // drain
+    }
+
+    expect(graphSpy).toHaveBeenCalledTimes(1);
+    expect(graphSpy).toHaveBeenCalledWith(
+      'what is jarvis?',
+      'ws-test',
+      { explicitSnapshotId: undefined },
+    );
   });
 });

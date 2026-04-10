@@ -1,9 +1,20 @@
-// packages/ai/ask.ts  (retrieval section — Task 4 adds generation)
+// packages/ai/ask.ts  (retrieval + generation)
+import Anthropic from '@anthropic-ai/sdk';
 import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
-import type { RetrievedClaim } from './types.js';
+import {
+  retrieveRelevantGraphContext,
+  type GraphContext,
+} from './graph-context.js';
+import type {
+  SSEEvent,
+  SourceRef,
+  TextSourceRef,
+  GraphSourceRef,
+  RetrievedClaim,
+} from './types.js';
 
 const TOP_K_VECTOR = 10;
 const TOP_K_FINAL = 5;
@@ -93,29 +104,11 @@ export async function retrieveRelevantClaims(
   return claims.slice(0, TOP_K_FINAL);
 }
 
-import Anthropic from '@anthropic-ai/sdk';
-import type { SSEEvent, SourceRef } from './types.js';
-import {
-  retrieveRelevantGraphContext,
-  formatGraphContextXml,
-  type GraphContext,
-} from './graph-context.js';
-
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 const CLAUDE_MODEL = 'claude-sonnet-4-5';
-
-export function assembleContext(claims: RetrievedClaim[]): string {
-  const sources = claims
-    .map(
-      (c, i) =>
-        `  <source id="${i + 1}" title="${escapeXml(c.pageTitle)}" url="${c.pageUrl}">${escapeXml(c.claimText)}</source>`,
-    )
-    .join('\n');
-  return `<context>\n${sources}\n</context>`;
-}
 
 function escapeXml(str: string): string {
   return str
@@ -126,23 +119,129 @@ function escapeXml(str: string): string {
     .replace(/'/g, '&apos;');
 }
 
+function truncate(s: string, n: number): string {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+/**
+ * Convert a GraphContext into an array of GraphSourceRef objects.
+ * Limits to top 5 unique matched nodes + top 2 paths so the unified
+ * sources array stays bounded (matches Task 5 spec).
+ */
+export function toGraphSourceRefs(ctx: GraphContext): GraphSourceRef[] {
+  const title = truncate(ctx.snapshotTitle, 60);
+  const seen = new Set<string>();
+  const nodeSources: GraphSourceRef[] = ctx.matchedNodes
+    .filter((n) => {
+      if (seen.has(n.nodeId)) return false;
+      seen.add(n.nodeId);
+      return true;
+    })
+    .slice(0, 5)
+    .map((n) => ({
+      kind: 'graph' as const,
+      snapshotId: ctx.snapshotId,
+      snapshotTitle: title,
+      nodeId: n.nodeId,
+      nodeLabel: n.label,
+      sourceFile: n.sourceFile,
+      communityLabel: n.communityLabel,
+      url: `/architecture?snapshot=${ctx.snapshotId}&node=${encodeURIComponent(n.nodeId)}`,
+      confidence: 0.7,
+    }));
+
+  const pathSources: GraphSourceRef[] = ctx.paths.slice(0, 2).map((p) => ({
+    kind: 'graph' as const,
+    snapshotId: ctx.snapshotId,
+    snapshotTitle: title,
+    nodeId: `${p.from}->${p.to}`,
+    nodeLabel: `${p.from} → ${p.to}`,
+    sourceFile: null as string | null,
+    communityLabel: null as string | null,
+    relationPath: p.hops,
+    url: `/architecture?snapshot=${ctx.snapshotId}`,
+    confidence: 0.7,
+  }));
+
+  return [...nodeSources, ...pathSources];
+}
+
+export function assembleContext(
+  claims: RetrievedClaim[],
+  graphSources: GraphSourceRef[],
+  graphCtx: GraphContext | null,
+): string {
+  const textEntries = claims.map(
+    (c, i) =>
+      `  <source idx="${i + 1}" kind="text" title="${escapeXml(c.pageTitle)}" url="${c.pageUrl}">${escapeXml(c.claimText)}</source>`,
+  );
+
+  const textCount = claims.length;
+  const graphEntries = graphSources.map((g, i) => {
+    const idx = textCount + i + 1;
+    const conns =
+      graphCtx?.matchedNodes.find((n) => n.nodeId === g.nodeId)?.connections ?? [];
+    const connSummary = conns
+      .slice(0, 5)
+      .map((c) => `${c.relation} → ${escapeXml(c.targetLabel)}`)
+      .join(', ');
+    const pathLine = g.relationPath
+      ? `Path: ${g.relationPath.map(escapeXml).join(' → ')}`
+      : '';
+    const communityLine = g.communityLabel
+      ? `Community: ${escapeXml(g.communityLabel)}`
+      : '';
+    const fileLine = g.sourceFile ? `File: ${escapeXml(g.sourceFile)}` : '';
+    const inner = [
+      pathLine,
+      communityLine,
+      fileLine,
+      connSummary ? `Connections: ${connSummary}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ');
+    return `  <source idx="${idx}" kind="graph" node="${escapeXml(g.nodeLabel)}">${inner}</source>`;
+  });
+
+  return `<context>\n${[...textEntries, ...graphEntries].join('\n')}\n</context>`;
+}
+
 const SYSTEM_PROMPT = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
-Answer ONLY based on the provided context sources and graph context. Do not use outside knowledge.
-For each factual claim in your answer, cite the source using [source:N] notation where N is the source id.
-If multiple sources support a claim, cite all relevant ones: [source:1][source:2].
-If the context doesn't contain enough information to answer the question, say so explicitly and suggest the user search the knowledge base or contact the relevant team.
-Keep answers concise and professional. Use the same language as the user's question.
-For structure-based answers (architecture, dependencies, connections), reference the graph context.
-When a question asks about relationships, dependencies, or "how does X connect to Y", prefer the graph context over text sources.`;
+Answer ONLY based on the provided <context>. Do not use outside knowledge.
+
+Sources inside <context> come in two kinds:
+  - kind="text"  → excerpts from knowledge pages
+  - kind="graph" → structural facts from the code/architecture graph (nodes, files, relations, paths)
+
+For each factual claim, cite the source using [source:N] notation where N is the source idx.
+If multiple sources support a claim, cite all: [source:1][source:3].
+Use graph sources for structural questions ("how is X connected to Y", "what depends on X", "architecture of X").
+Use text sources for definitions, policies, how-tos, and descriptive answers.
+If <context> doesn't answer the question, say so explicitly and suggest the user search the knowledge base or contact the relevant team.
+Keep answers concise and professional. Use the same language as the user's question.`;
 
 export async function* generateAnswer(
   question: string,
   context: string,
   claims: RetrievedClaim[],
+  graphSources: GraphSourceRef[],
 ): AsyncGenerator<SSEEvent> {
   let fullText = '';
   let inputTokens = 0;
   let outputTokens = 0;
+
+  // Prebuild the unified sources array — text first, then graph.
+  // Prompt index and UI index share the same order, so [source:N] from the
+  // model can cite either kind through a single shared index space.
+  const allTextSources: TextSourceRef[] = claims.map((c) => ({
+    kind: 'text',
+    pageId: c.pageId,
+    title: c.pageTitle,
+    url: c.pageUrl,
+    excerpt: c.claimText.slice(0, 200),
+    confidence: c.hybridScore,
+  }));
+  const allSources: SourceRef[] = [...allTextSources, ...graphSources];
 
   try {
     const stream = anthropic.messages.stream({
@@ -175,7 +274,8 @@ export async function* generateAnswer(
       }
     }
 
-    // Parse [source:N] citations from full text and map to SourceRef[]
+    // Parse [source:N] citations from full text (1-based) and map to
+    // the unified sources array (0-based).
     const citationPattern = /\[source:(\d+)\]/g;
     const citedIndexes = new Set<number>();
     let match: RegExpExecArray | null;
@@ -183,25 +283,19 @@ export async function* generateAnswer(
       const raw = match[1];
       if (!raw) continue;
       const idx = parseInt(raw, 10) - 1; // 1-based → 0-based
-      if (idx >= 0 && idx < claims.length) {
+      if (idx >= 0 && idx < allSources.length) {
         citedIndexes.add(idx);
       }
     }
 
-    const sources: SourceRef[] = Array.from(citedIndexes).flatMap((idx) => {
-      const claim = claims[idx];
-      if (!claim) return [];
-      return [{
-        kind: 'text',
-        pageId: claim.pageId,
-        title: claim.pageTitle,
-        url: claim.pageUrl,
-        excerpt: claim.claimText.slice(0, 200),
-        confidence: claim.hybridScore,
-      }];
-    });
+    // Emit only the cited sources, preserving original order
+    // (text entries first, then graph entries).
+    const emitted: SourceRef[] = [];
+    for (let i = 0; i < allSources.length; i++) {
+      if (citedIndexes.has(i)) emitted.push(allSources[i]!);
+    }
 
-    yield { type: 'sources', sources };
+    yield { type: 'sources', sources: emitted };
     yield { type: 'done', totalTokens: inputTokens + outputTokens };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -213,7 +307,7 @@ export async function* generateAnswer(
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
-  const { question, workspaceId, userPermissions } = query;
+  const { question, workspaceId, userPermissions, snapshotId } = query;
 
   // Parallel retrieval: text claims + graph context
   let claims: RetrievedClaim[];
@@ -222,8 +316,13 @@ export async function* askAI(
   try {
     [claims, graphCtx] = await Promise.all([
       retrieveRelevantClaims(question, workspaceId, userPermissions),
-      retrieveRelevantGraphContext(question, workspaceId).catch((err) => {
-        console.error('[ask] Graph context retrieval failed (degraded gracefully):', err instanceof Error ? err.message : err);
+      retrieveRelevantGraphContext(question, workspaceId, {
+        explicitSnapshotId: snapshotId,
+      }).catch((err) => {
+        console.error(
+          '[ask] Graph context retrieval failed (degraded gracefully):',
+          err instanceof Error ? err.message : err,
+        );
         return null;
       }),
     ]);
@@ -233,7 +332,9 @@ export async function* askAI(
     return;
   }
 
-  if (claims.length === 0 && !graphCtx) {
+  const graphSources: GraphSourceRef[] = graphCtx ? toGraphSourceRefs(graphCtx) : [];
+
+  if (claims.length === 0 && graphSources.length === 0) {
     yield {
       type: 'text',
       content:
@@ -244,11 +345,7 @@ export async function* askAI(
     return;
   }
 
-  // Assemble combined context: text sources + graph structure
-  let context = assembleContext(claims);
-  if (graphCtx && graphCtx.matchedNodes.length > 0) {
-    context += '\n\n' + formatGraphContextXml(graphCtx);
-  }
+  const context = assembleContext(claims, graphSources, graphCtx);
 
-  yield* generateAnswer(question, context, claims);
+  yield* generateAnswer(question, context, claims, graphSources);
 }

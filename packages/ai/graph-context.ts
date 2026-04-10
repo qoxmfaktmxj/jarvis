@@ -287,38 +287,9 @@ export async function retrieveRelevantGraphContext(
   };
 }
 
-export function formatGraphContextXml(ctx: GraphContext): string {
-  const nodesXml = ctx.matchedNodes
-    .map((n) => {
-      const conns = n.connections
-        .slice(0, 5)
-        .map(
-          (c) =>
-            `      <connection relation="${c.relation}" target="${c.targetLabel}" confidence="${c.confidence}" />`,
-        )
-        .join('\n');
-      return `    <node label="${n.label}" type="${n.fileType ?? 'unknown'}" file="${n.sourceFile ?? ''}" community="${n.communityLabel ?? ''}">
-${conns}
-    </node>`;
-    })
-    .join('\n');
-
-  const pathsXml = ctx.paths
-    .map(
-      (p) =>
-        `    <path from="${p.from}" to="${p.to}">\n      ${p.hops.join(' --> ')}\n    </path>`,
-    )
-    .join('\n');
-
-  return `<graph_context>
-  <matched_nodes>
-${nodesXml}
-  </matched_nodes>
-  <paths>
-${pathsXml}
-  </paths>
-  <community_context>
-    ${ctx.communityContext}
-  </community_context>
-</graph_context>`;
-}
+// NOTE: The legacy `formatGraphContextXml(ctx)` helper was removed as part of
+// Task 5 (2026-04-10). The Ask pipeline now unifies text and graph sources
+// through `toGraphSourceRefs` + `assembleContext` in `ask.ts`, which share a
+// single `<source idx="N" kind="text|graph">` index space. If you need an
+// XML dump of a snapshot for debugging, query `graph_node`/`graph_edge`
+// directly — this helper was the only surviving caller.
