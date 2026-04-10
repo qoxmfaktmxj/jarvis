@@ -3,7 +3,7 @@
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, and, notInArray, sql } from 'drizzle-orm';
-import { buildGraphSnapshotSensitivitySqlFragment } from '@jarvis/auth/rbac';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 export interface RetrieveGraphContextOptions {
   explicitSnapshotId?: string;
@@ -77,17 +77,17 @@ export async function retrieveRelevantGraphContext(
   //    pick the top match (with createdAt DESC tiebreak), require
   //    >= minMatchThreshold (default 2).
   const permissions = options.permissions ?? [];
-  const sensitivityFragment = buildGraphSnapshotSensitivitySqlFragment(permissions);
+  const hasGraphAccess = permissions.includes('graph:read') || permissions.includes('admin:all');
+  const hasAdminAll = permissions.includes('admin:all');
 
   // Fast exit: caller has no graph permission at all
-  if (sensitivityFragment === 'AND 1 = 0') return null;
+  if (!hasGraphAccess) return null;
 
   let snapshot: { id: string; title: string } | null = null;
 
   if (options.explicitSnapshotId) {
     // For the explicit path, apply sensitivity filter via Drizzle notInArray
-    // when the caller is not an admin (sensitivityFragment is non-empty).
-    const hasAdminAll = permissions.includes('admin:all');
+    // when the caller is not an admin.
     const conditions: Parameters<typeof and>[0][] = [
       eq(graphSnapshot.id, options.explicitSnapshotId),
       eq(graphSnapshot.workspaceId, workspaceId),
@@ -111,13 +111,23 @@ export async function retrieveRelevantGraphContext(
   } else {
     // Auto-pick by keyword match score across all done snapshots in workspace
     const threshold = options.minMatchThreshold ?? 2;
-    // sensitivityFragment is either "" (admin) or "AND sensitivity NOT IN (...)" (graph:read).
-    // We've already returned null for the "AND 1 = 0" case above.
-    // Map to a gs-qualified SQL clause for the CTE join.
-    const hasAdminAll = permissions.includes('admin:all');
-    const sensitivityClause = hasAdminAll
-      ? sql.empty()
-      : sql.raw(` AND gs.sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')`);
+    const sensitivityConditions: Parameters<typeof and>[0][] = [
+      eq(graphSnapshot.workspaceId, workspaceId),
+      eq(graphSnapshot.buildStatus, 'done'),
+    ];
+    if (!hasAdminAll) {
+      sensitivityConditions.push(
+        notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']),
+      );
+    }
+    // Collect eligible snapshot IDs via Drizzle (consistent with explicit path)
+    const eligibleSnapshots = await db
+      .select({ id: graphSnapshot.id })
+      .from(graphSnapshot)
+      .where(and(...sensitivityConditions));
+    if (eligibleSnapshots.length === 0) return null;
+    const eligibleIds = eligibleSnapshots.map((s) => s.id);
+
     const pickRows = await db.execute<{
       snapshot_id: string;
       title: string;
@@ -127,16 +137,14 @@ export async function retrieveRelevantGraphContext(
         SELECT gn.snapshot_id,
                COUNT(DISTINCT gn.node_id) AS match_count
         FROM graph_node gn
-        JOIN graph_snapshot gs ON gs.id = gn.snapshot_id
-        WHERE gs.workspace_id = ${workspaceId}::uuid
-          AND gs.build_status = 'done'
+        WHERE gn.snapshot_id = ANY(${eligibleIds}::uuid[])
           AND gn.label ILIKE ANY(${likePatterns}::text[])
         GROUP BY gn.snapshot_id
       )
       SELECT km.snapshot_id, gs.title, km.match_count
       FROM keyword_matches km
       JOIN graph_snapshot gs ON gs.id = km.snapshot_id
-      WHERE km.match_count >= ${threshold}${sensitivityClause}
+      WHERE km.match_count >= ${threshold}
       ORDER BY km.match_count DESC, gs.created_at DESC
       LIMIT 1
     `);

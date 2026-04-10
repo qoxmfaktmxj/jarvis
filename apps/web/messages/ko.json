@@ -326,7 +326,9 @@
     "checkedOut": "{time}에 퇴근"
   },
   "Ask": {
-    "title": "AI 질문"
+    "title": "AI 질문",
+    "graphScope": "그래프 범위: {title}",
+    "clearScope": "범위 초기화"
   },
   "Common": {
     "loading": "로딩 중...",
@@ -361,6 +363,21 @@
     "SuggestedQuestions": {
       "title": "추천 질문",
       "empty": "추천 질문이 없습니다."
+    },
+    "BuildLifecycle": {
+      "title": "빌드 현황",
+      "status": {
+        "running": "빌드 중",
+        "pending": "대기 중",
+        "error": "오류",
+        "done": "완료"
+      }
+    },
+    "BuildStatus": {
+      "running": "'{title}' 빌드 진행 중...",
+      "pending": "'{title}' 빌드 대기 중",
+      "error": "'{title}' 빌드 실패",
+      "elapsed": "{seconds}초 경과"
     }
   },
   "OutManage": {

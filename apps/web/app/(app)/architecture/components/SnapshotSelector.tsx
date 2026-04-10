@@ -8,6 +8,17 @@ interface Snapshot {
   title: string;
   createdAt: string;
   buildMode: string;
+  buildStatus: 'pending' | 'running' | 'done' | 'error';
+}
+
+function statusEmoji(status: string): string {
+  switch (status) {
+    case 'done':    return '✓';
+    case 'running': return '⟳';
+    case 'pending': return '◦';
+    case 'error':   return '✕';
+    default:        return '•';
+  }
 }
 
 interface SnapshotSelectorProps {
@@ -30,7 +41,7 @@ export function SnapshotSelector({
     >
       {snapshots.map((s) => (
         <option key={s.id} value={s.id}>
-          {s.title} ({new Date(s.createdAt).toLocaleDateString()})
+          {statusEmoji(s.buildStatus)} {s.title} ({new Date(s.createdAt).toLocaleDateString()})
         </option>
       ))}
     </select>

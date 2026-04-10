@@ -6,11 +6,18 @@ import { useTranslations } from 'next-intl';
 
 interface SuggestedQuestionsProps {
   questions: string[];
+  snapshotId?: string;
 }
 
-export function SuggestedQuestions({ questions }: SuggestedQuestionsProps) {
+export function SuggestedQuestions({ questions, snapshotId }: SuggestedQuestionsProps) {
   const t = useTranslations('Architecture.SuggestedQuestions');
   const router = useRouter();
+
+  function buildUrl(q: string) {
+    const params = new URLSearchParams({ q });
+    if (snapshotId) params.set('snapshot', snapshotId);
+    return `/ask?${params.toString()}`;
+  }
 
   return (
     <div className="border rounded-lg p-4">
@@ -23,7 +30,7 @@ export function SuggestedQuestions({ questions }: SuggestedQuestionsProps) {
             <li key={i}>
               <button
                 className="text-sm text-left text-blue-600 hover:underline"
-                onClick={() => router.push(`/ask?q=${encodeURIComponent(q)}`)}
+                onClick={() => router.push(buildUrl(q))}
               >
                 {q}
               </button>
