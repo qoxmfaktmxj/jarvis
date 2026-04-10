@@ -307,6 +307,7 @@ export async function* askAI(
       canReadGraph
         ? retrieveRelevantGraphContext(question, workspaceId, {
             explicitSnapshotId: snapshotId,
+            permissions: userPermissions,
           }).catch((err) => {
             console.error(
               '[ask] Graph context retrieval failed (degraded gracefully):',

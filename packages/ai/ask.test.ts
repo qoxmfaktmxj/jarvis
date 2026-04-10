@@ -105,7 +105,7 @@ describe('askAI snapshotId propagation', () => {
     expect(graphSpy).toHaveBeenCalledWith(
       'how is the auth service wired?',
       'ws-test',
-      { explicitSnapshotId: 'explicit-snap-1' },
+      { explicitSnapshotId: 'explicit-snap-1', permissions: ['knowledge.read'] },
     );
   });
 
@@ -126,7 +126,7 @@ describe('askAI snapshotId propagation', () => {
     expect(graphSpy).toHaveBeenCalledWith(
       'what is jarvis?',
       'ws-test',
-      { explicitSnapshotId: undefined },
+      { explicitSnapshotId: undefined, permissions: ['knowledge.read'] },
     );
   });
 });
