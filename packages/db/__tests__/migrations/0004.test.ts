@@ -30,7 +30,7 @@ describe('migration 0004 — graphify scope & upsert', () => {
 
   it('knowledge_page partial unique index allows NULL source_type duplicates', async () => {
     const wsId = randomUUID();
-    await db.execute(sql`INSERT INTO workspace (id, name, slug) VALUES (${wsId}, 'test', ${'test-' + wsId.slice(0,8)}) ON CONFLICT DO NOTHING`);
+    await db.execute(sql`INSERT INTO workspace (id, code, name) VALUES (${wsId}, ${'ws-' + wsId.slice(0,8)}, 'test') ON CONFLICT DO NOTHING`);
 
     await db.execute(sql`
       INSERT INTO knowledge_page (id, workspace_id, page_type, title, slug, publish_status)
@@ -43,7 +43,7 @@ describe('migration 0004 — graphify scope & upsert', () => {
 
   it('knowledge_page partial unique index rejects duplicate (workspace, source_type, source_key)', async () => {
     const wsId = randomUUID();
-    await db.execute(sql`INSERT INTO workspace (id, name, slug) VALUES (${wsId}, 'test2', ${'test2-' + wsId.slice(0,8)}) ON CONFLICT DO NOTHING`);
+    await db.execute(sql`INSERT INTO workspace (id, code, name) VALUES (${wsId}, ${'ws2-' + wsId.slice(0,8)}, 'test2') ON CONFLICT DO NOTHING`);
     const srcKey = 'attachment:abc:GRAPH_REPORT.md';
 
     await db.execute(sql`
