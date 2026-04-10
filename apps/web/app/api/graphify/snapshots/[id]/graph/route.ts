@@ -3,6 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireApiSession } from '@/lib/server/api-auth';
+import { canAccessGraphSnapshotSensitivity } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, and } from 'drizzle-orm';
@@ -22,7 +23,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<NextResponse> {
-  const auth = await requireApiSession(req, 'knowledge:read');
+  const auth = await requireApiSession(req, 'graph:read');
   if (auth.response) return auth.response;
   const { session } = auth;
   const { id } = await params;
@@ -40,6 +41,12 @@ export async function GET(
 
   if (!snapshot) {
     return NextResponse.json({ error: 'Snapshot not found' }, { status: 404 });
+  }
+
+  if (
+    !canAccessGraphSnapshotSensitivity(session.permissions, snapshot.sensitivity)
+  ) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   // ?type=html for graph.html, default is graph.json
