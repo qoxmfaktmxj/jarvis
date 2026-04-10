@@ -199,6 +199,8 @@ async function processGraphifyBuild(
         pageType: 'analysis',
         sensitivity: 'INTERNAL',
         createdBy: requestedBy,
+        sourceType: 'graphify',
+        sourceKey: `attachment:${rawSourceId}:GRAPH_REPORT.md`,
       });
     } catch {
       console.warn(
@@ -226,6 +228,8 @@ async function processGraphifyBuild(
           pageType: 'analysis',
           sensitivity: 'INTERNAL',
           createdBy: requestedBy,
+          sourceType: 'graphify',
+          sourceKey: `attachment:${rawSourceId}:wiki/${wikiFile}`,
         });
       }
     } catch (err) {

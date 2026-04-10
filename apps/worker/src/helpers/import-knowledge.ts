@@ -6,7 +6,7 @@ import {
   knowledgePage,
   knowledgePageVersion,
 } from '@jarvis/db/schema/knowledge';
-import { sql } from 'drizzle-orm';
+import { sql, eq, and, desc } from 'drizzle-orm';
 import { boss } from '../lib/boss.js';
 
 export interface ImportKnowledgeParams {
@@ -14,9 +14,18 @@ export interface ImportKnowledgeParams {
   title: string;
   slug: string;
   mdxContent: string;
-  pageType: string;      // e.g. 'analysis', 'wiki'
-  sensitivity: string;   // e.g. 'INTERNAL'
-  createdBy: string;     // userId
+  pageType: string;
+  sensitivity: string;
+  createdBy: string | null;
+  sourceType: string;
+  sourceKey: string;
+}
+
+export interface ImportKnowledgeResult {
+  pageId: string;
+  wasCreated: boolean;
+  wasUpdated: boolean;
+  versionNumber: number;
 }
 
 function escapeRegex(str: string): string {
@@ -24,36 +33,101 @@ function escapeRegex(str: string): string {
 }
 
 /**
- * Creates a knowledge_page + knowledge_page_version in a single transaction,
- * then enqueues a compile job. The compile handler chains to embed automatically.
+ * Upsert a knowledge page by external key (sourceType + sourceKey).
  *
- * Returns the created pageId.
+ * On first import: creates page + version 1, enqueues compile.
+ * On rebuild (same sourceKey): creates a new version if content changed,
+ *   preserves user-set publishStatus, enqueues compile.
+ * On rebuild (same sourceKey, same content): no-op, no compile.
+ *
+ * Returns pageId, wasCreated, wasUpdated, versionNumber.
  */
 export async function importAsKnowledgePage(
   params: ImportKnowledgeParams,
-): Promise<string> {
-  const pageId = randomUUID();
-  const versionId = randomUUID();
+): Promise<ImportKnowledgeResult> {
+  const result = await db.transaction(async (tx) => {
+    // 1. Look up by external key with row lock
+    const existingRows = await tx.execute<{
+      id: string;
+      title: string;
+    }>(sql`
+      SELECT id, title FROM knowledge_page
+      WHERE workspace_id = ${params.workspaceId}::uuid
+        AND source_type = ${params.sourceType}
+        AND source_key  = ${params.sourceKey}
+      FOR UPDATE
+      LIMIT 1
+    `);
+    const existing = existingRows.rows[0];
 
-  // Deduplicate slug: if the base slug exists in this workspace, append a numeric suffix
-  let resolvedSlug = params.slug;
-  {
-    const existing = await db
+    if (existing) {
+      // 2. Fetch latest version's mdxContent
+      const [latestVer] = await tx
+        .select({
+          versionNumber: knowledgePageVersion.versionNumber,
+          mdxContent: knowledgePageVersion.mdxContent,
+        })
+        .from(knowledgePageVersion)
+        .where(eq(knowledgePageVersion.pageId, existing.id))
+        .orderBy(desc(knowledgePageVersion.versionNumber))
+        .limit(1);
+
+      if (latestVer && latestVer.mdxContent === params.mdxContent) {
+        // Content unchanged — no-op
+        return {
+          pageId: existing.id,
+          wasCreated: false,
+          wasUpdated: false,
+          versionNumber: latestVer.versionNumber,
+        };
+      }
+
+      const nextVersion = (latestVer?.versionNumber ?? 0) + 1;
+
+      await tx.insert(knowledgePageVersion).values({
+        id: randomUUID(),
+        pageId: existing.id,
+        versionNumber: nextVersion,
+        title: params.title,
+        mdxContent: params.mdxContent,
+        changeNote: 'Auto-reimported from Graphify (rebuild)',
+        authorId: params.createdBy,
+      });
+
+      // Update title + updatedAt, but do NOT touch publishStatus
+      await tx
+        .update(knowledgePage)
+        .set({ title: params.title, updatedAt: new Date() })
+        .where(eq(knowledgePage.id, existing.id));
+
+      return {
+        pageId: existing.id,
+        wasCreated: false,
+        wasUpdated: true,
+        versionNumber: nextVersion,
+      };
+    }
+
+    // 3. Insert path — slug collision check (across all sources in workspace)
+    let resolvedSlug = params.slug;
+    const existingSlugs = await tx
       .select({ slug: knowledgePage.slug })
       .from(knowledgePage)
       .where(
-        sql`workspace_id = ${params.workspaceId}::uuid AND slug LIKE ${params.slug + '%'}`,
+        and(
+          eq(knowledgePage.workspaceId, params.workspaceId),
+          sql`${knowledgePage.slug} LIKE ${params.slug + '%'}`,
+        ),
       );
-    if (existing.some((r) => r.slug === resolvedSlug)) {
-      const maxSuffix = existing.reduce((max, r) => {
-        const match = r.slug.match(new RegExp(`^${escapeRegex(params.slug)}-(\\d+)$`));
-        return match ? Math.max(max, parseInt(match[1]!, 10)) : max;
+    if (existingSlugs.some((r) => r.slug === resolvedSlug)) {
+      const maxSuffix = existingSlugs.reduce((max, r) => {
+        const m = r.slug.match(new RegExp(`^${escapeRegex(params.slug)}-(\\d+)$`));
+        return m ? Math.max(max, parseInt(m[1]!, 10)) : max;
       }, 0);
       resolvedSlug = `${params.slug}-${maxSuffix + 1}`;
     }
-  }
 
-  await db.transaction(async (tx) => {
+    const pageId = randomUUID();
     await tx.insert(knowledgePage).values({
       id: pageId,
       workspaceId: params.workspaceId,
@@ -62,30 +136,42 @@ export async function importAsKnowledgePage(
       slug: resolvedSlug,
       sensitivity: params.sensitivity,
       publishStatus: 'published',
+      sourceType: params.sourceType,
+      sourceKey: params.sourceKey,
       createdBy: params.createdBy,
     });
 
     await tx.insert(knowledgePageVersion).values({
-      id: versionId,
+      id: randomUUID(),
       pageId,
       versionNumber: 1,
       title: params.title,
       mdxContent: params.mdxContent,
-      changeNote: 'Auto-imported from Graphify analysis',
+      changeNote: 'Auto-imported from Graphify',
       authorId: params.createdBy,
     });
+
+    return {
+      pageId,
+      wasCreated: true,
+      wasUpdated: true,
+      versionNumber: 1,
+    };
   });
 
-  // Enqueue compile → (auto) embed chain.
-  // NOTE: boss.send runs after the transaction commits, so a queue failure here
-  // leaves a published page with no compile job. For now this is acceptable since
-  // pg-boss has retry logic and pages can be manually recompiled.
-  await boss.send('compile', { pageId });
-  console.log(
-    `[import-knowledge] Created pageId=${pageId} title="${params.title}" → compile enqueued`,
-  );
+  // Enqueue compile only if content actually changed
+  if (result.wasCreated || result.wasUpdated) {
+    await boss.send('compile', { pageId: result.pageId });
+    console.log(
+      `[import-knowledge] sourceKey=${params.sourceKey} pageId=${result.pageId} wasCreated=${result.wasCreated} wasUpdated=${result.wasUpdated} v${result.versionNumber} → compile enqueued`,
+    );
+  } else {
+    console.log(
+      `[import-knowledge] sourceKey=${params.sourceKey} pageId=${result.pageId} unchanged (v${result.versionNumber}), skipping compile`,
+    );
+  }
 
-  return pageId;
+  return result;
 }
 
 /**
@@ -99,7 +185,7 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9가-힣\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '') // trim leading/trailing dashes
+    .replace(/^-+|-+$/g, '')
     .slice(0, 200);
-  return slug || 'page'; // guard empty string
+  return slug || 'page';
 }
