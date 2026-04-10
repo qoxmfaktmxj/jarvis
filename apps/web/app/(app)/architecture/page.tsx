@@ -2,6 +2,7 @@
 
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
+import { canAccessGraphSnapshotSensitivity } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, desc, and } from 'drizzle-orm';
@@ -16,7 +17,7 @@ interface Props {
 
 export default async function ArchitecturePage({ searchParams }: Props) {
   const t = await getTranslations('Architecture');
-  const session = await requirePageSession();
+  const session = await requirePageSession('graph:read');
   const workspaceId = session.workspaceId;
   const { snapshot: selectedId } = await searchParams;
 
@@ -33,9 +34,13 @@ export default async function ArchitecturePage({ searchParams }: Props) {
     .orderBy(desc(graphSnapshot.createdAt))
     .limit(20);
 
+  const authorizedSnapshots = snapshots.filter((s) =>
+    canAccessGraphSnapshotSensitivity(session.permissions, s.sensitivity),
+  );
+
   const current = selectedId
-    ? (snapshots.find((s) => s.id === selectedId) ?? snapshots[0])
-    : snapshots[0];
+    ? (authorizedSnapshots.find((s) => s.id === selectedId) ?? authorizedSnapshots[0])
+    : authorizedSnapshots[0];
 
   if (!current) {
     return (
@@ -49,7 +54,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   }
 
   // Serialize for Client Components (Date → string, pick only needed fields)
-  const serializedSnapshots = snapshots.map((s) => ({
+  const serializedSnapshots = authorizedSnapshots.map((s) => ({
     id: s.id,
     title: s.title,
     createdAt: s.createdAt.toISOString(),
