@@ -59,6 +59,9 @@ async function seedWorkspace(): Promise<string> {
   return id;
 }
 
+// Pass admin permissions so the permission gate passes in all explicit/auto-pick tests.
+const ADMIN_PERMISSIONS = ['admin:all'];
+
 describe('retrieveRelevantGraphContext — explicit scope', () => {
   let wsA: string;
   let wsB: string;
@@ -86,7 +89,7 @@ describe('retrieveRelevantGraphContext — explicit scope', () => {
     const ctx = await retrieveRelevantGraphContext(
       'tell me about UserService',
       wsA,
-      { explicitSnapshotId: snapshotId },
+      { explicitSnapshotId: snapshotId, permissions: ADMIN_PERMISSIONS },
     );
 
     expect(ctx).not.toBeNull();
@@ -99,6 +102,7 @@ describe('retrieveRelevantGraphContext — explicit scope', () => {
 
     const ctx = await retrieveRelevantGraphContext('q', wsA, {
       explicitSnapshotId: snapshotId,
+      permissions: ADMIN_PERMISSIONS,
     });
 
     expect(ctx).toBeNull();
@@ -112,6 +116,7 @@ describe('retrieveRelevantGraphContext — explicit scope', () => {
 
     const ctx = await retrieveRelevantGraphContext('q', wsA, {
       explicitSnapshotId: snapshotId,
+      permissions: ADMIN_PERMISSIONS,
     });
 
     expect(ctx).toBeNull();
@@ -125,6 +130,7 @@ describe('retrieveRelevantGraphContext — explicit scope', () => {
 
     const ctx = await retrieveRelevantGraphContext('q', wsA, {
       explicitSnapshotId: snapshotId,
+      permissions: ADMIN_PERMISSIONS,
     });
 
     expect(ctx).toBeNull();
@@ -159,7 +165,7 @@ describe('retrieveRelevantGraphContext — auto-pick', () => {
       ],
     });
 
-    const ctx = await retrieveRelevantGraphContext('tell me about user service and user repository', wsA);
+    const ctx = await retrieveRelevantGraphContext('tell me about user service and user repository', wsA, { permissions: ADMIN_PERMISSIONS });
 
     expect(ctx).not.toBeNull();
     expect(ctx?.snapshotId).toBe(high);
@@ -171,7 +177,7 @@ describe('retrieveRelevantGraphContext — auto-pick', () => {
       nodes: [{ nodeId: 'a', label: 'OnlyOne' }],
     });
 
-    const ctx = await retrieveRelevantGraphContext('onlyone', wsA, { minMatchThreshold: 5 });
+    const ctx = await retrieveRelevantGraphContext('onlyone', wsA, { minMatchThreshold: 5, permissions: ADMIN_PERMISSIONS });
 
     expect(ctx).toBeNull();
   });
@@ -195,13 +201,13 @@ describe('retrieveRelevantGraphContext — auto-pick', () => {
       ],
     });
 
-    const ctx = await retrieveRelevantGraphContext('auth service token', wsA);
+    const ctx = await retrieveRelevantGraphContext('auth service token', wsA, { permissions: ADMIN_PERMISSIONS });
 
     expect(ctx?.snapshotId).toBe(newer);
   });
 
   it('returns null when no snapshots exist in workspace', async () => {
-    const ctx = await retrieveRelevantGraphContext('anything', wsA);
+    const ctx = await retrieveRelevantGraphContext('anything', wsA, { permissions: ADMIN_PERMISSIONS });
     expect(ctx).toBeNull();
   });
 
@@ -215,7 +221,7 @@ describe('retrieveRelevantGraphContext — auto-pick', () => {
       ],
     });
 
-    const ctx = await retrieveRelevantGraphContext('widget factory', wsA);
+    const ctx = await retrieveRelevantGraphContext('widget factory', wsA, { permissions: ADMIN_PERMISSIONS });
     expect(ctx).toBeNull();
   });
 });
