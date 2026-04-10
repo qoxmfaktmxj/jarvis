@@ -2,7 +2,12 @@
 
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
+
+export interface RetrieveGraphContextOptions {
+  explicitSnapshotId?: string;
+  minMatchThreshold?: number;
+}
 
 export interface GraphNodeResult {
   nodeId: string;
@@ -20,6 +25,8 @@ export interface GraphPath {
 }
 
 export interface GraphContext {
+  snapshotId: string;
+  snapshotTitle: string;
   matchedNodes: GraphNodeResult[];
   paths: GraphPath[];
   communityContext: string;
@@ -48,19 +55,37 @@ function extractKeywords(question: string): string[] {
 export async function retrieveRelevantGraphContext(
   question: string,
   workspaceId: string,
+  options: RetrieveGraphContextOptions = {},
 ): Promise<GraphContext | null> {
-  // 1. Find latest completed snapshot (status: 'done')
-  const [snapshot] = await db
-    .select({ id: graphSnapshot.id })
-    .from(graphSnapshot)
-    .where(
-      and(
-        eq(graphSnapshot.workspaceId, workspaceId),
-        eq(graphSnapshot.buildStatus, 'done'),
-      ),
-    )
-    .orderBy(desc(graphSnapshot.createdAt))
-    .limit(1);
+  // 1. Resolve the target snapshot.
+  //    Explicit path: caller named a specific snapshotId — verify it exists,
+  //    belongs to this workspace, and is in 'done' status.
+  //    Otherwise: Task 3 will implement auto-pick. For now, return null.
+  let snapshot: { id: string; title: string } | null = null;
+
+  if (options.explicitSnapshotId) {
+    const [row] = await db
+      .select({ id: graphSnapshot.id, title: graphSnapshot.title })
+      .from(graphSnapshot)
+      .where(
+        and(
+          eq(graphSnapshot.id, options.explicitSnapshotId),
+          eq(graphSnapshot.workspaceId, workspaceId),
+          eq(graphSnapshot.buildStatus, 'done'),
+        ),
+      )
+      .limit(1);
+    if (!row) {
+      console.warn(
+        `[graph-context] explicit snapshotId=${options.explicitSnapshotId} not found or not accessible for workspace=${workspaceId}`,
+      );
+      return null;
+    }
+    snapshot = row;
+  } else {
+    // TASK 3에서 auto-pick 구현 — 현재는 placeholder
+    snapshot = null;
+  }
 
   if (!snapshot) return null;
 
@@ -223,7 +248,13 @@ export async function retrieveRelevantGraphContext(
       .join('\n');
   }
 
-  return { matchedNodes, paths, communityContext };
+  return {
+    snapshotId: snapshot.id,
+    snapshotTitle: snapshot.title,
+    matchedNodes,
+    paths,
+    communityContext,
+  };
 }
 
 export function formatGraphContextXml(ctx: GraphContext): string {
