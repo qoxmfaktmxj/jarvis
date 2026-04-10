@@ -1,7 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { NextRequest, NextResponse } from "next/server";
 
 // Mock requireApiSession before importing the route
 vi.mock("@/lib/server/api-auth", () => ({

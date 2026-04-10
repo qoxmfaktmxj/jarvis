@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { and, desc, eq, count, sql } from "drizzle-orm";
-import { Loader2, Clock, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
+import { and, desc, eq, notInArray } from "drizzle-orm";
+import { Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import { db } from "@jarvis/db/client";
 import { graphSnapshot } from "@jarvis/db/schema/graph";
-import { canAccessGraphSnapshotSensitivity } from "@jarvis/auth/rbac";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 interface Props {
   workspaceId: string;
@@ -18,23 +18,27 @@ type BuildStatus = 'pending' | 'running' | 'done' | 'error';
 export async function BuildLifecycleSection({ workspaceId, permissions }: Props) {
   const t = await getTranslations("Architecture.BuildLifecycle");
 
-  // Fetch raw rows — sensitivity filtering applied below (same as ArchitecturePage)
-  const allRows = await db
+  // Push sensitivity filter to DB level (same pattern as ArchitecturePage)
+  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const sensitivityCondition = hasAdminAll
+    ? undefined
+    : notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']);
+
+  const authorized = await db
     .select({
       id: graphSnapshot.id,
       title: graphSnapshot.title,
       status: graphSnapshot.buildStatus,
-      sensitivity: graphSnapshot.sensitivity,
       createdAt: graphSnapshot.createdAt,
     })
     .from(graphSnapshot)
-    .where(eq(graphSnapshot.workspaceId, workspaceId))
+    .where(
+      sensitivityCondition
+        ? and(eq(graphSnapshot.workspaceId, workspaceId), sensitivityCondition)
+        : eq(graphSnapshot.workspaceId, workspaceId),
+    )
     .orderBy(desc(graphSnapshot.createdAt))
     .limit(100);
-
-  const authorized = allRows.filter((s) =>
-    canAccessGraphSnapshotSensitivity(permissions, s.sensitivity),
-  );
 
   const byStatus: Record<BuildStatus, number> = {
     pending: 0, running: 0, done: 0, error: 0,
