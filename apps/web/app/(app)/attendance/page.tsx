@@ -13,7 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { PageProps } from '@jarvis/shared/types/page';
 import { format } from 'date-fns';
 
-export const metadata = { title: 'Attendance' };
+export const metadata = { title: '출퇴근' };
 
 async function AttendanceContent({ month, userId, workspaceId }: {
   month: string;
