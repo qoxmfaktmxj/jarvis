@@ -20,6 +20,8 @@ coverage/
 
 # Drizzle
 drizzle/
+!packages/db/drizzle/
+!packages/db/drizzle/**
 
 # OS
 .DS_Store
@@ -39,3 +41,7 @@ Thumbs.db
 *.pfx
 secrets/
 .gstack/
+
+# Generated TSVD999 case exports and normalized case data may contain internal data.
+data/cases/*
+!data/cases/README.md

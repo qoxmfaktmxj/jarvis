@@ -1,5 +1,6 @@
 // packages/ai/ask.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { askAI, retrieveRelevantClaims } from './ask.js';
 import * as graphContextModule from './graph-context.js';
 
@@ -86,11 +87,11 @@ describe('askAI snapshotId propagation', () => {
 
   it('passes query.snapshotId into retrieveRelevantGraphContext options', async () => {
     const generator = askAI({
-      question: 'how is the auth service wired?',
+      question: 'architecture graph auth service dependency',
       workspaceId: 'ws-test',
       userId: 'user-test',
       userRoles: ['MEMBER'],
-      userPermissions: ['knowledge.read'],
+      userPermissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ],
       snapshotId: 'explicit-snap-1',
     });
 
@@ -103,19 +104,19 @@ describe('askAI snapshotId propagation', () => {
 
     expect(graphSpy).toHaveBeenCalledTimes(1);
     expect(graphSpy).toHaveBeenCalledWith(
-      'how is the auth service wired?',
+      'architecture graph auth service dependency',
       'ws-test',
-      { explicitSnapshotId: 'explicit-snap-1', permissions: ['knowledge.read'] },
+      { explicitSnapshotId: 'explicit-snap-1', permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ] },
     );
   });
 
   it('still calls retrieveRelevantGraphContext with undefined explicitSnapshotId when query.snapshotId is omitted', async () => {
     const generator = askAI({
-      question: 'what is jarvis?',
+      question: 'architecture graph jarvis',
       workspaceId: 'ws-test',
       userId: 'user-test',
       userRoles: ['MEMBER'],
-      userPermissions: ['knowledge.read'],
+      userPermissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ],
     });
 
     for await (const _event of generator) {
@@ -124,9 +125,25 @@ describe('askAI snapshotId propagation', () => {
 
     expect(graphSpy).toHaveBeenCalledTimes(1);
     expect(graphSpy).toHaveBeenCalledWith(
-      'what is jarvis?',
+      'architecture graph jarvis',
       'ws-test',
-      { explicitSnapshotId: undefined, permissions: ['knowledge.read'] },
+      { explicitSnapshotId: undefined, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ] },
     );
+  });
+
+  it('does not call retrieveRelevantGraphContext without graph read permission', async () => {
+    const generator = askAI({
+      question: 'architecture graph jarvis',
+      workspaceId: 'ws-test',
+      userId: 'user-test',
+      userRoles: ['MEMBER'],
+      userPermissions: [PERMISSIONS.KNOWLEDGE_READ],
+    });
+
+    for await (const _event of generator) {
+      // drain
+    }
+
+    expect(graphSpy).not.toHaveBeenCalled();
   });
 });

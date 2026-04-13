@@ -22,7 +22,36 @@ export interface GraphSourceRef {
   confidence: number;
 }
 
-export type SourceRef = TextSourceRef | GraphSourceRef;
+// ---------------------------------------------------------------------------
+// Cases Layer SourceRef — 유지보수 사례 (precedent_case)
+// ---------------------------------------------------------------------------
+export interface CaseSourceRef {
+  kind: 'case';
+  caseId: string;
+  title: string;
+  symptom: string | null;
+  action: string | null;
+  requestCompany: string | null;
+  clusterLabel: string | null;
+  result: string | null;   // resolved | workaround | escalated | no_fix | info_only
+  confidence: number;
+}
+
+// ---------------------------------------------------------------------------
+// Directory Layer SourceRef — 시스템·양식·담당자 바로가기 (directory_entry)
+// ---------------------------------------------------------------------------
+export interface DirectorySourceRef {
+  kind: 'directory';
+  entryId: string;
+  entryType: string;       // tool | form | contact | system_link | guide_link
+  name: string;
+  nameKo: string | null;
+  url: string | null;
+  category: string | null;
+  ownerTeam: string | null;
+}
+
+export type SourceRef = TextSourceRef | GraphSourceRef | CaseSourceRef | DirectorySourceRef;
 
 export interface Claim {
   text: string;

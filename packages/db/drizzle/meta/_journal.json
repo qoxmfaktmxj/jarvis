@@ -36,6 +36,34 @@
       "when": 1775790010782,
       "tag": "0004_graphify_scope_and_upsert",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776058569268,
+      "tag": "0005_productive_power_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776067890142,
+      "tag": "0006_stormy_scorpion",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776078936421,
+      "tag": "0007_perfect_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776079009754,
+      "tag": "0008_yellow_bloodaxe",
+      "breakpoints": true
     }
   ]
 }

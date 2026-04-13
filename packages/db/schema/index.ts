@@ -12,3 +12,5 @@ export * from "./search.js";
 export * from "./audit.js";
 export * from "./review.js";
 export * from "./graph.js";
+export * from "./case.js";
+export * from "./directory.js";

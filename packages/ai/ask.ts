@@ -1,5 +1,7 @@
 // packages/ai/ask.ts  (retrieval + generation)
-import Anthropic from '@anthropic-ai/sdk';
+// 2026-04-13: 6-lane 라우터 + Cases/Directory Layer 추가 + OpenAI 생성 마이그레이션
+
+import OpenAI from 'openai';
 import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
@@ -8,30 +10,48 @@ import {
   retrieveRelevantGraphContext,
   type GraphContext,
 } from './graph-context.js';
+import {
+  retrieveRelevantCases,
+  toCaseSourceRef,
+  type RetrievedCase,
+} from './case-context.js';
+import {
+  searchDirectory,
+  toDirectorySourceRef,
+  type RetrievedEntry,
+} from './directory-context.js';
+import { routeQuestion, LANE_SOURCE_PRIORITY } from './router.js';
 import type {
   SSEEvent,
   SourceRef,
   TextSourceRef,
   GraphSourceRef,
+  CaseSourceRef,
+  DirectorySourceRef,
   RetrievedClaim,
 } from './types.js';
 
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
 const TOP_K_VECTOR = 10;
 const TOP_K_FINAL = 5;
 const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
+const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
+
+// ---------------------------------------------------------------------------
+// Text Claims Retrieval (기존 로직 유지)
+// ---------------------------------------------------------------------------
 export async function retrieveRelevantClaims(
   question: string,
   workspaceId: string,
   userPermissions: string[],
 ): Promise<RetrievedClaim[]> {
-  // 1. Embed query
   const embedding = await generateEmbedding(question);
   const embeddingLiteral = `[${embedding.join(',')}]`;
 
-  // 2. Sensitivity filter: SECRET_REF_ONLY excluded unless ADMIN or DEVELOPER
-  // Roles are stored uppercase in session (e.g. 'ADMIN', 'DEVELOPER') — must match exactly
   const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
     .replace(/\bsensitivity\b/g, 'kp.sensitivity')
     .trim();
@@ -39,7 +59,6 @@ export async function retrieveRelevantClaims(
     ? sql.raw(` ${sensitivityFilter}`)
     : sql.empty();
 
-  // 3. Vector similarity search (top 10)
   const vectorRows = await db.execute<{
     id: string;
     claim_text: string;
@@ -67,7 +86,6 @@ export async function retrieveRelevantClaims(
 
   if (vectorRows.rows.length === 0) return [];
 
-  // 4. FTS rerank: compute ts_rank for each retrieved claim's page
   const pageIds = vectorRows.rows.map((r) => r.page_id);
   const ftsRows = await db.execute<{ page_id: string; fts_rank: number }>(
     sql`
@@ -83,9 +101,8 @@ export async function retrieveRelevantClaims(
     ftsRows.rows.map((r) => [r.page_id, Number(r.fts_rank)]),
   );
 
-  // 5. Compute hybrid score and sort
   const claims: RetrievedClaim[] = vectorRows.rows.map((row) => {
-    const vectorSim = 1 - Number(row.distance); // cosine: distance 0 = perfect match
+    const vectorSim = 1 - Number(row.distance);
     const ftsRank = ftsRankMap.get(row.page_id) ?? 0;
     const hybridScore = vectorSim * VECTOR_WEIGHT + ftsRank * FTS_WEIGHT;
     return {
@@ -104,12 +121,16 @@ export async function retrieveRelevantClaims(
   return claims.slice(0, TOP_K_FINAL);
 }
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+// ---------------------------------------------------------------------------
+// OpenAI Client
+// ---------------------------------------------------------------------------
+const openai = new OpenAI({
+  apiKey: process.env['OPENAI_API_KEY'],
 });
 
-const CLAUDE_MODEL = 'claude-sonnet-4-5';
-
+// ---------------------------------------------------------------------------
+// XML / Helper utilities (기존 유지)
+// ---------------------------------------------------------------------------
 function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -123,11 +144,9 @@ function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
 }
 
-/**
- * Convert a GraphContext into an array of GraphSourceRef objects.
- * Limits to top 5 unique matched nodes + top 2 paths so the unified
- * sources array stays bounded (matches Task 5 spec).
- */
+// ---------------------------------------------------------------------------
+// toGraphSourceRefs (기존 유지)
+// ---------------------------------------------------------------------------
 export function toGraphSourceRefs(ctx: GraphContext): GraphSourceRef[] {
   const title = truncate(ctx.snapshotTitle, 60);
   const seen = new Set<string>();
@@ -166,19 +185,24 @@ export function toGraphSourceRefs(ctx: GraphContext): GraphSourceRef[] {
   return [...nodeSources, ...pathSources];
 }
 
+// ---------------------------------------------------------------------------
+// assembleContext — 4개 소스 종류를 하나의 XML로 통합
+// ---------------------------------------------------------------------------
 export function assembleContext(
   claims: RetrievedClaim[],
   graphSources: GraphSourceRef[],
   graphCtx: GraphContext | null,
+  cases: RetrievedCase[],
+  entries: RetrievedEntry[],
 ): string {
+  let idx = 1;
   const textEntries = claims.map(
-    (c, i) =>
-      `  <source idx="${i + 1}" kind="text" title="${escapeXml(c.pageTitle)}" url="${c.pageUrl}">${escapeXml(c.claimText)}</source>`,
+    (c) =>
+      `  <source idx="${idx++}" kind="text" title="${escapeXml(c.pageTitle)}" url="${c.pageUrl}">${escapeXml(c.claimText)}</source>`,
   );
 
   const textCount = claims.length;
-  const graphEntries = graphSources.map((g, i) => {
-    const idx = textCount + i + 1;
+  const graphEntries = graphSources.map((g) => {
     const conns =
       graphCtx?.matchedNodes.find((n) => n.nodeId === g.nodeId)?.connections ?? [];
     const connSummary = conns
@@ -192,46 +216,64 @@ export function assembleContext(
       ? `Community: ${escapeXml(g.communityLabel)}`
       : '';
     const fileLine = g.sourceFile ? `File: ${escapeXml(g.sourceFile)}` : '';
-    const inner = [
-      pathLine,
-      communityLine,
-      fileLine,
-      connSummary ? `Connections: ${connSummary}` : '',
-    ]
+    const inner = [pathLine, communityLine, fileLine, connSummary ? `Connections: ${connSummary}` : '']
       .filter(Boolean)
       .join(' | ');
-    return `  <source idx="${idx}" kind="graph" node="${escapeXml(g.nodeLabel)}">${inner}</source>`;
+    return `  <source idx="${idx++}" kind="graph" node="${escapeXml(g.nodeLabel)}">${inner}</source>`;
   });
 
-  return `<context>\n${[...textEntries, ...graphEntries].join('\n')}\n</context>`;
+  const caseEntries = cases.map(
+    (c) =>
+      `  <source idx="${idx++}" kind="case" cluster="${escapeXml(c.clusterLabel ?? '')}" result="${c.result ?? ''}">` +
+      `증상: ${escapeXml(c.symptom ?? '')} | 조치: ${escapeXml(c.action ?? '')}</source>`,
+  );
+
+  const dirEntries = entries.map(
+    (e) =>
+      `  <source idx="${idx++}" kind="directory" type="${e.entryType}" name="${escapeXml(e.name)}">` +
+      `${e.url ? `URL: ${escapeXml(e.url)} | ` : ''}${e.ownerTeam ? `담당: ${escapeXml(e.ownerTeam)}` : ''}</source>`,
+  );
+
+  return `<context>\n${[...textEntries, ...graphEntries, ...caseEntries, ...dirEntries].join('\n')}\n</context>`;
 }
 
+// ---------------------------------------------------------------------------
+// SYSTEM_PROMPT — 4개 소스 종류 지원
+// ---------------------------------------------------------------------------
 const SYSTEM_PROMPT = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
 Answer ONLY based on the provided <context>. Do not use outside knowledge.
 
-Sources inside <context> come in two kinds:
-  - kind="text"  → excerpts from knowledge pages
-  - kind="graph" → structural facts from the code/architecture graph (nodes, files, relations, paths)
+Sources inside <context> come in four kinds:
+  - kind="text"      → excerpts from canonical knowledge pages (highest authority)
+  - kind="graph"     → structural facts from the code/architecture graph
+  - kind="case"      → past maintenance/incident patterns (증상→조치 형식)
+  - kind="directory" → internal system links, forms, contacts (바로가기 정보)
 
-For each factual claim, cite the source using [source:N] notation where N is the source idx.
-If multiple sources support a claim, cite all: [source:1][source:3].
-Use graph sources for structural questions ("how is X connected to Y", "what depends on X", "architecture of X").
-Use text sources for definitions, policies, how-tos, and descriptive answers.
-If <context> doesn't answer the question, say so explicitly and suggest the user search the knowledge base or contact the relevant team.
-Keep answers concise and professional. Use the same language as the user's question.`;
+Response rules:
+1. For each factual claim, cite the source using [source:N] notation (N = idx attribute).
+2. If multiple sources support a claim, cite all: [source:1][source:3].
+3. Use directory sources for "어디서", "링크", "담당자" type questions — provide the URL directly.
+4. Use case sources for incident/troubleshooting questions — summarize the pattern.
+5. Use graph sources for structural/dependency questions.
+6. Use text sources for policies, procedures, and definitions.
+7. text > graph > case > directory in authority order for conflicting information.
+8. If <context> doesn't answer the question, say so explicitly and suggest searching the knowledge base or contacting the relevant team.
+9. Keep answers concise and professional. Use the same language as the user's question (Korean preferred).`;
 
+// ---------------------------------------------------------------------------
+// generateAnswer — OpenAI 스트리밍 생성
+// ---------------------------------------------------------------------------
 export async function* generateAnswer(
   question: string,
   context: string,
   claims: RetrievedClaim[],
   graphSources: GraphSourceRef[],
+  caseSources: CaseSourceRef[],
+  dirSources: DirectorySourceRef[],
 ): AsyncGenerator<SSEEvent> {
-  let inputTokens = 0;
-  let outputTokens = 0;
+  let totalTokens = 0;
 
-  // Prebuild the unified sources array — text first, then graph.
-  // Prompt index and UI index share the same order, so [source:N] from the
-  // model can cite either kind through a single shared index space.
+  // 통합 sources 배열 (idx 순서: text → graph → case → directory)
   const allTextSources: TextSourceRef[] = claims.map((c) => ({
     kind: 'text',
     pageId: c.pageId,
@@ -240,82 +282,110 @@ export async function* generateAnswer(
     excerpt: c.claimText.slice(0, 200),
     confidence: c.hybridScore,
   }));
-  const allSources: SourceRef[] = [...allTextSources, ...graphSources];
+  const allSources: SourceRef[] = [
+    ...allTextSources,
+    ...graphSources,
+    ...caseSources,
+    ...dirSources,
+  ];
 
   try {
-    const stream = anthropic.messages.stream({
-      model: CLAUDE_MODEL,
+    const stream = await openai.chat.completions.create({
+      model: ASK_MODEL,
+      stream: true,
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
       messages: [
-        {
-          role: 'user',
-          content: `${context}\n\nQuestion: ${question}`,
-        },
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: `${context}\n\nQuestion: ${question}` },
       ],
     });
 
     for await (const chunk of stream) {
-      if (
-        chunk.type === 'content_block_delta' &&
-        chunk.delta.type === 'text_delta'
-      ) {
-        yield { type: 'text', content: chunk.delta.text };
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        yield { type: 'text', content };
       }
-
-      if (chunk.type === 'message_delta' && chunk.usage) {
-        outputTokens = chunk.usage.output_tokens;
-      }
-
-      if (chunk.type === 'message_start' && chunk.message.usage) {
-        inputTokens = chunk.message.usage.input_tokens;
+      // OpenAI usage는 스트림 마지막 청크에 포함 (stream_options.include_usage 설정 시)
+      if (chunk.usage) {
+        totalTokens = (chunk.usage.prompt_tokens ?? 0) + (chunk.usage.completion_tokens ?? 0);
       }
     }
 
-    // Emit all sources in unified order (text first, then graph).
-    // The LLM's [source:N] citations use 1-based indexes into this same array,
-    // so we must preserve original positions — compacting to cited-only would
-    // break ClaimBadge lookups (e.g. [source:6] → sources[5] undefined).
     yield { type: 'sources', sources: allSources };
-    yield { type: 'done', totalTokens: inputTokens + outputTokens };
+    yield { type: 'done', totalTokens };
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     yield { type: 'error', message };
   }
 }
 
-// Full pipeline: question → SSEEvent stream
+// ---------------------------------------------------------------------------
+// askAI — 메인 파이프라인 (6-lane 라우터 통합)
+// ---------------------------------------------------------------------------
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
   const { question, workspaceId, userPermissions, snapshotId } = query;
 
-  // Parallel retrieval: text claims + graph context
-  let claims: RetrievedClaim[];
-  let graphCtx: GraphContext | null;
-
-  // Graph context is gated on graph:read permission. Users without this permission
-  // (e.g. HR staff with only knowledge:read) still get text answers but no graph
-  // citations or /architecture links in the response.
   const canReadGraph =
     userPermissions.includes('graph:read') ||
     userPermissions.includes('admin:all');
 
+  // 1. 라우팅 결정
+  const route = routeQuestion(question);
+  const { lane } = route;
+
+  // 2. Lane별 retrieval 계획 수립
+  const shouldFetchText =
+    lane !== 'directory-first'; // directory-only 질문엔 text skip
+
+  const shouldFetchGraph =
+    canReadGraph &&
+    (lane === 'graph-first' || lane === 'tutor-first');
+
+  const shouldFetchCases =
+    lane === 'case-first' || lane === 'tutor-first' || lane === 'action-first';
+
+  const shouldFetchDirectory =
+    lane === 'directory-first' || lane === 'action-first' || lane === 'tutor-first';
+
+  // 3. 병렬 retrieval 실행
+  let claims: RetrievedClaim[] = [];
+  let graphCtx: GraphContext | null = null;
+  let caseResult: Awaited<ReturnType<typeof retrieveRelevantCases>> | null = null;
+  let dirResult: Awaited<ReturnType<typeof searchDirectory>> | null = null;
+
   try {
-    [claims, graphCtx] = await Promise.all([
-      retrieveRelevantClaims(question, workspaceId, userPermissions),
-      canReadGraph
+    const tasks: Promise<unknown>[] = [];
+
+    const claimsTask = shouldFetchText
+      ? retrieveRelevantClaims(question, workspaceId, userPermissions)
+      : Promise.resolve([]);
+
+    const graphTask =
+      shouldFetchGraph
         ? retrieveRelevantGraphContext(question, workspaceId, {
             explicitSnapshotId: snapshotId,
             permissions: userPermissions,
           }).catch((err) => {
-            console.error(
-              '[ask] Graph context retrieval failed (degraded gracefully):',
-              err instanceof Error ? err.message : err,
-            );
+            console.error('[ask] Graph context failed (degraded):', err instanceof Error ? err.message : err);
             return null;
           })
-        : Promise.resolve(null),
+        : Promise.resolve(null);
+
+    const casesTask = shouldFetchCases
+      ? retrieveRelevantCases(question, workspaceId, { topK: 3, userPermissions })
+      : Promise.resolve(null);
+
+    const dirTask = shouldFetchDirectory
+      ? searchDirectory(question, workspaceId, { topK: 5 })
+      : Promise.resolve(null);
+
+    [claims, graphCtx, caseResult, dirResult] = await Promise.all([
+      claimsTask,
+      graphTask,
+      casesTask,
+      dirTask,
     ]);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';
@@ -324,10 +394,18 @@ export async function* askAI(
   }
 
   const graphSources: GraphSourceRef[] = graphCtx ? toGraphSourceRefs(graphCtx) : [];
+  const cases = caseResult?.cases ?? [];
+  const entries = dirResult?.entries ?? [];
+  const caseSources: CaseSourceRef[] = cases.map(toCaseSourceRef);
+  const dirSources: DirectorySourceRef[] = entries.map(toDirectorySourceRef);
 
-  // Only bail if there's truly nothing — graphCtx (even with no matched nodes)
-  // still carries community summaries that the model can use for broad questions.
-  if (claims.length === 0 && graphSources.length === 0 && !graphCtx) {
+  // 4. 아무 결과도 없을 때 fallback
+  if (
+    claims.length === 0 &&
+    graphSources.length === 0 &&
+    cases.length === 0 &&
+    entries.length === 0
+  ) {
     yield {
       type: 'text',
       content:
@@ -338,7 +416,8 @@ export async function* askAI(
     return;
   }
 
-  const context = assembleContext(claims, graphSources, graphCtx);
+  // 5. 컨텍스트 조합 + 생성
+  const context = assembleContext(claims, graphSources, graphCtx, cases, entries);
 
-  yield* generateAnswer(question, context, claims, graphSources);
+  yield* generateAnswer(question, context, claims, graphSources, caseSources, dirSources);
 }

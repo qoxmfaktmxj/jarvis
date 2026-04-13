@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   pgTable,
   text,
@@ -31,7 +32,9 @@ export const system = pgTable("system", {
   knowledgePageId: uuid("knowledge_page_id").references(() => knowledgePage.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
+}, (table) => ({
+  knowledgePageIdx: index("idx_system_knowledge_page").on(table.knowledgePageId),
+}));
 
 export const systemAccess = pgTable("system_access", {
   id: uuid("id").primaryKey().defaultRandom(),

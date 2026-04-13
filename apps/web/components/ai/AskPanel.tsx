@@ -9,6 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAskAI } from "@/lib/hooks/useAskAI";
+import { AnswerCard } from "./AnswerCard";
 import { ClaimBadge } from "./ClaimBadge";
 import { SourceRefCard } from "./SourceRefCard";
 
@@ -184,19 +185,8 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
                       J
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="prose prose-sm max-w-none text-sm leading-relaxed">
-                        <AnswerText text={entry.answer} sources={entry.sources} />
-                      </div>
-
-                      {entry.sources.length > 0 && (
-                        <div className="space-y-1.5 pt-1">
-                          <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
-                          {entry.sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.nodeId}-${sourceIndex}`} source={source} index={sourceIndex} />
-                          ))}
-                        </div>
-                      )}
+                    <div className="flex-1">
+                      <AnswerCard answer={entry.answer} sources={entry.sources} />
                     </div>
                   </div>
 
@@ -234,7 +224,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                         <div className="space-y-1.5 pt-1">
                           <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
                           {sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.nodeId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.kind === 'graph' ? source.nodeId : source.kind === 'case' ? source.caseId : source.entryId}-${sourceIndex}`} source={source} index={sourceIndex} />
                           ))}
                         </div>
                       )}

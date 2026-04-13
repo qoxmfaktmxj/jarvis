@@ -15,6 +15,54 @@ interface ClaimBadgeProps {
   sources: SourceRef[];
 }
 
+/** SourceRef 종류에 따라 tooltip 레이블/상세 및 URL을 추출 */
+function getSourceMeta(source: SourceRef): {
+  label: string;
+  hoverTitle: string;
+  hoverDetail: string | null;
+  href: string | null;
+  colorClass: string;
+} {
+  switch (source.kind) {
+    case 'text':
+      return {
+        label: '',         // 숫자만 (호출 측에서 sourceNumber 표시)
+        hoverTitle: source.title,
+        hoverDetail: source.excerpt,
+        href: source.url,
+        colorClass:
+          'inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors',
+      };
+    case 'graph':
+      return {
+        label: 'G',
+        hoverTitle: `Graph: ${source.nodeLabel}`,
+        hoverDetail: source.snapshotTitle,
+        href: source.url,
+        colorClass:
+          'inline-flex items-center justify-center rounded-full bg-blue-100 px-1 text-blue-800 text-[10px] font-bold hover:bg-blue-200 transition-colors dark:bg-blue-900 dark:text-blue-100',
+      };
+    case 'case':
+      return {
+        label: 'C',
+        hoverTitle: `사례: ${source.title}`,
+        hoverDetail: source.symptom,
+        href: null,
+        colorClass:
+          'inline-flex items-center justify-center rounded-full bg-amber-100 px-1 text-amber-800 text-[10px] font-bold hover:bg-amber-200 transition-colors dark:bg-amber-900 dark:text-amber-100',
+      };
+    case 'directory':
+      return {
+        label: 'D',
+        hoverTitle: source.nameKo ?? source.name,
+        hoverDetail: source.ownerTeam ?? null,
+        href: source.url,
+        colorClass:
+          'inline-flex items-center justify-center rounded-full bg-green-100 px-1 text-green-800 text-[10px] font-bold hover:bg-green-200 transition-colors dark:bg-green-900 dark:text-green-100',
+      };
+  }
+}
+
 export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
   const source = sources[sourceNumber - 1];
 
@@ -24,26 +72,25 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
     );
   }
 
-  const isGraph = source.kind === 'graph';
-  const label = isGraph ? `G${sourceNumber}` : String(sourceNumber);
-  const hoverTitle = isGraph ? `Graph: ${source.nodeLabel}` : source.title;
-  const hoverDetail = isGraph ? source.snapshotTitle : source.excerpt;
+  const { label, hoverTitle, hoverDetail, href, colorClass } = getSourceMeta(source);
+  const displayLabel = label ? `${label}${sourceNumber}` : String(sourceNumber);
 
   return (
     <TooltipProvider delayDuration={200}>
       <Tooltip>
         <TooltipTrigger asChild>
           <sup>
-            <Link
-              href={source.url}
-              className={
-                isGraph
-                  ? 'inline-flex items-center justify-center rounded-full bg-blue-100 px-1 text-blue-800 text-[10px] font-bold hover:bg-blue-200 transition-colors dark:bg-blue-900 dark:text-blue-100'
-                  : 'inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors'
-              }
-            >
-              {label}
-            </Link>
+            {href ? (
+              <Link
+                href={href}
+                className={colorClass}
+                {...(source.kind === 'directory' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+              >
+                {displayLabel}
+              </Link>
+            ) : (
+              <span className={colorClass}>{displayLabel}</span>
+            )}
           </sup>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">

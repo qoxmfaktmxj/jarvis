@@ -1,9 +1,16 @@
 // apps/web/components/ai/SourceRefCard.tsx
+// 4종 SourceRef (text | graph | case | directory) 렌더러
 import Link from 'next/link';
-import { Network } from 'lucide-react';
+import { Network, Briefcase, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { SourceRef, TextSourceRef, GraphSourceRef } from '@jarvis/ai/types';
+import type {
+  SourceRef,
+  TextSourceRef,
+  GraphSourceRef,
+  CaseSourceRef,
+  DirectorySourceRef,
+} from '@jarvis/ai/types';
 
 interface SourceRefCardProps {
   source: SourceRef;
@@ -17,15 +24,17 @@ function confidenceLabel(score: number): { label: string; variant: 'default' | '
 }
 
 export function SourceRefCard({ source, index }: SourceRefCardProps) {
-  if (source.kind === 'graph') {
-    return <GraphSourceCard source={source} index={index} />;
-  }
+  if (source.kind === 'graph') return <GraphSourceCard source={source} index={index} />;
+  if (source.kind === 'case') return <CaseSourceCard source={source} index={index} />;
+  if (source.kind === 'directory') return <DirectorySourceCard source={source} index={index} />;
   return <TextSourceCard source={source} index={index} />;
 }
 
+// ---------------------------------------------------------------------------
+// Text
+// ---------------------------------------------------------------------------
 function TextSourceCard({ source, index }: { source: TextSourceRef; index: number }) {
   const { label, variant } = confidenceLabel(source.confidence);
-
   return (
     <Card className="hover:bg-muted/50 transition-colors">
       <CardContent className="p-3 flex gap-3 items-start">
@@ -34,20 +43,13 @@ function TextSourceCard({ source, index }: { source: TextSourceRef; index: numbe
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href={source.url}
-              className="text-sm font-medium text-primary hover:underline truncate"
-            >
+            <Link href={source.url} className="text-sm font-medium text-primary hover:underline truncate">
               {source.title}
             </Link>
-            <Badge variant={variant} className="text-xs shrink-0">
-              {label}
-            </Badge>
+            <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
           </div>
           {source.excerpt && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {source.excerpt}
-            </p>
+            <p className="text-xs text-muted-foreground line-clamp-2">{source.excerpt}</p>
           )}
         </div>
       </CardContent>
@@ -55,6 +57,9 @@ function TextSourceCard({ source, index }: { source: TextSourceRef; index: numbe
   );
 }
 
+// ---------------------------------------------------------------------------
+// Graph
+// ---------------------------------------------------------------------------
 function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: number }) {
   return (
     <Card className="border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors dark:border-blue-900 dark:bg-blue-950/20">
@@ -65,10 +70,7 @@ function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: num
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
             <Network className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
-            <Link
-              href={source.url}
-              className="text-sm font-medium text-blue-800 hover:underline truncate dark:text-blue-200"
-            >
+            <Link href={source.url} className="text-sm font-medium text-blue-800 hover:underline truncate dark:text-blue-200">
               {source.nodeLabel}
             </Link>
           </div>
@@ -84,9 +86,104 @@ function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: num
               {source.relationPath.join(' → ')}
             </p>
           )}
-          <p className="text-[10px] text-muted-foreground">
-            Graph: {source.snapshotTitle}
-          </p>
+          <p className="text-[10px] text-muted-foreground">Graph: {source.snapshotTitle}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Case (유지보수 사례)
+// ---------------------------------------------------------------------------
+function CaseSourceCard({ source }: { source: CaseSourceRef; index: number }) {
+  const resultLabel: Record<string, string> = {
+    resolved: '해결',
+    workaround: '우회',
+    escalated: '에스컬레이션',
+    no_fix: '미해결',
+    info_only: '안내',
+  };
+  return (
+    <Card className="border-amber-200 bg-amber-50/30 hover:bg-amber-50 transition-colors dark:border-amber-900 dark:bg-amber-950/20">
+      <CardContent className="p-3 flex gap-3 items-start">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold flex items-center justify-center dark:bg-amber-900 dark:text-amber-100">
+          <Briefcase className="h-3 w-3" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-amber-800 truncate dark:text-amber-200">
+              {source.title}
+            </span>
+            {source.result && (
+              <Badge variant="outline" className="text-xs shrink-0 border-amber-300 text-amber-700">
+                {resultLabel[source.result] ?? source.result}
+              </Badge>
+            )}
+          </div>
+          {source.symptom && (
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              <span className="font-medium">증상:</span> {source.symptom}
+            </p>
+          )}
+          {source.action && (
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              <span className="font-medium">조치:</span> {source.action}
+            </p>
+          )}
+          {(source.clusterLabel || source.requestCompany) && (
+            <p className="text-[10px] text-muted-foreground">
+              {source.clusterLabel && <span>{source.clusterLabel}</span>}
+              {source.clusterLabel && source.requestCompany && <span> · </span>}
+              {source.requestCompany && <span>{source.requestCompany}</span>}
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Directory (바로가기 카드)
+// ---------------------------------------------------------------------------
+function DirectorySourceCard({ source }: { source: DirectorySourceRef; index: number }) {
+  const typeLabel: Record<string, string> = {
+    tool: '시스템',
+    form: '양식',
+    contact: '담당자',
+    system_link: '메뉴',
+    guide_link: '가이드',
+  };
+  return (
+    <Card className="border-green-200 bg-green-50/30 hover:bg-green-50 transition-colors dark:border-green-900 dark:bg-green-950/20">
+      <CardContent className="p-3 flex gap-3 items-start">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-900 text-xs font-semibold flex items-center justify-center dark:bg-green-900 dark:text-green-100">
+          <ExternalLink className="h-3 w-3" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            {source.url ? (
+              <Link
+                href={source.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-green-800 hover:underline truncate dark:text-green-200"
+              >
+                {source.nameKo ?? source.name}
+              </Link>
+            ) : (
+              <span className="text-sm font-medium text-green-800 truncate dark:text-green-200">
+                {source.nameKo ?? source.name}
+              </span>
+            )}
+            <Badge variant="outline" className="text-xs shrink-0 border-green-300 text-green-700">
+              {typeLabel[source.entryType] ?? source.entryType}
+            </Badge>
+          </div>
+          {source.ownerTeam && (
+            <p className="text-xs text-muted-foreground">담당: {source.ownerTeam}</p>
+          )}
         </div>
       </CardContent>
     </Card>
