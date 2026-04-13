@@ -1,0 +1,219 @@
+[
+  {
+    "entry_type": "tool",
+    "name": "isu-groupware",
+    "name_ko": "이수그룹웨어",
+    "category": "it",
+    "owner_team": "전산팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "isu-hr",
+    "name_ko": "이수HR",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "workup",
+    "name_ko": "워크업(WORKUP)",
+    "category": "it",
+    "owner_team": "전산팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "e-slip",
+    "name_ko": "전자전표시스템",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "teams",
+    "name_ko": "팀즈",
+    "category": "it",
+    "owner_team": "전산팀"
+  },
+  {
+    "entry_type": "system_link",
+    "name": "smart-office",
+    "name_ko": "스마트오피스",
+    "category": "facility",
+    "owner_team": "총무팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "isu-learning",
+    "name_ko": "이수그룹 러닝센터",
+    "category": "hr",
+    "owner_team": "인재육성팀"
+  },
+  {
+    "entry_type": "tool",
+    "name": "purchase-sys",
+    "name_ko": "구매시스템",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "leave-request",
+    "name_ko": "휴가(취소) 신청서",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "attendance-request",
+    "name_ko": "근태(취소) 신청서",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "training-request",
+    "name_ko": "교육훈련(취소) 신청서",
+    "category": "hr",
+    "owner_team": "인재육성팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "holiday-swap",
+    "name_ko": "휴일대체 신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "domestic-trip",
+    "name_ko": "국내출장 신청",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "overseas-trip",
+    "name_ko": "해외출장 신청",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "certificate",
+    "name_ko": "제증명신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "personal-info",
+    "name_ko": "개인정보변경신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "leave-return",
+    "name_ko": "휴직/복직신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "resign",
+    "name_ko": "퇴직신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "tax-adjust",
+    "name_ko": "원천징수세액조정신청",
+    "category": "hr",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "id-card",
+    "name_ko": "사원증 재발급",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "namecard",
+    "name_ko": "명함신청",
+    "category": "admin",
+    "owner_team": "총무팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "meeting-room",
+    "name_ko": "회의실 예약",
+    "category": "facility",
+    "owner_team": "총무팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "visitor-parking",
+    "name_ko": "방문자 주차등록",
+    "category": "facility",
+    "owner_team": "총무팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "condo",
+    "name_ko": "법인콘도예약",
+    "category": "welfare",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "welfare-card",
+    "name_ko": "복지카드 신청",
+    "category": "welfare",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "form",
+    "name": "corp-card",
+    "name_ko": "법인카드 신청",
+    "category": "admin",
+    "owner_team": "경영지원팀"
+  },
+  {
+    "entry_type": "contact",
+    "name": "mgmt-support",
+    "name_ko": "경영지원팀",
+    "category": "hr",
+    "description": "HR/급여/인사/근태/복리후생"
+  },
+  {
+    "entry_type": "contact",
+    "name": "talent-dev",
+    "name_ko": "인재육성팀",
+    "category": "hr",
+    "description": "교육/채용/온보딩"
+  },
+  {
+    "entry_type": "contact",
+    "name": "general-affairs",
+    "name_ko": "총무팀",
+    "category": "admin",
+    "description": "시설/회의실/주차/비품"
+  },
+  {
+    "entry_type": "contact",
+    "name": "it-team",
+    "name_ko": "전산팀",
+    "category": "it",
+    "description": "IT시스템/보안/장비"
+  },
+  {
+    "entry_type": "contact",
+    "name": "labor-council",
+    "name_ko": "노사협의회",
+    "category": "hr",
+    "description": "노사 관련 의견 수렴"
+  }
+]
