@@ -87,6 +87,8 @@ export class PgSearchAdapter implements SearchAdapter {
     if (!prefix || prefix.trim().length < 2) return [];
 
     const sanitizedPrefix = prefix.trim().replace(/[^\w\s]/g, '').substring(0, 100);
+    // Escape LIKE wildcards (_ is a word char, so it passes the regex above)
+    const escapedPrefix = sanitizedPrefix.replace(/[%_\\]/g, '\\$&');
     const sensitivityFilter = this.buildSecretFilter(userPermissions);
 
     const [titleRows, popularRows] = await Promise.all([
@@ -97,7 +99,7 @@ export class PgSearchAdapter implements SearchAdapter {
         WHERE
           workspace_id = ${workspaceId}::uuid
           AND publish_status != 'deleted'
-          AND title ILIKE ${sanitizedPrefix + '%'}
+          AND title ILIKE ${escapedPrefix + '%'}
           ${sql.raw(sensitivityFilter)}
         ORDER BY title
         LIMIT 6

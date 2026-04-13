@@ -1,5 +1,7 @@
 'use server';
 
+import { cookies, headers } from 'next/headers';
+import { getSession } from '@jarvis/auth/session';
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { directoryEntry } from '@jarvis/db/schema/directory';
@@ -45,7 +47,23 @@ const KNOWN_SYSTEM_REFERENCES = [
 // ---------------------------------------------------------------------------
 // detectDrift — 문서-시스템 정합성 검사
 // ---------------------------------------------------------------------------
+async function resolveSessionId() {
+  const headerStore = await headers();
+  const cookieStore = await cookies();
+  return (
+    headerStore.get('x-session-id') ??
+    cookieStore.get('sessionId')?.value ??
+    cookieStore.get('jarvis_session')?.value ??
+    null
+  );
+}
+
 export async function detectDrift(workspaceId: string): Promise<DriftReport> {
+  // Auth guard — prevent unauthorized workspace enumeration
+  const sessionId = await resolveSessionId();
+  if (!sessionId) throw new Error('Unauthorized');
+  const session = await getSession(sessionId);
+  if (!session || session.workspaceId !== workspaceId) throw new Error('Forbidden');
   const drifts: DriftItem[] = [];
   const now = new Date().toISOString();
 

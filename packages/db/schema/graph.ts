@@ -156,4 +156,6 @@ export const graphCommunity = pgTable('graph_community', {
     .default([])
     .notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => [
+  uniqueIndex('idx_graph_community_snapshot_community').on(table.snapshotId, table.communityId),
+]);

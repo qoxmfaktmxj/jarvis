@@ -190,9 +190,11 @@ export function routeQuestion(question: string): RouteResult {
 }
 
 // ---------------------------------------------------------------------------
-// laneToSources — lane별 retrieval 우선순위 힌트 (ask.ts에서 참조)
+// laneToSources — lane별 retrieval 우선순위 힌트
+// NOTE: Currently informational only. ask.ts uses hardcoded shouldFetch* booleans.
+// Kept as documentation of the intended source priority per lane.
 // ---------------------------------------------------------------------------
-export const LANE_SOURCE_PRIORITY: Record<AskLane, string[]> = {
+export const LANE_SOURCE_PRIORITY: Record<AskLane, readonly string[]> = {
   'text-first':      ['canonical', 'case'],
   'graph-first':     ['graph', 'canonical'],
   'case-first':      ['case', 'canonical'],

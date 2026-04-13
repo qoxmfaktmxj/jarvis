@@ -33,7 +33,8 @@ export async function cleanupHandler(
     )
   `);
 
+  const rowCount = (deletedVersions as { rowCount?: number }).rowCount ?? 0;
   console.log(
-    `[cleanup] Deleted ${(deletedVersions as any).rowCount ?? 0} old knowledge_page_version entries`,
+    `[cleanup] Deleted ${rowCount} old knowledge_page_version entries`,
   );
 }

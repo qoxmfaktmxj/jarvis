@@ -15,6 +15,7 @@ export const HEADLINE_OPTIONS =
  */
 export function sanitizeHeadline(raw: string): string {
   return raw
-    .replace(/<(?!\/?mark\b)[^>]*>/gi, '')  // strip all tags except <mark>
+    .replace(/<mark[^>]*>/gi, '<mark>')     // normalize <mark> — strip any attributes
+    .replace(/<(?!\/?mark>)[^>]*>/gi, '')   // strip all tags except plain <mark>/<\/mark>
     .trim();
 }

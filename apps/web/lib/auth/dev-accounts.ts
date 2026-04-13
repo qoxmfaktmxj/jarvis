@@ -1,3 +1,7 @@
+// WARNING: Development-only accounts with plaintext passwords.
+// The dev-login API route checks NODE_ENV and returns 404 in production.
+// These credentials are NOT secrets — they only work with the local dev Keycloak.
+
 export const TEMP_DEV_ACCOUNTS = [
   {
     label: "Admin User",

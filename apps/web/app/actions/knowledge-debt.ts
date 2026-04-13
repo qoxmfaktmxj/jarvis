@@ -1,8 +1,10 @@
 'use server';
 
+import { cookies, headers } from 'next/headers';
+import { getSession } from '@jarvis/auth/session';
 import { db } from '@jarvis/db/client';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
-import { sql, and, eq, lte, isNotNull } from 'drizzle-orm';
+import { and, eq, isNotNull } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,9 +35,25 @@ export interface KnowledgeDebtSummary {
 // ---------------------------------------------------------------------------
 // getKnowledgeDebtSummary — 지식 부채 전체 현황 조회
 // ---------------------------------------------------------------------------
+async function resolveSessionId() {
+  const headerStore = await headers();
+  const cookieStore = await cookies();
+  return (
+    headerStore.get('x-session-id') ??
+    cookieStore.get('sessionId')?.value ??
+    cookieStore.get('jarvis_session')?.value ??
+    null
+  );
+}
+
 export async function getKnowledgeDebtSummary(
   workspaceId: string,
 ): Promise<KnowledgeDebtSummary> {
+  // Auth guard — prevent unauthorized workspace enumeration
+  const sessionId = await resolveSessionId();
+  if (!sessionId) throw new Error('Unauthorized');
+  const session = await getSession(sessionId);
+  if (!session || session.workspaceId !== workspaceId) throw new Error('Forbidden');
   // review_cycle_days가 설정된 문서만 대상 (canonical surface 위주)
   const rows = await db
     .select({
