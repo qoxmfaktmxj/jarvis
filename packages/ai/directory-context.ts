@@ -49,11 +49,17 @@ export async function searchDirectory(
   }
 
   // 2. ILIKE 조건 구성 (name, name_ko, description 검색)
-  const keywordConditions = tokens.flatMap((tok) => [
-    ilike(directoryEntry.name, `%${tok}%`),
-    ilike(directoryEntry.nameKo, `%${tok}%`),
-    ilike(directoryEntry.description, `%${tok}%`),
-  ]);
+  // Note: directory_entry is assumed public-internal (no sensitivity column).
+  // All entries are visible to any authenticated user. This is by design —
+  // directory items are tool links, forms, and team contacts, not sensitive data.
+  const keywordConditions = tokens.flatMap((tok) => {
+    const safe = escapeLike(tok);
+    return [
+      ilike(directoryEntry.name, `%${safe}%`),
+      ilike(directoryEntry.nameKo, `%${safe}%`),
+      ilike(directoryEntry.description, `%${safe}%`),
+    ];
+  });
 
   const baseConditions = [
     eq(directoryEntry.workspaceId, workspaceId),
@@ -180,10 +186,16 @@ function extractKeywords(question: string): string[] {
   );
 }
 
+/** Escape LIKE/ILIKE wildcard characters in user input */
+function escapeLike(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
+}
+
 function escapeXml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }

@@ -82,20 +82,30 @@ export async function detectDrift(workspaceId: string): Promise<DriftReport> {
 
   const entryNames = new Set(entries.map((e) => e.name));
 
-  // 3. 각 canonical 문서의 최신 버전 body 확인
-  for (const page of pages) {
-    const versions = await db
-      .select({
-        id: knowledgePageVersion.id,
-        mdxContent: knowledgePageVersion.mdxContent,
-        versionNumber: knowledgePageVersion.versionNumber,
-      })
-      .from(knowledgePageVersion)
-      .where(eq(knowledgePageVersion.pageId, page.id))
-      .orderBy(desc(knowledgePageVersion.versionNumber))
-      .limit(1);
+  // 3. 최신 버전 body 일괄 조회 (N+1 방지)
+  const pageIds = pages.map((p) => p.id);
+  const allVersions = pageIds.length > 0
+    ? await db
+        .select({
+          pageId: knowledgePageVersion.pageId,
+          mdxContent: knowledgePageVersion.mdxContent,
+          versionNumber: knowledgePageVersion.versionNumber,
+        })
+        .from(knowledgePageVersion)
+        .where(sql`${knowledgePageVersion.pageId} = ANY(${pageIds}::uuid[])`)
+        .orderBy(desc(knowledgePageVersion.versionNumber))
+    : [];
 
-    const latestVersion = versions[0];
+  // pageId -> 최신 버전만 추출
+  const latestVersionMap = new Map<string, { mdxContent: string | null; versionNumber: number }>();
+  for (const v of allVersions) {
+    if (!latestVersionMap.has(v.pageId)) {
+      latestVersionMap.set(v.pageId, v);
+    }
+  }
+
+  for (const page of pages) {
+    const latestVersion = latestVersionMap.get(page.id);
     if (!latestVersion?.mdxContent) continue;
 
     const body = latestVersion.mdxContent;

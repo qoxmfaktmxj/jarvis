@@ -20,7 +20,7 @@ import {
   toDirectorySourceRef,
   type RetrievedEntry,
 } from './directory-context.js';
-import { routeQuestion, LANE_SOURCE_PRIORITY } from './router.js';
+import { routeQuestion } from './router.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -311,6 +311,7 @@ export async function* generateAnswer(
     const stream = await openai.chat.completions.create({
       model: ASK_MODEL,
       stream: true,
+      stream_options: { include_usage: true },
       max_tokens: 1024,
       messages: [
         { role: 'system', content: getSystemPrompt(mode) },

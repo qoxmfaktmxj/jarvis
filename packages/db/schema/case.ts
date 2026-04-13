@@ -176,6 +176,10 @@ export const precedentCaseRelations = relations(precedentCase, ({ one }) => ({
     fields: [precedentCase.digestPageId],
     references: [knowledgePage.id],
   }),
+  // NOTE: This is an application-level-only relation (integer cluster_id →
+  // numeric_cluster_id). The actual FK uniqueness is workspace-scoped via
+  // UNIQUE(workspace_id, numeric_cluster_id). Do NOT use this with .with()
+  // eager loading across workspaces — always filter by workspaceId first.
   cluster: one(caseCluster, {
     fields: [precedentCase.clusterId],
     references: [caseCluster.numericClusterId],

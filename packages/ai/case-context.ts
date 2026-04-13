@@ -181,11 +181,14 @@ async function keywordFallback(
   const conditions = [
     eq(precedentCase.workspaceId, workspaceId),
     or(
-      ...tokens.flatMap((tok) => [
-        ilike(precedentCase.title, `%${tok}%`),
-        ilike(precedentCase.symptom, `%${tok}%`),
-        ilike(precedentCase.lowerCategory, `%${tok}%`),
-      ]),
+      ...tokens.flatMap((tok) => {
+        const safe = escapeLike(tok);
+        return [
+          ilike(precedentCase.title, `%${safe}%`),
+          ilike(precedentCase.symptom, `%${safe}%`),
+          ilike(precedentCase.lowerCategory, `%${safe}%`),
+        ];
+      }),
     )!,
   ];
 
@@ -264,7 +267,13 @@ function escapeXml(str: string): string {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+/** Escape LIKE/ILIKE wildcard characters in user input */
+function escapeLike(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
 }
 
 // ---------------------------------------------------------------------------

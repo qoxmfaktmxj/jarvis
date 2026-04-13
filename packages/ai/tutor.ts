@@ -4,6 +4,10 @@
 
 import OpenAI from 'openai';
 import type { SSEEvent, SourceRef, AskQuery } from './types.js';
+
+// Module-level singleton — shared across all tutor invocations
+const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
+const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
 import { retrieveRelevantClaims } from './ask.js';
 import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
 import { searchDirectory, toDirectorySourceRef } from './directory-context.js';
@@ -159,12 +163,11 @@ export async function* tutorAI(
   yield { type: 'sources', sources: allSources };
 
   // 5. 스트리밍 생성
-  const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-  const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
 
   const stream = await openai.chat.completions.create({
     model: ASK_MODEL,
     stream: true,
+    stream_options: { include_usage: true },
     messages,
     temperature: mode === 'quiz' ? 0.3 : 0.5,
     max_tokens: 1500,

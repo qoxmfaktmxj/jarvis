@@ -46,6 +46,7 @@ export async function getKnowledgeDebtSummary(
       domain: knowledgePage.domain,
       ownerTeam: knowledgePage.ownerTeam,
       reviewCycleDays: knowledgePage.reviewCycleDays,
+      lastVerifiedAt: knowledgePage.lastVerifiedAt,
       updatedAt: knowledgePage.updatedAt,
     })
     .from(knowledgePage)
@@ -66,7 +67,9 @@ export async function getKnowledgeDebtSummary(
 
   for (const row of rows) {
     const cycleDays = row.reviewCycleDays ?? 90;
-    const lastVerified = row.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+    // Prefer lastVerifiedAt (explicit review); fall back to updatedAt (any edit)
+    const verifiedDate = row.lastVerifiedAt ?? row.updatedAt;
+    const lastVerified = verifiedDate ? new Date(verifiedDate).getTime() : 0;
     const daysSince = Math.floor((now - lastVerified) / (1000 * 60 * 60 * 24));
     const overdueDays = daysSince - cycleDays;
 
