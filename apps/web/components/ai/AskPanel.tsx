@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { BotMessageSquare, Loader2, RotateCcw, Send, Sparkles } from "lucide-react";
-import type { SourceRef } from "@jarvis/ai/types";
+import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, Sparkles, Zap } from "lucide-react";
+import type { AskMode, SourceRef } from "@jarvis/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,6 +51,7 @@ function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
 export function AskPanel({ initialQuestion = "", initialScope = null, popularQuestions = [] }: AskPanelProps) {
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
+  const [askMode, setAskMode] = useState<AskMode>('simple');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const { isStreaming, answer, sources, error, question, ask, reset } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -86,7 +87,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
       return;
     }
 
-    ask(trimmed, { snapshotId: activeScope?.id });
+    ask(trimmed, { snapshotId: activeScope?.id, mode: askMode });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -108,8 +109,8 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
 
   const composer = (
     <div className="space-y-2">
-      {activeScope && (
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        {activeScope && (
           <Badge variant="outline" className="gap-1 py-1">
             <BotMessageSquare className="h-3 w-3 text-violet-500" />
             <span className="text-xs">그래프 범위: {activeScope.title}</span>
@@ -122,8 +123,23 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
               ✕
             </button>
           </Badge>
-        </div>
-      )}
+        )}
+        <button
+          type="button"
+          onClick={() => setAskMode(askMode === 'simple' ? 'expert' : 'simple')}
+          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+            askMode === 'expert'
+              ? 'border-violet-300 bg-violet-50 text-violet-700'
+              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          {askMode === 'expert' ? (
+            <><GraduationCap className="h-3 w-3" /> Expert</>
+          ) : (
+            <><Zap className="h-3 w-3" /> Simple</>
+          )}
+        </button>
+      </div>
       <div className="relative flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
         <Textarea
           ref={textareaRef}

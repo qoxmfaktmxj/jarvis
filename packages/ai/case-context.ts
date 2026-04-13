@@ -64,12 +64,21 @@ export async function retrieveRelevantCases(
   workspaceId: string,
   options: {
     topK?: number;
-    companyFilter?: string;  // 특정 고객사 필터 (선택적)
+    companyFilter?: string;       // 특정 고객사만 보기 (hard filter)
+    userCompany?: string;         // 사용자 소속 고객사 (soft boost)
+    companyBoost?: number;        // 같은 고객사 가산점 (default 0.15)
     includeNonDigest?: boolean;
     userPermissions?: string[];
   } = {},
 ): Promise<CaseContext> {
-  const { topK = 5, companyFilter, includeNonDigest = false, userPermissions = [] } = options;
+  const {
+    topK = 5,
+    companyFilter,
+    userCompany,
+    companyBoost = 0.15,
+    includeNonDigest = false,
+    userPermissions = [],
+  } = options;
   const sensitivityCondition = caseSensitivityCondition(userPermissions);
 
   // 1. 임베딩이 없는 경우(사례 없음 또는 임베딩 미적재)를 대비한 개수 확인
@@ -132,12 +141,18 @@ export async function retrieveRelevantCases(
     .orderBy(sql`${precedentCase.embedding} <=> ${embeddingLiteral}::vector`)
     .limit(topK * 2); // 후처리용 여분
 
-  // 4. 하이브리드 점수 계산 (벡터 0.8 + isDigest 보너스 0.2)
-  const scored: RetrievedCase[] = rows.map((row) => ({
-    ...row,
-    vectorSim: Number(row.vectorSim),
-    hybridScore: Number(row.vectorSim) * 0.8 + (row.isDigest ? 0.2 : 0),
-  }));
+  // 4. 하이브리드 점수 계산 (벡터 0.7 + isDigest 보너스 0.15 + 고객사 부스트 0.15)
+  const scored: RetrievedCase[] = rows.map((row) => {
+    const sim = Number(row.vectorSim);
+    const digestBonus = row.isDigest ? 0.15 : 0;
+    const companyBonusVal =
+      userCompany && row.requestCompany === userCompany ? companyBoost : 0;
+    return {
+      ...row,
+      vectorSim: sim,
+      hybridScore: sim * 0.7 + digestBonus + companyBonusVal,
+    };
+  });
 
   scored.sort((a, b) => b.hybridScore - a.hybridScore);
   const top = scored.slice(0, topK);

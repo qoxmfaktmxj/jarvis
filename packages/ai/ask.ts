@@ -238,9 +238,9 @@ export function assembleContext(
 }
 
 // ---------------------------------------------------------------------------
-// SYSTEM_PROMPT — 4개 소스 종류 지원
+// SYSTEM_PROMPT — 4개 소스 종류 지원, Simple/Expert 모드 분기
 // ---------------------------------------------------------------------------
-const SYSTEM_PROMPT = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
+const SYSTEM_PROMPT_BASE = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
 Answer ONLY based on the provided <context>. Do not use outside knowledge.
 
 Sources inside <context> come in four kinds:
@@ -249,16 +249,33 @@ Sources inside <context> come in four kinds:
   - kind="case"      → past maintenance/incident patterns (증상→조치 형식)
   - kind="directory" → internal system links, forms, contacts (바로가기 정보)
 
-Response rules:
+Citation rules:
 1. For each factual claim, cite the source using [source:N] notation (N = idx attribute).
 2. If multiple sources support a claim, cite all: [source:1][source:3].
-3. Use directory sources for "어디서", "링크", "담당자" type questions — provide the URL directly.
-4. Use case sources for incident/troubleshooting questions — summarize the pattern.
-5. Use graph sources for structural/dependency questions.
-6. Use text sources for policies, procedures, and definitions.
-7. text > graph > case > directory in authority order for conflicting information.
-8. If <context> doesn't answer the question, say so explicitly and suggest searching the knowledge base or contacting the relevant team.
-9. Keep answers concise and professional. Use the same language as the user's question (Korean preferred).`;
+3. text > graph > case > directory in authority order for conflicting information.
+4. If <context> doesn't answer the question, say so explicitly and suggest searching the knowledge base or contacting the relevant team.
+5. Use the same language as the user's question (Korean preferred).`;
+
+const SIMPLE_SUFFIX = `
+Response style: SIMPLE mode
+- Answer in 2-3 short sentences maximum.
+- Lead with the direct answer, then one supporting detail.
+- If a directory link exists, show it as a clickable action: "→ [시스템명] 바로가기".
+- Skip detailed explanations, cases, and graph context unless directly asked.
+- Prioritize: answer → link → team contact.`;
+
+const EXPERT_SUFFIX = `
+Response style: EXPERT mode
+- Provide a thorough, detailed answer with full context.
+- Include relevant case patterns (증상→원인→조치→결과) when available.
+- Reference graph/structural context for architecture or dependency questions.
+- Show all relevant directory links and forms.
+- Explain the reasoning and cite all supporting sources.
+- Structure with clear sections when the answer is complex.`;
+
+function getSystemPrompt(mode: import('./types.js').AskMode = 'simple'): string {
+  return SYSTEM_PROMPT_BASE + (mode === 'expert' ? EXPERT_SUFFIX : SIMPLE_SUFFIX);
+}
 
 // ---------------------------------------------------------------------------
 // generateAnswer — OpenAI 스트리밍 생성
@@ -270,6 +287,7 @@ export async function* generateAnswer(
   graphSources: GraphSourceRef[],
   caseSources: CaseSourceRef[],
   dirSources: DirectorySourceRef[],
+  mode: import('./types.js').AskMode = 'simple',
 ): AsyncGenerator<SSEEvent> {
   let totalTokens = 0;
 
@@ -295,7 +313,7 @@ export async function* generateAnswer(
       stream: true,
       max_tokens: 1024,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: getSystemPrompt(mode) },
         { role: 'user', content: `${context}\n\nQuestion: ${question}` },
       ],
     });
@@ -325,7 +343,7 @@ export async function* generateAnswer(
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
-  const { question, workspaceId, userPermissions, snapshotId } = query;
+  const { question, workspaceId, userPermissions, snapshotId, userCompany } = query;
 
   const canReadGraph =
     userPermissions.includes('graph:read') ||
@@ -374,7 +392,11 @@ export async function* askAI(
         : Promise.resolve(null);
 
     const casesTask = shouldFetchCases
-      ? retrieveRelevantCases(question, workspaceId, { topK: 3, userPermissions })
+      ? retrieveRelevantCases(question, workspaceId, {
+          topK: 3,
+          userCompany,
+          userPermissions,
+        })
       : Promise.resolve(null);
 
     const dirTask = shouldFetchDirectory
@@ -419,5 +441,5 @@ export async function* askAI(
   // 5. 컨텍스트 조합 + 생성
   const context = assembleContext(claims, graphSources, graphCtx, cases, entries);
 
-  yield* generateAnswer(question, context, claims, graphSources, caseSources, dirSources);
+  yield* generateAnswer(question, context, claims, graphSources, caseSources, dirSources, query.mode ?? 'simple');
 }

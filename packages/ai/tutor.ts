@@ -1,0 +1,185 @@
+// packages/ai/tutor.ts
+// HR 튜터/시뮬레이터 — 온보딩 가이드 + 단계별 학습 + 퀴즈
+// tutor-first lane에서 사용. 일반 askAI와 달리 multi-turn 대화 지원.
+
+import OpenAI from 'openai';
+import type { SSEEvent, SourceRef, AskQuery } from './types.js';
+import { retrieveRelevantClaims } from './ask.js';
+import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
+import { searchDirectory, toDirectorySourceRef } from './directory-context.js';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+export type TutorMode = 'guide' | 'quiz' | 'simulation';
+
+export interface TutorMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface TutorSession {
+  mode: TutorMode;
+  topic: string;
+  messages: TutorMessage[];
+  sources: SourceRef[];
+}
+
+// ---------------------------------------------------------------------------
+// System prompts per mode
+// ---------------------------------------------------------------------------
+const TUTOR_GUIDE_PROMPT = `당신은 Jarvis HR 튜터입니다. 이수시스템 신입사원에게 사내 제도와 시스템 사용법을 친절하게 안내합니다.
+
+역할:
+- 단계별로 설명합니다 (Step 1, Step 2, ...)
+- 각 단계에서 관련 시스템 링크나 양식을 안내합니다
+- 이해했는지 중간중간 확인합니다 ("여기까지 이해되셨나요?")
+- 실제 화면 경로를 구체적으로 알려줍니다 (예: "이수HR > 근태신청 > 연장근무")
+- <context>에 있는 정보만 사용합니다
+- 출처를 [source:N]으로 인용합니다
+- 한국어로 답변합니다`;
+
+const TUTOR_QUIZ_PROMPT = `당신은 Jarvis HR 퀴즈 마스터입니다. 이수시스템 사내 제도에 대한 이해도를 확인하는 퀴즈를 출제합니다.
+
+역할:
+- <context>에 기반한 객관식(4지선다) 또는 O/X 퀴즈를 출제합니다
+- 사용자가 답하면 정답 여부와 해설을 제공합니다
+- 틀린 경우 관련 문서를 안내합니다
+- 난이도: 쉬움 → 보통 → 어려움 순서로 점진적으로
+- 출처를 [source:N]으로 인용합니다
+- 한국어로 진행합니다
+
+퀴즈 형식:
+Q. [질문]
+A) [보기1]  B) [보기2]  C) [보기3]  D) [보기4]`;
+
+const TUTOR_SIM_PROMPT = `당신은 Jarvis HR 시뮬레이터입니다. 이수시스템의 실제 업무 상황을 시뮬레이션합니다.
+
+역할:
+- 실제 업무 시나리오를 제시합니다 (예: "휴가를 신청해야 하는 상황")
+- 사용자가 각 단계에서 어떻게 해야 하는지 선택하게 합니다
+- 올바른 절차를 따르면 격려하고, 잘못된 선택이면 올바른 방법을 안내합니다
+- 시뮬레이션 완료 후 요약과 점수를 제공합니다
+- <context>의 실제 절차에 기반합니다
+- 출처를 [source:N]으로 인용합니다
+- 한국어로 진행합니다`;
+
+function getTutorPrompt(mode: TutorMode): string {
+  switch (mode) {
+    case 'quiz': return TUTOR_QUIZ_PROMPT;
+    case 'simulation': return TUTOR_SIM_PROMPT;
+    default: return TUTOR_GUIDE_PROMPT;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding topics — 자동 추천용
+// ---------------------------------------------------------------------------
+export const ONBOARDING_TOPICS = [
+  { id: 'attendance', label: '출퇴근/근태', keywords: ['출퇴근', '근태', '출근', '퇴근', '비콘'] },
+  { id: 'leave', label: '휴가/연차', keywords: ['휴가', '연차', '반차', '병가'] },
+  { id: 'hr-system', label: '이수HR 사용법', keywords: ['이수HR', '이수hr', '급여', '명세서'] },
+  { id: 'expense', label: '경비/출장', keywords: ['경비', '출장', '법인카드', '유류비'] },
+  { id: 'welfare', label: '복리후생', keywords: ['복지카드', '건강검진', '콘도', '동호회'] },
+  { id: 'eval', label: '평가/성과', keywords: ['평가', '성과', 'KPI', '다면진단'] },
+  { id: 'facility', label: '시설/회의실', keywords: ['회의실', '주차', '샤워실', '스마트오피스'] },
+  { id: 'it', label: 'IT/보안', keywords: ['노트북', '와이파이', '비밀번호', 'VPN'] },
+] as const;
+
+// ---------------------------------------------------------------------------
+// tutorAI — 튜터 세션 생성기
+// ---------------------------------------------------------------------------
+export async function* tutorAI(
+  query: AskQuery,
+  session: TutorSession,
+): AsyncGenerator<SSEEvent> {
+  const { question, workspaceId, userPermissions } = query;
+  const mode = session.mode;
+
+  // 1. 컨텍스트 수집 (튜터는 항상 text + directory + case 전부 가져옴)
+  const [claims, caseResult, dirResult] = await Promise.all([
+    retrieveRelevantClaims(question, workspaceId, userPermissions),
+    retrieveRelevantCases(question, workspaceId, { topK: 3, userPermissions }),
+    searchDirectory(question, workspaceId, { topK: 5 }),
+  ]);
+
+  // 2. 컨텍스트 조립
+  const contextParts: string[] = [];
+
+  if (claims.length > 0) {
+    const claimXml = claims
+      .map((c, i) => `  <source idx="${i + 1}" kind="text" title="${c.pageTitle}">\n    ${c.claimText.slice(0, 400)}\n  </source>`)
+      .join('\n');
+    contextParts.push(claimXml);
+  }
+
+  if (caseResult && caseResult.cases.length > 0) {
+    contextParts.push(caseResult.xml);
+  }
+
+  if (dirResult && dirResult.entries.length > 0) {
+    contextParts.push(dirResult.xml);
+  }
+
+  const context = contextParts.length > 0
+    ? `<context>\n${contextParts.join('\n')}\n</context>`
+    : '<context>(관련 문서를 찾지 못했습니다)</context>';
+
+  // 3. 메시지 히스토리 구성
+  const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+    { role: 'system', content: getTutorPrompt(mode) },
+    { role: 'system', content: context },
+    ...session.messages.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    })),
+    { role: 'user', content: question },
+  ];
+
+  // 4. 소스 수집
+  const textSources: SourceRef[] = claims.map((c) => ({
+    kind: 'text' as const,
+    pageId: c.pageId,
+    title: c.pageTitle,
+    url: c.pageUrl,
+    excerpt: c.claimText.slice(0, 200),
+    confidence: c.hybridScore,
+  }));
+
+  const caseSources: SourceRef[] = caseResult
+    ? caseResult.cases.map(toCaseSourceRef)
+    : [];
+
+  const dirSources: SourceRef[] = dirResult
+    ? dirResult.entries.map(toDirectorySourceRef)
+    : [];
+
+  const allSources = [...textSources, ...caseSources, ...dirSources];
+
+  yield { type: 'sources', sources: allSources };
+
+  // 5. 스트리밍 생성
+  const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
+  const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
+
+  const stream = await openai.chat.completions.create({
+    model: ASK_MODEL,
+    stream: true,
+    messages,
+    temperature: mode === 'quiz' ? 0.3 : 0.5,
+    max_tokens: 1500,
+  });
+
+  let totalTokens = 0;
+  for await (const chunk of stream) {
+    const content = chunk.choices[0]?.delta?.content;
+    if (content) {
+      yield { type: 'text', content };
+    }
+    if (chunk.usage?.total_tokens) {
+      totalTokens = chunk.usage.total_tokens;
+    }
+  }
+
+  yield { type: 'done', totalTokens };
+}
