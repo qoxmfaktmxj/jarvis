@@ -415,13 +415,15 @@ export const wikiSources = pgTable("wiki_sources", {
 }));
 
 // wiki_sources_draft — Heal/LLM 자동 생성물은 여기 먼저
+export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected", "expired"]);
+
 export const wikiSourcesDraft = pgTable("wiki_sources_draft", {
   // 동일 구조 + originatingRun uuid + reviewStatus enum
   id: uuid("id").defaultRandom().primaryKey(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
   originatingRunId: uuid("originating_run_id"),      // ingest_run 또는 heal_run 참조
   proposedData: jsonb("proposed_data").notNull(),    // 동일 구조 JSON
-  reviewStatus: pgEnum("review_status", ["pending", "approved", "rejected", "expired"])("review_status").notNull().default("pending"),
+  reviewStatus: reviewStatusEnum("review_status").notNull().default("pending"),
   reviewedByUserId: uuid("reviewed_by_user_id"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   createdAt: createdAt(),
