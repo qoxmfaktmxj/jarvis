@@ -485,7 +485,7 @@ export const wikiCitations = pgTable("wiki_citations", {
 ```ts
 // packages/db/schema/ingest-run.ts
 import { pgTable, uuid, text, jsonb, integer, pgEnum, index } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { workspace } from "./tenant";
 import { createdAt, updatedAt } from "./_helpers";
 
 export const ingestStatusEnum = pgEnum("ingest_status", [
