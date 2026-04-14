@@ -72,7 +72,6 @@ ALTER TABLE "knowledge_page" ADD COLUMN "audience" varchar(50) DEFAULT 'all-empl
 ALTER TABLE "knowledge_page" ADD COLUMN "review_cycle_days" integer DEFAULT 90;--> statement-breakpoint
 ALTER TABLE "knowledge_page" ADD COLUMN "domain" varchar(50);--> statement-breakpoint
 ALTER TABLE "knowledge_page" ADD COLUMN "source_origin" varchar(50);--> statement-breakpoint
-ALTER TABLE "graph_snapshot" ADD COLUMN "sensitivity" varchar(30) DEFAULT 'INTERNAL' NOT NULL;--> statement-breakpoint
 ALTER TABLE "case_cluster" ADD CONSTRAINT "case_cluster_workspace_id_workspace_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspace"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "case_cluster" ADD CONSTRAINT "case_cluster_digest_case_id_precedent_case_id_fk" FOREIGN KEY ("digest_case_id") REFERENCES "public"."precedent_case"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "case_cluster" ADD CONSTRAINT "case_cluster_digest_page_id_knowledge_page_id_fk" FOREIGN KEY ("digest_page_id") REFERENCES "public"."knowledge_page"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
