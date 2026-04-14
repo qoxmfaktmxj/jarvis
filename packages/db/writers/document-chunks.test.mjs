@@ -7,7 +7,7 @@
  * Run: node --test packages/db/writers/document-chunks.test.mjs
  */
 
-import { describe, it, beforeEach, afterEach } from "node:test";
+import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

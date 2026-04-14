@@ -7,7 +7,7 @@
  * Run: node --test scripts/tests/check-schema-drift.test.mjs
  */
 
-import { describe, it, before, after, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -110,6 +110,17 @@ describe("check-schema-drift.mjs --precommit mode", () => {
     try {
       const result = runScript(["--precommit"], { cwd: tmp });
       assert.strictEqual(result.status, 0, `Expected exit 0 but got ${result.status}.\nstdout: ${result.stdout}`);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it("exits 1 when journal is missing", () => {
+    const tmp = makeFixture({ schemaAheadMs: 0, journalExists: false });
+    try {
+      const result = runScript(["--precommit"], { cwd: tmp });
+      assert.strictEqual(result.status, 1, "--precommit should exit 1 when journal is missing");
+      assert.match(result.stderr, /missing/i);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
