@@ -34,6 +34,7 @@ import type {
   GraphSourceRef,
   CaseSourceRef,
   DirectorySourceRef,
+  ChunkSourceRef,
   RetrievedClaim,
   RetrievedChunk,
 } from './types.js';
@@ -178,9 +179,16 @@ const TOP_K_CHUNK_FINAL = 5;
 export async function retrieveChunkHybrid(
   question: string,
   workspaceId: string,
+  userPermissions: string[] = [],
 ): Promise<RetrievedChunk[]> {
   const embedding = await generateEmbedding(question);
   const embeddingLiteral = `[${embedding.join(',')}]`;
+
+  // Sensitivity filter — mirrors buildKnowledgeSensitivitySqlFilter but for dc.sensitivity
+  const rawFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
+    .replace(/\bsensitivity\b/g, 'dc.sensitivity')
+    .trim();
+  const sensitivityClause = rawFilter ? sql.raw(` ${rawFilter}`) : sql.empty();
 
   const vectorRows = await db.execute<{
     id: string; document_type: string; document_id: string;
@@ -192,6 +200,7 @@ export async function retrieveChunkHybrid(
     FROM document_chunks dc
     WHERE dc.workspace_id = ${workspaceId}::uuid
       AND dc.embedding IS NOT NULL
+      ${sensitivityClause}
     ORDER BY dc.embedding <=> ${embeddingLiteral}::vector
     LIMIT ${TOP_K_CHUNK_EACH}
   `);
@@ -207,6 +216,7 @@ export async function retrieveChunkHybrid(
     FROM document_chunks dc
     WHERE dc.workspace_id = ${workspaceId}::uuid
       AND to_tsvector('simple', dc.content) @@ websearch_to_tsquery('simple', ${question})
+      ${sensitivityClause}
     ORDER BY fts_rank DESC
     LIMIT ${TOP_K_CHUNK_EACH}
   `);
@@ -222,8 +232,9 @@ export async function retrieveChunkHybrid(
     ftsRows.rows.map((r) => r.id),
   );
 
-  return merged.slice(0, TOP_K_CHUNK_FINAL).map(({ id, score }) => {
-    const row = byId.get(id)!;
+  return merged.slice(0, TOP_K_CHUNK_FINAL).flatMap(({ id, score }) => {
+    const row = byId.get(id);
+    if (!row) return []; // defensive: should never happen
     const vr = vectorRows.rows.find((r) => r.id === id);
     const fr = ftsRows.rows.find((r) => r.id === id);
     return {
@@ -419,12 +430,13 @@ export async function* generateAnswer(
   dirSources: DirectorySourceRef[],
   mode: import('./types.js').AskMode = 'simple',
   meta: AskMeta = { workspaceId: '00000000-0000-0000-0000-000000000000', requestId: null },
+  chunks: RetrievedChunk[] = [],
 ): AsyncGenerator<SSEEvent> {
   let tokensIn = 0;
   let tokensOut = 0;
   const startedAt = Date.now();
 
-  // 통합 sources 배열 (idx 순서: text → graph → case → directory)
+  // 통합 sources 배열 (idx 순서: text → graph → case → directory → chunk)
   const allTextSources: TextSourceRef[] = claims.map((c) => ({
     kind: 'text',
     pageId: c.pageId,
@@ -433,11 +445,22 @@ export async function* generateAnswer(
     excerpt: c.claimText.slice(0, 200),
     confidence: c.hybridScore,
   }));
+  const chunkSources: ChunkSourceRef[] = chunks.map((c) => ({
+    kind: 'chunk' as const,
+    chunkId: c.id,
+    documentType: c.documentType,
+    documentId: c.documentId,
+    chunkIndex: c.chunkIndex,
+    excerpt: c.content.slice(0, 200),
+    sensitivity: c.sensitivity,
+    confidence: c.rrfScore,
+  }));
   const allSources: SourceRef[] = [
     ...allTextSources,
     ...graphSources,
     ...caseSources,
     ...dirSources,
+    ...chunkSources,
   ];
 
   // Budget gate BEFORE OpenAI call
@@ -686,7 +709,7 @@ export async function* askAI(
   let chunkResults: RetrievedChunk[] = [];
   if (featureHybridSearchMvp()) {
     try {
-      chunkResults = await retrieveChunkHybrid(question, workspaceId);
+      chunkResults = await retrieveChunkHybrid(question, workspaceId, query.userPermissions ?? []);
     } catch (err) {
       console.warn('[ask] retrieveChunkHybrid failed, degrading gracefully:', err);
     }
@@ -712,6 +735,7 @@ export async function* askAI(
     dirSources,
     query.mode ?? 'simple',
     { workspaceId, requestId: query.requestId ?? null },
+    chunkResults,
   )) {
     collectedEvents.push(evt);
     yield evt;

@@ -95,23 +95,28 @@ export async function twoStepIngest(
 
   // Only write chunks if both flags are on
   if (featureDocumentChunksWrite()) {
-    const chunksToWrite = await Promise.all(
-      rawChunks.map(async (content, idx) => {
-        const contentHash = crypto.createHash('sha256').update(content).digest('hex');
-        const embedding = await generateEmbedding(content);
-        return {
-          workspaceId,
-          documentType: 'raw_source',
-          documentId: rawSourceId,
-          chunkIndex: idx,
-          content,
-          contentHash,
-          embedding,
-          tokens: Math.ceil(content.split(/\s+/).length * 1.3), // rough token estimate
-          sensitivity: sensitivity as 'PUBLIC' | 'INTERNAL' | 'RESTRICTED' | 'SECRET_REF_ONLY',
-        };
-      }),
-    );
+    const chunksToWrite: Array<{
+      workspaceId: string; documentType: string; documentId: string;
+      chunkIndex: number; content: string; contentHash: string;
+      embedding: number[]; tokens: number; sensitivity: string;
+    }> = [];
+    // Sequential embedding to stay within OpenAI rate limits
+    for (let idx = 0; idx < rawChunks.length; idx++) {
+      const content = rawChunks[idx]!;
+      const contentHash = crypto.createHash('sha256').update(content).digest('hex');
+      const embedding = await generateEmbedding(content);
+      chunksToWrite.push({
+        workspaceId,
+        documentType: 'raw_source',
+        documentId: rawSourceId,
+        chunkIndex: idx,
+        content,
+        contentHash,
+        embedding,
+        tokens: Math.ceil(content.split(/\s+/).length * 1.3),
+        sensitivity,
+      });
+    }
     await upsertChunks(chunksToWrite);
   }
 
@@ -124,7 +129,7 @@ export async function twoStepIngest(
 
 Respond ONLY with valid JSON. No markdown fences. No extra text.`;
 
-  const userPrompt = `Document (workspaceId=${workspaceId}, rawSourceId=${rawSourceId}):\n\n${truncated}`;
+  const userPrompt = `Document:\n\n${truncated}`;
 
   let synthesis: { title: string; summary: string; claims: string[] };
   try {
@@ -181,19 +186,22 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
   );
 
   const claims = (synthesis.claims ?? []).slice(0, 5);
-  if (claims.length > 0) {
-    await Promise.all(
-      claims.map(async (claimText, idx) => {
-        const embedding = await generateEmbedding(claimText);
-        await db.insert(knowledgeClaim).values({
-          pageId: page.id,
-          claimText: claimText.slice(0, 1000),
-          embedding,
-          claimSource: 'generated',
-          sortOrder: idx,
-        });
-      }),
-    );
+  // Sequential to avoid rate-limit bursts; each claim is short so latency is low
+  for (let idx = 0; idx < claims.length; idx++) {
+    const claimText = claims[idx]!;
+    try {
+      const embedding = await generateEmbedding(claimText);
+      await db.insert(knowledgeClaim).values({
+        pageId: page.id,
+        claimText: claimText.slice(0, 1000),
+        embedding,
+        claimSource: 'generated',
+        sortOrder: idx,
+      });
+    } catch (claimErr) {
+      // per-claim failure is non-fatal — partial claims still written
+      console.warn(`[ingest] claim embed/insert failed idx=${idx} rawSourceId=${rawSourceId}: ${String(claimErr)}`);
+    }
   }
 }
 
