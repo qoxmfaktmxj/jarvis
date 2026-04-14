@@ -68,7 +68,14 @@ jobs:
             -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       - name: Run DB migrations
-        run: pnpm db:migrate
+        run: |
+          pnpm db:migrate 2>&1 | tee /tmp/migrate.log
+          EXIT=${PIPESTATUS[0]}
+          if [ $EXIT -ne 0 ]; then
+            echo "=== Migration failed. Log tail ==="
+            tail -50 /tmp/migrate.log
+          fi
+          exit $EXIT
 
       - name: Unit tests
         run: pnpm test
