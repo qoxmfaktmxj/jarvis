@@ -11,7 +11,7 @@
 **구성 요소:**
 - 에이전트: `.claude/agents/jarvis-planner.md`, `.claude/agents/jarvis-builder.md`, `.claude/agents/jarvis-integrator.md`
 - 스킬: `.claude/skills/jarvis-feature/` (오케스트레이터), `.claude/skills/jarvis-architecture/`, `.claude/skills/jarvis-db-patterns/`, `.claude/skills/jarvis-i18n/`
-- 훅: `.claude/settings.json` (PostToolUse → `scripts/check-schema-drift.mjs --hook`)
+- 훅: `.claude/settings.json` (PostToolUse → `scripts/check-schema-drift.mjs --hook`, advisory). CI/pre-commit은 동일 스크립트에 `--ci`/`--precommit`을 붙여 블로킹.
 - Codex 공유 지시문: `AGENTS.md` (같은 하네스 원칙을 Codex CLI에서도 재사용)
 - 공유 스크립트: `scripts/check-schema-drift.mjs` (Claude Code hook / Codex 수동 / CI 공용)
 
@@ -20,3 +20,4 @@
 |------|----------|------|------|
 | 2026-04-10 | 초기 구성 (경량 3인 팀) | 전체 | 사내 업무 시스템 + 사내 위키 통합 프로젝트 경량 하네스 요청 |
 | 2026-04-10 | Drizzle schema drift 훅 + Codex용 `AGENTS.md` 추가 | `.claude/settings.json`, `scripts/check-schema-drift.mjs`, `AGENTS.md` | 경량 훅 1(advisory) 설치 + Codex CLI에서도 동일 원칙 따르도록 지시문 미러링 |
+| 2026-04-14 | schema-drift hook에 `--ci`/`--precommit` blocking 모드 추가 | `scripts/check-schema-drift.mjs`, `scripts/tests/check-schema-drift.test.mjs` | G5 게이트: 의도적 drift에서 CI exit 1 보장 (Phase-7A PR#4) |
