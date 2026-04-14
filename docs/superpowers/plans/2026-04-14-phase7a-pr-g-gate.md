@@ -14,7 +14,13 @@
 
 ## 배경
 
-Phase-7A는 4개 Lane(A: cost/observability, B: PII/review, C: workspace isolation, D: schema-drift/eval)으로 구성되어 있다. 각 Lane이 모두 main에 머지되면, 본 PR#G에서 G1–G7 게이트를 한꺼번에 실측해 Phase-7B 진입 여부를 판정한다.
+Phase-7A는 4개 Lane으로 구성되어 있다 (스펙 §4 기준):
+- **Lane A** = PR#1 (observability/llm_call_log) + PR#2 (cost kill-switch) → 게이트 G1, G7
+- **Lane B** = PR#3 (PII redactor) + PR#6 (eval fixture/harness) → 게이트 G2, G3, G6
+- **Lane C** = PR#4 (schema-drift hook) + PR#7 (document_chunks DDL) + PR#8 (docs) → 게이트 G5
+- **Lane D** = PR#5 (cache key/workspace isolation) + PR#9 (CI + cross-workspace leakage) → 게이트 G4
+
+각 Lane이 모두 main에 머지되면, 본 PR#G에서 G1–G7 게이트를 한꺼번에 실측해 Phase-7B 진입 여부를 판정한다.
 
 **PR#G는 코드 변경이 없다.** 오직 세 가지 산출물만 다룬다:
 1. `docs/analysis/07-gate-result-2026-04.md` — 게이트 결과 문서
@@ -45,21 +51,21 @@ Phase-7A는 4개 Lane(A: cost/observability, B: PII/review, C: workspace isolati
 
 PR#G는 4 Lane이 **전부** main에 머지되었을 때만 의미를 가진다. 하나라도 빠져 있으면 STOP.
 
-- [ ] Lane A (cost kill-switch + llm_call_log + review_queue 스키마) 머지 확인
+- [ ] Lane A (PR#1 observability + PR#2 cost kill-switch) 머지 확인 — 게이트 G1, G7 대응
   ```bash
   git log main --oneline | grep -E 'lane-a|phase7a-pr[12]'
   ```
-- [ ] Lane B (PII redactor + review 라우팅 + dry-run) 머지 확인
+- [ ] Lane B (PR#3 PII redactor + PR#6 eval fixture) 머지 확인 — 게이트 G2, G3, G6 대응
   ```bash
-  git log main --oneline | grep -E 'lane-b|phase7a-pr[34]'
+  git log main --oneline | grep -E 'lane-b|phase7a-pr[36]'
   ```
-- [ ] Lane C (workspace isolation + cross-workspace leakage 테스트) 머지 확인
+- [ ] Lane C (PR#4 schema-drift hook + PR#7 document_chunks DDL + PR#8 docs) 머지 확인 — 게이트 G5 대응
   ```bash
-  git log main --oneline | grep -E 'lane-c|phase7a-pr5'
+  git log main --oneline | grep -E 'lane-c|phase7a-pr[478]'
   ```
-- [ ] Lane D (schema-drift CI + eval fixture 30 pairs) 머지 확인
+- [ ] Lane D (PR#5 cache key + PR#9 CI + cross-workspace leakage) 머지 확인 — 게이트 G4 대응
   ```bash
-  git log main --oneline | grep -E 'lane-d|phase7a-pr6'
+  git log main --oneline | grep -E 'lane-d|phase7a-pr[59]'
   ```
 - [ ] 4개 Lane 중 하나라도 빠져 있으면 → 해당 Lane 소유자에게 핑, PR#G 작업 중단
 
@@ -151,12 +157,14 @@ All 7 green → 7B unlock.
 Any red → hotfix PR → re-judge.
 
 ## 7B unlock record
-- Feature flags to be flipped in 7B start PR:
-  - `FEATURE_TWO_STEP_INGEST=true` (location: <path>)
-  - `FEATURE_HYBRID_SEARCH_MVP=true` (location: <path>)
-  - `FEATURE_DOCUMENT_CHUNKS_WRITE=true` (location: `packages/db/writers/document-chunks.ts`)
+- Feature flags / paths to be activated in 7B start PR (per spec §6.1):
+  - `FEATURE_TWO_STEP_INGEST=true` (위치: 7B PR에서 확인)
+  - `FEATURE_HYBRID_SEARCH_MVP=true` (위치: 7B PR에서 확인)
+  - `wiki_*` write path 활성화 (7B 작업 범위)
 - Responsible person: <to-fill>
 - Target start date: <to-fill>
+
+> Note: `FEATURE_DOCUMENT_CHUNKS_WRITE`는 Lane C에서 기본 `false`로 배선됨. 7B에서 document_chunks write path 실전 도입 시 플립. **7B unlock 조건**에는 포함되지 않는다.
 ```
 
 - [ ] 파일 저장 후 git status로 staged 대상 확인
@@ -217,14 +225,29 @@ Any red → hotfix PR → re-judge.
 
 ## Task 7 — G5 실측 (schema-drift hook)
 
-- [ ] 의도적 drift 조성 (예: `packages/db/schema/*.ts`에 컬럼 추가 후 migration 미생성)
-- [ ] 실행
-  ```bash
-  node scripts/check-schema-drift.mjs --ci; echo "exit=$?"
-  ```
+- [ ] **G5 probe — safe method**: drift 시뮬레이션 전용 임시 worktree 사용
+
+```bash
+# Safe: isolated worktree, no risk to main working tree
+git worktree add /tmp/jarvis-g5-probe main
+cd /tmp/jarvis-g5-probe
+
+# Create intentional drift: add a dummy line to a schema file, don't run db:generate
+echo "// G5 drift probe" >> packages/db/schema/knowledge.ts
+
+# Run the CI-mode hook — expect exit 1
+node scripts/check-schema-drift.mjs --ci
+echo "Exit code: $?"  # expect 1
+
+# Cleanup: simply remove the worktree (original files untouched)
+cd /
+git worktree remove /tmp/jarvis-g5-probe --force
+```
+
 - [ ] exit code 1 확인, block 메시지 존재 확인
-- [ ] drift 원복 (`git checkout -- packages/db/schema`)
 - [ ] G5에 exit code + 출력 snippet 기록, Verdict 체크
+
+> **절대 금지**: 메인 워크트리에서 `git checkout --` 또는 `git restore --`로 복원하지 말 것. 사용자의 작업 중 변경을 덮어쓸 수 있다. 반드시 임시 worktree 사용.
 
 ---
 
@@ -274,24 +297,29 @@ Any red → hotfix PR → re-judge.
 
 결과가 GO인 경우에만 진행. HOLD이면 Task 12로 건너뜀.
 
-- [ ] 결과 문서 `## 7B unlock record` 섹션 채우기
-  - `FEATURE_TWO_STEP_INGEST` 플래그 위치 조사 및 기입 (예: `packages/config/src/flags.ts`)
-  - `FEATURE_HYBRID_SEARCH_MVP` 플래그 위치 조사 및 기입
-  - `FEATURE_DOCUMENT_CHUNKS_WRITE` 위치는 스펙 §2.2 지정대로 `packages/db/writers/document-chunks.ts`
+- [ ] 결과 문서 `## 7B unlock record` 섹션 채우기 (스펙 §6.1 기준)
+  - `FEATURE_TWO_STEP_INGEST=true` (위치는 7B PR에서 확인)
+  - `FEATURE_HYBRID_SEARCH_MVP=true` (위치는 7B PR에서 확인)
+  - `wiki_*` write path 활성화 (7B 작업 범위)
   - Responsible person: 7B 시작 PR 담당자 이름
   - Target start date: 7B 착수 목표일
 - [ ] **이 PR에서는 플래그를 뒤집지 않는다.** 실제 true 전환은 7B 시작 PR의 책임.
+- [ ] `FEATURE_DOCUMENT_CHUNKS_WRITE`는 7B unlock 조건에 **포함되지 않음**. Lane C에서 기본 `false`로 배선되어 있으며, 7B에서 document_chunks write path 실전 도입 시 별도로 플립.
 
 ---
 
-## Task 12 — 스펙 §9 Revision log 업데이트
+## Task 12 — 스펙 §9 Revision log 일괄 업데이트 (centralization point)
+
+다른 Lane PR들은 spec 파일을 건드리지 않기로 했으므로, **PR#G가 7A 결과를 스펙에 기록하는 유일한 centralization point**다. 여기서 한 번에 7A 결과를 기록한다.
 
 - [ ] `docs/superpowers/specs/2026-04-14-phase7-v3-design.md` §9 열기
 - [ ] 아래 엔트리 append
   ```markdown
-  | 2026-04-XX | PR#G merged, Phase-7A gate judged <PASS|FAIL> | 전체 | G1–G7 실측 완료. 결과: `docs/analysis/07-gate-result-2026-04.md` |
+  | 2026-04-XX | 7A gate 판정 (G1-G7 all green) + 7B 해제 | PR#G |
   ```
+  (FAIL인 경우: `7A gate 판정 FAIL — <failed gates> hotfix 필요`)
 - [ ] 날짜/결과는 실제 값으로 교체
+- [ ] 이 엔트리 추가 후 commit (Task 14에서 한꺼번에 푸시)
 
 ---
 
@@ -354,7 +382,17 @@ GO 판정일 때만:
 
 ## Failure Playbook
 
-게이트별 FAIL 시 대응.
+게이트별 FAIL 시 대응. 게이트 ↔ 책임 Lane 매핑 (스펙 §4 기준):
+
+| Gate | Owner Lane | Hotfix branch |
+|------|-----------|---------------|
+| G1 | Lane A | `claude/phase7a-hotfix-g1` |
+| G2 | Lane B | `claude/phase7a-hotfix-g2` |
+| G3 | Lane B | `claude/phase7a-hotfix-g3` |
+| G4 | Lane D | `claude/phase7a-hotfix-g4` |
+| G5 | Lane C | `claude/phase7a-hotfix-g5` |
+| G6 | Lane B | `claude/phase7a-hotfix-g6` |
+| G7 | Lane A | `claude/phase7a-hotfix-g7` |
 
 ### G1 FAIL (cost kill-switch 미작동)
 - 원인 후보: budget check 미호출, 순서 버그, `LLM_DAILY_BUDGET_USD` 환경변수 미주입
@@ -369,17 +407,17 @@ GO 판정일 때만:
 - 대응: Lane B hotfix → G2, G3 동시 재측정
 
 ### G4 FAIL (cross-workspace leakage 발견)
-- **최우선 긴급**: 데이터 격리 위반. 즉시 Lane C 재진입
-- 원인 후보: workspace filter 미적용 쿼리, RLS 누락, 인덱스 혼입
-- 대응: hotfix PR → G4 재측정 + 추가 시나리오로 보강
+- **최우선 긴급**: 데이터 격리 위반. 즉시 Lane D 재진입
+- 원인 후보: workspace filter 미적용 쿼리, RLS 누락, 인덱스 혼입, cache key workspace 스코프 누락
+- 대응: Lane D hotfix PR → G4 재측정 + 추가 시나리오로 보강
 
 ### G5 FAIL (schema-drift hook이 막지 못함)
 - 원인 후보: CI 스크립트 exit code 반환 버그, 감지 패턴 누락
-- 대응: Lane D hotfix → G5 재측정
+- 대응: Lane C hotfix → G5 재측정 (schema-drift hook은 Lane C 소속)
 
 ### G6 FAIL (eval fixture 오류)
 - 원인 후보: fixture 손상, 런타임 오류, 30 pair 미달
-- 대응: Lane D hotfix → G6 재측정. Baseline은 재측정 값으로 갱신.
+- 대응: Lane B hotfix → G6 재측정 (eval fixture/harness는 Lane B 소속). Baseline은 재측정 값으로 갱신.
 
 ### G7 FAIL (llm_call_log 누락)
 - 원인 후보: 특정 경로(예: 캐시 히트, 스트리밍)에서 로그 write 누락

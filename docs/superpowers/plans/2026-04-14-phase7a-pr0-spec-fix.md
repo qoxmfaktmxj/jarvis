@@ -4,7 +4,7 @@
 
 **Goal:** `docs/analysis/99-integration-plan.md`의 Drizzle 스키마 예시 코드를 Jarvis 실제 컨벤션과 맞추어 정정한다. 실제 런타임 코드 변경 없음 — 문서 교정만.
 
-**Architecture:** 정정 대상 3종: (1) `vector("embedding", { dimensions: 1536 })` 표준 API → `customType<vector>` 패턴, (2) 컬럼 정의 인라인 `pgEnum(...)(...)` → 파일 top-level `pgEnum` 선언 + 컬럼은 해당 enum 변수 사용, (3) `sensitivity()` helper 사용 전제 → 별도 helper 파일 전제 명시. 실제 런타임 스키마(`packages/db/schema/case.ts:23`, `knowledge.ts:23`)의 패턴을 레퍼런스.
+**Architecture:** 정정 대상 3종: (1) `vector("embedding", { dimensions: 1536 })` 표준 API → `customType<vector>` 패턴, (2) 컬럼 정의 인라인 `pgEnum(...)(...)` → 파일 top-level `pgEnum` 선언 + 컬럼은 해당 enum 변수 사용, (3) `sensitivity()` helper 사용 전제 → 별도 helper 파일 전제 명시. 실제 런타임 스키마(`packages/db/schema/knowledge.ts:23`)의 패턴을 단일 canonical 레퍼런스로 사용.
 
 **Tech Stack:** Drizzle ORM 0.45.2, PostgreSQL + pgvector, Markdown 문서 편집.
 
@@ -22,8 +22,7 @@
   - §5.7 `ingest_run` (line ~465~ 해당 부분)
 
 **Verify (no modification):**
-- `packages/db/schema/knowledge.ts:23` — 레퍼런스 customType vector 패턴
-- `packages/db/schema/case.ts:23` — 동일
+- `packages/db/schema/knowledge.ts:23` — 단일 canonical customType vector 패턴 레퍼런스
 - `scripts/check-schema-drift.mjs` — false-positive 검증에 사용
 
 ---

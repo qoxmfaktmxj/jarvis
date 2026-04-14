@@ -12,6 +12,10 @@
 
 **Dependency order:** Run AFTER Lane A (선택적 `llm_call_log` 상호 참조) and AFTER Lane C (`document_chunks` 테이블이 G4 테스트 시드 대상). Lane A/C가 머지되기 전에도 Lane D 착수는 가능하지만, G4 통합 테스트는 Lane C가 안정화되기 전까지는 red로 남는다. `cache.ts`는 의도적으로 `llm_call_log`에 의존하지 않도록 순수 인메모리로 설계한다.
 
+> **Merge 전략 — `packages/ai/ask.ts`**: Lane A도 이 파일을 수정(logger + assertBudget 삽입), Lane D도 수정(cache-through). **순서: Lane A를 먼저 머지 → Lane D에서 rebase → ask.ts의 최종 diff를 `assertBudget → makeCacheKey → getCached → openai call → setCached → logLlmCall` 순으로 통합**. Lane D PR 생성 전 로컬에서 rebase하여 단일 diff로 관찰.
+
+> **Root `package.json` scripts 병합**: Lane A(eval:budget-test), Lane B(eval:run), Lane D(test:integration) 모두 scripts 추가. 3 lane 각각 머지 후 `package.json` scripts 키를 최종적으로 정렬 + 중복 제거하는 짧은 정리 커밋 필요. PR#G가 이 정리 커밋도 포함할 수 있다.
+
 **Branch:** `claude/phase7a-lane-d-cache-cicd`
 **Today:** 2026-04-14
 
@@ -83,7 +87,7 @@ sensitivityScope = "workspace:<workspaceId>|level:<accessLevel>"
 - [ ] 1.2.1 `packages/ai/__tests__/cache.test.ts` 작성: `makeCacheKey(sameParams)` 두 번 호출 시 동일 해시임을 단언.
 - [ ] 1.2.2 `pnpm --filter=@jarvis/ai exec vitest run __tests__/cache.test.ts` 실행 → 모듈 없음으로 실패 확인.
 - [ ] 1.2.3 `packages/ai/cache.ts` 최소 구현으로 테스트 통과.
-- [ ] 1.2.4 커밋: `feat(ai): add makeCacheKey scaffold with deterministic hashing`.
+- [ ] 1.2.4 커밋: `feat(ai): add makeCacheKey — deterministic key composition (promptVersion+workspaceId+sensitivityScope+input+model)`.
 
 ### 1.3 PR#5 — workspaceId 분리 테스트
 - [ ] 1.3.1 테스트 추가: 동일 input/model, 다른 workspaceId → 다른 키.
@@ -98,7 +102,47 @@ sensitivityScope = "workspace:<workspaceId>|level:<accessLevel>"
 - [ ] 1.5.2 `cache.ts`에서 `Map` 삽입 순서를 이용한 FIFO eviction 구현.
 - [ ] 1.5.3 커밋.
 
-### 1.6 PR#5 — ask.ts 배선
+### 1.6 PR#5 — ask.ts cache-through 실패 테스트 (TDD red)
+- [ ] 1.6.0a `packages/ai/__tests__/ask-cache.test.ts` 작성 — 2차 동일 호출이 OpenAI 재호출 없이 캐시에서 응답되는지 단언.
+
+```ts
+// packages/ai/__tests__/ask-cache.test.ts (new)
+import { describe, it, expect, vi } from 'vitest';
+import { ask } from '../ask.ts';
+
+describe('ask() cache-through', () => {
+  it('second identical call returns cached result without OpenAI invocation', async () => {
+    const openaiSpy = vi.fn();
+    // Inject spy via test harness or mock
+    const r1 = await ask({
+      workspaceId: 'ws-test',
+      prompt: '동일한 질문',
+      sensitivityScope: 'workspace:ws-test|level:INTERNAL',
+      // ... other required params
+    });
+    const r2 = await ask({
+      workspaceId: 'ws-test',
+      prompt: '동일한 질문',
+      sensitivityScope: 'workspace:ws-test|level:INTERNAL',
+    });
+    expect(r1).toEqual(r2);
+    expect(openaiSpy).toHaveBeenCalledTimes(1); // cache hit on 2nd
+  });
+
+  it('different workspaceId → different cache slot → 2 OpenAI calls', async () => {
+    // similar but with ws-A and ws-B → asserts spy called twice
+  });
+});
+```
+
+- [ ] 1.6.0b 실행 (FAIL 예상):
+
+```bash
+pnpm --filter @jarvis/ai test ask-cache
+```
+Expected: FAIL (cache logic not yet in ask.ts)
+
+### 1.6 PR#5 — ask.ts 배선 (TDD green)
 - [ ] 1.6.1 `packages/ai/ask.ts` 상단에 `export const PROMPT_VERSION = '2026-04-v1';` 추가.
 - [ ] 1.6.2 `ask()` 시그니처에 `sensitivityScope: string` 파라미터 추가 (호출자에서 계산해 주입).
 - [ ] 1.6.3 OpenAI 호출 지점 직전에 `makeCacheKey` → `getCached` → 히트 시 즉시 return.
@@ -156,6 +200,8 @@ sensitivityScope = "workspace:<workspaceId>|level:<accessLevel>"
 ## 3. 전체 코드 (플레이스홀더 없음)
 
 ### 3.1 `packages/ai/cache.ts`
+
+> **스펙 범위**: PR#5의 핵심 산출물은 `makeCacheKey()` 키 조합. `getCached`/`setCached`는 **in-memory helper**로 7A 동안만 유효 — 7B에서 Redis/pg로 교체될 수 있다. 키 계산 로직(promptVersion + workspaceId + sensitivityScope)이 테스트의 1차 대상이며, LRU 스토어는 부가 helper이다 (스펙 §3 PR#5 자체는 LRU를 요구하지 않음).
 
 ```ts
 // packages/ai/cache.ts
@@ -450,6 +496,9 @@ jobs:
       - name: Integration tests
         run: pnpm test:integration
 
+      - name: Schema drift check
+        run: node scripts/check-schema-drift.mjs --ci
+
       - name: Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -574,6 +623,12 @@ describe('LRU cache', () => {
 "test:integration": "pnpm --filter=@jarvis/worker test:integration"
 ```
 
+> **G4 타겟 실행 명령 (PR#G에서 사용)**:
+> ```bash
+> pnpm test:integration -- src/__tests__/integration/cross-workspace-leakage.test.ts
+> ```
+> vitest는 positional arg로 filter를 받는다. PR#G의 G4 판정 시 이 정확한 명령을 복사해 사용.
+
 ### 3.7 `apps/worker/package.json` 추가 스크립트
 
 ```jsonc
@@ -661,9 +716,12 @@ export async function ask(
 
 ## 7. Self-Review Checklist
 
+- [ ] **스펙 정합성 — PR#5의 1차 산출물은 `makeCacheKey()` 키 조합 로직이다**. LRU 스토어는 in-memory helper이며 7B에서 교체 가능하다는 점이 문서·주석에 명시되어 있다.
 - [ ] `cache.ts`가 `llm_call_log`에 의존하지 않는다 (Lane A 독립).
-- [ ] `makeCacheKey`가 `workspaceId`, `promptVersion`, `sensitivityScope` 세 필드 각각의 변경에 반응한다 (unit tests 존재).
-- [ ] LRU cap 500 eviction 동작이 테스트로 보장된다.
+- [ ] `makeCacheKey`가 `workspaceId`, `promptVersion`, `sensitivityScope` 세 필드 각각의 변경에 반응한다 (unit tests 존재) — 이것이 PR#5 검증의 핵심.
+- [ ] LRU cap 500 eviction 동작이 테스트로 보장된다 (보조 helper 검증).
+- [ ] `ask.ts` cache-through 실패 테스트(`ask-cache.test.ts`)가 구현 전에 red를 보였다.
+- [ ] CI 워크플로에 `node scripts/check-schema-drift.mjs --ci` 스텝이 포함되어 있다.
 - [ ] `ask.ts` 시그니처 변경이 호출부(앱/워커)에도 반영되었다 (`sensitivityScope` 주입).
 - [ ] `sensitivityScope` 포맷이 코드 주석과 본 문서(§0.4)에서 일치한다.
 - [ ] 통합 테스트가 실제 pgvector에서 돌고, `TEST_DATABASE_URL` 없이도 전체 테스트 런이 깨지지 않는다 (skip).

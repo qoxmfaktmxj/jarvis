@@ -241,18 +241,26 @@ export type NewDocumentChunk = typeof documentChunks.$inferInsert;
 
 - [ ] 3.1.2 `packages/db/schema/index.ts`(있다면) export 추가: `export * from "./document-chunks.js";`. 없으면 스킵.
 
-### 3.2 마이그레이션 생성
+### 3.2 마이그레이션 생성 (Drizzle 정규 플로우)
 
-- [ ] 3.2.1 `pnpm db:generate` 실행. 새로 생성된 파일 경로를 기록(예: `packages/db/drizzle/0005_document_chunks.sql` 형태).
-- [ ] 3.2.2 생성된 SQL을 열어 다음 항목 존재 확인:
+> **중요**: `packages/db/drizzle/meta/_journal.json`은 **Drizzle이 자동 관리**한다. 수동으로 편집하지 않는다. 기존 migration SQL 파일도 수동 수정하지 않는다. 아래 플로우는 `pnpm db:generate` → 검사 → `pnpm db:migrate`로 고정.
+
+- [ ] 3.2.1 `pnpm db:generate` 실행. Drizzle이 schema 변경을 감지해 새 마이그레이션 SQL과 스냅샷을 생성하고 `_journal.json`을 자동 갱신한다. 생성된 파일 경로를 기록(예: `packages/db/drizzle/0011_document_chunks.sql` 형태 — 실제 번호는 현재 max+1).
+- [ ] 3.2.2 생성된 SQL을 열어(편집 금지, 읽기만) 다음 항목 존재 확인:
   - `CREATE TABLE "document_chunks"` with `embedding vector(1536)`
   - 3개 index + 1개 unique index
   - FK `workspace_id` → `workspace(id) ON DELETE CASCADE`
-- [ ] 3.2.3 `packages/db/drizzle/meta/_journal.json`이 갱신되었는지 확인 → `node scripts/check-schema-drift.mjs --ci` → exit 0.
+- [ ] 3.2.3 누락된 항목이 있으면 **SQL을 손대지 말고** `packages/db/schema/document-chunks.ts`를 수정한 뒤 `pnpm db:generate`를 다시 실행. Drizzle이 diff migration을 추가하거나 기존 것을 regen한다.
+- [ ] 3.2.4 `packages/db/drizzle/meta/_journal.json`, `packages/db/drizzle/meta/<N>_snapshot.json`이 자동 갱신되었는지 `git status`로 확인 → `node scripts/check-schema-drift.mjs --ci` → exit 0.
 
-### 3.3 IVFFlat 보조 마이그레이션 (필요 시)
+### 3.3 IVFFlat 보조 마이그레이션 (필요 시, Drizzle이 vector ANN index를 지원하지 않기 때문)
 
-- [ ] 3.3.1 위 생성 SQL에 IVFFlat 인덱스가 없다면(대부분의 경우 Drizzle은 vector 전용 ANN 인덱스를 생성하지 않음), 보조 마이그레이션 신규:
+> **caveat**: Drizzle `_journal.json`은 원칙적으로 자동 관리. IVFFlat 보조 migration이 필요한 경우에만 `_journal.json`에 엔트리를 수동 추가하되, 기존 엔트리와 동일한 shape(`idx`, `when`, `tag`, `breakpoints`)을 복제해 inconsistency를 피한다. 가능한 경우 Drizzle `sql` tagged 템플릿이나 post-migration hook 사용을 우선 고려한다.
+
+- [ ] 3.3.1 3.2.2에서 생성 SQL에 IVFFlat 인덱스가 포함되어 있으면 본 섹션 전체 스킵(드묾 — 대부분의 Drizzle 버전은 vector ANN을 생성하지 않음).
+- [ ] 3.3.2 포함되지 않았을 때의 **권장 경로 A (Drizzle sql 템플릿)**: `packages/db/schema/document-chunks.ts`의 테이블 정의 아래에 Drizzle `sql` 태그 template로 raw CREATE INDEX를 선언하거나, post-migration hook(리포에 기존 hook 러너가 있는 경우)을 이용. 이 경로로 처리 가능하면 3.3.3 스킵.
+- [ ] 3.3.3 **차선 경로 B (수동 보조 SQL + _journal 엔트리 복제)**: 경로 A가 리포 관례상 쓰기 어렵다면 보조 migration을 만든다.
+  - 3.3.2에서 생성된 migration 번호가 `0011_document_chunks.sql`이라고 가정하면, 그 다음 번호(`0012_document_chunks_ivfflat.sql`)로 **새 파일**을 추가하되 Drizzle이 픽업하도록 한다. 기존 migration SQL은 **절대 편집하지 않는다**.
   - 파일: `packages/db/drizzle/<NEXT_N>_document_chunks_ivfflat.sql`
   - 내용:
     ```sql
@@ -263,18 +271,51 @@ export type NewDocumentChunk = typeof documentChunks.$inferInsert;
       USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100);
     ```
-  - `packages/db/drizzle/meta/_journal.json`에 수동 엔트리 추가가 필요한지 Drizzle 버전에 따라 다름. `pnpm db:migrate` 결과로 확인.
-- [ ] 3.3.2 이미 생성 SQL에 IVFFlat이 들어 있으면 이 단계 스킵.
+  - `_journal.json`에 **수동 엔트리 추가**: 기존 마지막 엔트리의 shape을 그대로 복제해 `idx = 기존 max + 1`, `when = Date.now()` 등을 채운다. 필드 이름/순서를 바꾸지 않는다. diff를 PR body에 명시적으로 기록해 리뷰어가 확인하게 한다.
+  - 경로 B를 쓴 경우 plan notes에 "Drizzle이 IVFFlat을 미지원해 수동 보조 migration을 추가했고 _journal.json에 기존 shape을 복제한 엔트리 1개만 추가함" 문구를 남긴다.
 
 ### 3.4 마이그레이션 적용
 
-- [ ] 3.4.1 로컬 개발 DB에 `pnpm db:migrate` (또는 리포 관례상 동등 명령) 실행.
-- [ ] 3.4.2 psql(or Drizzle Studio)로 테이블 확인: `\d document_chunks`.
+- [ ] 3.4.1 로컬 개발 DB에 `pnpm db:migrate` 실행(리포에 정의되어 있지 않으면 Drizzle CLI 직접 호출 — §8 Open questions 참조).
+- [ ] 3.4.2 psql(or Drizzle Studio)로 테이블 확인: `\d document_chunks`. IVFFlat index 존재 여부도 `\di document_chunks_vec_idx`로 확인.
 - [ ] 3.4.3 `node scripts/check-schema-drift.mjs --ci` → exit 0.
 
-### 3.5 feature flag + writer 스텁
+### 3.5 feature flag + writer 스텁 (TDD: RED → GREEN)
 
-- [ ] 3.5.1 `packages/db/feature-flags.ts` 존재 여부 확인. 없으면 생성:
+- [ ] 3.5.1 **실패하는 테스트 먼저 작성** (`packages/db/writers/document-chunks.test.ts`). 리포가 vitest면 아래 그대로, node:test면 `node:test` + `node:assert/strict`로 변환:
+  ```ts
+  import { describe, it, expect, afterEach } from "vitest";
+
+  describe("writeChunks (flag-guarded stub)", () => {
+    const PREV = process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
+
+    afterEach(() => {
+      if (PREV === undefined) delete process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
+      else process.env.FEATURE_DOCUMENT_CHUNKS_WRITE = PREV;
+    });
+
+    it("throws when flag is undefined (default)", async () => {
+      delete process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
+      const { writeChunks } = await import("./document-chunks.ts");
+      await expect(async () => writeChunks([])).rejects.toThrow(/disabled/);
+    });
+
+    it("throws when flag = 'false' (string)", async () => {
+      process.env.FEATURE_DOCUMENT_CHUNKS_WRITE = "false";
+      const { writeChunks } = await import("./document-chunks.ts");
+      await expect(async () => writeChunks([])).rejects.toThrow(/disabled/);
+    });
+
+    it("throws 'not landed' when flag = 'true' (7A has no impl yet)", async () => {
+      process.env.FEATURE_DOCUMENT_CHUNKS_WRITE = "true";
+      const { writeChunks } = await import("./document-chunks.ts");
+      await expect(async () => writeChunks([])).rejects.toThrow(/not landed/);
+    });
+  });
+  ```
+  - 동기 throw 함수라면 `expect(() => writeChunks([])).toThrow(...)` 형태로 대체.
+- [ ] 3.5.2 **실행 → FAIL 예상**: `pnpm -F @jarvis/db test writers` (또는 리포 동등 명령). 아직 `feature-flags.ts` / `writers/document-chunks.ts`가 없어 import 실패해야 한다. 실패 출력을 plan notes에 기록.
+- [ ] 3.5.3 `packages/db/feature-flags.ts` 존재 여부 확인. 없으면 생성:
   ```ts
   // packages/db/feature-flags.ts
   // 중앙화된 DB 관련 feature flag 읽기. 모든 flag는 기본 false.
@@ -282,7 +323,7 @@ export type NewDocumentChunk = typeof documentChunks.$inferInsert;
     return process.env.FEATURE_DOCUMENT_CHUNKS_WRITE === "true";
   }
   ```
-- [ ] 3.5.2 `packages/db/writers/document-chunks.ts` 신규 작성:
+- [ ] 3.5.4 `packages/db/writers/document-chunks.ts` 신규 작성 (테스트가 기대하는 메시지와 매칭: `/disabled/`, `/not landed/`):
   ```ts
   import { featureDocumentChunksWrite } from "../feature-flags.js";
   import type { NewDocumentChunk } from "../schema/document-chunks.js";
@@ -305,33 +346,7 @@ export type NewDocumentChunk = typeof documentChunks.$inferInsert;
     );
   }
   ```
-- [ ] 3.5.3 `packages/db/writers/document-chunks.test.ts` (vitest 또는 node:test — 리포 기본에 맞춤, `packages/db`에 기존 test runner 확인 후 결정) 신규:
-  ```ts
-  import { describe, it, expect, beforeEach, afterEach } from "vitest";
-  import { writeChunks } from "./document-chunks.js";
-
-  describe("writeChunks (guard stub)", () => {
-    const prev = process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
-    beforeEach(() => {
-      delete process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
-    });
-    afterEach(() => {
-      if (prev === undefined) delete process.env.FEATURE_DOCUMENT_CHUNKS_WRITE;
-      else process.env.FEATURE_DOCUMENT_CHUNKS_WRITE = prev;
-    });
-
-    it("throws when flag is off (default)", () => {
-      expect(() => writeChunks([])).toThrow(/disabled/);
-    });
-
-    it("still throws 'not landed' when flag is on (7A has no impl)", () => {
-      process.env.FEATURE_DOCUMENT_CHUNKS_WRITE = "true";
-      expect(() => writeChunks([])).toThrow(/not landed/);
-    });
-  });
-  ```
-  - 리포가 vitest 대신 node:test이면 `node:test` + `node:assert/strict`로 변환.
-- [ ] 3.5.4 `pnpm -F @jarvis/db test`(또는 동등 명령)로 신규 테스트 PASS.
+- [ ] 3.5.5 **실행 → PASS**: `pnpm -F @jarvis/db test writers`로 3개 케이스 전부 PASS 확인.
 
 ### 3.6 PR#7 커밋 & 푸시
 
