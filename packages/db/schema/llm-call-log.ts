@@ -20,16 +20,16 @@ export const llmCallLog = pgTable(
     requestId: varchar("request_id", { length: 64 }),
     model: varchar("model", { length: 100 }).notNull(),
     promptVersion: varchar("prompt_version", { length: 50 }),
-    tokensIn: integer("tokens_in").default(0).notNull(),
-    tokensOut: integer("tokens_out").default(0).notNull(),
+    inputTokens: integer("input_tokens").default(0).notNull(),
+    outputTokens: integer("output_tokens").default(0).notNull(),
     costUsd: numeric("cost_usd", { precision: 12, scale: 6 })
       .default("0")
       .notNull(),
-    latencyMs: integer("latency_ms").default(0).notNull(),
+    durationMs: integer("duration_ms").default(0).notNull(),
     // 'ok' | 'error' | 'blocked_by_budget'
     status: varchar("status", { length: 30 }).notNull(),
     blockedBy: text("blocked_by"),
-    errorMessage: text("error_message"),
+    errorCode: text("error_code"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

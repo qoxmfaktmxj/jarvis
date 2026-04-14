@@ -47,7 +47,7 @@ describe("embed logs llm_call_log row", () => {
     const row = logLlmCallMock.mock.calls[0][0];
     expect(row.status).toBe("ok");
     expect(row.model).toBe("text-embedding-3-small");
-    expect(row.tokensIn).toBe(7);
+    expect(row.inputTokens).toBe(7);
     expect(row.requestId).toBe("req-e-1");
   });
 });

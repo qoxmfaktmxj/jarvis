@@ -7,7 +7,7 @@ import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
 import { logLlmCall } from './logger.js';
-import { assertBudget, BudgetExceededError } from './budget.js';
+import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
 import {
   retrieveRelevantGraphContext,
   type GraphContext,
@@ -335,19 +335,7 @@ export async function* generateAnswer(
     await assertBudget(meta.workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await logLlmCall({
-        workspaceId: meta.workspaceId,
-        requestId: meta.requestId,
-        model: ASK_MODEL,
-        promptVersion: null,
-        tokensIn: 0,
-        tokensOut: 0,
-        costUsd: '0',
-        latencyMs: Date.now() - startedAt,
-        status: 'blocked_by_budget',
-        blockedBy: 'budget',
-        errorMessage: err.message,
-      });
+      await recordBlocked(meta.workspaceId, ASK_MODEL, meta.requestId);
       yield { type: 'error', message: 'daily budget exceeded' };
       return;
     }
@@ -385,13 +373,13 @@ export async function* generateAnswer(
       requestId: meta.requestId,
       model: ASK_MODEL,
       promptVersion: null,
-      tokensIn,
-      tokensOut,
+      inputTokens: tokensIn,
+      outputTokens: tokensOut,
       costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
-      latencyMs: Date.now() - startedAt,
+      durationMs: Date.now() - startedAt,
       status: 'ok',
       blockedBy: null,
-      errorMessage: null,
+      errorCode: null,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -400,13 +388,13 @@ export async function* generateAnswer(
       requestId: meta.requestId,
       model: ASK_MODEL,
       promptVersion: null,
-      tokensIn,
-      tokensOut,
+      inputTokens: tokensIn,
+      outputTokens: tokensOut,
       costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
-      latencyMs: Date.now() - startedAt,
+      durationMs: Date.now() - startedAt,
       status: 'error',
       blockedBy: null,
-      errorMessage: message,
+      errorCode: message,
     });
     yield { type: 'error', message };
   }

@@ -14,7 +14,7 @@ describe("ask budget integration", () => {
     // seed: 오늘 이미 $0.02 소비
     await db.execute(sql`
       INSERT INTO llm_call_log
-        (workspace_id, model, tokens_in, tokens_out, cost_usd, latency_ms, status)
+        (workspace_id, model, input_tokens, output_tokens, cost_usd, duration_ms, status)
       VALUES
         (${WS}::uuid, 'gpt-5.4-mini', 100, 100, 0.02, 100, 'ok')
     `);

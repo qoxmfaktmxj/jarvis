@@ -20,13 +20,13 @@ export interface LlmCallLogRow {
   requestId: string | null;
   model: string;
   promptVersion: string | null;
-  tokensIn: number;
-  tokensOut: number;
+  inputTokens: number;
+  outputTokens: number;
   costUsd: string; // numeric as string
-  latencyMs: number;
+  durationMs: number;
   status: "ok" | "error" | "blocked_by_budget";
   blockedBy: string | null;
-  errorMessage: string | null;
+  errorCode: string | null;
 }
 
 export async function logLlmCall(row: LlmCallLogRow): Promise<void> {
@@ -35,13 +35,13 @@ export async function logLlmCall(row: LlmCallLogRow): Promise<void> {
     requestId: row.requestId ?? undefined,
     model: row.model,
     promptVersion: row.promptVersion ?? undefined,
-    tokensIn: row.tokensIn,
-    tokensOut: row.tokensOut,
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
     costUsd: row.costUsd,
-    latencyMs: row.latencyMs,
+    durationMs: row.durationMs,
     status: row.status,
     blockedBy: row.blockedBy ?? undefined,
-    errorMessage: row.errorMessage ?? undefined,
+    errorCode: row.errorCode ?? undefined,
   };
 
   try {
@@ -59,10 +59,10 @@ export async function logLlmCall(row: LlmCallLogRow): Promise<void> {
       requestId: row.requestId,
       workspaceId: row.workspaceId,
       model: row.model,
-      tokensIn: row.tokensIn,
-      tokensOut: row.tokensOut,
+      inputTokens: row.inputTokens,
+      outputTokens: row.outputTokens,
       costUsd: row.costUsd,
-      latencyMs: row.latencyMs,
+      durationMs: row.durationMs,
       status: row.status,
     },
     "llm.call",

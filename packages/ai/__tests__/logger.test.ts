@@ -33,13 +33,13 @@ describe("logger", () => {
       requestId: "req-xyz",
       model: "gpt-5.4-mini",
       promptVersion: "v1",
-      tokensIn: 10,
-      tokensOut: 20,
+      inputTokens: 10,
+      outputTokens: 20,
       costUsd: "0.0012",
-      latencyMs: 123,
+      durationMs: 123,
       status: "ok",
       blockedBy: null,
-      errorMessage: null,
+      errorCode: null,
     });
     expect(db.insert).toHaveBeenCalledTimes(1);
   });

@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { db } from '@jarvis/db/client';
+import { logLlmCall } from './logger.js';
 
 export class BudgetExceededError extends Error {
   constructor(public workspaceId: string, public spent: number, public limit: number) {
@@ -33,11 +34,22 @@ export async function assertBudget(workspaceId: string): Promise<void> {
   }
 }
 
-export async function recordBlocked(workspaceId: string, reason: string): Promise<void> {
-  await db.execute(sql`
-    INSERT INTO llm_call_log
-      (workspace_id, model, status, blocked_by, error_message)
-    VALUES
-      (${workspaceId}::uuid, 'unknown', 'blocked_by_budget', ${reason}, ${reason})
-  `);
+export async function recordBlocked(
+  workspaceId: string,
+  model: string,
+  requestId?: string | null,
+): Promise<void> {
+  await logLlmCall({
+    workspaceId,
+    requestId: requestId ?? null,
+    model,
+    promptVersion: null,
+    inputTokens: 0,
+    outputTokens: 0,
+    costUsd: '0',
+    durationMs: 0,
+    status: 'blocked_by_budget',
+    blockedBy: 'budget',
+    errorCode: null,
+  });
 }

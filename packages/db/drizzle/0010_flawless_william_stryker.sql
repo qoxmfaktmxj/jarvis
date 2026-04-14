@@ -4,13 +4,13 @@ CREATE TABLE "llm_call_log" (
 	"request_id" varchar(64),
 	"model" varchar(100) NOT NULL,
 	"prompt_version" varchar(50),
-	"tokens_in" integer DEFAULT 0 NOT NULL,
-	"tokens_out" integer DEFAULT 0 NOT NULL,
+	"input_tokens" integer DEFAULT 0 NOT NULL,
+	"output_tokens" integer DEFAULT 0 NOT NULL,
 	"cost_usd" numeric(12, 6) DEFAULT '0' NOT NULL,
-	"latency_ms" integer DEFAULT 0 NOT NULL,
+	"duration_ms" integer DEFAULT 0 NOT NULL,
 	"status" varchar(30) NOT NULL,
 	"blocked_by" text,
-	"error_message" text,
+	"error_code" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint

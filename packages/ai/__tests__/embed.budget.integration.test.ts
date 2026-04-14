@@ -12,7 +12,7 @@ describe("embed budget integration", () => {
     await db.execute(sql`DELETE FROM llm_call_log WHERE workspace_id = ${WS}::uuid`);
     await db.execute(sql`
       INSERT INTO llm_call_log
-        (workspace_id, model, tokens_in, tokens_out, cost_usd, latency_ms, status)
+        (workspace_id, model, input_tokens, output_tokens, cost_usd, duration_ms, status)
       VALUES
         (${WS}::uuid, 'text-embedding-3-small', 1000, 0, 0.02, 50, 'ok')
     `);

@@ -59,8 +59,8 @@ describe("ask logs llm_call_log row", () => {
     expect(logLlmCallMock).toHaveBeenCalledTimes(1);
     const row = logLlmCallMock.mock.calls[0][0];
     expect(row.status).toBe("ok");
-    expect(row.tokensIn).toBe(10);
-    expect(row.tokensOut).toBe(20);
+    expect(row.inputTokens).toBe(10);
+    expect(row.outputTokens).toBe(20);
     expect(row.requestId).toBe("req-test-1");
   });
 });

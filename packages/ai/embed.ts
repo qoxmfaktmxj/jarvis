@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import { createHash } from 'crypto';
 import { getRedis } from '@jarvis/db/redis';
 import { logLlmCall } from './logger.js';
-import { assertBudget, BudgetExceededError } from './budget.js';
+import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -57,19 +57,7 @@ export async function generateEmbedding(
     await assertBudget(workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await logLlmCall({
-        workspaceId,
-        requestId,
-        model: EMBED_MODEL,
-        promptVersion: null,
-        tokensIn: 0,
-        tokensOut: 0,
-        costUsd: '0',
-        latencyMs: Date.now() - startedAt,
-        status: 'blocked_by_budget',
-        blockedBy: 'budget',
-        errorMessage: err.message,
-      });
+      await recordBlocked(workspaceId, EMBED_MODEL, requestId);
     }
     throw err;
   }
@@ -92,13 +80,13 @@ export async function generateEmbedding(
       requestId,
       model: EMBED_MODEL,
       promptVersion: null,
-      tokensIn,
-      tokensOut: 0,
+      inputTokens: tokensIn,
+      outputTokens: 0,
       costUsd: computeCostUsd(tokensIn),
-      latencyMs: Date.now() - startedAt,
+      durationMs: Date.now() - startedAt,
       status: 'ok',
       blockedBy: null,
-      errorMessage: null,
+      errorCode: null,
     });
 
     await redis.set(cacheKey, JSON.stringify(embedding), 'EX', CACHE_TTL_SECONDS);
@@ -110,13 +98,13 @@ export async function generateEmbedding(
       requestId,
       model: EMBED_MODEL,
       promptVersion: null,
-      tokensIn: 0,
-      tokensOut: 0,
+      inputTokens: 0,
+      outputTokens: 0,
       costUsd: '0',
-      latencyMs: Date.now() - startedAt,
+      durationMs: Date.now() - startedAt,
       status: 'error',
       blockedBy: null,
-      errorMessage: message,
+      errorCode: message,
     });
     throw err;
   }
