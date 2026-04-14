@@ -17,5 +17,4 @@ ALTER TABLE "document_chunks" ADD CONSTRAINT "document_chunks_workspace_id_works
 CREATE UNIQUE INDEX "document_chunks_doc_chunk_uniq" ON "document_chunks" USING btree ("document_type","document_id","chunk_index");--> statement-breakpoint
 CREATE INDEX "document_chunks_doc_idx" ON "document_chunks" USING btree ("document_type","document_id");--> statement-breakpoint
 CREATE INDEX "document_chunks_hash_idx" ON "document_chunks" USING btree ("content_hash");--> statement-breakpoint
-CREATE INDEX "document_chunks_ws_idx" ON "document_chunks" USING btree ("workspace_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_graph_community_snapshot_community" ON "graph_community" USING btree ("snapshot_id","community_id");
+CREATE INDEX "document_chunks_ws_idx" ON "document_chunks" USING btree ("workspace_id");
