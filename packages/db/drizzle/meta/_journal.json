@@ -99,6 +99,13 @@
       "when": 1776178361557,
       "tag": "0013_massive_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776178361558,
+      "tag": "0014_lame_screwball",
+      "breakpoints": true
     }
   ]
 }

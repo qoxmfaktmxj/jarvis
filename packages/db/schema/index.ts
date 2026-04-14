@@ -17,3 +17,4 @@ export * from "./directory.js";
 export * from "./feedback.js";
 export * from "./llm-call-log.js";
 export * from "./review-queue.js";
+export * from "./document-chunks.js";
