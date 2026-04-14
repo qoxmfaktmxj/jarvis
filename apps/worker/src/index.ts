@@ -1,5 +1,8 @@
 // apps/worker/src/index.ts
 
+import { initSentry } from '@jarvis/shared/sentry';
+initSentry();
+
 import 'dotenv/config';
 import { boss } from './lib/boss.js';
 import { ingestHandler } from './jobs/ingest.js';
