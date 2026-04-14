@@ -10,7 +10,7 @@ describe("redactPII — SSN (주민번호)", () => {
     const { redacted, hits } = redactPII("홍길동 900101-1234567 문의");
     expect(redacted).toBe("홍길동 [REDACTED_SSN] 문의");
     expect(hits).toHaveLength(1);
-    expect(hits[0].kind).toBe("ssn");
+    expect(hits[0]!.kind).toBe("ssn");
   });
 
   it("redacts multiple SSNs in one string", () => {
@@ -23,8 +23,8 @@ describe("redactPII — SSN (주민번호)", () => {
   it("records correct span for SSN", () => {
     const input = "ID 900101-1234567 END";
     const { hits } = redactPII(input);
-    expect(hits[0].span[0]).toBe(3);
-    expect(hits[0].span[1]).toBe(17);
+    expect(hits[0]!.span[0]).toBe(3);
+    expect(hits[0]!.span[1]).toBe(17);
   });
 
   it("does not match 6-7 with wrong separator", () => {
@@ -43,7 +43,7 @@ describe("redactPII — phone (전화)", () => {
   it("redacts 010 mobile", () => {
     const { redacted, hits } = redactPII("연락 010-1234-5678 부탁");
     expect(redacted).toBe("연락 [REDACTED_PHONE] 부탁");
-    expect(hits[0].kind).toBe("phone");
+    expect(hits[0]!.kind).toBe("phone");
   });
 
   it("redacts 011 legacy mobile 3-digit middle", () => {
@@ -71,7 +71,7 @@ describe("redactPII — email", () => {
   it("redacts simple email", () => {
     const { redacted, hits } = redactPII("문의 a@b.com");
     expect(redacted).toBe("문의 [REDACTED_EMAIL]");
-    expect(hits[0].kind).toBe("email");
+    expect(hits[0]!.kind).toBe("email");
   });
 
   it("redacts email with dots and plus", () => {
@@ -86,7 +86,7 @@ describe("redactPII — email", () => {
 
   it("records email span", () => {
     const { hits } = redactPII("email: a@b.com end");
-    expect(hits[0].span[0]).toBe(7);
+    expect(hits[0]!.span[0]).toBe(7);
   });
 
   it("does not match bare domain", () => {
@@ -99,7 +99,7 @@ describe("redactPII — card", () => {
   it("redacts hyphen-separated card", () => {
     const { redacted, hits } = redactPII("카드 4111-1111-1111-1111 결제");
     expect(redacted).toBe("카드 [REDACTED_CARD] 결제");
-    expect(hits[0].kind).toBe("card");
+    expect(hits[0]!.kind).toBe("card");
   });
 
   it("redacts space-separated card", () => {
