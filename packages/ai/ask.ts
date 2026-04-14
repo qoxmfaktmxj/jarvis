@@ -42,6 +42,7 @@ const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
+const PROMPT_VERSION = process.env.PROMPT_VERSION ?? '2026-04-v1';
 
 // 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
@@ -372,7 +373,7 @@ export async function* generateAnswer(
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
       model: ASK_MODEL,
-      promptVersion: null,
+      promptVersion: PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
       costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
@@ -387,7 +388,7 @@ export async function* generateAnswer(
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
       model: ASK_MODEL,
-      promptVersion: null,
+      promptVersion: PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
       costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),

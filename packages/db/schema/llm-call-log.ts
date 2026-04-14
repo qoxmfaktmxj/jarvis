@@ -38,6 +38,7 @@ export const llmCallLog = pgTable(
     workspaceIdx: index("idx_llm_call_log_workspace").on(t.workspaceId),
     requestIdx: index("idx_llm_call_log_request").on(t.requestId),
     createdAtIdx: index("idx_llm_call_log_created_at").on(t.createdAt),
+    budgetIdx: index("idx_llm_call_log_budget").on(t.workspaceId, t.createdAt),
   }),
 );
 
