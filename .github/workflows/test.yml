@@ -1,0 +1,112 @@
+name: test
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-and-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: jarvis
+          POSTGRES_DB: jarvis_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      NODE_ENV: test
+      OPENAI_API_KEY: dummy-for-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - name: Get pnpm store dir
+        id: pnpm-cache
+        shell: bash
+        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure pgvector extension
+        run: |
+          PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Run DB migrations
+        run: pnpm db:migrate
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Integration tests
+        run: pnpm test:integration
+
+      - name: Schema drift check
+        run: node scripts/check-schema-drift.mjs --ci
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs
+          path: |
+            **/vitest.log
+            **/junit*.xml
+          if-no-files-found: ignore
+
+  # -------------------------------------------------------------------------
+  # Nightly eval job — disabled until Phase-7A Lane B (eval harness) lands.
+  # Unblock by removing the `if: false` gate after `pnpm eval:run` exists.
+  # -------------------------------------------------------------------------
+  eval-nightly:
+    if: false
+    runs-on: ubuntu-latest
+    needs: unit-and-integration
+    # schedule trigger is defined at workflow root once Lane B lands:
+    #   schedule:
+    #     - cron: '0 3 * * *'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm eval:run

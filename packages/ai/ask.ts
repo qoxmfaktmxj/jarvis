@@ -1,5 +1,7 @@
 // packages/ai/ask.ts  (retrieval + generation)
 // 2026-04-13: 6-lane 라우터 + Cases/Directory Layer 추가 + OpenAI 생성 마이그레이션
+// 2026-04-14 (Phase-7A PR#5): cache-through with workspace/prompt/scope-aware key.
+// TODO: integrate with Lane A assertBudget+logLlmCall after Lane A is merged.
 
 import OpenAI from 'openai';
 import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
@@ -23,6 +25,7 @@ import {
   type RetrievedEntry,
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
+import { makeCacheKey, getCached, setCached } from './cache.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -34,6 +37,11 @@ import type {
 } from './types.js';
 
 // ---------------------------------------------------------------------------
+// Cache key versioning — bump when prompt template changes
+// ---------------------------------------------------------------------------
+export const PROMPT_VERSION = '2026-04-v1';
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 const TOP_K_VECTOR = 10;
@@ -42,7 +50,6 @@ const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
-const PROMPT_VERSION = process.env.PROMPT_VERSION ?? '2026-04-v1';
 
 // 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
@@ -416,14 +423,50 @@ export async function* askAI(
 ): AsyncGenerator<SSEEvent> {
   const { question, workspaceId, userPermissions, snapshotId, userCompany } = query;
 
+  // ---------------------------------------------------------------------------
+  // Phase-7A cache-through (interim in-memory LRU; Phase-7B replaces with Redis)
+  // sensitivityScope is derived from query if provided, otherwise defaults to
+  // workspace-level internal scope. Callers (request handlers) should pass the
+  // RBAC-derived sensitivityScope once the auth layer is wired.
+  // ---------------------------------------------------------------------------
+  const sensitivityScope =
+    query.sensitivityScope ??
+    `workspace:${workspaceId}|level:internal`;
+
+  const cacheKey = makeCacheKey({
+    promptVersion: PROMPT_VERSION,
+    workspaceId,
+    sensitivityScope,
+    input: question,
+    model: process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini',
+  });
+
+  const hit = await getCached(cacheKey);
+  if (hit) {
+    // Cache hit: replay stored events without touching OpenAI.
+    const cached = JSON.parse(hit) as SSEEvent[];
+    for (const evt of cached) {
+      yield evt;
+    }
+    return;
+  }
+
+  // No cache hit — run the full retrieval + generation pipeline and
+  // collect events so we can store them after completion.
+
   const canReadGraph =
     userPermissions.includes('graph:read') ||
     userPermissions.includes('admin:all');
 
+  // Collect all events so we can cache the full response after completion.
+  const collectedEvents: SSEEvent[] = [];
+
   // 1. 라우팅: lane 결정 + 소스별 가중치
   const route = routeQuestion(question);
   const weights = LANE_SOURCE_WEIGHTS[route.lane];
-  yield { type: 'route', lane: route.lane, confidence: route.confidence };
+  const routeEvent: SSEEvent = { type: 'route', lane: route.lane, confidence: route.confidence };
+  collectedEvents.push(routeEvent);
+  yield routeEvent;
 
   // 2. 모든 소스 항상 병렬 fetch (graph는 권한 있을 때만)
   let claims: RetrievedClaim[] = [];
@@ -518,6 +561,7 @@ export async function* askAI(
     };
     yield { type: 'sources', sources: [] };
     yield { type: 'done', totalTokens: 0 };
+    // Don't cache the fallback (no-result responses shouldn't be cached).
     return;
   }
 
@@ -530,7 +574,8 @@ export async function* askAI(
     weightedEntries,
   );
 
-  yield* generateAnswer(
+  // Collect generation events, yield each one, then cache the whole response.
+  for await (const evt of generateAnswer(
     question,
     context,
     weightedClaims,
@@ -539,5 +584,16 @@ export async function* askAI(
     dirSources,
     query.mode ?? 'simple',
     { workspaceId, requestId: query.requestId ?? null },
-  );
+  )) {
+    collectedEvents.push(evt);
+    yield evt;
+  }
+
+  // Store the collected events so future identical requests skip OpenAI.
+  // Don't cache error responses — a transient OpenAI failure should not be
+  // served to future callers as a cached "answer".
+  const hasError = collectedEvents.some(e => e.type === 'error');
+  if (!hasError) {
+    await setCached(cacheKey, JSON.stringify(collectedEvents));
+  }
 }
