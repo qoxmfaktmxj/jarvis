@@ -10,7 +10,7 @@ export interface EvalFixture {
 }
 
 export function loadFixtures(dir: string): EvalFixture[] {
-  const files = readdirSync(dir).filter((f) => f.endsWith(".md"));
+  const files = readdirSync(dir).filter((f) => f.endsWith(".md")).sort();
   return files.map((f) => {
     const raw = readFileSync(join(dir, f), "utf-8");
     const { data, content } = matter(raw);

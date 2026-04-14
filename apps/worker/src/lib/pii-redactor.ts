@@ -18,7 +18,16 @@ interface PatternDef {
 }
 
 const PATTERNS: PatternDef[] = [
-  { kind: "ssn", regex: /\d{6}-\d{7}/g, replacement: "[REDACTED_SSN]" },
+  {
+    kind: "ssn",
+    // Korean resident registration number: YYMMDD-GNNNNNNC
+    // Validate month (01-12) and day (01-31) to reduce false positives on order
+    // numbers, date ranges, etc.  Boundary anchors prevent matching inside longer
+    // digit runs (e.g. 12-digit order numbers).
+    regex:
+      /(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])-\d{7}(?!\d)/g,
+    replacement: "[REDACTED_SSN]",
+  },
   {
     kind: "phone",
     regex: /\b01[0-9]-\d{3,4}-\d{4}\b|\b02-\d{3,4}-\d{4}\b/g,

@@ -7,7 +7,6 @@ import * as mammoth from 'mammoth';
 import { minioClient, BUCKET } from '../lib/minio-client.js';
 import { parsePdf } from '../lib/pdf-parser.js';
 import {
-  computeSensitivity,
   detectSecretKeywords,
   redactPII,
   type Sensitivity,
@@ -107,11 +106,14 @@ async function processIngest(
     const mimeType = source.mimeType ?? 'application/octet-stream';
     const extractedText = await extractText(buffer, mimeType);
 
-    // ---- Step 0: PII / SECRET guard ----
+    // ---- Step 0: PII / SECRET guard (single-pass) ----
+    // Run each scan exactly once to avoid redundant regex sweeps.
+    // computeSensitivity() is intentionally NOT called here because it would
+    // re-invoke detectSecretKeywords + redactPII internally.
     const currentSensitivity =
       (source.sensitivity as Sensitivity | null) ?? 'INTERNAL';
     const secretHits = detectSecretKeywords(extractedText);
-    const newSensitivity = computeSensitivity(extractedText, currentSensitivity);
+    const { redacted, hits: piiHits } = redactPII(extractedText);
 
     if (secretHits.length > 0) {
       await db.insert(reviewQueue).values({
@@ -137,6 +139,19 @@ async function processIngest(
     }
 
     // PII만 있음 → sensitivity만 승급하고 계속 진행
+    const hasPII = piiHits.length > 0;
+    const ORDER: Record<Sensitivity, number> = {
+      PUBLIC: 0,
+      INTERNAL: 1,
+      RESTRICTED: 2,
+      SECRET_REF_ONLY: 3,
+    };
+    const newSensitivity: Sensitivity = hasPII
+      ? (ORDER[currentSensitivity] >= ORDER.INTERNAL
+          ? currentSensitivity
+          : 'INTERNAL')
+      : currentSensitivity;
+
     if (newSensitivity !== currentSensitivity) {
       await db
         .update(rawSource)
@@ -145,7 +160,6 @@ async function processIngest(
     }
 
     // extractedText는 이후 단계용으로 redacted 버전으로 교체
-    const { redacted } = redactPII(extractedText);
     const safeText = redacted;
     // ---- End Step 0 ----
 

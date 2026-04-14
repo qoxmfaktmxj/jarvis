@@ -37,6 +37,14 @@ describe("redactPII — SSN (주민번호)", () => {
     expect(redacted).toBe("주문번호 12345678901234");
     expect(hits).toHaveLength(0);
   });
+
+  it("should NOT flag order numbers as SSN", () => {
+    // 202401-1234567: month part is "24" which is not a valid month (01-12)
+    const text = "주문번호: 202401-1234567호 처리완료";
+    const { redacted, hits } = redactPII(text);
+    expect(hits.filter((h) => h.kind === "ssn")).toHaveLength(0);
+    expect(redacted).toBe(text);
+  });
 });
 
 describe("redactPII — phone (전화)", () => {
