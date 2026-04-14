@@ -17,6 +17,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@sentry/node": "^10.48.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
