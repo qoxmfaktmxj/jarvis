@@ -20,7 +20,7 @@ import {
   toDirectorySourceRef,
   type RetrievedEntry,
 } from './directory-context.js';
-import { routeQuestion } from './router.js';
+import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -39,7 +39,7 @@ const TOP_K_FINAL = 5;
 const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
-const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
+const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 
 // ---------------------------------------------------------------------------
 // Text Claims Retrieval (기존 로직 유지)
@@ -339,8 +339,15 @@ export async function* generateAnswer(
 }
 
 // ---------------------------------------------------------------------------
-// askAI — 메인 파이프라인 (6-lane 라우터 통합)
+// Unified retrieval: 항상 4개 소스 전부 병렬 검색 → lane 가중치로 랭킹만 조정.
+// 라우터는 "어떤 소스를 버릴지"가 아니라 "얼마나 신뢰할지"를 결정한다.
 // ---------------------------------------------------------------------------
+const UNIFIED_TOP_K = 8;      // 각 소스 초기 fetch 개수
+const UNIFIED_FINAL_TEXT = 5;
+const UNIFIED_FINAL_CASE = 4;
+const UNIFIED_FINAL_DIR = 5;
+const UNIFIED_FINAL_GRAPH = 5;
+
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
@@ -350,59 +357,49 @@ export async function* askAI(
     userPermissions.includes('graph:read') ||
     userPermissions.includes('admin:all');
 
-  // 1. 라우팅 결정
+  // 1. 라우팅: lane 결정 + 소스별 가중치
   const route = routeQuestion(question);
-  const { lane } = route;
+  const weights = LANE_SOURCE_WEIGHTS[route.lane];
+  yield { type: 'route', lane: route.lane, confidence: route.confidence };
 
-  // 2. Lane별 retrieval 계획 수립
-  const shouldFetchText =
-    lane !== 'directory-first'; // directory-only 질문엔 text skip
-
-  const shouldFetchGraph =
-    canReadGraph &&
-    (lane === 'graph-first' || lane === 'tutor-first');
-
-  const shouldFetchCases =
-    lane === 'case-first' || lane === 'tutor-first' || lane === 'action-first';
-
-  const shouldFetchDirectory =
-    lane === 'directory-first' || lane === 'action-first' || lane === 'tutor-first';
-
-  // 3. 병렬 retrieval 실행
+  // 2. 모든 소스 항상 병렬 fetch (graph는 권한 있을 때만)
   let claims: RetrievedClaim[] = [];
   let graphCtx: GraphContext | null = null;
   let caseResult: Awaited<ReturnType<typeof retrieveRelevantCases>> | null = null;
   let dirResult: Awaited<ReturnType<typeof searchDirectory>> | null = null;
 
   try {
-    const tasks: Promise<unknown>[] = [];
+    const claimsTask = retrieveRelevantClaims(question, workspaceId, userPermissions)
+      .catch((err) => {
+        console.error('[ask] Text retrieval failed:', err instanceof Error ? err.message : err);
+        return [] as RetrievedClaim[];
+      });
 
-    const claimsTask = shouldFetchText
-      ? retrieveRelevantClaims(question, workspaceId, userPermissions)
-      : Promise.resolve([]);
-
-    const graphTask =
-      shouldFetchGraph
-        ? retrieveRelevantGraphContext(question, workspaceId, {
-            explicitSnapshotId: snapshotId,
-            permissions: userPermissions,
-          }).catch((err) => {
-            console.error('[ask] Graph context failed (degraded):', err instanceof Error ? err.message : err);
-            return null;
-          })
-        : Promise.resolve(null);
-
-    const casesTask = shouldFetchCases
-      ? retrieveRelevantCases(question, workspaceId, {
-          topK: 3,
-          userCompany,
-          userPermissions,
+    const graphTask = canReadGraph
+      ? retrieveRelevantGraphContext(question, workspaceId, {
+          explicitSnapshotId: snapshotId,
+          permissions: userPermissions,
+        }).catch((err) => {
+          console.error('[ask] Graph retrieval failed (degraded):', err instanceof Error ? err.message : err);
+          return null;
         })
       : Promise.resolve(null);
 
-    const dirTask = shouldFetchDirectory
-      ? searchDirectory(question, workspaceId, { topK: 5 })
-      : Promise.resolve(null);
+    const casesTask = retrieveRelevantCases(question, workspaceId, {
+      topK: UNIFIED_TOP_K,
+      userCompany,
+      userPermissions,
+      includeNonDigest: true,
+    }).catch((err) => {
+      console.error('[ask] Case retrieval failed:', err instanceof Error ? err.message : err);
+      return null;
+    });
+
+    const dirTask = searchDirectory(question, workspaceId, { topK: UNIFIED_TOP_K })
+      .catch((err) => {
+        console.error('[ask] Directory retrieval failed:', err instanceof Error ? err.message : err);
+        return null;
+      });
 
     [claims, graphCtx, caseResult, dirResult] = await Promise.all([
       claimsTask,
@@ -416,18 +413,40 @@ export async function* askAI(
     return;
   }
 
+  // 3. 소스별 가중치 적용 + 정규화 후 최종 선택
+  const rawCases = caseResult?.cases ?? [];
+  const rawEntries = dirResult?.entries ?? [];
+
+  const weightedClaims = claims
+    .map((c) => ({ ...c, weighted: c.hybridScore * weights.text }))
+    .sort((a, b) => b.weighted - a.weighted)
+    .slice(0, UNIFIED_FINAL_TEXT);
+
+  const weightedCases = rawCases
+    .map((c) => ({ ...c, weighted: c.hybridScore * weights.case }))
+    .sort((a, b) => b.weighted - a.weighted)
+    .slice(0, UNIFIED_FINAL_CASE);
+
+  const weightedEntries = rawEntries
+    .map((e) => ({ ...e, weighted: e.score * weights.directory }))
+    .sort((a, b) => b.weighted - a.weighted)
+    .slice(0, UNIFIED_FINAL_DIR);
+
   const graphSources: GraphSourceRef[] = graphCtx ? toGraphSourceRefs(graphCtx) : [];
-  const cases = caseResult?.cases ?? [];
-  const entries = dirResult?.entries ?? [];
-  const caseSources: CaseSourceRef[] = cases.map(toCaseSourceRef);
-  const dirSources: DirectorySourceRef[] = entries.map(toDirectorySourceRef);
+  const weightedGraph = graphSources
+    .map((g) => ({ ...g, weighted: g.confidence * weights.graph }))
+    .sort((a, b) => b.weighted - a.weighted)
+    .slice(0, UNIFIED_FINAL_GRAPH);
+
+  const caseSources: CaseSourceRef[] = weightedCases.map(toCaseSourceRef);
+  const dirSources: DirectorySourceRef[] = weightedEntries.map(toDirectorySourceRef);
 
   // 4. 아무 결과도 없을 때 fallback
   if (
-    claims.length === 0 &&
-    graphSources.length === 0 &&
-    cases.length === 0 &&
-    entries.length === 0
+    weightedClaims.length === 0 &&
+    weightedGraph.length === 0 &&
+    weightedCases.length === 0 &&
+    weightedEntries.length === 0
   ) {
     yield {
       type: 'text',
@@ -440,7 +459,21 @@ export async function* askAI(
   }
 
   // 5. 컨텍스트 조합 + 생성
-  const context = assembleContext(claims, graphSources, graphCtx, cases, entries);
+  const context = assembleContext(
+    weightedClaims,
+    weightedGraph,
+    graphCtx,
+    weightedCases,
+    weightedEntries,
+  );
 
-  yield* generateAnswer(question, context, claims, graphSources, caseSources, dirSources, query.mode ?? 'simple');
+  yield* generateAnswer(
+    question,
+    context,
+    weightedClaims,
+    weightedGraph,
+    caseSources,
+    dirSources,
+    query.mode ?? 'simple',
+  );
 }

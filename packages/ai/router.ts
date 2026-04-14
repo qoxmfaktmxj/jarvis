@@ -190,15 +190,17 @@ export function routeQuestion(question: string): RouteResult {
 }
 
 // ---------------------------------------------------------------------------
-// laneToSources — lane별 retrieval 우선순위 힌트
-// NOTE: Currently informational only. ask.ts uses hardcoded shouldFetch* booleans.
-// Kept as documentation of the intended source priority per lane.
+// Source weights per lane — used by unified retrieval in ask.ts.
+// Each source is always fetched; the lane only tunes how much to trust it.
+// Keys: text | case | directory | graph. Values 0..1.5.
 // ---------------------------------------------------------------------------
-export const LANE_SOURCE_PRIORITY: Record<AskLane, readonly string[]> = {
-  'text-first':      ['canonical', 'case'],
-  'graph-first':     ['graph', 'canonical'],
-  'case-first':      ['case', 'canonical'],
-  'directory-first': ['directory'],
-  'action-first':    ['directory', 'canonical'],
-  'tutor-first':     ['canonical', 'case', 'graph'],
+export type SourceKind = 'text' | 'case' | 'directory' | 'graph';
+
+export const LANE_SOURCE_WEIGHTS: Record<AskLane, Record<SourceKind, number>> = {
+  'text-first':      { text: 1.0, case: 0.6, directory: 0.5, graph: 0.4 },
+  'graph-first':     { text: 0.7, case: 0.5, directory: 0.4, graph: 1.2 },
+  'case-first':      { text: 0.6, case: 1.2, directory: 0.5, graph: 0.3 },
+  'directory-first': { text: 0.5, case: 0.4, directory: 1.3, graph: 0.2 },
+  'action-first':    { text: 0.9, case: 0.8, directory: 1.1, graph: 0.3 },
+  'tutor-first':     { text: 1.0, case: 0.9, directory: 0.9, graph: 0.7 },
 };

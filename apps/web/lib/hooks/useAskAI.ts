@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SSEEvent, SourceRef } from "@jarvis/ai/types";
 
 export interface AskAIState {
@@ -9,11 +9,15 @@ export interface AskAIState {
   sources: SourceRef[];
   error: string | null;
   question: string;
+  lane: string | null;
+  totalTokens: number | null;
+  feedbackSent: 'up' | 'down' | null;
 }
 
 export interface UseAskAIReturn extends AskAIState {
   ask: (question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert' }) => void;
   reset: () => void;
+  sendFeedback: (rating: 'up' | 'down', comment?: string) => Promise<void>;
 }
 
 const initialState: AskAIState = {
@@ -22,11 +26,18 @@ const initialState: AskAIState = {
   sources: [],
   error: null,
   question: "",
+  lane: null,
+  totalTokens: null,
+  feedbackSent: null,
 };
 
 export function useAskAI(): UseAskAIReturn {
   const [state, setState] = useState<AskAIState>(initialState);
   const abortRef = useRef<AbortController | null>(null);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
@@ -44,6 +55,9 @@ export function useAskAI(): UseAskAIReturn {
       sources: [],
       error: null,
       question,
+      lane: null,
+      totalTokens: null,
+      feedbackSent: null,
     });
 
     (async () => {
@@ -128,10 +142,16 @@ export function useAskAI(): UseAskAIReturn {
                 ...current,
                 sources: event.sources,
               }));
+            } else if (event.type === "route") {
+              setState((current) => ({
+                ...current,
+                lane: event.lane,
+              }));
             } else if (event.type === "done") {
               setState((current) => ({
                 ...current,
                 isStreaming: false,
+                totalTokens: event.totalTokens,
               }));
             } else if (event.type === "error") {
               setState((current) => ({
@@ -156,5 +176,39 @@ export function useAskAI(): UseAskAIReturn {
     })();
   }, []);
 
-  return { ...state, ask, reset };
+  const sendFeedback = useCallback(async (rating: 'up' | 'down', comment?: string) => {
+    const snapshot = stateRef.current;
+    if (!snapshot.question || snapshot.feedbackSent) return;
+    try {
+      const sourceRefs = snapshot.sources
+        .slice(0, 20)
+        .map((s) => {
+          if (s.kind === 'text') return `text:${s.pageId}`;
+          if (s.kind === 'graph') return `graph:${s.nodeId}`;
+          if (s.kind === 'case') return `case:${s.caseId}`;
+          return `directory:${s.entryId}`;
+        });
+
+      const res = await fetch('/api/ask/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: snapshot.question,
+          answerPreview: snapshot.answer.slice(0, 300),
+          lane: snapshot.lane ?? undefined,
+          sourceRefs,
+          rating,
+          comment,
+          totalTokens: snapshot.totalTokens ?? undefined,
+        }),
+      });
+      if (res.ok) {
+        setState((cur) => ({ ...cur, feedbackSent: rating }));
+      }
+    } catch {
+      // best-effort, silent fail
+    }
+  }, []);
+
+  return { ...state, ask, reset, sendFeedback };
 }

@@ -7,7 +7,7 @@ import type { SSEEvent, SourceRef, AskQuery } from './types.js';
 
 // Module-level singleton — shared across all tutor invocations
 const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
-const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini';
+const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 import { retrieveRelevantClaims } from './ask.js';
 import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
 import { searchDirectory, toDirectorySourceRef } from './directory-context.js';

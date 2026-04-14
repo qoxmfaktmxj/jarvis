@@ -24,6 +24,12 @@ importers:
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
+      dotenv:
+        specifier: ^16.4.5
+        version: 16.6.1
+      openai:
+        specifier: ^4.0.0
+        version: 4.104.0(zod@3.25.76)
       tsx:
         specifier: ^4.21.0
         version: 4.21.0

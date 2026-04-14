@@ -64,6 +64,13 @@
       "when": 1776079009754,
       "tag": "0008_yellow_bloodaxe",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776140858134,
+      "tag": "0009_flaky_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }

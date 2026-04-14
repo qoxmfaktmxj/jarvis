@@ -22,7 +22,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 
-DEFAULT_MODEL = "gpt-4.1-mini"
+DEFAULT_MODEL = "gpt-5.4-mini"
 DEFAULT_CONCURRENCY = 50
 KST = ZoneInfo("Asia/Seoul")
 

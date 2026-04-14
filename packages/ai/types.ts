@@ -66,13 +66,14 @@ export interface AskResult {
   totalTokens: number;
 }
 
-export type SSEEventType = 'text' | 'sources' | 'done' | 'error';
+export type SSEEventType = 'text' | 'sources' | 'done' | 'error' | 'route';
 
 export interface SSETextEvent { type: 'text'; content: string }
 export interface SSESourcesEvent { type: 'sources'; sources: SourceRef[] }
 export interface SSEDoneEvent { type: 'done'; totalTokens: number }
 export interface SSEErrorEvent { type: 'error'; message: string }
-export type SSEEvent = SSETextEvent | SSESourcesEvent | SSEDoneEvent | SSEErrorEvent;
+export interface SSERouteEvent { type: 'route'; lane: string; confidence: number }
+export type SSEEvent = SSETextEvent | SSESourcesEvent | SSEDoneEvent | SSEErrorEvent | SSERouteEvent;
 
 export interface RetrievedClaim {
   id: string;

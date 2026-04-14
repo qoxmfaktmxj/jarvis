@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, Sparkles, Zap } from "lucide-react";
+import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
 import type { AskMode, SourceRef } from "@jarvis/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
   const [askMode, setAskMode] = useState<AskMode>('simple');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const { isStreaming, answer, sources, error, question, ask, reset } = useAskAI();
+  const { isStreaming, answer, sources, error, question, lane, feedbackSent, ask, reset, sendFeedback } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -69,22 +69,20 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [answer]);
 
-  useEffect(() => {
-    if (!isStreaming && answer && question) {
-      setHistory((prev) => {
-        if (prev[prev.length - 1]?.question === question) {
-          return prev;
-        }
-
-        return [...prev, { question, answer, sources }];
-      });
-    }
-  }, [isStreaming, answer, question, sources]);
-
+  // history 이동은 "새 질문이 들어오는 시점"에만 한다.
+  // 답변 완료 직후 live 블록을 없애면 피드백 버튼이 즉시 사라지므로,
+  // 다음 질문을 보낼 때까지 live 블록(+ 피드백 버튼)을 유지한다.
   function handleAsk(rawQuestion: string) {
     const trimmed = rawQuestion.trim();
     if (!trimmed || isStreaming) {
       return;
+    }
+
+    if (answer && question && question !== trimmed) {
+      setHistory((prev) => {
+        if (prev[prev.length - 1]?.question === question) return prev;
+        return [...prev, { question, answer, sources }];
+      });
     }
 
     ask(trimmed, { snapshotId: activeScope?.id, mode: askMode });
@@ -210,7 +208,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                 </div>
               ))}
 
-              {(isStreaming || (answer && !history.find((item) => item.question === question))) && (
+              {(isStreaming || answer) && (
                 <div className="space-y-3">
                   <div className="flex justify-end">
                     <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-2.5 text-sm text-white">
@@ -242,6 +240,43 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                           {sources.map((source, sourceIndex) => (
                             <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.kind === 'graph' ? source.nodeId : source.kind === 'case' ? source.caseId : source.entryId}-${sourceIndex}`} source={source} index={sourceIndex} />
                           ))}
+                        </div>
+                      )}
+
+                      {!isStreaming && answer && (
+                        <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+                          {lane && (
+                            <span className="rounded-full border border-gray-200 px-2 py-0.5">
+                              {lane}
+                            </span>
+                          )}
+                          <span className="ml-auto">이 답변이 도움이 됐나요?</span>
+                          <button
+                            type="button"
+                            onClick={() => sendFeedback('up')}
+                            disabled={!!feedbackSent}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
+                              feedbackSent === 'up'
+                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                            title="도움됨"
+                          >
+                            <ThumbsUp className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => sendFeedback('down')}
+                            disabled={!!feedbackSent}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
+                              feedbackSent === 'down'
+                                ? 'border-rose-300 bg-rose-50 text-rose-700'
+                                : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                            title="도움 안 됨"
+                          >
+                            <ThumbsDown className="h-3 w-3" />
+                          </button>
                         </div>
                       )}
                     </div>

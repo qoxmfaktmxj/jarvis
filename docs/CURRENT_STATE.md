@@ -125,7 +125,7 @@ All architecture phases (0-6) are complete. The system is ready for:
 
 | Purpose | Provider | Model | Environment Variable |
 |---------|----------|-------|----------------------|
-| **Ask AI Generation** | OpenAI | gpt-4.1-mini (default) | `ASK_AI_MODEL` (optional) |
+| **Ask AI Generation** | OpenAI | gpt-5.4-mini (default) | `ASK_AI_MODEL` (optional) |
 | **Ask AI Embeddings** | OpenAI | text-embedding-3-small | `OPENAI_API_KEY` |
 | **Case Embeddings** | Local TF-IDF | 1536d (compatible with pgvector) | (Computed locally) |
 | **Graphify Code Analysis** | Anthropic | claude-haiku-4-5 | `ANTHROPIC_API_KEY` |
@@ -274,7 +274,7 @@ Pattern Matching (no LLM):
   ↓
 Retrieve from selected lane(s)
   ↓
-OpenAI generation (gpt-4.1-mini)
+OpenAI generation (gpt-5.4-mini)
   ↓
 Response + [source:N] citations
   ↓

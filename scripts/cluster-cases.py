@@ -18,7 +18,7 @@ import numpy as np
 
 
 DEFAULT_EMBED_MODEL = "text-embedding-3-small"
-DEFAULT_LABEL_MODEL = "gpt-4.1-mini"
+DEFAULT_LABEL_MODEL = "gpt-5.4-mini"
 DEFAULT_DIMENSIONS = 1536
 
 
