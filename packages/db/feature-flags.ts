@@ -3,3 +3,11 @@
 export function featureDocumentChunksWrite(): boolean {
   return process.env.FEATURE_DOCUMENT_CHUNKS_WRITE === "true";
 }
+
+export function featureTwoStepIngest(): boolean {
+  return process.env.FEATURE_TWO_STEP_INGEST === "true";
+}
+
+export function featureHybridSearchMvp(): boolean {
+  return process.env.FEATURE_HYBRID_SEARCH_MVP === "true";
+}
