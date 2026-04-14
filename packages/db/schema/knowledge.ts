@@ -109,7 +109,11 @@ export const knowledgeClaim = pgTable("knowledge_claim", {
   embedding: vector("embedding"),
   verified: boolean("verified").default(false).notNull(),
   verifiedBy: uuid("verified_by").references(() => user.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  // Phase-7B: track whether claim was hand-written or LLM-generated
+  claimSource: varchar("claim_source", { length: 30 }).default("manual").notNull(),
+  // Phase-7B: display order within a page
+  sortOrder: integer("sort_order").default(0).notNull(),
 }, (table) => ({
   pageIdx: index("idx_knowledge_claim_page").on(table.pageId),
 }));
