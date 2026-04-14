@@ -10,7 +10,8 @@
     "./constants": "./constants/index.ts",
     "./constants/*": "./constants/*.ts",
     "./validation": "./validation/index.ts",
-    "./validation/*": "./validation/*.ts"
+    "./validation/*": "./validation/*.ts",
+    "./sentry": "./sentry.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
