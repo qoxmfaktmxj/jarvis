@@ -24,6 +24,39 @@ function formatSSE(event: SSEEvent): string {
   return `data: ${JSON.stringify(event)}\n\n`;
 }
 
+/**
+ * Derives a cache scope key from the session's permissions.
+ * Users with different clearance levels must NOT share cache entries — a
+ * RESTRICTED-level response must never be served to a PUBLIC/INTERNAL caller.
+ *
+ * Knowledge level: aligns with PRIVILEGED_KNOWLEDGE_PERMISSIONS in packages/auth/rbac.ts
+ *   (KNOWLEDGE_UPDATE, KNOWLEDGE_REVIEW, ADMIN_ALL can see RESTRICTED/SECRET_REF_ONLY).
+ *
+ * Graph dimension: graph:read gates graph-lane retrieval in ask.ts. A response that
+ *   includes graph context must NOT be served to a non-graph-read caller from cache.
+ */
+function deriveSensitivityScope(workspaceId: string, permissions: string[]): string {
+  let level: string;
+  if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
+    level = 'secret';
+  } else if (
+    permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW) ||
+    permissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE)
+  ) {
+    level = 'restricted';
+  } else if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
+    level = 'internal';
+  } else {
+    level = 'public';
+  }
+
+  const graphFlag = permissions.includes(PERMISSIONS.GRAPH_READ) || permissions.includes(PERMISSIONS.ADMIN_ALL)
+    ? 'graph:1'
+    : 'graph:0';
+
+  return `workspace:${workspaceId}|level:${level}|${graphFlag}`;
+}
+
 export async function POST(request: NextRequest) {
   // 1. Auth + permission check
   const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_READ);
@@ -70,14 +103,16 @@ export async function POST(request: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       try {
+        const permissions = session.permissions ?? [];
         const generator = askAI({
           question: body.question,
           workspaceId: session.workspaceId,
           userId: session.userId,
           userRoles: session.roles ?? [],
-          userPermissions: session.permissions ?? [],
+          userPermissions: permissions,
           snapshotId: body.snapshotId,
           mode: body.mode,
+          sensitivityScope: deriveSensitivityScope(session.workspaceId, permissions),
         });
 
         for await (const event of generator) {

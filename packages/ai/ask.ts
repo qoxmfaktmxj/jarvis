@@ -1,7 +1,7 @@
 // packages/ai/ask.ts  (retrieval + generation)
 // 2026-04-13: 6-lane 라우터 + Cases/Directory Layer 추가 + OpenAI 생성 마이그레이션
 // 2026-04-14 (Phase-7A PR#5): cache-through with workspace/prompt/scope-aware key.
-// TODO: integrate with Lane A assertBudget+logLlmCall after Lane A is merged.
+// 2026-04-15 (Phase-7A merged): assertBudget + logLlmCall integrated.
 
 import OpenAI from 'openai';
 import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
@@ -425,13 +425,15 @@ export async function* askAI(
 
   // ---------------------------------------------------------------------------
   // Phase-7A cache-through (interim in-memory LRU; Phase-7B replaces with Redis)
-  // sensitivityScope is derived from query if provided, otherwise defaults to
-  // workspace-level internal scope. Callers (request handlers) should pass the
-  // RBAC-derived sensitivityScope once the auth layer is wired.
+  // sensitivityScope encodes both knowledge clearance and graph access so that
+  // users with different permission profiles never share a cache entry.
+  // Format: workspace:<id>|level:<public|internal|restricted|secret>|graph:<0|1>
+  // Callers MUST pass the RBAC-derived scope (see apps/web/app/api/ask/route.ts).
+  // The fallback here is the conservative minimum (internal, no graph).
   // ---------------------------------------------------------------------------
   const sensitivityScope =
     query.sensitivityScope ??
-    `workspace:${workspaceId}|level:internal`;
+    `workspace:${workspaceId}|level:internal|graph:0`;
 
   const cacheKey = makeCacheKey({
     promptVersion: PROMPT_VERSION,
@@ -440,6 +442,19 @@ export async function* askAI(
     input: question,
     model: process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini',
   });
+
+  // Budget gate applies even on cache hit — a workspace over budget should not
+  // receive LLM content regardless of whether it comes from cache or a new call.
+  try {
+    await assertBudget(workspaceId);
+  } catch (err) {
+    if (err instanceof BudgetExceededError) {
+      await recordBlocked(workspaceId, process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini', query.requestId ?? null);
+      yield { type: 'error', message: 'daily budget exceeded' };
+      return;
+    }
+    throw err;
+  }
 
   const hit = await getCached(cacheKey);
   if (hit) {

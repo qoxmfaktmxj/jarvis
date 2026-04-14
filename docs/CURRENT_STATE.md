@@ -1,7 +1,7 @@
 # Jarvis Current State Document
 
-**Last Updated**: 2026-04-14  
-**Status**: All Phases Completed  
+**Last Updated**: 2026-04-15  
+**Status**: Phases 0–7A Complete  
 **Scope**: 5000-user enterprise portal, 1-week sprint baseline
 
 ---
@@ -16,9 +16,9 @@ Jarvis is a production-ready enterprise knowledge portal that integrates:
 - **Graphify Code Analysis** (deterministic pipeline: tree-sitter AST + NetworkX + Leiden/Louvain — no LLM)
 - **OpenAI-powered Generation + Embeddings** (ask responses, embeddings — single provider across the stack)
 
-All architecture phases (0-6) are complete. The system is ready for:
-1. Extended test coverage
-2. CI/CD pipeline automation
+All architecture phases (0–7A) are complete. The system is ready for:
+1. Phase-7B (2-step ingest, hybrid search, wiki write path)
+2. Production: connect real OPENAI_API_KEY, run db:migrate
 3. Production observability tuning
 
 ---
@@ -34,6 +34,7 @@ All architecture phases (0-6) are complete. The system is ready for:
 | **Phase 4** | Graphify Integration | ✓ Complete | Code analysis, graph export, wiki generation |
 | **Phase 5** | UI Features (Simple/Expert, Tutor) | ✓ Complete | Mode toggle, AnswerCard, HR tutor |
 | **Phase 6** | Knowledge Quality (Radar, Drift) | ✓ Complete | Stale detection, consistency checking |
+| **Phase 7A** | Infrastructure Gate (observability, cost, PII, eval, CI/CD) | ✓ Complete | llm_call_log, PII redactor, review_queue, document_chunks DDL, eval fixtures 30-pair, CI/CD |
 
 ---
 
@@ -41,7 +42,7 @@ All architecture phases (0-6) are complete. The system is ready for:
 
 ### Table Count
 
-**39 Tables** organized by domain:
+**42 Tables** organized by domain:
 
 #### Knowledge Tables (5)
 - `knowledge_page` — documents with 4-surface model (canonical/directory/case/derived)
@@ -104,6 +105,11 @@ All architecture phases (0-6) are complete. The system is ready for:
 - `code`
 - `company`
 
+#### LLM/AI Tables (3)
+- `llm_call_log` — per-call log (model, tokens, cost_usd, latency_ms, request_id, workspace_id, status)
+- `review_queue` — PII/secret documents flagged for human review
+- `document_chunks` — chunked document embeddings (write path off by default; `FEATURE_DOCUMENT_CHUNKS_WRITE=true` to enable)
+
 ---
 
 ## Data Inventory
@@ -129,6 +135,7 @@ All architecture phases (0-6) are complete. The system is ready for:
 | **Case Embeddings** | Local TF-IDF | 1536d (compatible with pgvector) | (Computed locally) |
 | **Graphify Code Analysis** | Deterministic (no LLM) | tree-sitter + NetworkX + Leiden/Louvain | (none) |
 | **Graphify Cache** | Graphify internals | SHA256-based | (Managed by Graphify) |
+| **Cost Tracking** | Internal | llm_call_log | `LLM_DAILY_BUDGET_USD` |
 
 **Notes**:
 - **Ask AI** uses **OpenAI** (`gpt-5.4-mini` default)
@@ -214,6 +221,9 @@ All architecture phases (0-6) are complete. The system is ready for:
 - `directory-context.ts` — Directory ILIKE search
 - `graph-context.ts` — Graph node/edge retrieval
 - `tutor.ts` — Multi-turn tutorial mode
+- `budget.ts` — daily budget gate (`LLM_DAILY_BUDGET_USD`), `assertBudget()` + `recordBlocked()`
+- `logger.ts` — structured pino logging, request-id context, Sentry integration
+- `cache.ts` — in-memory LRU cache (promptVersion + workspaceId + sensitivityScope key)
 
 **Router Lanes** (no LLM cost):
 1. **text-first**: /규정|정책|규칙/ → knowledge_claim
@@ -475,17 +485,15 @@ ORDER BY
    - Add search relevance regression tests
    - Graphify pipeline validation tests
 
-2. **CI/CD**
-   - GitHub Actions workflow (lint, test, build, deploy)
-   - Docker image push to registry
-   - Database migration validation before deploy
-   - Schema drift check in CI (not just as hook)
+2. **Phase 7B** (conditional on CI gates passing)
+   - `FEATURE_TWO_STEP_INGEST=true` — 2-step wiki ingest pipeline
+   - `FEATURE_HYBRID_SEARCH_MVP=true` — 4-signal relevance + RRF
+   - `wiki_*` write path activation
+   - Gate condition: all 7 Phase-7A gates pass in CI
 
 3. **Observability**
-   - Request ID middleware (all APIs)
    - Queue metrics export (pg-boss)
    - Performance tracing (APM integration)
-   - Error rate monitoring
 
 ### Medium Term (1-2 months)
 
@@ -595,24 +603,25 @@ jarvis/
 ## Summary
 
 Jarvis is a **production-ready knowledge portal** with:
-- ✓ 39 tables, 95 canonical docs, 74,342 cases, 31 directory entries
+- ✓ 42 tables, 95 canonical docs, 74,342 cases, 31 directory entries
 - ✓ 6-lane Ask AI router (Korean keyword matching, no LLM cost)
 - ✓ OpenAI generation + OpenAI embeddings (single provider; Graphify is deterministic — no LLM)
 - ✓ 4-surface knowledge model (canonical/directory/case/derived)
 - ✓ Knowledge Debt Radar + Drift Detection
+- ✓ Phase-7A: llm_call_log + PII redactor + review_queue + document_chunks DDL + 30-pair eval fixtures + CI/CD + cost kill-switch
 - ✓ AnswerCard structured responses
 - ✓ Simple/Expert mode toggle
 - ✓ HR tutor with guides, quizzes, simulations
 - ✓ Graphify code analysis (AST + semantic extraction)
 
 **Ready for**:
-1. Extended test coverage (API, RBAC, search relevance)
-2. CI/CD pipeline (GitHub Actions)
-3. Production observability (tracing, metrics, logging)
+1. Phase-7B (2-step ingest, hybrid search, wiki write path)
+2. ~~CI/CD pipeline (GitHub Actions)~~ — done
+3. Production: connect real OPENAI_API_KEY, run db:migrate
 
 **Not yet**:
 - Multi-tenant workspace isolation (code-ready, not enforced)
 - Custom search plugins
 - Advanced analytics
 
-All architecture phases complete. Quality + reliability improvements next.
+Phases 0–7A complete. Phase-7B is next (conditional on CI gates).
