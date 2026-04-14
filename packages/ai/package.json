@@ -10,7 +10,9 @@
     "./ask": "./ask.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@jarvis/auth": "workspace:*",
