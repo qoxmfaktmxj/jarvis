@@ -436,15 +436,24 @@ export const wikiSourcesDraft = pgTable("wiki_sources_draft", {
 
 ```ts
 // packages/db/schema/wiki-junction.ts
-import { pgTable, uuid, text, pgEnum, index, unique } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { pgTable, uuid, text, pgEnum, integer, index, unique } from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
 import { createdAt } from "./_helpers";
+
+// Top-level enum declarations (Jarvis 컨벤션)
+export const refererTypeEnum = pgEnum("referer_type", [
+  "wiki_entity", "wiki_concept", "wiki_synthesis", "case",
+]);
+
+export const citedTypeEnum = pgEnum("cited_type", [
+  "wiki_sources", "knowledge_page", "case", "directory", "wiki_concept",
+]);
 
 // wiki_source_refs: wiki_entities / wiki_concepts / wiki_syntheses가 어느 wiki_sources를 참조하는지
 export const wikiSourceRefs = pgTable("wiki_source_refs", {
   id: uuid("id").defaultRandom().primaryKey(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
-  refererType: pgEnum("referer_type", ["wiki_entity", "wiki_concept", "wiki_synthesis", "case"])("referer_type").notNull(),
+  refererType: refererTypeEnum("referer_type").notNull(),
   refererId: uuid("referer_id").notNull(),
   sourceId: uuid("source_id").notNull(),  // wiki_sources.id (FK 강제 어려움 — trigger로 보정 또는 nullable)
   relation: text("relation"),              // 'mentions' | 'defines' | 'cites' | ...
@@ -461,7 +470,7 @@ export const wikiCitations = pgTable("wiki_citations", {
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
   synthesisId: uuid("synthesis_id").notNull(),       // FK → wiki_syntheses.id
   citationIndex: integer("citation_index").notNull(), // [1], [2], [3]
-  citedType: pgEnum("cited_type", ["wiki_sources", "knowledge_page", "case", "directory", "wiki_concept"])("cited_type").notNull(),
+  citedType: citedTypeEnum("cited_type").notNull(),
   citedId: uuid("cited_id").notNull(),
   snippet: text("snippet"),
   createdAt: createdAt(),
