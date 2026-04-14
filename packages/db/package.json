@@ -8,7 +8,9 @@
     "./client": "./client.ts",
     "./redis": "./redis.ts",
     "./schema": "./schema/index.ts",
-    "./schema/*": "./schema/*.ts"
+    "./schema/*": "./schema/*.ts",
+    "./feature-flags": "./feature-flags.ts",
+    "./writers/document-chunks": "./writers/document-chunks.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
