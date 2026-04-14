@@ -51,3 +51,6 @@ data/directory/*
 !data/directory/.gitkeep
 data/guidebook/*
 !data/guidebook/.gitkeep
+
+# Git worktrees (Claude Code managed)
+.claude/worktrees/
