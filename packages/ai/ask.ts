@@ -26,6 +26,7 @@ import {
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import { makeCacheKey, getCached, setCached } from './cache.js';
+import { featureHybridSearchMvp } from '@jarvis/db/feature-flags';
 import type {
   SSEEvent,
   SourceRef,
@@ -34,6 +35,7 @@ import type {
   CaseSourceRef,
   DirectorySourceRef,
   RetrievedClaim,
+  RetrievedChunk,
 } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -62,6 +64,29 @@ function computeCostUsd(model: string, tokensIn: number, tokensOut: number): str
   const p = MODEL_PRICING[model] ?? { in: 0, out: 0 };
   const cost = (tokensIn * p.in + tokensOut * p.out) / 1000;
   return cost.toFixed(6);
+}
+
+// ---------------------------------------------------------------------------
+// RRF (Reciprocal Rank Fusion) — hybrid search merge utility
+// ---------------------------------------------------------------------------
+const RRF_K = 60;
+
+export function rrfMerge(
+  listA: string[],
+  listB: string[],
+): Array<{ id: string; score: number }> {
+  const scores = new Map<string, number>();
+  for (let i = 0; i < listA.length; i++) {
+    const id = listA[i]!;
+    scores.set(id, (scores.get(id) ?? 0) + 1 / (RRF_K + i));
+  }
+  for (let i = 0; i < listB.length; i++) {
+    const id = listB[i]!;
+    scores.set(id, (scores.get(id) ?? 0) + 1 / (RRF_K + i));
+  }
+  return [...scores.entries()]
+    .map(([id, score]) => ({ id, score }))
+    .sort((a, b) => b.score - a.score);
 }
 
 // ---------------------------------------------------------------------------
@@ -145,6 +170,77 @@ export async function retrieveRelevantClaims(
 }
 
 // ---------------------------------------------------------------------------
+// Document Chunks Hybrid Retrieval (BM25 + vector + RRF)
+// ---------------------------------------------------------------------------
+const TOP_K_CHUNK_EACH = 20;
+const TOP_K_CHUNK_FINAL = 5;
+
+export async function retrieveChunkHybrid(
+  question: string,
+  workspaceId: string,
+): Promise<RetrievedChunk[]> {
+  const embedding = await generateEmbedding(question);
+  const embeddingLiteral = `[${embedding.join(',')}]`;
+
+  const vectorRows = await db.execute<{
+    id: string; document_type: string; document_id: string;
+    chunk_index: number; content: string; sensitivity: string; distance: number;
+  }>(sql`
+    SELECT dc.id, dc.document_type, dc.document_id, dc.chunk_index,
+           dc.content, dc.sensitivity,
+           (dc.embedding <=> ${embeddingLiteral}::vector) AS distance
+    FROM document_chunks dc
+    WHERE dc.workspace_id = ${workspaceId}::uuid
+      AND dc.embedding IS NOT NULL
+    ORDER BY dc.embedding <=> ${embeddingLiteral}::vector
+    LIMIT ${TOP_K_CHUNK_EACH}
+  `);
+
+  const ftsRows = await db.execute<{
+    id: string; document_type: string; document_id: string;
+    chunk_index: number; content: string; sensitivity: string; fts_rank: number;
+  }>(sql`
+    SELECT dc.id, dc.document_type, dc.document_id, dc.chunk_index,
+           dc.content, dc.sensitivity,
+           ts_rank_cd(to_tsvector('simple', dc.content),
+                      websearch_to_tsquery('simple', ${question})) AS fts_rank
+    FROM document_chunks dc
+    WHERE dc.workspace_id = ${workspaceId}::uuid
+      AND to_tsvector('simple', dc.content) @@ websearch_to_tsquery('simple', ${question})
+    ORDER BY fts_rank DESC
+    LIMIT ${TOP_K_CHUNK_EACH}
+  `);
+
+  if (vectorRows.rows.length === 0 && ftsRows.rows.length === 0) return [];
+
+  const byId = new Map<string, { document_type: string; document_id: string; chunk_index: number; content: string; sensitivity: string }>();
+  for (const r of vectorRows.rows) byId.set(r.id, r);
+  for (const r of ftsRows.rows) byId.set(r.id, r);
+
+  const merged = rrfMerge(
+    vectorRows.rows.map((r) => r.id),
+    ftsRows.rows.map((r) => r.id),
+  );
+
+  return merged.slice(0, TOP_K_CHUNK_FINAL).map(({ id, score }) => {
+    const row = byId.get(id)!;
+    const vr = vectorRows.rows.find((r) => r.id === id);
+    const fr = ftsRows.rows.find((r) => r.id === id);
+    return {
+      id,
+      documentType: row.document_type,
+      documentId: row.document_id,
+      chunkIndex: Number(row.chunk_index),
+      content: row.content,
+      sensitivity: row.sensitivity,
+      vectorSim: vr ? 1 - Number(vr.distance) : 0,
+      ftsRank: fr ? Number(fr.fts_rank) : 0,
+      rrfScore: score,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // OpenAI Client
 // ---------------------------------------------------------------------------
 const openai = new OpenAI({
@@ -217,6 +313,7 @@ export function assembleContext(
   graphCtx: GraphContext | null,
   cases: RetrievedCase[],
   entries: RetrievedEntry[],
+  chunks: RetrievedChunk[] = [],
 ): string {
   let idx = 1;
   const textEntries = claims.map(
@@ -257,7 +354,12 @@ export function assembleContext(
       `${e.url ? `URL: ${escapeXml(e.url)} | ` : ''}${e.ownerTeam ? `담당: ${escapeXml(e.ownerTeam)}` : ''}</source>`,
   );
 
-  return `<context>\n${[...textEntries, ...graphEntries, ...caseEntries, ...dirEntries].join('\n')}\n</context>`;
+  const chunkEntries = chunks.map(
+    (c) =>
+      `  <source idx="${idx++}" kind="chunk" doc_type="${escapeXml(c.documentType)}" doc_id="${escapeXml(c.documentId)}">${escapeXml(c.content.slice(0, 300))}</source>`,
+  );
+
+  return `<context>\n${[...textEntries, ...graphEntries, ...caseEntries, ...dirEntries, ...chunkEntries].join('\n')}\n</context>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -580,13 +682,24 @@ export async function* askAI(
     return;
   }
 
-  // 5. 컨텍스트 조합 + 생성
+  // 5. 하이브리드 청크 검색 (feature flag)
+  let chunkResults: RetrievedChunk[] = [];
+  if (featureHybridSearchMvp()) {
+    try {
+      chunkResults = await retrieveChunkHybrid(question, workspaceId);
+    } catch (err) {
+      console.warn('[ask] retrieveChunkHybrid failed, degrading gracefully:', err);
+    }
+  }
+
+  // 6. 컨텍스트 조합 + 생성
   const context = assembleContext(
     weightedClaims,
     weightedGraph,
     graphCtx,
     weightedCases,
     weightedEntries,
+    chunkResults,
   );
 
   // Collect generation events, yield each one, then cache the whole response.
