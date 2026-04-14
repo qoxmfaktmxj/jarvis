@@ -42,6 +42,12 @@ Thumbs.db
 secrets/
 .gstack/
 
-# Generated TSVD999 case exports and normalized case data may contain internal data.
+# Generated data — contains internal company data, regenerated from scripts
 data/cases/*
 !data/cases/README.md
+data/canonical/*
+!data/canonical/.gitkeep
+data/directory/*
+!data/directory/.gitkeep
+data/guidebook/*
+!data/guidebook/.gitkeep
