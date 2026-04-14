@@ -6,6 +6,8 @@ import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
+import { logLlmCall } from './logger.js';
+import { assertBudget, BudgetExceededError } from './budget.js';
 import {
   retrieveRelevantGraphContext,
   type GraphContext,
@@ -40,6 +42,19 @@ const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
+
+// 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
+const MODEL_PRICING: Record<string, { in: number; out: number }> = {
+  'gpt-5.4-mini': { in: 0.0005, out: 0.0015 },
+  'gpt-5.4': { in: 0.005, out: 0.015 },
+  'text-embedding-3-small': { in: 0.00002, out: 0 },
+};
+
+function computeCostUsd(model: string, tokensIn: number, tokensOut: number): string {
+  const p = MODEL_PRICING[model] ?? { in: 0, out: 0 };
+  const cost = (tokensIn * p.in + tokensOut * p.out) / 1000;
+  return cost.toFixed(6);
+}
 
 // ---------------------------------------------------------------------------
 // Text Claims Retrieval (기존 로직 유지)
@@ -280,6 +295,11 @@ function getSystemPrompt(mode: import('./types.js').AskMode = 'simple'): string 
 // ---------------------------------------------------------------------------
 // generateAnswer — OpenAI 스트리밍 생성
 // ---------------------------------------------------------------------------
+export interface AskMeta {
+  workspaceId: string;
+  requestId: string | null;
+}
+
 export async function* generateAnswer(
   question: string,
   context: string,
@@ -288,8 +308,11 @@ export async function* generateAnswer(
   caseSources: CaseSourceRef[],
   dirSources: DirectorySourceRef[],
   mode: import('./types.js').AskMode = 'simple',
+  meta: AskMeta = { workspaceId: '00000000-0000-0000-0000-000000000000', requestId: null },
 ): AsyncGenerator<SSEEvent> {
-  let totalTokens = 0;
+  let tokensIn = 0;
+  let tokensOut = 0;
+  const startedAt = Date.now();
 
   // 통합 sources 배열 (idx 순서: text → graph → case → directory)
   const allTextSources: TextSourceRef[] = claims.map((c) => ({
@@ -306,6 +329,30 @@ export async function* generateAnswer(
     ...caseSources,
     ...dirSources,
   ];
+
+  // Budget gate BEFORE OpenAI call
+  try {
+    await assertBudget(meta.workspaceId);
+  } catch (err) {
+    if (err instanceof BudgetExceededError) {
+      await logLlmCall({
+        workspaceId: meta.workspaceId,
+        requestId: meta.requestId,
+        model: ASK_MODEL,
+        promptVersion: null,
+        tokensIn: 0,
+        tokensOut: 0,
+        costUsd: '0',
+        latencyMs: Date.now() - startedAt,
+        status: 'blocked_by_budget',
+        blockedBy: 'budget',
+        errorMessage: err.message,
+      });
+      yield { type: 'error', message: 'daily budget exceeded' };
+      return;
+    }
+    throw err;
+  }
 
   try {
     const stream = await openai.chat.completions.create({
@@ -324,16 +371,43 @@ export async function* generateAnswer(
       if (content) {
         yield { type: 'text', content };
       }
-      // OpenAI usage는 스트림 마지막 청크에 포함 (stream_options.include_usage 설정 시)
       if (chunk.usage) {
-        totalTokens = (chunk.usage.prompt_tokens ?? 0) + (chunk.usage.completion_tokens ?? 0);
+        tokensIn = chunk.usage.prompt_tokens ?? 0;
+        tokensOut = chunk.usage.completion_tokens ?? 0;
       }
     }
 
     yield { type: 'sources', sources: allSources };
-    yield { type: 'done', totalTokens };
+    yield { type: 'done', totalTokens: tokensIn + tokensOut };
+
+    await logLlmCall({
+      workspaceId: meta.workspaceId,
+      requestId: meta.requestId,
+      model: ASK_MODEL,
+      promptVersion: null,
+      tokensIn,
+      tokensOut,
+      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      latencyMs: Date.now() - startedAt,
+      status: 'ok',
+      blockedBy: null,
+      errorMessage: null,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
+    await logLlmCall({
+      workspaceId: meta.workspaceId,
+      requestId: meta.requestId,
+      model: ASK_MODEL,
+      promptVersion: null,
+      tokensIn,
+      tokensOut,
+      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      latencyMs: Date.now() - startedAt,
+      status: 'error',
+      blockedBy: null,
+      errorMessage: message,
+    });
     yield { type: 'error', message };
   }
 }
@@ -475,5 +549,6 @@ export async function* askAI(
     caseSources,
     dirSources,
     query.mode ?? 'simple',
+    { workspaceId, requestId: query.requestId ?? null },
   );
 }
