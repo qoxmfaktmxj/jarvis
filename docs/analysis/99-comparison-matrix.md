@@ -15,7 +15,7 @@
 | **배포** | 멀티테넌트 웹 서버 | CLI + MCP stdio | Tauri 데스크톱 | 로컬 CLI + Claude Code | PyPI CLI + launchd | CLI + MCP stdio |
 | **사용자 규모** | 5,000명 | 1인 repo | 1인 vault | 1인 repo | 1인 홈 디렉토리 | 1인 로컬 |
 | **저장소** | PostgreSQL 39테이블 + pgvector | `graph.json` + `memory/*.md` | FS + LanceDB + JSON | FS + 마크다운 | FS (`~/.mindvault/`) | SQLite FTS5 + sqlite-vec |
-| **LLM** | OpenAI gpt-4.1-mini | Anthropic (Haiku+Sonnet) | OpenAI / Anthropic / LM Studio / Ollama | Anthropic (Haiku+Sonnet) via litellm | OpenAI (엔트리에서만) | **on-device** node-llama-cpp (GGUF) |
+| **LLM** | OpenAI `gpt-4.1-mini` (AS-IS) — v2 통합 계획에서 `gpt-5.4-mini`로 전환 | Anthropic (Haiku+Sonnet) | OpenAI / Anthropic / LM Studio / Ollama | Anthropic (Haiku+Sonnet) via litellm | OpenAI (엔트리에서만) | **on-device** node-llama-cpp (GGUF) |
 | **임베딩** | ✅ text-embedding-3-small 1536d | ❌ 없음 | ✅ LanceDB 768d | ❌ 없음 | ❌ 없음 (BM25만) | ✅ embeddinggemma 768d |
 | **검색 전략** | PG FTS + pg_trgm + pgvector | Graph BFS/DFS/shortest_path | 토큰+벡터+그래프 확장 4-phase | substring + CJK 청크 | BM25 + Graph BFS/DFS | BM25 + vec + expand + RRF + rerank (5-stage) |
 | **그래프 레이어** | graphify 서브프로세스 (별도) | ⭐ 중심 (3단 신뢰도 엣지) | sigma.js + graphology | 2-pass (regex+LLM) | networkx DiGraph | ❌ 없음 |
@@ -50,7 +50,7 @@
 | 항목 | Jarvis | graphify | llm_wiki | llm-wiki-agent | mindvault | qmd |
 |------|--------|----------|----------|----------------|-----------|-----|
 | **벤더** | OpenAI만 | Anthropic | multi (OpenAI/Anth/LM Studio/Ollama) | multi (litellm) | OpenAI | on-device GGUF |
-| **모델** | `gpt-4.1-mini` 단일 | Haiku (추출/inference) + Sonnet (합성) | 사용자 선택 (보통 Sonnet) | Haiku + Sonnet | gpt-4.1-mini | Qwen3-1.7B (SFT fine-tuned) |
+| **모델** | `gpt-4.1-mini` 단일 (AS-IS, v2에서 `gpt-5.4-mini`로 전환) | Haiku (추출/inference) + Sonnet (합성) | 사용자 선택 (보통 Sonnet) | Haiku + Sonnet | gpt-4.1-mini | Qwen3-1.7B (SFT fine-tuned) |
 | **모델 라우팅** | ❌ 없음 | ✅ task별 (추론 vs 합성) | ✅ 사용자 설정 | ✅ ingest는 Sonnet, 2-pass는 Haiku | ❌ | ❌ (단일 로컬) |
 | **프롬프트 관리** | 하드코딩 상수 | skill.md 내장 | lib/prompts | skill.md 내장 | 하드코딩 | 하드코딩 |
 | **구조화 출력** | ❌ | JSON 텍스트 | JSON 텍스트 | ✅ JSON (한방에) | JSON 텍스트 | ✅ GBNF grammar |
@@ -97,7 +97,7 @@
    │
    ├──▶ 1. Intent Classification (optional, 사내 용어 동음이의어 대응)
    │
-   ├──▶ 2. Query Expansion (lex/vec/hyde 3-way, gpt-4.1-mini)
+   ├──▶ 2. Query Expansion (lex/vec/hyde 3-way, `gpt-5.4-mini`)
    │       ↓
    ├──▶ 3. Parallel Retrieval
    │        ├─ BM25 (PG FTS or OpenSearch)
@@ -370,7 +370,7 @@
 - LLM 캐시 테이블
 - Smart chunking (qmd)
 - Strong-signal BM25 bypass
-- 모델 라우팅 (mini + gpt-4.1 or Anthropic dual)
+- 모델 라우팅 (`gpt-5.4-mini` + `gpt-5.4`, env var 추상화)
 - Milkdown 또는 Tiptap 에디터
 
 ### 10.2 재구성 필요 (P1)
@@ -414,14 +414,14 @@
 
 ### 11.2 모델 라우팅 전략
 
-| 옵션 | 설명 |
-|------|------|
-| **단일 `gpt-4.1-mini`** (현재) | 단순, 비용 낮음. 복잡한 합성 시 품질 부족 가능 |
-| **mini + `gpt-4.1` 라우팅** | 추출/확장은 mini, 합성/ingest는 4.1 |
-| **OpenAI + Anthropic dual** | Anthropic SDK는 이미 dead dependency. 재활성화 비용 |
-| **litellm 추상화** | 벤더 중립성, 운영 복잡도↑ |
+| 옵션 | 설명 | v2 결정 |
+|------|------|---------|
+| **단일 `gpt-5.4-mini`** | 단순, 비용 낮음. 복잡한 합성 시 품질 부족 가능 | — |
+| **`gpt-5.4-mini` + `gpt-5.4` 라우팅 (env 추상화)** | 추출/확장은 mini, 합성/ingest는 `gpt-5.4`. env var로 모델 교체 쉽게 | ✅ **채택** |
+| **OpenAI + Anthropic dual** | Anthropic SDK는 이미 dead dependency. 재활성화 비용 | ❌ 거절 |
+| **litellm 추상화** | 벤더 중립성, 운영 복잡도↑ | ❌ 거절 |
 
-**추천**: **mini + `gpt-4.1` 라우팅**. 기존 OpenAI 인프라 유지, Jarvis 4-surface 중 syntheses/concepts 생성에만 4.1 사용.
+**v2 채택**: `gpt-5.4-mini`(utility) + `gpt-5.4`(synthesis) + env var (`ASK_AI_MODEL`, `ASK_AI_SYNTHESIS_MODEL`). 신규 모델 출시 시 env 한 줄 교체로 전환. 현재 코드의 `gpt-4.1-mini`는 Phase-7A W1 D1에 스왑.
 
 ### 11.3 임베딩 유지 여부
 
