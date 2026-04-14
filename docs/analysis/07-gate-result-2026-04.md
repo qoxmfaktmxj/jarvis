@@ -78,3 +78,26 @@ Full pass confirmation blocked until CI run completes.
 - Target start date: (to-fill after full CI pass)
 
 > Note: `FEATURE_DOCUMENT_CHUNKS_WRITE` defaults to `false` (wired in Lane C). Flip separately in 7B write-path PR. NOT part of 7B unlock conditions.
+
+---
+
+## Phase-7B Entry Record
+
+**Date:** 2026-04-15
+**Status:** LANDED — all Phase-7B features committed behind feature flags
+
+### Features implemented (flags default `false` — flip in prod when ready)
+
+| Flag | Feature | PR |
+|------|---------|-----|
+| `FEATURE_TWO_STEP_INGEST=true` | Chunk+embed raw_source → document_chunks; LLM synthesises knowledge_page(draft, generated) | d2068e4–a55d41e |
+| `FEATURE_DOCUMENT_CHUNKS_WRITE=true` | Enables the upsertChunks write path (prerequisite for above) | dd75075 |
+| `FEATURE_HYBRID_SEARCH_MVP=true` | BM25 + vector + RRF retrieval over document_chunks in askAI() | a8b0be1–08dfa77 |
+
+### Review findings (all addressed in 08dfa77)
+- **Critical fixed:** `retrieveChunkHybrid()` now applies `buildKnowledgeSensitivitySqlFilter(userPermissions)` — cross-clearance leakage closed
+- **Important fixed:** chunk embeddings are now sequential (rate-limit safe); `ChunkSourceRef` wired into SSE sources event; defensive null guard on RRF map lookup
+- **Minor fixed:** UUIDs removed from LLM extraction prompt
+
+### Next: Phase-8 unlock condition
+Both `7A all gates green` + `7B complete` required. 7B is now complete pending G6 eval baseline run and G7 manual smoke.
