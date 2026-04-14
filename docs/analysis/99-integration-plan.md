@@ -392,8 +392,8 @@ ALTER TABLE document_chunks
 
 ```ts
 // packages/db/schema/wiki-sources.ts
-import { pgTable, uuid, text, pgEnum, jsonb, unique, index } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { pgTable, uuid, text, pgEnum, jsonb, unique, index, timestamp } from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
 import { sensitivity, createdAt } from "./_helpers";
 
 export const sourceKindEnum = pgEnum("source_kind", ["meeting", "doc", "ticket", "email", "chat", "url"]);
