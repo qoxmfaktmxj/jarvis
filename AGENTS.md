@@ -177,12 +177,17 @@ export async function pinPage(
 
 ## Codex 사용자에게 특히
 
-- Claude Code는 `.claude/settings.json`의 PostToolUse 훅으로 스키마 drift를 **자동 감지**합니다.
+- Claude Code는 `.claude/settings.json`의 PostToolUse 훅으로 스키마 drift를 **자동 감지**합니다 (`--hook`, advisory).
 - Codex는 훅이 없으므로, **스키마 파일을 수정한 세션 말미에 수동으로** 실행하세요:
   ```bash
   node scripts/check-schema-drift.mjs
   ```
-  drift가 있으면 exit 1로 알려줍니다. CI 파이프라인에도 이 명령을 추가하면 동일한 안전망이 됩니다.
+  drift가 있으면 exit 1로 알려줍니다.
+- CI/pre-commit에서는 blocking 모드를 사용합니다:
+  ```bash
+  node scripts/check-schema-drift.mjs --ci         # CI 파이프라인 (exit 1 on drift)
+  node scripts/check-schema-drift.mjs --precommit  # 로컬 pre-commit hook (exit 1 on drift)
+  ```
 - Codex가 3인 팀 통신(`SendMessage`, `TaskCreate`)을 가질 수는 없지만, **역할 순서를 직접 따라가는 것**만으로도 경계면 버그(shape 불일치, i18n 키 누락, 권한 누락)의 대부분을 막을 수 있습니다.
 - 의심스러우면 `.claude/skills/`의 해당 스킬 파일을 열어 보세요. 내용은 Codex도 그대로 읽을 수 있는 markdown입니다.
 
@@ -192,3 +197,4 @@ export async function pinPage(
 |------|----------|------|
 | 2026-04-10 | 초기 하네스 구성 (3인 팀 + 4 스킬) | 사내 업무 시스템 + 사내 위키 통합 프로젝트 경량 하네스 |
 | 2026-04-10 | Drizzle schema drift 훅 + Codex용 `AGENTS.md` 추가 | 훅 1(경고) 설치 + Codex도 동일 원칙 따르도록 지시문 미러링 |
+| 2026-04-14 | `--ci`/`--precommit` blocking 모드 설명 추가 | Phase-7A PR#4: CI/pre-commit에서 동일 스크립트로 blocking 가능 |
