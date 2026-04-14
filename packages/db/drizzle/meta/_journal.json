@@ -78,13 +78,6 @@
       "when": 1776177275906,
       "tag": "0010_lame_screwball",
       "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "7",
-      "when": 1776177276000,
-      "tag": "0011_document_chunks_ivfflat",
-      "breakpoints": true
     }
   ]
 }
