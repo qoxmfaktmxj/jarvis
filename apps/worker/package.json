@@ -16,6 +16,7 @@
     "@jarvis/shared": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.45.2",
+    "gray-matter": "^4.0.3",
     "mammoth": "^1.8.0",
     "minio": "^8.0.0",
     "openai": "^4.0.0",

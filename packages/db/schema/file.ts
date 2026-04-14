@@ -22,6 +22,7 @@ export const rawSource = pgTable("raw_source", {
   sizeBytes: bigint("size_bytes", { mode: "number" }),
   checksum: varchar("checksum", { length: 128 }),
   parsedContent: text("parsed_content"),
+  sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
   ingestStatus: varchar("ingest_status", { length: 30 }).default("pending").notNull(),
   metadata: jsonb("metadata")
     .$type<Record<string, unknown>>()
