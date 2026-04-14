@@ -10,7 +10,7 @@
 
 ### 한 문단 요약
 
-graphify는 "임의의 폴더(코드/문서/PDF/이미지/영상/오디오/URL)를 단 하나의 조회 가능한 지식 그래프로 바꿔주는 AI 코딩 어시스턴트용 스킬(skill)"이다. Claude Code, Codex, Cursor, Aider, Gemini CLI, GitHub Copilot CLI, OpenClaw, Factory Droid, Trae 등 9종 이상의 에이전틱 CLI에 `.md` 스킬 파일과 플랫폼별 hook/plugin을 설치해, `/graphify <폴더>` 한 줄로 3단 파이프라인(AST 결정적 추출 → Whisper 로컬 전사 → Claude 서브에이전트 병렬 의미 추출)을 돌린 뒤 NetworkX 그래프로 빌드하고 Leiden 커뮤니티 탐지를 수행한다. 결과물은 `graphify-out/` 디렉토리에 `graph.html`(대화형 vis.js 시각화), `graph.json`(재사용/쿼리용 정본), `GRAPH_REPORT.md`(god nodes·놀라운 연결·제안 질문), `cache/{sha256}.json`(변경분만 재추출), 선택적으로 Obsidian vault·Neo4j Cypher·GraphML·SVG·MCP 서버 등으로 배출된다.
+graphify는 "임의의 폴더(코드/문서/PDF/이미지/영상/오디오/URL)를 단 하나의 조회 가능한 지식 그래프로 바꿔주는 AI 코딩 어시스턴트용 스킬(skill)"이다. Claude Code, Codex, Cursor, Aider, Gemini CLI, GitHub Copilot CLI, OpenClaw, Factory Droid, Trae 등 9종 이상의 에이전틱 CLI에 `.md` 스킬 파일과 플랫폼별 hook/plugin을 설치해, `/graphify <폴더>` 한 줄로 **결정론적 파이프라인(tree-sitter AST 추출 → NetworkX 그래프 구축 → Leiden/Louvain 커뮤니티 탐지)**을 돌린다. Whisper 로컬 전사는 오디오/영상에 한해 선택적으로 수행되며 로컬에서 돌아간다. **graphify 자체는 LLM API를 호출하지 않는다.** 의미 기반 엣지(semantic edges)는 graphify를 *호스팅하는* AI 에이전트(Claude Code·Codex 등)가 별도 서브에이전트로 채우도록 설계된 빈 슬롯(`input_tokens`/`output_tokens` 카운터)만 노출한다. 결과물은 `graphify-out/` 디렉토리에 `graph.html`(대화형 vis.js 시각화), `graph.json`(재사용/쿼리용 정본), `GRAPH_REPORT.md`(god nodes·놀라운 연결·제안 질문), `cache/{sha256}.json`(변경분만 재추출), 선택적으로 Obsidian vault·Neo4j Cypher·GraphML·SVG·MCP 서버 등으로 배출된다.
 
 ### 해결하려는 문제
 

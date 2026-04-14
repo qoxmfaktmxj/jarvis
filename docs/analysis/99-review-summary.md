@@ -119,9 +119,9 @@
 | 패키지 레이아웃 | `packages/prompts/src/`, `packages/core/src/` | flat layout — `packages/prompts/ingest/`, `packages/core/llm/` |
 | 기존 `packages/search` | 신규 구조 `src/pipeline/` | 이미 flat (`adapter.ts`, `pg-search.ts`). ADD-only sub-dir. |
 | Workspace FK | 누락 | `workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" })` |
-| Env var 충돌 | `OPENAI_MODEL_UTILITY` (신규) | `ASK_AI_MODEL=gpt-4.1-mini` (기존) 재사용 + `ASK_AI_SYNTHESIS_MODEL` 신규 |
-| graphify 표현 | "Python subprocess" | "binary subprocess (`execFile`) using Claude Haiku via `ANTHROPIC_API_KEY`" |
-| Anthropic SDK 제거 범위 | 전체 제거 | `packages/ai/package.json` dep만. env var + secret + graphify 유지. |
+| Env var 충돌 | `OPENAI_MODEL_UTILITY` (신규) | `ASK_AI_MODEL` (기존, 이미 `gpt-5.4-mini` 기본값) 재사용 + `ASK_AI_SYNTHESIS_MODEL` 신규 |
+| graphify 표현 | "Python subprocess + Claude Haiku" (초기 가정) | **"native binary subprocess via `execFile`, LLM 호출 없음"** — graphify는 100% 결정론적 (tree-sitter + NetworkX + Leiden). 2026-04-14 원본 분석으로 정정 |
+| Anthropic SDK 제거 범위 | 전체 제거 | ✅ **완전 제거**: `@anthropic-ai/sdk` dep + `ANTHROPIC_API_KEY` env + docker secret + graphify env 전달 모두 삭제. Jarvis는 OpenAI 단일 제공자 |
 | CI 커맨드 | `pnpm --filter @jarvis/web ...` | `pnpm -r run ...` 또는 `turbo type-check lint test` (monorepo-wide) |
 
 **조치**: v2 전면 재작성 시 이 표를 체크리스트로 사용.

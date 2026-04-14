@@ -11,14 +11,14 @@
 | 축 | v1 (폐기) | v2 (최종) | 근거 |
 |----|-----------|-----------|------|
 | **스코프** | Phase-7 단일 4주 (ingest+검색+에디터+관측+스키마+그래프+lint+CI 동시) | **Phase-7A(2주 안정화) + 7B(3주 검색/ingest) + Phase-8(에디터·그래프 고도화)** | Codex P0 #1, Gap CTX-03 |
-| **모델** | `gpt-4.1-mini` / `gpt-4.1` 혼용 | **`gpt-5.4-mini`(utility) + `gpt-5.4`(synthesis)**. env var 추상화로 교체 용이. 현재 코드 `gpt-4.1-mini`는 W1 스왑 작업 | 사용자 지시 |
+| **모델** | `gpt-4.1-mini` / `gpt-4.1` 혼용 (구버전 문서 가정) | **`gpt-5.4-mini`(utility) + `gpt-5.4`(synthesis)**. env var 추상화. ✅ main 코드는 이미 `gpt-5.4-mini` 기본값 — 스왑 작업 불요 | 사용자 지시 + main 코드 확인 |
 | **캐시 키** | `SHA256({op, model, prompt, extra})` | `SHA256({op, model, prompt, extra, promptVersion, workspaceId, sensitivityScope})` | Codex P0 #2·#5, Gap GAP-03 |
 | **FK 전략** | `sourceRefs: text[]`, polymorphic text column | 모든 참조는 **junction table** + typed FK. polymorphic 최소화 | Codex P0 #4, Fact P1 #1 |
 | **Heal** | 자동 INFERRED 생성 후 바로 RAG 후보 | **`*_draft` 테이블에 격리**, 검색·답변 후보 제외, 관리자 승인 후 승급 | Codex P0 #3 |
 | **검색 파이프라인** | 5-stage 전부 동시 구현 (Intent+Expand+HyDE+BM25+CJK+Vector+Graph+RRF+Blend+Rerank) | **MVP: BM25 + chunk vector + RRF + eval** 만. Intent/HyDE/Rerank는 eval 실효 증명 후 추가 | Codex P1 #6 |
 | **한국어 FTS** | "PG FTS korean + CJK bigram" 한 줄 | **`pg_bigm` 확장 가능성 조사 + trigram + bigram materialized column** 병행. Zero-downtime re-index (`CREATE INDEX CONCURRENTLY`) | Codex P1 #7, Gap GAP-13 |
 | **에디터 (Tiptap)** | W3 D4 1일에 전부 | **Phase-8로 이동**. 7B에는 **기존 textarea에 `[[wikilink]]` 파싱만** | Codex P1 #8, Gap SCOPE-01 |
-| **graphify** | "Python subprocess", retrieval 시점 BFS | "**native binary subprocess** via `execFile`, Claude Haiku via `ANTHROPIC_API_KEY`". retrieval 시점 호출 금지 — materialize된 `graph_node`/`graph_edge` 테이블 SQL BFS만 | Fact P0 #9, Gap CON-02 |
+| **graphify** | "Python subprocess"+Claude Haiku 가정 | **native binary subprocess via `execFile`, LLM 호출 없음** (graphify 바이너리 자체가 tree-sitter + NetworkX + Leiden의 결정론적 파이프라인). retrieval 시점 호출 금지 — materialize된 `graph_node`/`graph_edge` 테이블 SQL BFS만. 의미 보강이 필요하면 @jarvis/ai 별도 단계 | reference_only/graphify 원본 분석(2026-04-14) |
 | **관측 순서** | W4에 몰려있음 | **W1 D1부터** `llm_call_log` + pino + request-id + OpenAI cost tracking | Codex P2 #10 |
 | **Eval fixture** | W4 D2에 100쌍 한 번에 | **W1부터 백그라운드 큐레이션 트랙** (30→60→100쌍) + `curator_user_id`·`reviewed_by_user_id` 필드 | Gap GAP-07 |
 | **경로 오류** | `packages/db/src/schema/`, `apps/web/src/...` 전반 | **`packages/db/schema/`, `apps/web/components/`, `apps/web/app/`** (no `/src`). Worker만 `apps/worker/src/` | Fact P0 #1·#2 |
@@ -37,9 +37,9 @@
 
 1. **모든 OpenAI 호출은 최신 세대 모델 사용.** 현재 기준 `gpt-5.4-mini` (utility) + `gpt-5.4` (synthesis).
 2. **모델 이름은 코드에 박지 않는다.** env var로 추상화. 새 모델 나오면 env 한 줄 바꾸면 됨.
-3. **Anthropic은 `graphify` subprocess 전용.** 애플리케이션 코드(packages/ai 등)에서 Anthropic SDK 직접 import 금지.
+3. **Anthropic 사용 금지 (OpenAI 단일 제공자).** graphify 바이너리도 결정론적이라 Anthropic SDK 불필요. 의미 보강이 필요하면 `@jarvis/ai` (OpenAI) 경유.
 4. **모든 LLM 호출은 fallback ladder 명시.** primary 429/500 시 fallback 경로 정의.
-5. **Phase-7A W1 D1에 기존 `gpt-4.1-mini` → `gpt-5.4-mini` 마이그레이션 작업 포함.** 기존 코드(`packages/ai/ask.ts:42`, `tutor.ts:10` 등) 4.1-mini 고정값 → env var 참조로.
+5. **모델 스왑 상태:** ✅ main 코드는 이미 `gpt-5.4-mini`가 기본값(`packages/ai/ask.ts:42`, `tutor.ts:10`, `.env.example`). Phase-7A에서 synthesis 모델(`ASK_AI_SYNTHESIS_MODEL=gpt-5.4`) 신규 env만 추가하면 됨.
 
 ### 1.2 모델 라우팅 테이블 (v2)
 
@@ -58,17 +58,15 @@
 
 ### 1.3 Env var 체계 (Jarvis 기존 컨벤션 존중)
 
-기존 (`.env.example:33-40` 포함):
+기존 (main 코드 기준, 2026-04-14):
 ```env
-ASK_AI_MODEL=gpt-4.1-mini          # 기존 — W1 D1에 gpt-5.4-mini로 교체
-GRAPHIFY_MODEL=claude-haiku-4-5-20251001  # graphify subprocess용 Anthropic
-ANTHROPIC_API_KEY=...              # graphify 유지 (애플리케이션 코드엔 사용 X)
-OPENAI_API_KEY=...
+OPENAI_API_KEY=...                 # 단일 제공자
+ASK_AI_MODEL=gpt-5.4-mini          # 이미 기본값 — 스왑 불요
 ```
 
 v2 신규:
 ```env
-ASK_AI_MODEL=gpt-5.4-mini              # 기존 env var, 값만 업데이트 (W1 D1)
+ASK_AI_MODEL=gpt-5.4-mini              # 유지
 ASK_AI_SYNTHESIS_MODEL=gpt-5.4         # 신규 — synthesis/ingest/contradictions
 LLM_CACHE_TTL_DEFAULT_SECONDS=2592000  # 30일 (영구 캐시 금지)
 LLM_CACHE_TTL_SYNTHESIS_SECONDS=604800 # 7일 (syntheses는 짧게)
@@ -134,7 +132,7 @@ FEATURE_HYBRID_SEARCH_MVP=false        # 롤백용
 | 일 | 작업 | 산출물 | 근거 |
 |----|------|--------|------|
 | **D1** | `llm_call_log` 테이블 + 구조화 로깅 패키지 | `packages/db/schema/llm-call-log.ts`, `packages/logger/` 스캐폴딩, `0009_llm_call_log.sql` | Codex P2 #10 |
-| **D1** | 기존 `gpt-4.1-mini` → `gpt-5.4-mini` 스왑 | `.env.example` 업데이트 + `packages/ai/ask.ts`·`tutor.ts`·`embed.ts` 등에서 env 참조 확인 | 사용자 지시 |
+| **D1** | ✅ (완료) `gpt-5.4-mini` 스왑 — main 코드는 이미 기본값. 스왑 불요 | 확인만 | 2026-04-14 검증 |
 | **D1** | `ASK_AI_SYNTHESIS_MODEL=gpt-5.4` 신규 env 도입 | `.env.example`, `packages/ai/config.ts` | v2 §1.3 |
 | **D2** | `llm_cache` 테이블 (promptVersion 포함 key) + `cachedLLMCall` 래퍼 | `packages/db/schema/llm-cache.ts`, `packages/ai/cached-call.ts`, `0010_llm_cache.sql` | Gap GAP-03, v2 §7.1 |
 | **D2** | LLM fallback ladder 구현 | `packages/ai/router.ts` (primary/fallback pair) | Gap GAP-06 |
@@ -951,7 +949,7 @@ export async function assertWithinBudget(workspaceId: string, op: string) {
 - **Junction table**: polymorphic text[] 대신 FK 가능한 관계 테이블 (`wiki_source_refs`, `wiki_citations`)
 - **Feature flag**: `FEATURE_*` env var로 on/off. 롤백용
 - **Cost kill-switch**: `LLM_DAILY_BUDGET_USD` 초과 시 자동 차단
-- **`ASK_AI_MODEL`**: 기존 env var (현재 `gpt-4.1-mini` → W1 D1에 `gpt-5.4-mini`)
+- **`ASK_AI_MODEL`**: 기존 env var (이미 `gpt-5.4-mini` 기본값 — main 코드 확인 완료)
 - **`ASK_AI_SYNTHESIS_MODEL`**: v2 신규 env var (`gpt-5.4`)
 
 ---

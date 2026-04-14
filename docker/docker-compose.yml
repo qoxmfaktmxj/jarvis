@@ -91,10 +91,10 @@ services:
     # entrypoint.sh reads these secret files and exports as env vars:
     #   pg_password     → DATABASE_URL
     #   session_secret  → SESSION_SECRET
-    #   anthropic_api_key → ANTHROPIC_API_KEY
+    #   openai_api_key  → OPENAI_API_KEY
     #   minio_user      → MINIO_ACCESS_KEY
     #   minio_password  → MINIO_SECRET_KEY
-    secrets: [pg_password, session_secret, anthropic_api_key, minio_user, minio_password]
+    secrets: [pg_password, session_secret, openai_api_key, minio_user, minio_password]
     depends_on:
       postgres:
         condition: service_healthy
@@ -126,11 +126,11 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
     # entrypoint.sh reads these secret files and exports as env vars:
-    #   pg_password       → DATABASE_URL
-    #   anthropic_api_key → ANTHROPIC_API_KEY
-    #   minio_user        → MINIO_ACCESS_KEY
-    #   minio_password    → MINIO_SECRET_KEY
-    secrets: [pg_password, anthropic_api_key, minio_user, minio_password]
+    #   pg_password      → DATABASE_URL
+    #   openai_api_key   → OPENAI_API_KEY
+    #   minio_user       → MINIO_ACCESS_KEY
+    #   minio_password   → MINIO_SECRET_KEY
+    secrets: [pg_password, openai_api_key, minio_user, minio_password]
     depends_on:
       postgres:
         condition: service_healthy
@@ -174,5 +174,5 @@ secrets:
     file: ./secrets/minio_password.txt
   session_secret:
     file: ./secrets/session_secret.txt
-  anthropic_api_key:
-    file: ./secrets/anthropic_api_key.txt
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt

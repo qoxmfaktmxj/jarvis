@@ -84,7 +84,7 @@ AnswerCard (structured response with sections)
 |------|------|
 | **AI 생성** | OpenAI (`gpt-5.4-mini` default, via `ASK_AI_MODEL` env var) |
 | **AI 임베딩** | OpenAI (`text-embedding-3-small`) + TF-IDF (사례용) |
-| **코드 분석** | Graphify + Anthropic (`claude-haiku-4-5`) — Ask AI와 분리 |
+| **코드 분석** | Graphify (tree-sitter AST + NetworkX + Leiden/Louvain, 결정론적 파이프라인) |
 | **모노레포** | pnpm workspace, Turborepo |
 | **웹** | Next.js 15.5, React 19, TypeScript |
 | **DB** | PostgreSQL 16 + pgvector + pg_trgm |
@@ -200,8 +200,7 @@ AnswerCard (structured response with sections)
 | `SESSION_SECRET` | 예 | 세션 서명용 비밀키 (32자 이상) |
 | `OPENAI_API_KEY` | 예 | Ask AI 답변 + 임베딩 생성용 (OpenAI) |
 | `ASK_AI_MODEL` | 아니오 | Ask AI 모델 (기본값: `gpt-5.4-mini`) |
-| `ANTHROPIC_API_KEY` | 예 | Graphify 코드 분석용 (Anthropic) |
-| `GRAPHIFY_BIN` | 아니오 | Graphify 바이너리 경로 (기본값: `graphify`) |
+| `GRAPHIFY_BIN` | 아니오 | Graphify 바이너리 경로 (기본값: `graphify`). 결정론적 — API 키 불필요 |
 | `NODE_ENV` | 아니오 | `development`, `production` 등 |
 
 예시 (개발 환경 기준):
@@ -226,7 +225,6 @@ SESSION_SECRET=dev-session-secret-32-chars-min!!
 
 OPENAI_API_KEY=sk-...
 ASK_AI_MODEL=gpt-5.4-mini
-ANTHROPIC_API_KEY=sk-ant-...
 GRAPHIFY_BIN=graphify
 ```
 
@@ -286,8 +284,7 @@ GRAPHIFY_BIN=graphify
 - pnpm **9+**
 - Docker / Docker Compose
 - PostgreSQL, Redis, MinIO를 직접 띄우지 않는다면 Docker Compose 사용 권장
-- OpenAI API Key
-- Anthropic API Key (Graphify 코드 분석용)
+- OpenAI API Key (생성·임베딩 통합)
 
 ---
 
@@ -468,7 +465,7 @@ Graphify는 **코드 파일을 업로드하면 자동으로 AST 분석 + LLM sem
 
 ### 핵심 특징
 
-- **AI 기반 추출**: Anthropic (claude-haiku-4-5) 사용 — **Ask AI와 분리**
+- **결정론적 추출**: tree-sitter AST + NetworkX 그래프 구축 + Leiden/Louvain 커뮤니티 (LLM 호출 없음). 의미 기반 보강이 필요하면 @jarvis/ai 경유로 별도 단계 수행
 - **자동 wiki 생성**: 코드 구조에 기반한 설명서 자동 생성
 - **쿼리 엔진**: MCP server로 graph-native 검색 지원
 - **증분 빌드**: SHA256 캐시로 변경된 파일만 재분석
@@ -586,7 +583,6 @@ echo -n 'jarvisadmin'        > docker/secrets/minio_user.txt
 echo -n 'jarvispassword'     > docker/secrets/minio_password.txt
 echo -n 'your-session-secret-32chars' > docker/secrets/session_secret.txt
 echo -n 'sk-...'             > docker/secrets/openai_api_key.txt
-echo -n 'sk-ant-...'         > docker/secrets/anthropic_api_key.txt
 
 # 2. 환경변수 설정 (OIDC 등)
 export OIDC_ISSUER=https://auth.example.com/realms/jarvis
@@ -605,9 +601,7 @@ bash scripts/start-prod.sh
 - Redis는 세션/레이트리밋 용도로 안정적으로 운영
 - PostgreSQL에는 `pgvector`, `pg_trgm`, `unaccent` 확장 설치 필수
 - MinIO 또는 S3 호환 스토리지 사용
-- OpenAI API key는 `docker/secrets/openai_api_key.txt` 파일로 관리
-- Anthropic API key는 `docker/secrets/anthropic_api_key.txt` 파일로 관리
-- 모두 `.gitignore` 적용
+- OpenAI API key는 `docker/secrets/openai_api_key.txt` 파일로 관리 (`.gitignore` 적용)
 - worker를 web과 별도 프로세스로 운영 (compose에서 별도 서비스로 분리)
 - Graphify 바이너리는 worker 컨테이너에 설치 (또는 PATH에 포함)
 

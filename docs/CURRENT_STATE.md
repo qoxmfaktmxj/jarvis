@@ -13,9 +13,8 @@ Jarvis is a production-ready enterprise knowledge portal that integrates:
 - **6-Lane Ask AI Router** with Korean keyword pattern matching
 - **TSVD999 Case Layer** (74,342 precedent cases, 562 TF-IDF clusters)
 - **Directory Layer** (31 structured system/form/contact entries)
-- **Graphify Code Analysis** (AST extraction + LLM semantic enrichment)
-- **OpenAI-powered Generation** (ask responses, embeddings)
-- **Anthropic-powered Code Analysis** (separate from Ask AI)
+- **Graphify Code Analysis** (deterministic pipeline: tree-sitter AST + NetworkX + Leiden/Louvain — no LLM)
+- **OpenAI-powered Generation + Embeddings** (ask responses, embeddings — single provider across the stack)
 
 All architecture phases (0-6) are complete. The system is ready for:
 1. Extended test coverage
@@ -128,13 +127,13 @@ All architecture phases (0-6) are complete. The system is ready for:
 | **Ask AI Generation** | OpenAI | gpt-5.4-mini (default) | `ASK_AI_MODEL` (optional) |
 | **Ask AI Embeddings** | OpenAI | text-embedding-3-small | `OPENAI_API_KEY` |
 | **Case Embeddings** | Local TF-IDF | 1536d (compatible with pgvector) | (Computed locally) |
-| **Graphify Code Analysis** | Anthropic | claude-haiku-4-5 | `ANTHROPIC_API_KEY` |
+| **Graphify Code Analysis** | Deterministic (no LLM) | tree-sitter + NetworkX + Leiden/Louvain | (none) |
 | **Graphify Cache** | Graphify internals | SHA256-based | (Managed by Graphify) |
 
-**Key Correction**: 
-- **Ask AI** uses **OpenAI** (not Anthropic)
-- **Graphify** uses **Anthropic** (separate pipeline)
-- Both use same `OPENAI_API_KEY` for embeddings
+**Notes**:
+- **Ask AI** uses **OpenAI** (`gpt-5.4-mini` default)
+- **Graphify** is a deterministic pipeline — tree-sitter AST → NetworkX 그래프 → Leiden/Louvain. No LLM calls inside the binary. (Earlier docs claimed Anthropic Claude Haiku; 2026-04-14 원본 분석으로 오류 판명, 모든 Anthropic 참조 제거 완료.)
+- Semantic enrichment, if required, happens as a separate optional step via `@jarvis/ai` (OpenAI).
 
 ---
 
@@ -303,14 +302,15 @@ AnswerCard render
 
 ### What Graphify Does
 
-Graphify is a **Python skill/utility** (not a CLI tool) that:
+Graphify is a **Python skill/utility** (not a CLI tool) that runs a 100% deterministic pipeline:
 1. Detects file types + filters sensitive files
-2. Extracts AST from 19+ languages (Python, JS, Go, Rust, Java, etc.)
-3. Uses Anthropic Claude for semantic enrichment
-4. Builds NetworkX knowledge graph
-5. Detects communities (Leiden algorithm)
-6. Generates GRAPH_REPORT.md + wiki/* markdown
-7. Exports graph.html (vis.js interactive), graph.json
+2. Extracts AST from 19+ languages (Python, JS, Go, Rust, Java, etc.) via tree-sitter
+3. Builds NetworkX knowledge graph
+4. Detects communities (Leiden / Louvain fallback)
+5. Generates GRAPH_REPORT.md + wiki/* markdown from topology (god nodes, surprising connections)
+6. Exports graph.html (vis.js interactive), graph.json
+
+**No LLM calls inside the binary.** Semantic edges are placeholder slots that an *external* AI agent (Claude Code/Codex/…) can fill — in Jarvis that's an optional post-step via `@jarvis/ai` (OpenAI gpt-5.4-mini).
 
 ### Execution Model
 
@@ -331,10 +331,8 @@ Graphify is a **Python skill/utility** (not a CLI tool) that:
 
 **Configuration**:
 ```env
-GRAPHIFY_BIN=graphify                    # Binary path
+GRAPHIFY_BIN=graphify                    # Binary path (deterministic — no API key needed)
 GRAPHIFY_TIMEOUT_MS=600000              # 10 minutes
-GRAPHIFY_MODEL=claude-haiku-4-5-20251001 # Anthropic model
-GRAPHIFY_API_KEY=${ANTHROPIC_API_KEY}   # Auth
 GRAPHIFY_MAX_FILE_COUNT=5000            # Archive size limit
 GRAPHIFY_MAX_ARCHIVE_MB=200             # Archive MB limit
 ```
@@ -599,7 +597,7 @@ jarvis/
 Jarvis is a **production-ready knowledge portal** with:
 - ✓ 39 tables, 95 canonical docs, 74,342 cases, 31 directory entries
 - ✓ 6-lane Ask AI router (Korean keyword matching, no LLM cost)
-- ✓ OpenAI generation + OpenAI embeddings (separate Anthropic for Graphify)
+- ✓ OpenAI generation + OpenAI embeddings (single provider; Graphify is deterministic — no LLM)
 - ✓ 4-surface knowledge model (canonical/directory/case/derived)
 - ✓ Knowledge Debt Radar + Drift Detection
 - ✓ AnswerCard structured responses
