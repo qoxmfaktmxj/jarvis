@@ -13,7 +13,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
     "@jarvis/auth": "workspace:*",
     "@jarvis/db": "workspace:*",
     "@jarvis/shared": "workspace:*",

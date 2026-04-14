@@ -26,10 +26,10 @@
 | §2.5, §3.3, §5.2 multiple | `sensitivityEnum('sensitivity')` and `sensitivity: sensitivityEnum('sensitivity').notNull().default('internal')` | `sensitivityEnum` **does not exist** anywhere. Jarvis stores sensitivity as `varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull()` (confirmed in `case.ts:79`, `graph.ts:43`, `knowledge.ts:39`, `system.ts:26`). Values are UPPERCASE: `PUBLIC`, `INTERNAL`, `RESTRICTED`, `SECRET_REF_ONLY` (per `docs/CURRENT_STATE.md:144-151`). | Replace all `sensitivityEnum(...)` with `varchar("sensitivity", { length: 30 }).notNull().default("INTERNAL")`. If an enum is desired, **create it and add a migration first** — currently it is not defined. |
 | §5.2 wikiSources, §5.2 wikiConcepts, §5.2 wikiEdges | `pgEnum('source_kind', [...])('kind')`, `pgEnum('confidence_enum_concepts', [...])('confidence')` — inline usage inside column def | Jarvis defines pgEnum as top-level `export const`, then uses it: see `packages/db/schema/graph.ts:19-26` where `buildStatusEnum = pgEnum(...)` is declared separately, then used as `buildStatusEnum('status')`. The inline pattern may work in Drizzle but conflicts with project style and will trigger schema-drift hook re-generation. | Declare enums at top of file with `export const sourceKindEnum = pgEnum('source_kind', [...])`, then use `sourceKindEnum('kind')`. |
 | §10.1 D1 | `0010_llm_cache.sql` is the next migration filename | Actual highest migration: **`0008_yellow_bloodaxe.sql`**. There are 10 `.sql` files but one is a manually-added `0001_auth_and_search_indexes.sql` not in `_journal.json`. `_journal.json` has idx 0-8 (9 entries). Next auto-generated would be **`0009`**, not `0010`. | Change D1 to `0009_llm_cache.sql`. Cascade: `0010_document_chunks.sql`, `0011_wiki_sources.sql`, `0012_wiki_concepts.sql`, `0013_wiki_syntheses.sql`, `0014_directory_ext.sql`, `0015_review_queue_kind.sql`. Also note: drizzle-kit picks the names automatically; do not hard-code except in plan copy. |
-| Introduction §TL;DR line 16, §2.2, §12 | Plan repeatedly calls graphify "Python subprocess" | `apps/worker/src/jobs/graphify-build.ts:20-22` spawns via `execFile` with `GRAPHIFY_BIN=graphify` (generic binary). It uses `GRAPHIFY_MODEL=claude-haiku-4-5-20251001` and `ANTHROPIC_API_KEY`. It is a **native binary subprocess**, not Python-specific. | Rephrase as "graphify subprocess (binary via `execFile`, defaults to Claude Haiku)". Also note that Anthropic SDK removal in §2.2/§12/§13 is safe in **application code** but `ANTHROPIC_API_KEY` env var and docker secret remain required for graphify binary. |
+| Introduction §TL;DR line 16, §2.2, §12 | Plan repeatedly calls graphify "Python subprocess" | `apps/worker/src/jobs/graphify-build.ts` spawns via `execFile` with `GRAPHIFY_BIN=graphify`. ⚠️ **정정(2026-04-14):** 이전 기재의 "Claude Haiku via `ANTHROPIC_API_KEY`"는 사실이 아님 — reference_only/graphify 원본 분석 결과 graphify 바이너리는 100% 결정론적 (tree-sitter + NetworkX + Leiden). LLM 호출 0건. | Rephrase as "graphify native binary subprocess via `execFile`, **LLM 호출 없음**". `@anthropic-ai/sdk` dependency, `ANTHROPIC_API_KEY` env, docker secret 모두 제거 (의미 보강이 필요하면 @jarvis/ai 경유로 별도 단계). |
 | §9.1, §10.4 D3 | `packages/logger/` new package | No existing `packages/logger/`. Safe to create (good). However, confirm no collision with existing helper in `@jarvis/shared`. | Verified no collision with `packages/shared/`. This claim is fine; included as "correct" but flagged for the planner to double-check `packages/shared/` first. |
 | §1.1 Q4, §11 row 1 | Uses `@jarvis/db` import style `from '@jarvis/db'` (implicit in code snippets) | Confirmed package name is `@jarvis/db` with exports `./client`, `./schema`, `./schema/*`. Plan's snippet `cachedLLMCall` uses `db.select().from(llmCache)…` — but `db` must be imported from `@jarvis/db/client`. | Add explicit import line: `import { db } from '@jarvis/db/client';` and `import { llmCache } from '@jarvis/db/schema/llm-cache';` (note: no `/src`). |
-| §13 line 838 | Proposes `OPENAI_MODEL_SYNTHESIS=gpt-4.1` and `OPENAI_MODEL_UTILITY=gpt-4.1-mini` as **new** env vars | `.env.example:33` already has **`ASK_AI_MODEL=gpt-4.1-mini`**, which is the existing mini-model env var. Adding `OPENAI_MODEL_UTILITY` creates a second source of truth. | Either (a) rename `ASK_AI_MODEL` → `OPENAI_MODEL_UTILITY` in a dedicated migration (touches `packages/ai/ask.ts:42`, `packages/ai/tutor.ts:10`), OR (b) keep `ASK_AI_MODEL` and add only `OPENAI_MODEL_SYNTHESIS`. Plan should mention the existing variable. |
+| §13 line 838 | Proposes `OPENAI_MODEL_SYNTHESIS=gpt-4.1` and `OPENAI_MODEL_UTILITY=gpt-4.1-mini` as **new** env vars | `.env.example` already has **`ASK_AI_MODEL=gpt-5.4-mini`** (main 기준). Adding `OPENAI_MODEL_UTILITY` creates a second source of truth. | Keep `ASK_AI_MODEL` (이미 `gpt-5.4-mini`) and add only `ASK_AI_SYNTHESIS_MODEL=gpt-5.4`. Plan should reference existing variable names. |
 
 ---
 
@@ -50,9 +50,9 @@
 ## Correct Claims (verified)
 
 - **39 Drizzle tables** — confirmed by counting `pgTable(` matches in `packages/db/schema/*.ts` (exactly 39).
-- **`gpt-4.1-mini` default model** — confirmed at `packages/ai/ask.ts:42` and `packages/ai/tutor.ts:10`.
+- **`gpt-5.4-mini` default model** — confirmed at `packages/ai/ask.ts:42` and `packages/ai/tutor.ts:10` (env `ASK_AI_MODEL` default). Earlier fact-check audit had said `gpt-4.1-mini`, but main code since 2026-04-10 已 `gpt-5.4-mini`. 정정 완료.
 - **`text-embedding-3-small` 1536d** — confirmed at `packages/ai/embed.ts:14` and `apps/worker/src/jobs/embed.ts:14`.
-- **`@anthropic-ai/sdk` is dead dependency in app code** — declared at `packages/ai/package.json:16`, but no `import` anywhere in `apps/` or `packages/` source. Only referenced in `docs/plan/` and `docs/archive/` (historical). graphify binary uses its own Anthropic auth, not via this SDK.
+- **`@anthropic-ai/sdk` was a dead dependency** — declared at `packages/ai/package.json:16`, but no `import` anywhere. ✅ **2026-04-14 정리로 완전 삭제**. graphify 바이너리 원본 분석 결과 LLM 호출 자체를 하지 않음 (tree-sitter + NetworkX + Leiden 결정론적) — Anthropic SDK·env·docker secret 전부 불필요로 판명.
 - **No OpenSearch used** — confirmed: zero matches in `packages/`, `apps/`, only appears in `docs/analysis/` reference materials. pgvector + pg_trgm + PG FTS only.
 - **`knowledge_claim` and `precedent_case` embedding tables exist** — confirmed `packages/db/schema/knowledge.ts:103-118` (`knowledgeClaim.embedding`) and `packages/db/schema/case.ts:75` (`precedentCase.embedding`). Both use `vector(1536)` via customType.
 - **Phase-6 files exist**:
@@ -118,9 +118,9 @@
 
 5. **§10.1–§10.4 migration filenames**: Renumber starting from `0009_` not `0010_` (so `0009_llm_cache.sql`, `0010_document_chunks.sql`, ..., `0015_review_queue_kind.sql`).
 
-6. **§2.2 + §13**: Clarify that `@anthropic-ai/sdk` removal applies ONLY to `packages/ai/package.json:16` — `ANTHROPIC_API_KEY` env var must remain for graphify binary (documented in `.env.example:37-40`).
+6. **§2.2 + §13**: ✅ (2026-04-14 정리로 해소) `@anthropic-ai/sdk` dep 제거 + `ANTHROPIC_API_KEY` env·docker secret 전부 삭제. graphify 바이너리는 결정론적이라 API 키 불요.
 
-7. **§13 env block**: Note that `ASK_AI_MODEL=gpt-4.1-mini` is the existing var. Either rename or add `OPENAI_MODEL_SYNTHESIS` alongside without overlap.
+7. **§13 env block**: `ASK_AI_MODEL=gpt-5.4-mini` 기존 유지 + `ASK_AI_SYNTHESIS_MODEL=gpt-5.4` 신규 추가.
 
 8. **§9.4 CI commands**: Change `pnpm --filter @jarvis/web ...` to a full monorepo form (`turbo type-check lint test` or `pnpm -r run …`) so worker + package tests are covered.
 
@@ -134,4 +134,6 @@
 
 ---
 
-**Bottom line**: The plan's strategy is sound. The technical claims on counts (39 tables, 305 i18n keys, 11 e2e, 46 unit, text-embedding model, gpt-4.1-mini default) are all correct. The systematic errors are almost entirely **path and Drizzle-style mismatches** — fixable by search-and-replace, enum declaration relocation, and schema column attribute alignment. After applying the 12 recommendations above, the plan is safe to execute by jarvis-planner → builder → integrator.
+**Bottom line**: The plan's strategy is sound. The technical claims on counts (39 tables, 305 i18n keys, 11 e2e, 46 unit, text-embedding model, gpt-5.4-mini default) are all correct. The systematic errors are almost entirely **path and Drizzle-style mismatches** — fixable by search-and-replace, enum declaration relocation, and schema column attribute alignment. After applying the 12 recommendations above, the plan is safe to execute by jarvis-planner → builder → integrator.
+
+**2026-04-14 update**: graphify 내부 LLM 호출 가정(Claude Haiku via ANTHROPIC_API_KEY)이 reference_only/graphify 원본 분석으로 오류로 판명. Anthropic 흔적 전부 삭제, Jarvis는 OpenAI 단일 제공자.

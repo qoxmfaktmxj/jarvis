@@ -53,9 +53,9 @@ Phase 0~6 완료 목록(`CURRENT_STATE.md:29-38`):
 문서가 과장 없는지 실제 코드로 교차 검증:
 
 - **39테이블:** `packages/db/schema/` 17개 ts 파일에서 drizzle 테이블 export. CURRENT_STATE 카운트(Knowledge 5 + Case 3 + Directory 1 + Graph 4 + Project 4 + System 2 + Attendance 3 + Search/Audit 8 + User/Tenant 9 + Code/Company 2 = 41)가 존재. 실제로 `case.ts`는 2테이블, `knowledge.ts`는 5테이블 등으로 CURRENT_STATE.md 기재가 코드와 일관적.
-- **OpenAI 생성 마이그레이션 완료:** `packages/ai/ask.ts:4`에서 `import OpenAI from 'openai'`, `ask.ts:42` `ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-4.1-mini'`. Anthropic은 `packages/ai/package.json:17`에 의존성 남아있지만(`@anthropic-ai/sdk ^0.30.0`) Ask 경로에서 호출은 제거됨 — 코드와 문서가 일치.
+- **OpenAI 단일화 완료:** `packages/ai/ask.ts:4` `import OpenAI from 'openai'`, `ask.ts:42` `ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini'`. `@anthropic-ai/sdk` 의존성은 제거됨(실제 import 0건이었음). **Anthropic 흔적 없음 = Jarvis는 OpenAI 단일 제공자로 통일.**
 - **6-lane 라우터 실제 존재:** `packages/ai/router.ts:12-18`에 6개 AskLane 타입 정의, 147줄 `routeQuestion()`에 가중치 기반 매칭.
-- **Graphify subprocess:** `apps/worker/src/jobs/graphify-build.ts:154` `execFileAsync(GRAPHIFY_BIN, args, …)`로 실제 subprocess 호출. `graphify-build.ts:160` 환경변수 allowlist(`PATH, HOME, TMPDIR, ANTHROPIC_API_KEY, GRAPHIFY_MODEL, LANG`).
+- **Graphify subprocess:** `apps/worker/src/jobs/graphify-build.ts:149` `execFileAsync(GRAPHIFY_BIN, args, …)`로 실제 subprocess 호출. 환경변수 allowlist는 `PATH, HOME, TMPDIR, LANG`만 전달 — **graphify 바이너리가 100% 결정론적(tree-sitter + NetworkX + Leiden)이라 API 키 불요**. 의미 기반 보강이 필요하면 별도 단계에서 `@jarvis/ai` (OpenAI) 경유.
 - **Knowledge Debt Radar / Drift Detection:** `apps/web/app/actions/knowledge-debt.ts`(141줄), `apps/web/app/actions/drift-detection.ts`(207줄) 실제 구현. 서버 액션이며 세션 검증(`drift-detection.ts:61-66`).
 
 **결론:** CURRENT_STATE.md의 주장은 코드와 거의 일치. 다만 “production-ready”는 테스트·CI·관측 부족(아래 §10 갭 참조)을 감안하면 “기능 완성, 운영 미완성” 수준.
@@ -202,16 +202,18 @@ Next.js 15는 server action + RSC가 일반화된 버전. App Router(`apps/web/a
 **OpenAI 사용 위치 (실제 호출 지점 전체 나열):**
 
 1. `packages/ai/embed.ts:34-44` — 쿼리·문서 임베딩 (`text-embedding-3-small`, 1536 dim). Redis SHA256 캐시 24시간.
-2. `packages/ai/ask.ts:127-129` (모듈 싱글턴) + `ask.ts:311-320` — Ask AI 생성 (`gpt-4.1-mini` 기본, `process.env['ASK_AI_MODEL']`로 override). SSE 스트리밍 + usage 토큰 추적.
+2. `packages/ai/ask.ts:127-129` (모듈 싱글턴) + `ask.ts:311-320` — Ask AI 생성 (`gpt-5.4-mini` 기본, `process.env['ASK_AI_MODEL']`로 override). SSE 스트리밍 + usage 토큰 추적.
 3. `packages/ai/tutor.ts:9-10` (모듈 싱글턴) + `tutor.ts:167-174` — HR 튜터 (같은 모델). Guide/Quiz/Simulation 모드별 온도 분기(quiz=0.3, else=0.5).
 4. `apps/worker/src/jobs/embed.ts:8` + `embed.ts:20-26` — 문서 임베딩 배치 (`text-embedding-3-small`, 10개 단위 배치).
 5. `packages/db/seed/dev.ts` — 시드용 (개발 환경).
 
-**Anthropic 사용 위치 (실제 호출 지점):**
+**Anthropic 사용 위치: 없음.**
 
-1. `apps/worker/src/jobs/graphify-build.ts:162` — Graphify subprocess 환경변수 `ANTHROPIC_API_KEY` 전달 (Graphify가 `claude-haiku-4-5-20251001` 호출). **코드 자체는 Anthropic SDK를 직접 import 하지 않음** — Python Graphify 내부에서만 사용.
+이전 가정(Graphify가 `claude-haiku-4-5-20251001`를 내부에서 호출)은 **사실이 아님**. reference_only/graphify 원본 소스 분석 결과, graphify 바이너리는 100% 결정론적(tree-sitter AST + NetworkX + Leiden/Louvain)이며 `openai`/`anthropic` SDK import 0건. semantic edges는 graphify를 *사용하는 외부 에이전트*가 채우는 빈 슬롯(`input_tokens`/`output_tokens` placeholder)만 노출한다.
 
-**결론: Jarvis 코드베이스 내 LLM 직접 호출은 OpenAI만, Anthropic은 Graphify subprocess를 통해 간접적으로만.** `@anthropic-ai/sdk ^0.30.0`이 `packages/ai/package.json:17`에 의존성으로 남아있지만 현재 ts 파일 어디에서도 import되지 않음(grep 결과 없음) — 제거 가능한 dead dependency.
+2026-04-14 정리: `apps/worker/src/jobs/graphify-build.ts` env allowlist에서 `ANTHROPIC_API_KEY`/`GRAPHIFY_MODEL` 전달 제거, `@anthropic-ai/sdk` 의존성 삭제, `.env.example`·`docker/*`·`README.md` 모두 OpenAI 단일화.
+
+**결론: Jarvis는 OpenAI 단일 제공자로 통일.** 의미 기반 보강이 필요하면 Jarvis 측에서 `@jarvis/ai` (gpt-5.4-mini) 경유로 별도 단계 수행.
 
 **프롬프트 매니지먼트:**
 - 하드코딩. `ask.ts:243-274`의 `SYSTEM_PROMPT_BASE / SIMPLE_SUFFIX / EXPERT_SUFFIX` 상수.
@@ -259,8 +261,8 @@ Next.js 15는 server action + RSC가 일반화된 버전. App Router(`apps/web/a
 - `REDIS_URL=redis://localhost:6380`
 - `MINIO_*` (localhost:9100, bucket `jarvis-files`)
 - `OIDC_*` (개발: dev 계정 로그인, OIDC 불필요)
-- `OPENAI_API_KEY`, `ASK_AI_MODEL=gpt-4.1-mini`
-- `ANTHROPIC_API_KEY`, `GRAPHIFY_*` (BIN, MODEL=claude-haiku-4-5-20251001, TIMEOUT_MS=300000, MAX_FILE_COUNT=500, MAX_ARCHIVE_MB=100, AUTO_BUILD=false)
+- `OPENAI_API_KEY`, `ASK_AI_MODEL=gpt-5.4-mini` (단일 제공자)
+- `GRAPHIFY_*` (BIN, TIMEOUT_MS=300000, MAX_FILE_COUNT=500, MAX_ARCHIVE_MB=100, AUTO_BUILD=false) — graphify는 결정론적이라 API 키 불요
 
 **CI/CD:** GitHub Actions 파일 없음 (CURRENT_STATE.md가 명시: "CI/CD: GitHub Actions workflow 필요"). 배포는 `scripts/start-prod.sh` 수동.
 
@@ -554,10 +556,10 @@ Next.js 15는 server action + RSC가 일반화된 버전. App Router(`apps/web/a
 | 위치 | 목적 | 모델 | 특징 |
 |------|------|------|------|
 | `packages/ai/embed.ts:34-44` | 쿼리/문서 임베딩 | `text-embedding-3-small` (1536d) | Redis SHA256 캐시 24h |
-| `packages/ai/ask.ts:311-331` | Ask 답변 생성 | `$ASK_AI_MODEL` ?? `gpt-4.1-mini` | SSE 스트리밍, max_tokens=1024, usage 포함 |
+| `packages/ai/ask.ts:311-331` | Ask 답변 생성 | `$ASK_AI_MODEL` ?? `gpt-5.4-mini` | SSE 스트리밍, max_tokens=1024, usage 포함 |
 | `packages/ai/tutor.ts:167-185` | HR 튜터 | 동일 모델 | temperature 0.3(quiz)/0.5(other), max_tokens=1500 |
 | `apps/worker/src/jobs/embed.ts:21-26` | 배치 문서 임베딩 | `text-embedding-3-small` | 10개 batch |
-| `apps/worker/src/jobs/graphify-build.ts:157-164` | Graphify subprocess | `claude-haiku-4-5-20251001` (Anthropic) | 환경변수로 전달, allowlist |
+| `apps/worker/src/jobs/graphify-build.ts:149-156` | Graphify subprocess | **LLM 미사용** (결정론적 tree-sitter + NetworkX + Leiden) | env allowlist: PATH/HOME/TMPDIR/LANG |
 
 ### 6.2 프롬프트 패턴
 
@@ -951,7 +953,7 @@ fe0a4ce feat(ask-ui): render graph source variant in SourceRefCard + ClaimBadge
 - [x] 4-표면 지식 모델 컬럼 (surface/authority/owner_team/audience/review_cycle_days/domain/source_origin)
 - [x] 95 canonical + 74,342 cases (TF-IDF) + 562 clusters + 31 directory
 - [x] 6-레인 라우터 (정규식, LLM 없음)
-- [x] Ask = OpenAI gpt-4.1-mini + text-embedding-3-small (+ SSE + Rate limit 20/h)
+- [x] Ask = OpenAI gpt-5.4-mini + text-embedding-3-small (+ SSE + Rate limit 20/h)
 - [x] HR 튜터 (guide/quiz/simulation × 8 onboarding topics)
 - [x] Knowledge Debt Radar + Drift Detection
 - [x] AnswerCard 4-소스 분류 + Simple/Expert 모드

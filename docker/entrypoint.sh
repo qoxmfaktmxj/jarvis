@@ -14,9 +14,9 @@ if [ -f /run/secrets/session_secret ]; then
   export SESSION_SECRET=$(cat /run/secrets/session_secret)
 fi
 
-# Anthropic API key
-if [ -f /run/secrets/anthropic_api_key ]; then
-  export ANTHROPIC_API_KEY=$(cat /run/secrets/anthropic_api_key)
+# OpenAI API key
+if [ -f /run/secrets/openai_api_key ]; then
+  export OPENAI_API_KEY=$(cat /run/secrets/openai_api_key)
 fi
 
 # MinIO credentials (root user = app access key in single-tenant setup)

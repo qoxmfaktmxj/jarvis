@@ -24,10 +24,10 @@ const GRAPHIFY_TIMEOUT_MS = parseInt(
   process.env['GRAPHIFY_TIMEOUT_MS'] || '600000',
   10,
 );
-const GRAPHIFY_MODEL =
-  process.env['GRAPHIFY_MODEL'] || 'claude-haiku-4-5-20251001';
-const GRAPHIFY_API_KEY =
-  process.env['GRAPHIFY_API_KEY'] || process.env['ANTHROPIC_API_KEY'];
+// NOTE: graphify binary (reference_only/graphify) is 100% deterministic
+// (tree-sitter AST + NetworkX + Leiden/Louvain). It makes no LLM calls
+// internally — no API key needed. Semantic enrichment, if ever required,
+// must happen in a separate step via @jarvis/ai (OpenAI gpt-5.4-mini).
 const MAX_FILE_COUNT = parseInt(
   process.env['GRAPHIFY_MAX_FILE_COUNT'] || '5000',
   10,
@@ -159,8 +159,6 @@ async function processGraphifyBuild(
         PATH: process.env['PATH'] ?? '/usr/local/bin:/usr/bin:/bin',
         HOME: process.env['HOME'] ?? '/root',
         TMPDIR: process.env['TMPDIR'] ?? '/tmp',
-        ANTHROPIC_API_KEY: GRAPHIFY_API_KEY ?? '',
-        GRAPHIFY_MODEL: GRAPHIFY_MODEL,
         LANG: process.env['LANG'] ?? 'en_US.UTF-8',
       },
     });

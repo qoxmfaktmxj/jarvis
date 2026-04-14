@@ -75,7 +75,7 @@
 
 1. **5개 레퍼런스 중 어느 것도 통째로 가져오지 않는다.** 전부 싱글유저 로컬 가정.
 2. **Phase-7을 7A(2주) + 7B(3주) + Phase-8로 분할.** 3-way review 공통 지적: 단일 4주는 불가능.
-3. **모든 OpenAI 호출은 `gpt-5.4-mini` (utility) / `gpt-5.4` (synthesis)**. env var 추상화로 새 모델 쉽게 전환. 현재 `gpt-4.1-mini`는 Phase-7A W1 D1에 스왑.
+3. **모든 OpenAI 호출은 `gpt-5.4-mini` (utility) / `gpt-5.4` (synthesis)**. env var 추상화. ✅ main 코드는 이미 `gpt-5.4-mini` 기본값 — 스왑 불요. Phase-7A에서 `ASK_AI_SYNTHESIS_MODEL=gpt-5.4` 신규 env만 추가.
 4. **Cache key에 `promptVersion + workspaceId + sensitivityScope` 강제**. 테넌트·권한 경계 데이터 누출 차단.
 5. **모든 새 테이블에 workspace FK + `varchar("sensitivity", { length: 30 })` UPPERCASE**. polymorphic text[] 금지 → junction table.
 6. **자동 Heal / Lint 결과는 `wiki_*_draft` 테이블에 격리**. 관리자 승급 후만 검색·답변 후보.

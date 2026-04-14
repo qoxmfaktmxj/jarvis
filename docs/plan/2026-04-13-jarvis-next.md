@@ -667,44 +667,29 @@ export type SourceRef =
 
 ---
 
-## Phase 4 — OpenAI 생성 마이그레이션
+## Phase 4 — OpenAI 단일 제공자 정리 ✅ (완료: 2026-04-14)
 
-**목표:** ask.ts의 Anthropic Claude → OpenAI 전환
+**상태:** 이 섹션의 원 목표(Anthropic → OpenAI 전환)는 이미 main 코드에 반영 완료. 남았던 잔재물을 2026-04-14에 최종 정리했음.
 
-### Task 4-1. ask.ts 프로바이더 교체
+### 완료 항목
 
-```typescript
-// 변경 전
-import Anthropic from '@anthropic-ai/sdk';
-const anthropic = new Anthropic({ apiKey: ... });
-const stream = anthropic.messages.stream({ model: 'claude-sonnet-4-5', ... });
+1. **Ask AI 생성 경로** — `packages/ai/ask.ts`는 처음부터 OpenAI 사용 중. `ASK_AI_MODEL=gpt-5.4-mini` 기본값 (`packages/ai/ask.ts:42`, `tutor.ts:10`).
+2. **`@anthropic-ai/sdk` 의존성 삭제** — `packages/ai/package.json`에서 제거 (실제 import 0건이었음, dead dependency).
+3. **`ANTHROPIC_API_KEY` 제거** — `.env.example`, `docker/docker-compose.yml`, `docker/entrypoint.sh`, `scripts/start-prod.sh`, `README.md` 전부 정리. Docker secret은 `openai_api_key`로 단일화.
+4. **graphify 서브프로세스 env 정리** — `apps/worker/src/jobs/graphify-build.ts`의 env allowlist에서 `ANTHROPIC_API_KEY`·`GRAPHIFY_MODEL` 전달 제거. `GRAPHIFY_API_KEY`·`GRAPHIFY_MODEL` env 삭제.
+5. **문서 정정** — `docs/analysis/00-jarvis-current-state.md`, `01-graphify.md`, `99-fact-check.md`, `99-review-summary.md`, `99-comparison-matrix.md`, `99-integration-plan.md`, `README.md`의 Anthropic/Claude Haiku/`gpt-4.1-mini` 잘못된 기재 전부 수정.
 
-// 변경 후
-import OpenAI from 'openai';
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const stream = await openai.chat.completions.create({
-  model: 'gpt-5.4-mini',  // 또는 gpt-4.1-mini
-  stream: true,
-  messages: [...],
-});
-```
+### 핵심 정정 사항 (중요)
 
-### Task 4-2. SSE 스트리밍 어댑터
+> 이전 버전의 이 plan과 analysis 문서들은 **graphify 바이너리가 내부적으로 Claude Haiku를 호출한다**고 전제했으나, `reference_only/graphify` 원본 소스 분석 결과 **사실이 아님**.
+>
+> graphify는 100% 결정론적 파이프라인: tree-sitter AST → NetworkX 그래프 → Leiden/Louvain 커뮤니티 검출. `openai`·`anthropic` SDK import 0건. semantic edges 슬롯은 graphify를 *호스팅하는* 외부 에이전트(Claude Code, Codex 등)가 채우도록 설계된 빈 placeholder에 불과. Jarvis 측에서는 필요 시 `@jarvis/ai` (OpenAI gpt-5.4-mini)로 별도 semantic pass를 돌리면 됨.
 
-OpenAI streaming format → 기존 SSE format 변환:
-```typescript
-for await (const chunk of stream) {
-  const content = chunk.choices[0]?.delta?.content;
-  if (content) yield { type: 'text', content } as SSETextEvent;
-}
-```
+### 후속 과제 (Phase-7A로 이관)
 
-### Task 4-3. 환경변수 정리
-
-`.env.example` 업데이트:
-- `ANTHROPIC_API_KEY` → 주석 처리 (graphify-build에서만 사용)
-- `OPENAI_API_KEY` — 생성 + 임베딩 통합 키
-- `ASK_AI_MODEL=gpt-5.4-mini`
+- **`ASK_AI_SYNTHESIS_MODEL=gpt-5.4`** 신규 env 도입 (synthesis/ingest/contradictions 용). `docs/analysis/99-integration-plan.md` §1.3 참조.
+- **Fallback ladder** — primary 429/500 시 degraded mode + quality flag.
+- **LLM cost kill-switch** — `LLM_DAILY_BUDGET_USD` 초과 시 자동 차단.
 
 ---
 

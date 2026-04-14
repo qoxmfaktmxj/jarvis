@@ -349,7 +349,7 @@
 ## 레퍼런스 ↔ MEMORY 컨텍스트 정합
 
 ### CTX-01: "정본 위키 + 판례 + 그래프 + 튜터" 4축 전략 (MEMORY) — plan에서 **튜터**만 약함
-**Description**: Phase-6의 HR 튜터(`tutor.ts`)는 Phase-7 plan 에서 한 번도 언급되지 않는다. 새 `document_chunks`, `wiki_syntheses`, `wiki_edges` 는 튜터 guide/quiz/simulation 에 영향. 튜터 프롬프트가 `gpt-4.1-mini` 고정인데 §2.2 모델 라우팅 정책과 일치하는지 불명.
+**Description**: Phase-6의 HR 튜터(`tutor.ts`)는 Phase-7 plan 에서 한 번도 언급되지 않는다. 새 `document_chunks`, `wiki_syntheses`, `wiki_edges` 는 튜터 guide/quiz/simulation 에 영향. 튜터는 `ASK_AI_MODEL` env(기본 `gpt-5.4-mini`) 참조로 이미 동일 모델을 쓰지만 §2.2 synthesis 전용 모델(`ASK_AI_SYNTHESIS_MODEL=gpt-5.4`) 승급 정책과의 관계가 불명.
 **Fix**: §2.2 테이블에 "HR 튜터 답변 생성" 행 추가. 튜터 retrieval 이 새 파이프라인을 쓸지, 자체 경로 유지할지 결정.
 
 ### CTX-02: 2단 UI (Simple/Expert) — Phase-7 신규 기능 지원?
