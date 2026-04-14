@@ -94,7 +94,8 @@ export interface AskQuery {
   userId: string;
   userRoles: string[];
   userPermissions: string[];
-  snapshotId?: string;     // explicit graph scope
-  userCompany?: string;    // 사용자 소속 고객사 (case 검색 부스팅)
-  mode?: AskMode;          // simple: 간결 답변, expert: 상세 답변 (default: simple)
+  snapshotId?: string;          // explicit graph scope
+  userCompany?: string;         // 사용자 소속 고객사 (case 검색 부스팅)
+  mode?: AskMode;               // simple: 간결 답변, expert: 상세 답변 (default: simple)
+  sensitivityScope?: string;    // RBAC-derived cache scope (e.g. 'workspace:X|level:internal')
 }

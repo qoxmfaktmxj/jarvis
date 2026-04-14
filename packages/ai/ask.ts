@@ -368,7 +368,7 @@ export async function* askAI(
   // RBAC-derived sensitivityScope once the auth layer is wired.
   // ---------------------------------------------------------------------------
   const sensitivityScope =
-    (query as { sensitivityScope?: string }).sensitivityScope ??
+    query.sensitivityScope ??
     `workspace:${workspaceId}|level:internal`;
 
   const cacheKey = makeCacheKey({
@@ -527,5 +527,10 @@ export async function* askAI(
   }
 
   // Store the collected events so future identical requests skip OpenAI.
-  await setCached(cacheKey, JSON.stringify(collectedEvents));
+  // Don't cache error responses — a transient OpenAI failure should not be
+  // served to future callers as a cached "answer".
+  const hasError = collectedEvents.some(e => e.type === 'error');
+  if (!hasError) {
+    await setCached(cacheKey, JSON.stringify(collectedEvents));
+  }
 }

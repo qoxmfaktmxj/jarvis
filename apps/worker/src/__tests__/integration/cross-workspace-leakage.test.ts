@@ -68,6 +68,8 @@ runIfDb('cross-workspace leakage (G4)', () => {
   const client = new Client({ connectionString: TEST_DB_URL });
 
   // Temporary IDs we insert so we can clean up precisely.
+  let workspaceAId: string;
+  let workspaceBId: string;
   let pageAId: string;
   let pageBId: string;
 
@@ -75,14 +77,29 @@ runIfDb('cross-workspace leakage (G4)', () => {
     await client.connect();
 
     // Ensure the test workspaces exist (workspace table has unique code constraint).
+    // Use ON CONFLICT (code) DO NOTHING to handle re-runs where the same code
+    // already exists (possibly with a different id). Then SELECT to get the actual id.
     await client.query(
       `INSERT INTO workspace (id, code, name)
-       VALUES
-         ($1::uuid, 'g4-ws-a', 'G4 Test Workspace A'),
-         ($2::uuid, 'g4-ws-b', 'G4 Test Workspace B')
-       ON CONFLICT (id) DO NOTHING`,
-      [WORKSPACE_A, WORKSPACE_B],
+       VALUES ($1::uuid, 'g4-ws-a', 'G4 Test Workspace A')
+       ON CONFLICT (code) DO NOTHING`,
+      [WORKSPACE_A],
     );
+    const wsARes = await client.query<{ id: string }>(
+      `SELECT id FROM workspace WHERE code = 'g4-ws-a'`,
+    );
+    workspaceAId = wsARes.rows[0]!.id;
+
+    await client.query(
+      `INSERT INTO workspace (id, code, name)
+       VALUES ($1::uuid, 'g4-ws-b', 'G4 Test Workspace B')
+       ON CONFLICT (code) DO NOTHING`,
+      [WORKSPACE_B],
+    );
+    const wsBRes = await client.query<{ id: string }>(
+      `SELECT id FROM workspace WHERE code = 'g4-ws-b'`,
+    );
+    workspaceBId = wsBRes.rows[0]!.id;
 
     // Create one knowledge_page per workspace.
     const resA = await client.query<{ id: string }>(
@@ -91,7 +108,7 @@ runIfDb('cross-workspace leakage (G4)', () => {
        VALUES
          ($1::uuid, 'wiki', 'G4 Page A', 'g4-page-a', 'published', 'public')
        RETURNING id`,
-      [WORKSPACE_A],
+      [workspaceAId],
     );
     pageAId = resA.rows[0]!.id;
 
@@ -101,7 +118,7 @@ runIfDb('cross-workspace leakage (G4)', () => {
        VALUES
          ($1::uuid, 'wiki', 'G4 Page B', 'g4-page-b', 'published', 'public')
        RETURNING id`,
-      [WORKSPACE_B],
+      [workspaceBId],
     );
     pageBId = resB.rows[0]!.id;
 
@@ -139,32 +156,31 @@ runIfDb('cross-workspace leakage (G4)', () => {
       await client.query('DELETE FROM knowledge_page WHERE id = $1::uuid', [pageBId]);
     }
     await client.query(
-      `DELETE FROM workspace WHERE id IN ($1::uuid, $2::uuid)`,
-      [WORKSPACE_A, WORKSPACE_B],
+      `DELETE FROM workspace WHERE code IN ('g4-ws-a', 'g4-ws-b')`,
     );
     await client.end();
   });
 
   it('query close to workspace A returns only workspace A rows', async () => {
     const q = seededVector(1000, 1); // near A-claim-0
-    const rows = await searchClaims(client, WORKSPACE_A, q);
+    const rows = await searchClaims(client, workspaceAId, q);
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.every((r) => r.workspace_id === WORKSPACE_A)).toBe(true);
+    expect(rows.every((r) => r.workspace_id === workspaceAId)).toBe(true);
   });
 
   it('query close to workspace B returns only workspace B rows', async () => {
     const q = seededVector(2000, 1); // near B-claim-0
-    const rows = await searchClaims(client, WORKSPACE_B, q);
+    const rows = await searchClaims(client, workspaceBId, q);
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.every((r) => r.workspace_id === WORKSPACE_B)).toBe(true);
+    expect(rows.every((r) => r.workspace_id === workspaceBId)).toBe(true);
   });
 
   it('generic vector is filtered to requested workspace only; no id appears in both sets', async () => {
     const q = seededVector(9999);
-    const rowsA = await searchClaims(client, WORKSPACE_A, q);
-    const rowsB = await searchClaims(client, WORKSPACE_B, q);
-    expect(rowsA.every((r) => r.workspace_id === WORKSPACE_A)).toBe(true);
-    expect(rowsB.every((r) => r.workspace_id === WORKSPACE_B)).toBe(true);
+    const rowsA = await searchClaims(client, workspaceAId, q);
+    const rowsB = await searchClaims(client, workspaceBId, q);
+    expect(rowsA.every((r) => r.workspace_id === workspaceAId)).toBe(true);
+    expect(rowsB.every((r) => r.workspace_id === workspaceBId)).toBe(true);
     // Cross-check: no claim id appears in both result sets.
     const idsA = new Set(rowsA.map((r) => r.id));
     expect(rowsB.some((r) => idsA.has(r.id))).toBe(false);
