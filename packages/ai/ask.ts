@@ -1,11 +1,15 @@
 // packages/ai/ask.ts  (retrieval + generation)
 // 2026-04-13: 6-lane 라우터 + Cases/Directory Layer 추가 + OpenAI 생성 마이그레이션
+// 2026-04-14 (Phase-7A PR#5): cache-through with workspace/prompt/scope-aware key.
+// TODO: integrate with Lane A assertBudget+logLlmCall after Lane A is merged.
 
 import OpenAI from 'openai';
 import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
+import { logLlmCall } from './logger.js';
+import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
 import {
   retrieveRelevantGraphContext,
   type GraphContext,
@@ -21,6 +25,7 @@ import {
   type RetrievedEntry,
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
+import { makeCacheKey, getCached, setCached } from './cache.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -32,6 +37,11 @@ import type {
 } from './types.js';
 
 // ---------------------------------------------------------------------------
+// Cache key versioning — bump when prompt template changes
+// ---------------------------------------------------------------------------
+export const PROMPT_VERSION = '2026-04-v1';
+
+// ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 const TOP_K_VECTOR = 10;
@@ -40,6 +50,19 @@ const VECTOR_WEIGHT = 0.7;
 const FTS_WEIGHT = 0.3;
 
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
+
+// 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
+const MODEL_PRICING: Record<string, { in: number; out: number }> = {
+  'gpt-5.4-mini': { in: 0.0005, out: 0.0015 },
+  'gpt-5.4': { in: 0.005, out: 0.015 },
+  'text-embedding-3-small': { in: 0.00002, out: 0 },
+};
+
+function computeCostUsd(model: string, tokensIn: number, tokensOut: number): string {
+  const p = MODEL_PRICING[model] ?? { in: 0, out: 0 };
+  const cost = (tokensIn * p.in + tokensOut * p.out) / 1000;
+  return cost.toFixed(6);
+}
 
 // ---------------------------------------------------------------------------
 // Text Claims Retrieval (기존 로직 유지)
@@ -280,6 +303,11 @@ function getSystemPrompt(mode: import('./types.js').AskMode = 'simple'): string 
 // ---------------------------------------------------------------------------
 // generateAnswer — OpenAI 스트리밍 생성
 // ---------------------------------------------------------------------------
+export interface AskMeta {
+  workspaceId: string;
+  requestId: string | null;
+}
+
 export async function* generateAnswer(
   question: string,
   context: string,
@@ -288,8 +316,11 @@ export async function* generateAnswer(
   caseSources: CaseSourceRef[],
   dirSources: DirectorySourceRef[],
   mode: import('./types.js').AskMode = 'simple',
+  meta: AskMeta = { workspaceId: '00000000-0000-0000-0000-000000000000', requestId: null },
 ): AsyncGenerator<SSEEvent> {
-  let totalTokens = 0;
+  let tokensIn = 0;
+  let tokensOut = 0;
+  const startedAt = Date.now();
 
   // 통합 sources 배열 (idx 순서: text → graph → case → directory)
   const allTextSources: TextSourceRef[] = claims.map((c) => ({
@@ -306,6 +337,18 @@ export async function* generateAnswer(
     ...caseSources,
     ...dirSources,
   ];
+
+  // Budget gate BEFORE OpenAI call
+  try {
+    await assertBudget(meta.workspaceId);
+  } catch (err) {
+    if (err instanceof BudgetExceededError) {
+      await recordBlocked(meta.workspaceId, ASK_MODEL, meta.requestId);
+      yield { type: 'error', message: 'daily budget exceeded' };
+      return;
+    }
+    throw err;
+  }
 
   try {
     const stream = await openai.chat.completions.create({
@@ -324,16 +367,43 @@ export async function* generateAnswer(
       if (content) {
         yield { type: 'text', content };
       }
-      // OpenAI usage는 스트림 마지막 청크에 포함 (stream_options.include_usage 설정 시)
       if (chunk.usage) {
-        totalTokens = (chunk.usage.prompt_tokens ?? 0) + (chunk.usage.completion_tokens ?? 0);
+        tokensIn = chunk.usage.prompt_tokens ?? 0;
+        tokensOut = chunk.usage.completion_tokens ?? 0;
       }
     }
 
     yield { type: 'sources', sources: allSources };
-    yield { type: 'done', totalTokens };
+    yield { type: 'done', totalTokens: tokensIn + tokensOut };
+
+    await logLlmCall({
+      workspaceId: meta.workspaceId,
+      requestId: meta.requestId,
+      model: ASK_MODEL,
+      promptVersion: PROMPT_VERSION,
+      inputTokens: tokensIn,
+      outputTokens: tokensOut,
+      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      durationMs: Date.now() - startedAt,
+      status: 'ok',
+      blockedBy: null,
+      errorCode: null,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
+    await logLlmCall({
+      workspaceId: meta.workspaceId,
+      requestId: meta.requestId,
+      model: ASK_MODEL,
+      promptVersion: PROMPT_VERSION,
+      inputTokens: tokensIn,
+      outputTokens: tokensOut,
+      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      blockedBy: null,
+      errorCode: message,
+    });
     yield { type: 'error', message };
   }
 }
@@ -353,14 +423,50 @@ export async function* askAI(
 ): AsyncGenerator<SSEEvent> {
   const { question, workspaceId, userPermissions, snapshotId, userCompany } = query;
 
+  // ---------------------------------------------------------------------------
+  // Phase-7A cache-through (interim in-memory LRU; Phase-7B replaces with Redis)
+  // sensitivityScope is derived from query if provided, otherwise defaults to
+  // workspace-level internal scope. Callers (request handlers) should pass the
+  // RBAC-derived sensitivityScope once the auth layer is wired.
+  // ---------------------------------------------------------------------------
+  const sensitivityScope =
+    query.sensitivityScope ??
+    `workspace:${workspaceId}|level:internal`;
+
+  const cacheKey = makeCacheKey({
+    promptVersion: PROMPT_VERSION,
+    workspaceId,
+    sensitivityScope,
+    input: question,
+    model: process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini',
+  });
+
+  const hit = await getCached(cacheKey);
+  if (hit) {
+    // Cache hit: replay stored events without touching OpenAI.
+    const cached = JSON.parse(hit) as SSEEvent[];
+    for (const evt of cached) {
+      yield evt;
+    }
+    return;
+  }
+
+  // No cache hit — run the full retrieval + generation pipeline and
+  // collect events so we can store them after completion.
+
   const canReadGraph =
     userPermissions.includes('graph:read') ||
     userPermissions.includes('admin:all');
 
+  // Collect all events so we can cache the full response after completion.
+  const collectedEvents: SSEEvent[] = [];
+
   // 1. 라우팅: lane 결정 + 소스별 가중치
   const route = routeQuestion(question);
   const weights = LANE_SOURCE_WEIGHTS[route.lane];
-  yield { type: 'route', lane: route.lane, confidence: route.confidence };
+  const routeEvent: SSEEvent = { type: 'route', lane: route.lane, confidence: route.confidence };
+  collectedEvents.push(routeEvent);
+  yield routeEvent;
 
   // 2. 모든 소스 항상 병렬 fetch (graph는 권한 있을 때만)
   let claims: RetrievedClaim[] = [];
@@ -455,6 +561,7 @@ export async function* askAI(
     };
     yield { type: 'sources', sources: [] };
     yield { type: 'done', totalTokens: 0 };
+    // Don't cache the fallback (no-result responses shouldn't be cached).
     return;
   }
 
@@ -467,7 +574,8 @@ export async function* askAI(
     weightedEntries,
   );
 
-  yield* generateAnswer(
+  // Collect generation events, yield each one, then cache the whole response.
+  for await (const evt of generateAnswer(
     question,
     context,
     weightedClaims,
@@ -475,5 +583,17 @@ export async function* askAI(
     caseSources,
     dirSources,
     query.mode ?? 'simple',
-  );
+    { workspaceId, requestId: query.requestId ?? null },
+  )) {
+    collectedEvents.push(evt);
+    yield evt;
+  }
+
+  // Store the collected events so future identical requests skip OpenAI.
+  // Don't cache error responses — a transient OpenAI failure should not be
+  // served to future callers as a cached "answer".
+  const hasError = collectedEvents.some(e => e.type === 'error');
+  if (!hasError) {
+    await setCached(cacheKey, JSON.stringify(collectedEvents));
+  }
 }

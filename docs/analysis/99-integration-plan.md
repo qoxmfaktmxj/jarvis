@@ -341,9 +341,18 @@ export const llmCache = pgTable("llm_cache", {
 
 ```ts
 // packages/db/schema/document-chunks.ts
-import { pgTable, uuid, text, integer, index, unique } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
-import { vector, sensitivity, createdAt, updatedAt } from "./_helpers";
+import {
+  pgTable, uuid, text, integer, index, unique, customType,
+} from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
+import { sensitivity, createdAt, updatedAt } from "./_helpers";
+
+// Jarvis 기존 패턴: packages/db/schema/knowledge.ts:23 참조
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType: () => "vector(1536)",
+  fromDriver: (value: string) => value.slice(1, -1).split(",").map(Number),
+  toDriver: (value: number[]) => `[${value.join(",")}]`,
+});
 
 export const documentChunks = pgTable("document_chunks", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -357,7 +366,7 @@ export const documentChunks = pgTable("document_chunks", {
   chunkIndex: integer("chunk_index").notNull(),
   content: text("content").notNull(),
   contentHash: text("content_hash").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+  embedding: vector("embedding"),
   tokens: integer("tokens").notNull(),
   sensitivity: sensitivity(),
   createdAt: createdAt(),
@@ -383,8 +392,8 @@ ALTER TABLE document_chunks
 
 ```ts
 // packages/db/schema/wiki-sources.ts
-import { pgTable, uuid, text, pgEnum, jsonb, unique, index } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { pgTable, uuid, text, pgEnum, jsonb, unique, index, timestamp } from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
 import { sensitivity, createdAt } from "./_helpers";
 
 export const sourceKindEnum = pgEnum("source_kind", ["meeting", "doc", "ticket", "email", "chat", "url"]);
@@ -406,13 +415,15 @@ export const wikiSources = pgTable("wiki_sources", {
 }));
 
 // wiki_sources_draft — Heal/LLM 자동 생성물은 여기 먼저
+export const reviewStatusEnum = pgEnum("review_status", ["pending", "approved", "rejected", "expired"]);
+
 export const wikiSourcesDraft = pgTable("wiki_sources_draft", {
   // 동일 구조 + originatingRun uuid + reviewStatus enum
   id: uuid("id").defaultRandom().primaryKey(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
   originatingRunId: uuid("originating_run_id"),      // ingest_run 또는 heal_run 참조
   proposedData: jsonb("proposed_data").notNull(),    // 동일 구조 JSON
-  reviewStatus: pgEnum("review_status", ["pending", "approved", "rejected", "expired"])("review_status").notNull().default("pending"),
+  reviewStatus: reviewStatusEnum("review_status").notNull().default("pending"),
   reviewedByUserId: uuid("reviewed_by_user_id"),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   createdAt: createdAt(),
@@ -425,15 +436,24 @@ export const wikiSourcesDraft = pgTable("wiki_sources_draft", {
 
 ```ts
 // packages/db/schema/wiki-junction.ts
-import { pgTable, uuid, text, pgEnum, index, unique } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { pgTable, uuid, text, pgEnum, integer, index, unique } from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
 import { createdAt } from "./_helpers";
+
+// Top-level enum declarations (Jarvis 컨벤션)
+export const refererTypeEnum = pgEnum("referer_type", [
+  "wiki_entity", "wiki_concept", "wiki_synthesis", "case",
+]);
+
+export const citedTypeEnum = pgEnum("cited_type", [
+  "wiki_sources", "knowledge_page", "case", "directory", "wiki_concept",
+]);
 
 // wiki_source_refs: wiki_entities / wiki_concepts / wiki_syntheses가 어느 wiki_sources를 참조하는지
 export const wikiSourceRefs = pgTable("wiki_source_refs", {
   id: uuid("id").defaultRandom().primaryKey(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
-  refererType: pgEnum("referer_type", ["wiki_entity", "wiki_concept", "wiki_synthesis", "case"])("referer_type").notNull(),
+  refererType: refererTypeEnum("referer_type").notNull(),
   refererId: uuid("referer_id").notNull(),
   sourceId: uuid("source_id").notNull(),  // wiki_sources.id (FK 강제 어려움 — trigger로 보정 또는 nullable)
   relation: text("relation"),              // 'mentions' | 'defines' | 'cites' | ...
@@ -450,7 +470,7 @@ export const wikiCitations = pgTable("wiki_citations", {
   workspaceId: uuid("workspace_id").notNull().references(() => workspace.id, { onDelete: "cascade" }),
   synthesisId: uuid("synthesis_id").notNull(),       // FK → wiki_syntheses.id
   citationIndex: integer("citation_index").notNull(), // [1], [2], [3]
-  citedType: pgEnum("cited_type", ["wiki_sources", "knowledge_page", "case", "directory", "wiki_concept"])("cited_type").notNull(),
+  citedType: citedTypeEnum("cited_type").notNull(),
   citedId: uuid("cited_id").notNull(),
   snippet: text("snippet"),
   createdAt: createdAt(),
@@ -465,7 +485,7 @@ export const wikiCitations = pgTable("wiki_citations", {
 ```ts
 // packages/db/schema/ingest-run.ts
 import { pgTable, uuid, text, jsonb, integer, pgEnum, index } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
+import { workspace } from "./tenant";
 import { createdAt, updatedAt } from "./_helpers";
 
 export const ingestStatusEnum = pgEnum("ingest_status", [

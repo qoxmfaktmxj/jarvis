@@ -10,13 +10,15 @@
     "./constants": "./constants/index.ts",
     "./constants/*": "./constants/*.ts",
     "./validation": "./validation/index.ts",
-    "./validation/*": "./validation/*.ts"
+    "./validation/*": "./validation/*.ts",
+    "./sentry": "./sentry.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "vitest"
   },
   "dependencies": {
+    "@sentry/node": "^10.48.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

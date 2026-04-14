@@ -71,6 +71,41 @@
       "when": 1776140858134,
       "tag": "0009_flaky_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776177132597,
+      "tag": "0010_flawless_william_stryker",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1776178361555,
+      "tag": "0011_silly_crusher_hogan",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1776178361556,
+      "tag": "0012_high_guardsmen",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1776178361557,
+      "tag": "0013_massive_prowler",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1776178361558,
+      "tag": "0014_lame_screwball",
+      "breakpoints": true
     }
   ]
 }

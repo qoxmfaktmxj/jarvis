@@ -8,23 +8,31 @@
  *       packages/db/drizzle/meta/_journal.json의 최신 수정 시각보다
  *       앞서 있으면 "마이그레이션을 재생성하지 않았다"라고 판단한다.
  *
- * 세 가지 실행 모드를 지원한다:
+ * 네 가지 실행 모드를 지원한다:
  *
- *   1) Claude Code hook 모드
+ *   1) Claude Code hook 모드 (advisory)
  *      $ node scripts/check-schema-drift.mjs --hook
  *      - stdin으로 Claude Code가 넘긴 PostToolUse JSON payload를 읽는다
  *      - payload.tool_input.file_path가 스키마 파일이 아니면 조용히 종료
  *      - drift가 있으면 stderr에 경고만 출력하고 exit 0 (advisory only, 차단 아님)
  *      - 오류가 나도 Claude의 작업 흐름을 막지 않기 위해 항상 exit 0
+ *      - --hook은 --ci/--precommit보다 우선함(Claude PostToolUse 흐름 안전)
  *
- *   2) 수동 / CI 모드
- *      $ node scripts/check-schema-drift.mjs
- *      - 현재 drift 상태를 출력
- *      - drift면 exit 1 (CI 실패 가능)
+ *   2) CI 모드 (blocking)
+ *      $ node scripts/check-schema-drift.mjs --ci
+ *      - drift면 exit 1 (CI 실패)
+ *      - journal 없어도 exit 1
  *      - drift 없으면 exit 0
  *
- *   3) Codex / 다른 에이전트
- *      (2)와 동일. 수동 모드로 호출하면 사람이 읽기 좋은 형태의 결과를 받는다.
+ *   3) pre-commit 모드 (blocking)
+ *      $ node scripts/check-schema-drift.mjs --precommit
+ *      - --ci와 동일 로직, 메시지에 "local pre-commit" 안내 포함
+ *
+ *   4) 수동 모드
+ *      $ node scripts/check-schema-drift.mjs
+ *      - 현재 drift 상태를 출력
+ *      - drift면 exit 1, 없으면 exit 0
+ *      - Codex / 다른 에이전트도 이 경로
  *
  * 이 스크립트는 Claude Code, Codex CLI, pre-commit, CI에서 모두 재사용된다.
  */
@@ -36,6 +44,8 @@ const ROOT = process.cwd();
 const SCHEMA_DIR = path.resolve(ROOT, "packages/db/schema");
 const JOURNAL = path.resolve(ROOT, "packages/db/drizzle/meta/_journal.json");
 const HOOK_MODE = process.argv.includes("--hook");
+const CI_MODE = process.argv.includes("--ci");
+const PRECOMMIT_MODE = process.argv.includes("--precommit");
 const TOLERANCE_MS = 500; // 거의 동시 편집에 대한 허용 오차
 
 /** packages/db/schema/ 하위의 모든 .ts 파일 중 최신 mtime. */
@@ -104,10 +114,14 @@ if (HOOK_MODE) {
   process.exit(0);
 }
 
-// ----- Manual / CI mode ---------------------------------------------------
+// ----- CI / pre-commit / manual mode -------------------------------------
 const result = checkDrift();
 
 if (result.reason === "no-journal") {
+  if (CI_MODE || PRECOMMIT_MODE) {
+    console.error("❌ drizzle/meta/_journal.json missing in CI/pre-commit mode.");
+    process.exit(1);
+  }
   console.log(
     "ℹ️  drizzle/meta/_journal.json이 없습니다. " +
     "첫 마이그레이션 전으로 가정하고 통과합니다."
@@ -116,8 +130,13 @@ if (result.reason === "no-journal") {
 }
 
 if (result.drift) {
+  const prefix = PRECOMMIT_MODE
+    ? "❌ [pre-commit] Schema drift detected."
+    : CI_MODE
+      ? "❌ [CI] Schema drift detected."
+      : "❌ Schema drift detected.";
   console.error(
-    `❌ Schema drift detected.\n` +
+    `${prefix}\n` +
     `   packages/db/schema/*.ts가 마이그레이션보다 ${result.ageSeconds}초 앞서 있습니다.\n` +
     `   'pnpm db:generate'를 실행해 동기화하세요.`
   );

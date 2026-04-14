@@ -1,10 +1,16 @@
 import type PgBoss from 'pg-boss';
 import { db } from '@jarvis/db/client';
 import { rawSource } from '@jarvis/db/schema/file';
+import { reviewQueue } from '@jarvis/db/schema/review-queue';
 import { eq } from 'drizzle-orm';
 import * as mammoth from 'mammoth';
 import { minioClient, BUCKET } from '../lib/minio-client.js';
 import { parsePdf } from '../lib/pdf-parser.js';
+import {
+  detectSecretKeywords,
+  redactPII,
+  type Sensitivity,
+} from '../lib/pii-redactor.js';
 
 export interface IngestJobData {
   rawSourceId: string;
@@ -100,18 +106,75 @@ async function processIngest(
     const mimeType = source.mimeType ?? 'application/octet-stream';
     const extractedText = await extractText(buffer, mimeType);
 
-    // Update raw_source with parsed content
+    // ---- Step 0: PII / SECRET guard (single-pass) ----
+    // Run each scan exactly once to avoid redundant regex sweeps.
+    // computeSensitivity() is intentionally NOT called here because it would
+    // re-invoke detectSecretKeywords + redactPII internally.
+    const currentSensitivity =
+      (source.sensitivity as Sensitivity | null) ?? 'INTERNAL';
+    const secretHits = detectSecretKeywords(extractedText);
+    const { redacted, hits: piiHits } = redactPII(extractedText);
+
+    if (secretHits.length > 0) {
+      await db.insert(reviewQueue).values({
+        workspaceId: source.workspaceId,
+        documentId: source.id,
+        documentType: 'raw_source',
+        reason: 'SECRET_KEYWORD',
+        matchedKeywords: secretHits,
+        status: 'pending',
+      });
+      await db
+        .update(rawSource)
+        .set({
+          ingestStatus: 'queued_for_review',
+          sensitivity: 'SECRET_REF_ONLY',
+          updatedAt: new Date(),
+        })
+        .where(eq(rawSource.id, rawSourceId));
+      console.log(
+        `[ingest] SECRET hit rawSourceId=${rawSourceId} keywords=${secretHits.join(',')}`,
+      );
+      return;
+    }
+
+    // PII만 있음 → sensitivity만 승급하고 계속 진행
+    const hasPII = piiHits.length > 0;
+    const ORDER: Record<Sensitivity, number> = {
+      PUBLIC: 0,
+      INTERNAL: 1,
+      RESTRICTED: 2,
+      SECRET_REF_ONLY: 3,
+    };
+    const newSensitivity: Sensitivity = hasPII
+      ? (ORDER[currentSensitivity] >= ORDER.INTERNAL
+          ? currentSensitivity
+          : 'INTERNAL')
+      : currentSensitivity;
+
+    if (newSensitivity !== currentSensitivity) {
+      await db
+        .update(rawSource)
+        .set({ sensitivity: newSensitivity, updatedAt: new Date() })
+        .where(eq(rawSource.id, rawSourceId));
+    }
+
+    // extractedText는 이후 단계용으로 redacted 버전으로 교체
+    const safeText = redacted;
+    // ---- End Step 0 ----
+
+    // Update raw_source with parsed content (redacted)
     await db
       .update(rawSource)
       .set({
-        parsedContent: extractedText,
+        parsedContent: safeText,
         ingestStatus: 'done',
         updatedAt: new Date(),
       })
       .where(eq(rawSource.id, rawSourceId));
 
     console.log(
-      `[ingest] Done rawSourceId=${rawSourceId} chars=${extractedText.length}`,
+      `[ingest] Done rawSourceId=${rawSourceId} chars=${safeText.length}`,
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
