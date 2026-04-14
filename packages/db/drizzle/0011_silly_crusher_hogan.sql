@@ -1,0 +1,1 @@
+CREATE INDEX "idx_llm_call_log_budget" ON "llm_call_log" USING btree ("workspace_id","created_at");

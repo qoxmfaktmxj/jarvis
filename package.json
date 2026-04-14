@@ -12,7 +12,8 @@
     "db:migrate": "pnpm --filter=@jarvis/db migrate",
     "db:seed": "pnpm --filter=@jarvis/db seed",
     "db:studio": "pnpm --filter=@jarvis/db studio",
-    "db:push": "pnpm --filter=@jarvis/db push"
+    "db:push": "pnpm --filter=@jarvis/db push",
+    "eval:budget-test": "tsx scripts/eval-budget-test.ts"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
