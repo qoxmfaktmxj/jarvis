@@ -341,9 +341,18 @@ export const llmCache = pgTable("llm_cache", {
 
 ```ts
 // packages/db/schema/document-chunks.ts
-import { pgTable, uuid, text, integer, index, unique } from "drizzle-orm/pg-core";
-import { workspace } from "./system";
-import { vector, sensitivity, createdAt, updatedAt } from "./_helpers";
+import {
+  pgTable, uuid, text, integer, index, unique, customType,
+} from "drizzle-orm/pg-core";
+import { workspace } from "./tenant";
+import { sensitivity, createdAt, updatedAt } from "./_helpers";
+
+// Jarvis 기존 패턴: packages/db/schema/knowledge.ts:23 참조
+const vector = customType<{ data: number[]; driverData: string }>({
+  dataType: () => "vector(1536)",
+  fromDriver: (value: string) => value.slice(1, -1).split(",").map(Number),
+  toDriver: (value: number[]) => `[${value.join(",")}]`,
+});
 
 export const documentChunks = pgTable("document_chunks", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -357,7 +366,7 @@ export const documentChunks = pgTable("document_chunks", {
   chunkIndex: integer("chunk_index").notNull(),
   content: text("content").notNull(),
   contentHash: text("content_hash").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+  embedding: vector("embedding"),
   tokens: integer("tokens").notNull(),
   sensitivity: sensitivity(),
   createdAt: createdAt(),
