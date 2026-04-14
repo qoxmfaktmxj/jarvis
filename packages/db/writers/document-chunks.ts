@@ -1,20 +1,41 @@
-import { featureDocumentChunksWrite } from "../feature-flags.js";
-import type { NewDocumentChunk } from "../schema/document-chunks.js";
+// packages/db/writers/document-chunks.ts
+import { db } from '../client.js';
+import { documentChunks } from '../schema/document-chunks.js';
+import { featureDocumentChunksWrite } from '../feature-flags.js';
+import type { NewDocumentChunk } from '../schema/document-chunks.js';
+import { sql } from 'drizzle-orm';
 
 /**
- * Phase-7A PR#7 — document_chunks write path guard stub.
+ * Upsert chunks into document_chunks.
+ * Conflict target: (document_type, document_id, chunk_index) — unique constraint.
+ * On conflict: update content, content_hash, embedding, tokens, sensitivity, updated_at.
  *
- * 7A에서는 실제 insert 경로가 없다. 7B에서 이 함수에 실 insert를 붙일 예정.
- * 지금은 플래그 가드만 둬서 누군가가 "먼저" write를 시도할 경우 즉시 실패시킨다.
+ * Gated by FEATURE_DOCUMENT_CHUNKS_WRITE.
  */
-export function writeChunks(_chunks: NewDocumentChunk[]): never {
+export async function upsertChunks(chunks: NewDocumentChunk[]): Promise<void> {
   if (!featureDocumentChunksWrite()) {
     throw new Error(
-      "document_chunks write path is disabled (FEATURE_DOCUMENT_CHUNKS_WRITE=false). " +
-      "Phase-7B 이후 활성화 예정."
+      'document_chunks write path is disabled (FEATURE_DOCUMENT_CHUNKS_WRITE=false).',
     );
   }
-  throw new Error(
-    "document_chunks write path is enabled via flag, but implementation is not landed yet (Phase-7B)."
-  );
+  if (chunks.length === 0) return;
+
+  await db
+    .insert(documentChunks)
+    .values(chunks)
+    .onConflictDoUpdate({
+      target: [
+        documentChunks.documentType,
+        documentChunks.documentId,
+        documentChunks.chunkIndex,
+      ],
+      set: {
+        content: sql`excluded.content`,
+        contentHash: sql`excluded.content_hash`,
+        embedding: sql`excluded.embedding`,
+        tokens: sql`excluded.tokens`,
+        sensitivity: sql`excluded.sensitivity`,
+        updatedAt: sql`now()`,
+      },
+    });
 }
