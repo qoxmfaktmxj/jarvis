@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { loginAsTestUser } from "./helpers/auth";
 
 test.describe("Ask AI page", () => {
   test.beforeEach(async ({ page }) => {
+    await loginAsTestUser(page);
     await page.goto("/ask");
   });
 
   test("loads the Ask AI page", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Ask AI" })).toBeVisible();
+    // The page <h1> renders the Ask.title translation ("AI 질문" in ko.json),
+    // not the literal "Ask AI". Match the current heading instead.
+    await expect(page.getByRole("heading", { name: "AI 질문" })).toBeVisible();
   });
 
   test("shows the input composer even without popular chips", async ({ page }) => {

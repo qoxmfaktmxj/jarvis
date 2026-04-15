@@ -14,12 +14,14 @@ test.describe('Admin', () => {
   test('admin can access /admin/users', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin/users');
-    await expect(page.locator('main')).toBeVisible();
+    // AppShell renders an outer <main>, and /admin layout adds an inner <main>,
+    // so a bare locator('main') hits strict-mode. Target the innermost one.
+    await expect(page.locator('main').last()).toBeVisible();
   });
 
   test('admin can access /admin/audit', async ({ page }) => {
     await loginAsAdmin(page);
     await page.goto('/admin/audit');
-    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('main').last()).toBeVisible();
   });
 });

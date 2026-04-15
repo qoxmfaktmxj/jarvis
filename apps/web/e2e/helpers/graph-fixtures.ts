@@ -6,7 +6,9 @@ import pg from 'pg';
 import { randomUUID } from 'crypto';
 
 const DB_URL = process.env.DATABASE_URL || 'postgres://jarvis:jarvis@localhost:5433/jarvis';
-const WORKSPACE_ID = 'test-workspace-id-001';
+// Must match TEST_WORKSPACE_ID in apps/web/e2e/helpers/auth.ts — the workspace_id
+// column is `uuid`, so non-UUID values raise Postgres 22P02.
+const WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
 
 export interface FixtureSnapshot {
   id: string;

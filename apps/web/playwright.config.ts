@@ -12,9 +12,11 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
-    command: 'pnpm -F web dev -- --port 3010',
+    // dev script already pins --port 3010; don't double-pass, pnpm treats
+    // the extra "--port" as a positional and fails with "no such directory".
+    command: 'pnpm -F web dev',
     url: 'http://localhost:3010',
     reuseExistingServer: !process.env.CI,
-    timeout: 60000,
+    timeout: 120000,
   },
 });
