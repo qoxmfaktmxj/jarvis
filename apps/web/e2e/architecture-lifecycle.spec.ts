@@ -53,13 +53,13 @@ test.describe('Architecture page — build lifecycle UI', () => {
   test('shows running snapshot in the active list', async ({ page }) => {
     await page.goto('/architecture');
 
-    await expect(page.getByText('E2E Running Build')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('link', { name: 'E2E Running Build' })).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows error snapshot in the active list', async ({ page }) => {
     await page.goto('/architecture');
 
-    await expect(page.getByText('E2E Error Build')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('link', { name: 'E2E Error Build' })).toBeVisible({ timeout: 10_000 });
   });
 
   test('selecting a running snapshot shows BuildStatusCard — running variant', async ({ page }) => {

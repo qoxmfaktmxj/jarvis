@@ -42,6 +42,8 @@ export function DialogContent({
 }) {
   return (
     <div
+      role="dialog"
+      aria-modal="true"
       className={cn(
         "relative z-50 w-full max-w-lg rounded-2xl bg-white shadow-xl p-6",
         className

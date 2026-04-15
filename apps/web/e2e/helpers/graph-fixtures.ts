@@ -5,7 +5,7 @@
 import pg from 'pg';
 import { randomUUID } from 'crypto';
 
-const DB_URL = process.env.DATABASE_URL || 'postgres://jarvis:jarvis@localhost:5433/jarvis';
+const DB_URL = process.env.DATABASE_URL || 'postgresql://jarvis:jarvispass@localhost:5436/jarvis';
 // Must match TEST_WORKSPACE_ID in apps/web/e2e/helpers/auth.ts — the workspace_id
 // column is `uuid`, so non-UUID values raise Postgres 22P02.
 const WORKSPACE_ID = '00000000-0000-0000-0000-000000000001';
@@ -35,10 +35,15 @@ export async function createTestSnapshot(
 
   try {
     await client.query(
+      `INSERT INTO workspace (id, code, name)
+       VALUES ('00000000-0000-0000-0000-000000000001', 'e2e-test-workspace', 'E2E Test Workspace')
+       ON CONFLICT DO NOTHING`,
+    );
+    await client.query(
       `INSERT INTO graph_snapshot
          (id, workspace_id, title, build_mode, build_status, build_error,
           sensitivity, scope_type, scope_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'WORKSPACE', $2, NOW(), NOW())`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'workspace', $2, NOW(), NOW())`,
       [
         id,
         WORKSPACE_ID,

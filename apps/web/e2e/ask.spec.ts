@@ -32,6 +32,20 @@ test.describe("Ask AI page", () => {
   });
 
   test("shows source references after streaming completes", async ({ page }) => {
+    const sseBody = [
+      'data: {"type":"text","content":"테스트 답변입니다."}\n\n',
+      'data: {"type":"sources","sources":[{"kind":"text","pageId":"p1","title":"테스트 문서","url":"/wiki/test","confidence":0.9,"excerpt":"테스트"}]}\n\n',
+      'data: {"type":"done","totalTokens":10}\n\n',
+    ].join("");
+
+    await page.route("/api/ask", (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: sseBody,
+      })
+    );
+
     const input = page.getByPlaceholder(/질문을 입력하세요/);
     await input.fill("프로젝트 관리 방법을 알려주세요.");
     await input.press("Control+Enter");

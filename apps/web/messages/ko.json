@@ -10,7 +10,8 @@
       "reviewQueue": "검토 대기",
       "auditLog": "감사 로그",
       "searchAnalytics": "검색 분석",
-      "settings": "설정"
+      "settings": "설정",
+      "llmCost": "LLM 비용"
     },
     "Users": {
       "title": "사용자",

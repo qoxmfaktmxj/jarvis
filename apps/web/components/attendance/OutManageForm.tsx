@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
@@ -122,8 +121,11 @@ export function OutManageForm({ children }: OutManageFormProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <>
+      {React.cloneElement(children as React.ReactElement, {
+        onClick: () => setOpen(true),
+      })}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('newRequest')}</DialogTitle>
@@ -293,5 +295,6 @@ export function OutManageForm({ children }: OutManageFormProps) {
         </Form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

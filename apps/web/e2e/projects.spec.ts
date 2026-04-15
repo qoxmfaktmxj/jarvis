@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAsTestUser } from './helpers/auth';
+import { loginAsTestUser, loginAsAdmin } from './helpers/auth';
 
 test.describe('Projects', () => {
   test.beforeEach(async ({ page }) => {
@@ -13,8 +13,9 @@ test.describe('Projects', () => {
   });
 
   test('/projects/new page renders form', async ({ page }) => {
+    await loginAsAdmin(page);
     await page.goto('/projects/new');
     await expect(page).toHaveURL(/\/projects\/new/);
-    await expect(page.locator('form, [role="form"]').or(page.locator('main'))).toBeVisible();
+    await expect(page.locator('form, [role="form"]').or(page.locator('main')).first()).toBeVisible();
   });
 });
