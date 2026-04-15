@@ -19,6 +19,7 @@ import OpenAI from 'openai';
 import { db } from '../packages/db/client';
 import { caseCluster, precedentCase } from '../packages/db/schema/case';
 import { knowledgePage, knowledgePageVersion } from '../packages/db/schema/knowledge';
+import { createChatWithTokenFallback } from '../packages/ai/openai-compat';
 import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 
 interface CliArgs {
@@ -138,16 +139,22 @@ ${caseSection}
 async function summarizeCluster(args: SummarizeArgs): Promise<{ title: string; mdx: string; summary: string }> {
   const userPrompt = buildPrompt(args);
 
-  const res = await getOpenAI().chat.completions.create({
-    model: OPENAI_MODEL,
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ],
-    response_format: { type: 'json_object' },
-    max_tokens: 1500,
-    temperature: 0.2,
-  });
+  const res = await createChatWithTokenFallback<
+    OpenAI.Chat.Completions.ChatCompletion,
+    Record<string, unknown>
+  >(
+    getOpenAI(),
+    OPENAI_MODEL,
+    {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: userPrompt },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2,
+    },
+    1500,
+  );
 
   const raw = res.choices[0]?.message?.content ?? '{}';
   const parsed = JSON.parse(raw) as { title?: string; summary?: string; mdx?: string };

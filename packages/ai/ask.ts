@@ -27,6 +27,7 @@ import {
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import { makeCacheKey, getCached, setCached } from './cache.js';
 import { featureHybridSearchMvp } from '@jarvis/db/feature-flags';
+import { createChatWithTokenFallback } from './openai-compat.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -476,16 +477,22 @@ export async function* generateAnswer(
   }
 
   try {
-    const stream = await openai.chat.completions.create({
-      model: ASK_MODEL,
-      stream: true,
-      stream_options: { include_usage: true },
-      max_tokens: 1024,
-      messages: [
-        { role: 'system', content: getSystemPrompt(mode) },
-        { role: 'user', content: `${context}\n\nQuestion: ${question}` },
-      ],
-    });
+    const stream = await createChatWithTokenFallback<
+      AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
+      Record<string, unknown>
+    >(
+      openai,
+      ASK_MODEL,
+      {
+        stream: true,
+        stream_options: { include_usage: true },
+        messages: [
+          { role: 'system', content: getSystemPrompt(mode) },
+          { role: 'user', content: `${context}\n\nQuestion: ${question}` },
+        ],
+      },
+      1024,
+    );
 
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content;
