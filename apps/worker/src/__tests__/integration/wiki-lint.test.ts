@@ -136,6 +136,7 @@ describe("wiki-lint helpers", () => {
       contradictions: [],
       stale: [],
       missingXrefs: [],
+      boundaryViolations: [],
     };
 
     it("emits frontmatter with INTERNAL sensitivity + authority auto", () => {

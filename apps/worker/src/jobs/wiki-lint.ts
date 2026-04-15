@@ -38,6 +38,8 @@ import {
   defaultFrontmatter,
 } from "@jarvis/wiki-fs";
 
+import { logger } from "../lib/observability/index.js";
+
 import { detectOrphans, type OrphanPage } from "./wiki-lint/orphans.js";
 import {
   detectBrokenLinks,
@@ -55,6 +57,10 @@ import {
   suggestMissingCrossRefs,
   type MissingCrossRef,
 } from "./wiki-lint/missing-cross-refs.js";
+import {
+  detectBoundaryViolations,
+  type BoundaryViolation,
+} from "./wiki-lint/boundary.js";
 
 export const WIKI_LINT_QUEUE = "wiki-lint-weekly";
 export const WIKI_LINT_CRON = "0 18 * * 6"; // Saturday 18:00 UTC = Sunday 03:00 KST
@@ -71,7 +77,8 @@ export interface WikiLintWorkspaceResult {
   contradictionCount: number;
   staleCount: number;
   missingXrefCount: number;
-  /** Total review_queue rows inserted (sum of five checks). */
+  boundaryViolationCount: number;
+  /** Total review_queue rows inserted (sum of six checks). */
   reviewQueueInserts: number;
   /** Lint report markdown repo-relative path. null if nothing written. */
   reportPath: string | null;
@@ -97,13 +104,33 @@ export async function wikiLintHandler(
   _jobs: PgBoss.Job<Record<string, never>>[],
 ): Promise<void> {
   if (!featureWikiLintCron()) {
-    console.log("[wiki-lint] FEATURE_WIKI_LINT_CRON=false — skipping run");
+    logger.info("[wiki-lint] FEATURE_WIKI_LINT_CRON=false — skipping run");
     return;
   }
+  const startMs = Date.now();
+  logger.info("[wiki-lint] start");
   const results = await runWikiLint({});
-  console.log(
-    `[wiki-lint] done — ${results.length} workspaces processed, ` +
-      `${results.reduce((a, r) => a + r.reviewQueueInserts, 0)} review rows`,
+  const durationMs = Date.now() - startMs;
+  const totalFindings = results.reduce(
+    (a, r) =>
+      a +
+      r.orphanCount +
+      r.brokenLinkCount +
+      r.contradictionCount +
+      r.staleCount +
+      r.missingXrefCount +
+      r.boundaryViolationCount,
+    0,
+  );
+  const reviewRows = results.reduce((a, r) => a + r.reviewQueueInserts, 0);
+  logger.info(
+    {
+      durationMs,
+      workspaces: results.length,
+      reviewRows,
+      findings: totalFindings,
+    },
+    "[wiki-lint] done",
   );
 }
 
@@ -120,7 +147,7 @@ export async function runWikiLint(
       const r = await runWikiLintForWorkspace(wsId, opts);
       results.push(r);
     } catch (err) {
-      console.error(`[wiki-lint] workspace=${wsId} failed: ${String(err)}`);
+      logger.error({ workspaceId: wsId, err }, "[wiki-lint] workspace failed");
     }
   }
   return results;
@@ -131,8 +158,10 @@ async function runWikiLintForWorkspace(
   opts: RunWikiLintOptions,
 ): Promise<WikiLintWorkspaceResult> {
   const reportDate = formatDateUtc(new Date());
-  console.log(
-    `[wiki-lint] workspace=${workspaceId} date=${reportDate} start`,
+  const wsStartMs = Date.now();
+  logger.info(
+    { workspaceId, reportDate },
+    "[wiki-lint] workspace start",
   );
 
   // 1~5 checks (serial — keeps DB load and LLM RPS modest).
@@ -141,6 +170,15 @@ async function runWikiLintForWorkspace(
   const contradictions = await detectContradictions(workspaceId);
   const stale = await detectStaleClaims(workspaceId);
   const missingXrefs = await suggestMissingCrossRefs(workspaceId);
+
+  // 6. boundary violations — git log walk on workspace sub-repo.
+  // NOTE(W4): boundary.ts predicates match `wiki/auto/` / `wiki/manual/` paths.
+  // If workspace sub-repos use a flat `auto/` / `manual/` layout the count
+  // will be 0 until the predicates are updated to strip the workspace prefix.
+  const wsRepoPath = path.join(REPO_ROOT, "wiki", workspaceId);
+  const boundaryViolations = await detectBoundaryViolations(wsRepoPath, {
+    sinceDays: 7,
+  });
 
   let reviewQueueInserts = 0;
   let reportPath: string | null = null;
@@ -161,6 +199,10 @@ async function runWikiLintForWorkspace(
       workspaceId,
       missingXrefs,
     );
+    reviewQueueInserts += await insertBoundaryViolationReviewItems(
+      workspaceId,
+      boundaryViolations,
+    );
 
     const report = buildLintReportMarkdown({
       workspaceId,
@@ -170,6 +212,7 @@ async function runWikiLintForWorkspace(
       contradictions,
       stale,
       missingXrefs,
+      boundaryViolations,
     });
 
     const written = await commitLintReport(
@@ -197,6 +240,26 @@ async function runWikiLintForWorkspace(
     }).onConflictDoNothing();
   }
 
+  const findings = {
+    orphan: orphans.length,
+    brokenLink: brokenLinks.length,
+    contradiction: contradictions.length,
+    stale: stale.length,
+    missingXref: missingXrefs.length,
+    boundaryViolation: boundaryViolations.length,
+  };
+  logger.info(
+    {
+      workspaceId,
+      reportDate,
+      durationMs: Date.now() - wsStartMs,
+      findings,
+      reviewQueueInserts,
+      commitSha: commitSha || null,
+    },
+    "[wiki-lint] workspace done",
+  );
+
   return {
     workspaceId,
     reportDate,
@@ -205,6 +268,7 @@ async function runWikiLintForWorkspace(
     contradictionCount: contradictions.length,
     staleCount: stale.length,
     missingXrefCount: missingXrefs.length,
+    boundaryViolationCount: boundaryViolations.length,
     reviewQueueInserts,
     reportPath,
     commitSha,
@@ -331,6 +395,29 @@ async function insertMissingXrefReviewItems(
   return rows.length;
 }
 
+async function insertBoundaryViolationReviewItems(
+  workspaceId: string,
+  violations: BoundaryViolation[],
+): Promise<number> {
+  if (violations.length === 0) return 0;
+  const rows = violations.map((v) => ({
+    workspaceId,
+    kind: "boundary_violation",
+    affectedPages: [] as string[],
+    description: `boundary violation (${v.kind}): ${v.author} wrote to ${v.path}`,
+    payload: {
+      commitSha: v.commitSha,
+      author: v.author,
+      path: v.path,
+      violationKind: v.kind,
+      timestamp: v.timestamp,
+    },
+    status: "pending",
+  }));
+  await db.insert(wikiReviewQueue).values(rows);
+  return rows.length;
+}
+
 // ── report generation ────────────────────────────────────────────────────
 
 interface ReportInput {
@@ -341,6 +428,7 @@ interface ReportInput {
   contradictions: ContradictionFinding[];
   stale: StalePage[];
   missingXrefs: MissingCrossRef[];
+  boundaryViolations: BoundaryViolation[];
 }
 
 export function buildLintReportMarkdown(r: ReportInput): string {
@@ -349,7 +437,8 @@ export function buildLintReportMarkdown(r: ReportInput): string {
     r.brokenLinks.length +
     r.contradictions.length +
     r.stale.length +
-    r.missingXrefs.length;
+    r.missingXrefs.length +
+    r.boundaryViolations.length;
 
   const now = new Date().toISOString();
   const fm = {
@@ -380,7 +469,7 @@ export function buildLintReportMarkdown(r: ReportInput): string {
   lines.push(
     `- orphan: ${r.orphans.length} / broken-link: ${r.brokenLinks.length} / ` +
       `contradictions: ${r.contradictions.length} / stale: ${r.stale.length} / ` +
-      `missing-xref: ${r.missingXrefs.length}`,
+      `missing-xref: ${r.missingXrefs.length} / boundary-violation: ${r.boundaryViolations.length}`,
   );
   lines.push("");
 
@@ -433,6 +522,17 @@ export function buildLintReportMarkdown(r: ReportInput): string {
     lines.push("");
   }
 
+  if (r.boundaryViolations.length > 0) {
+    lines.push("## Boundary Violations");
+    for (const v of r.boundaryViolations) {
+      const date = new Date(v.timestamp * 1000).toISOString().slice(0, 10);
+      lines.push(
+        `- \`${v.kind}\` — ${v.author} → \`${v.path}\` (commit \`${v.commitSha.slice(0, 8)}\`, ${date})`,
+      );
+    }
+    lines.push("");
+  }
+
   lines.push("## 다음 단계");
   lines.push(
     "- 각 이슈는 `wiki_review_queue`로 진입합니다. `/admin/wiki/review-queue`에서 승인/무시 가능.",
@@ -455,8 +555,9 @@ async function commitLintReport(
   if (!hasGit) {
     // Lint never initializes a repo — ingest/bootstrap owns repo creation.
     // If the repo is missing we still record counters in DB; skip commit.
-    console.warn(
-      `[wiki-lint] workspace=${workspaceId} has no git repo at ${gitRepoPath} — skipping commit`,
+    logger.warn(
+      { workspaceId, gitRepoPath },
+      "[wiki-lint] workspace has no git repo — skipping commit",
     );
     return { reportPath: repoRelPath, commitSha: "" };
   }
