@@ -1,0 +1,30 @@
+{"query":"회사 온보딩 절차는 어떻게 되나요?","expectedPages":["hr/onboarding/overview.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"프로젝트 관리 방법론은 어떤 것을 쓰나요?","expectedPages":["eng/project-management/methodology.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"코드 리뷰 기준을 알려주세요","expectedPages":["eng/review/code-review-standards.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"배포 프로세스는 어떻게 진행하나요?","expectedPages":["eng/deploy/release-process.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"보안 정책을 확인하고 싶습니다","expectedPages":["security/policy/overview.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"개인정보 처리방침은 어디서 볼 수 있나요?","expectedPages":["security/privacy/policy.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"팀 구조가 어떻게 되나요?","expectedPages":["org/structure/team-chart.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"OKR 설정 방법이 궁금합니다","expectedPages":["org/okr/how-to-set.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"휴가 신청은 어떻게 하나요?","expectedPages":["hr/leaves/request-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"비용 정산 절차를 알려주세요","expectedPages":["finance/expense/reimbursement.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"신입 개발자 가이드가 있나요?","expectedPages":["eng/onboarding/developer-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"CI/CD 설정 방법을 알려주세요","expectedPages":["eng/ci-cd/setup.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"데이터베이스 마이그레이션 절차는?","expectedPages":["eng/database/migration-process.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"API 설계 원칙을 알려주세요","expectedPages":["eng/api/design-principles.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"모니터링 대시보드 사용법이 궁금합니다","expectedPages":["ops/monitoring/dashboard-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"장애 대응 프로세스는 어떻게 되나요?","expectedPages":["ops/incident/response-process.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"코드 스타일 가이드 알려주세요","expectedPages":["eng/style/coding-style-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"회의 문화는 어떤가요?","expectedPages":["culture/meetings/guidelines.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"의사결정 프레임워크가 있나요?","expectedPages":["culture/decisions/framework.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"제품 로드맵은 어떻게 관리되나요?","expectedPages":["product/roadmap/management.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"기술 부채는 어떻게 처리하나요?","expectedPages":["eng/tech-debt/handling.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"문서 작성 가이드가 있나요?","expectedPages":["docs/writing/style-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"사내 도구 목록을 알려주세요","expectedPages":["ops/tools/internal-tools.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"협업 채널 규칙이 어떻게 되나요?","expectedPages":["culture/comms/channel-rules.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"성과 평가 기준이 궁금합니다","expectedPages":["hr/performance/evaluation-criteria.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"면접 프로세스는 어떻게 되나요?","expectedPages":["hr/hiring/interview-process.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"교육 지원 정책이 있나요?","expectedPages":["hr/learning/education-support.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"사무실 환경 규칙을 알려주세요","expectedPages":["office/rules/workspace-rules.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"긴급 연락 체계가 어떻게 되나요?","expectedPages":["ops/incident/emergency-contacts.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}
+{"query":"외부 파트너와 협업은 어떻게 하나요?","expectedPages":["biz/partners/collaboration-guide.md"],"answerPatterns":[],"curatorUserId":"eval-curator","reviewedByUserId":"eval-reviewer"}

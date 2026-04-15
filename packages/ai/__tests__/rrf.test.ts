@@ -10,7 +10,11 @@ vi.mock('openai', () => {
 
 // Mock heavy dependencies that are not needed for pure rrfMerge tests
 vi.mock('@jarvis/db/client', () => ({ db: {} }));
-vi.mock('@jarvis/db/feature-flags', () => ({ featureHybridSearchMvp: () => false }));
+vi.mock('@jarvis/db/feature-flags', () => ({
+  featureHybridSearchMvp: () => false,
+  featurePageFirstQuery: () => false,
+  featureRawChunkQuery: () => true,
+}));
 vi.mock('../embed.js', () => ({ generateEmbedding: vi.fn() }));
 vi.mock('../logger.js', () => ({ logLlmCall: vi.fn() }));
 vi.mock('../budget.js', () => ({

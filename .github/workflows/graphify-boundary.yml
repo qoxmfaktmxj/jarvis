@@ -1,0 +1,109 @@
+name: graphify-boundary-check
+
+# -----------------------------------------------------------------------------
+# Phase-W3 v4-W3-T2 — Graphify output isolation.
+#
+# Graphify produces deterministic AST-derived pages. They live ONLY under
+# `wiki/auto/derived/code/**`. The entity/concept tree (`wiki/auto/entities/**`,
+# `wiki/auto/concepts/**`) is reserved for LLM synthesis (wiki-ingest).
+#
+# Detection strategy:
+#   1. When a commit touches `wiki/auto/entities/**` or `wiki/auto/concepts/**`,
+#      scan the new/changed files for Graphify fingerprints:
+#        - frontmatter `type: derived`
+#        - sourceKey prefix `graphify:derived/code/` in frontmatter `sources:`
+#        - title prefix `[Graph]`
+#      Any hit = the LLM tree was contaminated with raw Graphify output.
+#   2. (Future-proofing) If a commit author matches the Graphify worker pattern
+#      but lands outside `wiki/auto/derived/code/**`, flag it too.
+#
+# On violation, the job fails with a `::error::` annotation and blocks the PR.
+# -----------------------------------------------------------------------------
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - 'wiki/auto/**'
+
+jobs:
+  graphify-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check Graphify output boundary
+        shell: bash
+        run: |
+          set +e
+          violation=0
+
+          # --------------------------------------------------------------------
+          # (1) Did this PR add/modify files under entities/** or concepts/**
+          #     that carry Graphify fingerprints?
+          # --------------------------------------------------------------------
+          base_sha=$(git merge-base origin/main HEAD 2>/dev/null || echo "")
+          if [ -z "$base_sha" ]; then
+            base_sha="origin/main"
+          fi
+
+          changed_llm_tree=$(git diff --name-only --diff-filter=AM "$base_sha" HEAD \
+            -- 'wiki/auto/entities/**' 'wiki/auto/concepts/**' 2>/dev/null || true)
+
+          if [ -n "$changed_llm_tree" ]; then
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              [ ! -f "$f" ] && continue
+              # Fingerprint A: frontmatter `type: derived`
+              if grep -qE '^type:\s*derived\s*$' "$f" 2>/dev/null; then
+                echo "::error file=$f::Graphify-derived frontmatter found in LLM tree (expected type=entity|concept|synthesis, not derived)"
+                violation=1
+              fi
+              # Fingerprint B: sources referencing graphify:derived/code/
+              if grep -qE 'graphify:derived/code/' "$f" 2>/dev/null; then
+                echo "::error file=$f::Graphify sourceKey pattern found in LLM tree (belongs under wiki/auto/derived/code/**)"
+                violation=1
+              fi
+              # Fingerprint C: [Graph] title prefix (Graphify wiki import marker)
+              if grep -qE '^title:.*\[Graph\]' "$f" 2>/dev/null; then
+                echo "::error file=$f::[Graph] title prefix found in LLM tree (Graphify output must live under wiki/auto/derived/code/**)"
+                violation=1
+              fi
+            done <<< "$changed_llm_tree"
+          fi
+
+          # --------------------------------------------------------------------
+          # (2) Did any commit on this branch land Graphify-derived content
+          #     outside the allowed prefix? Scans the commit range, not the
+          #     working tree, so removed misplaced files still get flagged.
+          # --------------------------------------------------------------------
+          misplaced=$(git log --format='%H' "$base_sha"..HEAD 2>/dev/null | \
+            xargs -I{} git show --name-only --format='' {} 2>/dev/null | \
+            grep -E '^wiki/auto/(entities|concepts)/' | \
+            sort -u || true)
+
+          if [ -n "$misplaced" ]; then
+            # Re-scan each file in the working tree only (deleted = fine).
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              [ ! -f "$f" ] && continue
+              if grep -qE '^(type:\s*derived\s*$|title:.*\[Graph\])' "$f" 2>/dev/null; then
+                echo "::error file=$f::File touched by branch contains Graphify markers but lives outside wiki/auto/derived/code/**"
+                violation=1
+              fi
+            done <<< "$misplaced"
+          fi
+
+          set -e
+
+          if [ $violation -eq 0 ]; then
+            echo "OK: Graphify output boundary intact — no derived/code contamination in entities/concepts trees."
+          fi
+
+          exit $violation

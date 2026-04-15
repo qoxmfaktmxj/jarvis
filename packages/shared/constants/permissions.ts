@@ -62,6 +62,10 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.NOTICE_CREATE,
     PERMISSIONS.NOTICE_UPDATE
   ],
+  // Phase-W3 RBAC 참고:
+  // DEVELOPER는 KNOWLEDGE_REVIEW가 없으므로, wiki_page_index의 sensitivity='RESTRICTED'
+  // 페이지가 검색·AI 결과에서 제외됩니다 (buildWikiSensitivitySqlFilter 엄격 규약).
+  // RESTRICTED 위키 접근이 필요한 DEVELOPER는 MANAGER 권한을 추가로 부여받아야 합니다.
   DEVELOPER: [
     PERMISSIONS.KNOWLEDGE_READ,
     PERMISSIONS.KNOWLEDGE_CREATE,

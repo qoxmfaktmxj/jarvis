@@ -4,7 +4,11 @@ import { db } from '@jarvis/db/client';
 import { rawSource } from '@jarvis/db/schema/file';
 import { reviewQueue } from '@jarvis/db/schema/review-queue';
 import { knowledgePage, knowledgeClaim } from '@jarvis/db/schema/knowledge';
-import { featureTwoStepIngest, featureDocumentChunksWrite } from '@jarvis/db/feature-flags';
+import {
+  featureTwoStepIngest,
+  featureDocumentChunksWrite,
+  featureWikiFsMode,
+} from '@jarvis/db/feature-flags';
 import { upsertChunks } from '@jarvis/db/writers/document-chunks';
 import { eq, sql } from 'drizzle-orm';
 import * as mammoth from 'mammoth';
@@ -26,18 +30,6 @@ import type { WikiSensitivity } from '@jarvis/wiki-fs';
 
 export interface IngestJobData {
   rawSourceId: string;
-}
-
-/**
- * Feature flag — switch ingest from the legacy single-page knowledge_page
- * pipeline to the W2 wiki-fs Two-Step CoT pipeline.
- *
- * Read inline because `packages/db/feature-flags.ts` does not export a
- * dedicated helper yet (W2-T1 keeps the flag local to the worker rather
- * than churning the shared module).
- */
-function featureWikiFsMode(): boolean {
-  return process.env['FEATURE_WIKI_FS_MODE'] === 'true';
 }
 
 const INGEST_MODEL = process.env['INGEST_AI_MODEL'] ?? 'gpt-5.4-mini';

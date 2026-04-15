@@ -26,7 +26,7 @@ import {
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import { makeCacheKey, getCached, setCached } from './cache.js';
-import { featureHybridSearchMvp, featurePageFirstQuery } from '@jarvis/db/feature-flags';
+import { featureHybridSearchMvp, featurePageFirstQuery, featureRawChunkQuery } from '@jarvis/db/feature-flags';
 import { pageFirstAsk } from './page-first/index.js';
 import { createChatWithTokenFallback } from './openai-compat.js';
 import type {
@@ -186,6 +186,9 @@ export async function retrieveChunkHybrid(
   workspaceId: string,
   userPermissions: string[] = [],
 ): Promise<RetrievedChunk[]> {
+  if (!featureRawChunkQuery()) {
+    throw new Error('[W3] FEATURE_RAW_CHUNK_QUERY is disabled. Use FEATURE_PAGE_FIRST_QUERY=true for wiki navigation.');
+  }
   const embedding = await generateEmbedding(question);
   const embeddingLiteral = `[${embedding.join(',')}]`;
 

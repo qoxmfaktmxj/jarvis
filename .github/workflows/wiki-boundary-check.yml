@@ -1,9 +1,16 @@
 name: wiki-boundary-check
 
 # -----------------------------------------------------------------------------
-# Phase-W3 G9 placeholder. The boundary-check step is gated behind `if: false`
-# until `scripts/wiki-boundary.mjs` lands. Remove the `if: false` in Phase-W3
-# 활성화 시점에 제거하고 스크립트를 실행하도록 전환한다.
+# Phase-W3 v4-W3-T1 — auto/manual boundary enforcement.
+#
+# LLM commit author pattern: `jarvis-llm@{workspaceId}` (e.g.
+# `jarvis-llm@11111111-1111-1111-1111-111111111111`). Humans commit with their
+# real email. Rules:
+#   - LLM may only write under `wiki/auto/**`
+#   - Humans may only write under `wiki/manual/**`
+#
+# On violation, the job fails with a `::error::` annotation and blocks the PR.
+# The `paths:` filter keeps unrelated PRs from paying the cost.
 # -----------------------------------------------------------------------------
 
 on:
@@ -11,43 +18,45 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - 'wiki/**'
 
 jobs:
-  wiki-boundary-check:
+  boundary-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
+    timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
         with:
-          node-version: 22
+          fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
-          run_install: false
-
-      - name: Get pnpm store dir
-        id: pnpm-cache
+      - name: Check auto/manual boundary
         shell: bash
-        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+        run: |
+          set +e
+          # LLM author touched wiki/manual/**?
+          llm_manual=$(git log --format="%ae %s" origin/main..HEAD -- 'wiki/manual/**' 2>/dev/null | grep -E '^jarvis-llm@' || true)
+          # Human author touched wiki/auto/**?
+          human_auto=$(git log --format="%ae %s" origin/main..HEAD -- 'wiki/auto/**' 2>/dev/null | grep -vE '^jarvis-llm@' | grep -vE '^$' || true)
+          set -e
 
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.store }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-
+          violation=0
 
-      - name: Install deps
-        run: pnpm install --frozen-lockfile
+          if [ -n "$llm_manual" ]; then
+            echo "::error::LLM author wrote to wiki/manual/**:"
+            echo "$llm_manual"
+            violation=1
+          fi
 
-      # Phase-W3에서 if: false 제거 후 활성화
-      - name: Wiki boundary check
-        if: false
-        run: node scripts/wiki-boundary.mjs --ci
+          if [ -n "$human_auto" ]; then
+            echo "::error::Human author wrote to wiki/auto/**:"
+            echo "$human_auto"
+            violation=1
+          fi
+
+          if [ $violation -eq 0 ]; then
+            echo "OK: wiki auto/manual boundary intact."
+          fi
+
+          exit $violation

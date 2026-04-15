@@ -19,10 +19,14 @@ import {
 } from './jobs/wiki-lint.js';
 import { featureWikiLintCron } from '@jarvis/db/feature-flags';
 import { ensureBucket } from './lib/minio-client.js';
+import { registerBossForHealthcheck, startHealthServer } from './health.js';
 
 async function main() {
   await boss.start();
   console.log('[worker] pg-boss started');
+
+  registerBossForHealthcheck(boss);
+  startHealthServer(9090);
 
   await ensureBucket();
 

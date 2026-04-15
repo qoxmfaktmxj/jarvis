@@ -19,12 +19,12 @@ jobs:
         shell: bash
         run: |
           set +e
-          matches=$(grep -rnE 'mdxContent|wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
+          matches=$(grep -rnE 'wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
           status=$?
           set -e
 
           if [ $status -eq 0 ] && [ -n "$matches" ]; then
-            echo "::error::Legacy body field access detected. Use wiki_pages.content instead."
+            echo "::error::Legacy SQL body column access detected. Use wiki-fs Read instead."
             echo "$matches"
             exit 1
           fi

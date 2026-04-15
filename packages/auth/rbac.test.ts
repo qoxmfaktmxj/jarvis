@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   canAccessGraphSnapshotSensitivity,
   buildGraphSnapshotSensitivitySqlFragment,
+  buildWikiSensitivitySqlFilter,
 } from "./rbac.js";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
@@ -92,5 +93,85 @@ describe("graph snapshot sensitivity", () => {
         buildGraphSnapshotSensitivitySqlFragment([PERMISSIONS.KNOWLEDGE_READ]),
       ).toBe("AND 1 = 0");
     });
+  });
+});
+
+describe("buildWikiSensitivitySqlFilter (Phase-W3 T5)", () => {
+  it("READ only: sees PUBLIC and INTERNAL only", () => {
+    const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ]);
+    expect(frag).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL')");
+  });
+
+  it("READ + REVIEW: sees RESTRICTED too (but not SECRET_REF_ONLY)", () => {
+    const frag = buildWikiSensitivitySqlFilter([
+      PERMISSIONS.KNOWLEDGE_READ,
+      PERMISSIONS.KNOWLEDGE_REVIEW,
+    ]);
+    expect(frag).toBe(
+      "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED')",
+    );
+  });
+
+  it("READ + SYSTEM_ACCESS_SECRET: sees SECRET_REF_ONLY too (but not RESTRICTED)", () => {
+    const frag = buildWikiSensitivitySqlFilter([
+      PERMISSIONS.KNOWLEDGE_READ,
+      PERMISSIONS.SYSTEM_ACCESS_SECRET,
+    ]);
+    expect(frag).toBe(
+      "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'SECRET_REF_ONLY')",
+    );
+  });
+
+  it("READ + REVIEW + SYSTEM_ACCESS_SECRET: sees everything via union", () => {
+    const frag = buildWikiSensitivitySqlFilter([
+      PERMISSIONS.KNOWLEDGE_READ,
+      PERMISSIONS.KNOWLEDGE_REVIEW,
+      PERMISSIONS.SYSTEM_ACCESS_SECRET,
+    ]);
+    expect(frag).toBe(
+      "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY')",
+    );
+  });
+
+  it("ADMIN_ALL: returns empty string (no filter)", () => {
+    const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.ADMIN_ALL]);
+    expect(frag).toBe("");
+  });
+
+  it("no permissions: returns AND 1 = 0 (sees nothing)", () => {
+    const frag = buildWikiSensitivitySqlFilter([]);
+    expect(frag).toBe("AND 1 = 0");
+  });
+
+  it("unrelated permissions only: returns AND 1 = 0", () => {
+    const frag = buildWikiSensitivitySqlFilter([
+      PERMISSIONS.PROJECT_READ,
+      PERMISSIONS.ATTENDANCE_READ,
+    ]);
+    expect(frag).toBe("AND 1 = 0");
+  });
+
+  it("strict contract: KNOWLEDGE_UPDATE alone is NOT sufficient for RESTRICTED", () => {
+    // 엄격 규약: UPDATE 단독으로는 RESTRICTED 를 볼 수 없음. READ 는 있어야 PUBLIC/INTERNAL 통과.
+    const frag = buildWikiSensitivitySqlFilter([
+      PERMISSIONS.KNOWLEDGE_READ,
+      PERMISSIONS.KNOWLEDGE_UPDATE,
+    ]);
+    expect(frag).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL')");
+    expect(frag).not.toContain("RESTRICTED");
+  });
+
+  it("custom column option: rewrites fragment to target alias", () => {
+    const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ], {
+      column: "wpi.sensitivity",
+    });
+    expect(frag).toBe("AND wpi.sensitivity IN ('PUBLIC', 'INTERNAL')");
+  });
+
+  it("custom column option: admin returns empty regardless of column", () => {
+    const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.ADMIN_ALL], {
+      column: "wpi.sensitivity",
+    });
+    expect(frag).toBe("");
   });
 });

@@ -37,3 +37,30 @@ export function featurePageFirstQuery(): boolean {
 export function featureWikiLintCron(): boolean {
   return process.env.FEATURE_WIKI_LINT_CRON === "true";
 }
+
+/**
+ * Phase-W2 pivot: wiki-fs mode (Karpathy-first).
+ *
+ * When true, ingest writes to the wiki-fs layer (disk + git), and the wiki
+ * page index (wiki_page_index) is the primary projection DB.
+ *
+ * When false (default), the legacy knowledge_page / document_chunks pipeline
+ * runs unchanged.
+ */
+export function featureWikiFsMode(): boolean {
+  return process.env.FEATURE_WIKI_FS_MODE === "true";
+}
+
+/**
+ * Phase-W3: raw document_chunk query gate.
+ *
+ * When false (default), `retrieveChunkHybrid` in `packages/ai/ask.ts` is
+ * disabled and throws immediately. Use `FEATURE_PAGE_FIRST_QUERY=true` for
+ * the Karpathy-first wiki navigation path.
+ *
+ * Set to true only when explicitly reverting to the legacy RAG pipeline.
+ * Will be removed entirely in Phase-W4 after document_chunks table DROP.
+ */
+export function featureRawChunkQuery(): boolean {
+  return process.env.FEATURE_RAW_CHUNK_QUERY === "true";
+}

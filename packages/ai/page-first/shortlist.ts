@@ -17,17 +17,18 @@
  *   - freshness bonus      — `updatedAt` recency tiebreaker
  *
  * Permission filter:
- *   - Uses `buildKnowledgeSensitivitySqlFilter` (re-targeted at
- *     `wpi.sensitivity`) to reuse the same RESTRICTED / SECRET_REF_ONLY
- *     gate as knowledge_page. This is the "RBAC + sensitivity both apply"
- *     rule from CLAUDE.md.
+ *   - Uses `buildWikiSensitivitySqlFilter` (Phase-W3 T5) — the strict
+ *     wiki-sensitivity.ts `canViewSensitivity` contract: RESTRICTED requires
+ *     KNOWLEDGE_REVIEW, SECRET_REF_ONLY requires SYSTEM_ACCESS_SECRET. This
+ *     supersedes the legacy (looser) `buildKnowledgeSensitivitySqlFilter`
+ *     that treated KNOWLEDGE_UPDATE as sufficient for RESTRICTED.
  *   - `requiredPermission` (wiki_page_index column, nullable) enforces
  *     page-level ACL: if set, the caller MUST carry that permission string.
  */
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildKnowledgeSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
 
 export interface ShortlistHit {
   id: string;
@@ -90,9 +91,9 @@ export async function lexicalShortlist(
   // synthesis step will then refuse to answer.)
   const hasTokens = tokens.length > 0;
 
-  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
-    .replace(/\bsensitivity\b/g, "wpi.sensitivity")
-    .trim();
+  const sensitivityFilter = buildWikiSensitivitySqlFilter(userPermissions, {
+    column: "wpi.sensitivity",
+  }).trim();
   const sensitivityClause = sensitivityFilter
     ? sql.raw(` ${sensitivityFilter}`)
     : sql.empty();

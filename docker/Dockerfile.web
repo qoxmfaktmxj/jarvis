@@ -13,6 +13,8 @@ COPY packages/auth/package.json       ./packages/auth/
 COPY packages/search/package.json     ./packages/search/
 COPY packages/ai/package.json         ./packages/ai/
 COPY packages/secret/package.json     ./packages/secret/
+COPY packages/wiki-fs/package.json    ./packages/wiki-fs/
+COPY packages/wiki-agent/package.json ./packages/wiki-agent/
 COPY apps/web/package.json            ./apps/web/
 
 RUN pnpm install --frozen-lockfile
@@ -26,13 +28,15 @@ RUN corepack enable pnpm
 WORKDIR /app
 
 COPY --from=deps /app/node_modules           ./node_modules
-COPY --from=deps /app/packages/db/node_modules     ./packages/db/node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/packages/auth/node_modules   ./packages/auth/node_modules
-COPY --from=deps /app/packages/search/node_modules ./packages/search/node_modules
-COPY --from=deps /app/packages/ai/node_modules     ./packages/ai/node_modules
-COPY --from=deps /app/packages/secret/node_modules ./packages/secret/node_modules
-COPY --from=deps /app/apps/web/node_modules        ./apps/web/node_modules
+COPY --from=deps /app/packages/db/node_modules         ./packages/db/node_modules
+COPY --from=deps /app/packages/shared/node_modules     ./packages/shared/node_modules
+COPY --from=deps /app/packages/auth/node_modules       ./packages/auth/node_modules
+COPY --from=deps /app/packages/search/node_modules     ./packages/search/node_modules
+COPY --from=deps /app/packages/ai/node_modules         ./packages/ai/node_modules
+COPY --from=deps /app/packages/secret/node_modules     ./packages/secret/node_modules
+COPY --from=deps /app/packages/wiki-fs/node_modules    ./packages/wiki-fs/node_modules
+COPY --from=deps /app/packages/wiki-agent/node_modules ./packages/wiki-agent/node_modules
+COPY --from=deps /app/apps/web/node_modules            ./apps/web/node_modules
 
 COPY . .
 

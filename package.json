@@ -16,7 +16,8 @@
     "eval:budget-test": "tsx scripts/eval-budget-test.ts",
     "eval:run": "tsx apps/worker/eval/run.ts",
     "test:integration": "pnpm --filter=@jarvis/worker test:integration",
-    "wiki:check": "node scripts/wiki-check.mjs"
+    "wiki:check": "node scripts/wiki-check.mjs",
+    "audit:rsc": "node scripts/audit-rsc-boundary.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -72,3 +72,6 @@ jobs:
 
       - name: Schema drift check
         run: node scripts/check-schema-drift.mjs --ci
+
+      - name: Run body-column guard tests (G11)
+        run: pnpm --filter @jarvis/db test

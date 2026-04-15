@@ -37,6 +37,75 @@ const MAX_ARCHIVE_MB = parseInt(
   10,
 );
 
+// -----------------------------------------------------------------------------
+// Phase-W3 v4-W3-T2 — Graphify output isolation.
+//
+// Graphify's deterministic AST output must be quarantined from the LLM-owned
+// entity/concept tree. All derived code pages live under this single path
+// prefix; LLM ingest reads from here but never writes back into it.
+//
+// File-system mirror (when FEATURE_GRAPHIFY_DERIVED_PAGES is enabled later):
+//   wiki/{workspaceId}/auto/derived/code/{path}.md
+//
+// DB-side marker (now): sourceKey always begins with `graphify:derived/code/`
+// and frontmatter body is prefixed with `type: derived` so downstream query /
+// ingest pipelines can tell machine-generated pages apart from LLM synthesis.
+// -----------------------------------------------------------------------------
+const GRAPHIFY_OUTPUT_PATH = 'wiki/auto/derived/code' as const;
+const GRAPHIFY_SOURCE_KEY_PREFIX = 'graphify:derived/code' as const;
+
+/**
+ * Ensure a Graphify-produced markdown body carries `type: derived` frontmatter.
+ * - If frontmatter already exists, patch `type:` to `derived` (preserve other fields).
+ * - Otherwise prepend a minimal frontmatter block.
+ *
+ * Graphify's native output has no frontmatter, so the common path is the
+ * prepend branch. The patch branch is defensive in case a future Graphify
+ * version starts emitting frontmatter.
+ */
+function ensureDerivedFrontmatter(
+  mdxContent: string,
+  params: {
+    title: string;
+    workspaceId: string;
+    sensitivity: string;
+    sourcePath: string;
+  },
+): string {
+  const hasFrontmatter = mdxContent.startsWith('---\n') || mdxContent.startsWith('---\r\n');
+  if (hasFrontmatter) {
+    // Defensive: patch existing type field or inject one.
+    const match = mdxContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
+    if (match) {
+      const fmBody = match[1] ?? '';
+      const rest = mdxContent.slice(match[0].length);
+      const typeRegex = /^type:\s*.*$/m;
+      const patchedFm = typeRegex.test(fmBody)
+        ? fmBody.replace(typeRegex, 'type: derived')
+        : `type: derived\n${fmBody}`;
+      return `---\n${patchedFm}\n---\n${rest}`;
+    }
+  }
+  const now = new Date().toISOString();
+  const fm = [
+    '---',
+    `title: ${JSON.stringify(params.title)}`,
+    'type: derived',
+    `workspaceId: ${params.workspaceId}`,
+    `sensitivity: ${params.sensitivity}`,
+    'authority: auto',
+    `sources:`,
+    `  - ${params.sourcePath}`,
+    'tags:',
+    '  - derived/code',
+    `created: ${now}`,
+    `updated: ${now}`,
+    '---',
+    '',
+  ].join('\n');
+  return fm + mdxContent;
+}
+
 export interface GraphifyBuildPayload {
   rawSourceId: string;
   workspaceId: string;
@@ -191,11 +260,18 @@ async function processGraphifyBuild(
     // 8. Import GRAPH_REPORT.md as a knowledge_page
     let reportTitle = `[Graph] Architecture Report`;
     try {
-      const reportContent = await readFile(
+      const reportRaw = await readFile(
         join(outDir, 'GRAPH_REPORT.md'),
         'utf-8',
       );
       reportTitle = `[Graph] Architecture Report — ${source.originalFilename ?? 'archive'}`;
+      const reportDerivedPath = `${GRAPHIFY_OUTPUT_PATH}/GRAPH_REPORT.md`;
+      const reportContent = ensureDerivedFrontmatter(reportRaw, {
+        title: reportTitle,
+        workspaceId,
+        sensitivity: lineage.sensitivity,
+        sourcePath: `attachment:${rawSourceId}`,
+      });
       await importAsKnowledgePage({
         workspaceId,
         title: reportTitle,
@@ -205,7 +281,7 @@ async function processGraphifyBuild(
         sensitivity: lineage.sensitivity,
         createdBy: requestedBy,
         sourceType: 'graphify',
-        sourceKey: `attachment:${rawSourceId}:GRAPH_REPORT.md`,
+        sourceKey: `${GRAPHIFY_SOURCE_KEY_PREFIX}:${rawSourceId}:${reportDerivedPath}`,
       });
     } catch {
       console.warn(
@@ -222,8 +298,18 @@ async function processGraphifyBuild(
       console.log(`[graphify-build] Found ${mdFiles.length} wiki files`);
 
       for (const wikiFile of mdFiles) {
-        const content = await readFile(join(wikiDir, wikiFile), 'utf-8');
+        const rawContent = await readFile(join(wikiDir, wikiFile), 'utf-8');
         const title = wikiFile.replace(/\.md$/, '').replace(/_/g, ' ');
+        // Isolation marker: every Graphify wiki page carries `type: derived`
+        // frontmatter + a `graphify:derived/code/` sourceKey. Downstream
+        // pipelines filter on these to keep the entity/concept tree clean.
+        const derivedPath = `${GRAPHIFY_OUTPUT_PATH}/${wikiFile}`;
+        const content = ensureDerivedFrontmatter(rawContent, {
+          title: `[Graph] ${title}`,
+          workspaceId,
+          sensitivity: lineage.sensitivity,
+          sourcePath: `attachment:${rawSourceId}`,
+        });
 
         await importAsKnowledgePage({
           workspaceId,
@@ -234,7 +320,7 @@ async function processGraphifyBuild(
           sensitivity: lineage.sensitivity,
           createdBy: requestedBy,
           sourceType: 'graphify',
-          sourceKey: `attachment:${rawSourceId}:wiki/${wikiFile}`,
+          sourceKey: `${GRAPHIFY_SOURCE_KEY_PREFIX}:${rawSourceId}:${derivedPath}`,
         });
       }
     } catch (err) {

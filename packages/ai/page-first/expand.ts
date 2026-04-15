@@ -19,7 +19,7 @@
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildKnowledgeSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
 
 import type { ShortlistHit } from "./shortlist.js";
 
@@ -56,9 +56,9 @@ export async function expandOneHop(
   const shortlistIds = shortlist.map((s) => s.id);
   const shortlistIdSet = new Set(shortlistIds);
 
-  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
-    .replace(/\bsensitivity\b/g, "wpi.sensitivity")
-    .trim();
+  const sensitivityFilter = buildWikiSensitivitySqlFilter(userPermissions, {
+    column: "wpi.sensitivity",
+  }).trim();
   const sensitivityClause = sensitivityFilter
     ? sql.raw(` ${sensitivityFilter}`)
     : sql.empty();
