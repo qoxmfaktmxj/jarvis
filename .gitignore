@@ -54,3 +54,29 @@ data/guidebook/*
 
 # Git worktrees (Claude Code managed)
 .claude/worktrees/
+
+# Codex artifacts (screen captures, QA results)
+.codex-artifacts/
+
+# Obsidian workspace
+.obsidian/
+
+# OMX / monitoring state
+.omx/
+
+# Jarvis agent workspace (planning files, not source)
+_workspace/
+_workspace_prev_*/
+
+# Playwright test results
+apps/web/test-results/
+
+# IDE
+jarvis.iml
+
+# Python cache
+scripts/__pycache__/
+scripts/tests/__pycache__/
+
+# Docs guidebook images (generated, large binaries)
+docs/guidebook/images/

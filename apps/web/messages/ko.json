@@ -119,6 +119,8 @@
       "deferConfirm": "이 요청을 보류하시겠습니까?",
       "commentLabel": "승인 사유 (선택사항)",
       "reasonLabel": "거절 이유 (필수)",
+      "commentPlaceholder": "검토 의견을 작성하세요 (마크다운 지원)",
+      "reasonPlaceholder": "거절 사유를 작성하세요 (마크다운 지원)",
       "kindFilterLabel": "종류",
       "kind": {
         "all": "전체",

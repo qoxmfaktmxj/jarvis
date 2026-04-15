@@ -6,6 +6,11 @@ import { and, eq } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { auditLog, reviewRequest } from "@jarvis/db/schema";
+import {
+  approveCommentSchema,
+  rejectReasonSchema,
+  deferSchema,
+} from "@jarvis/shared/validation";
 
 type ActionResult = { ok: boolean; error?: string };
 
@@ -53,6 +58,9 @@ async function loadOwnedRequest(id: string, workspaceId: string) {
 }
 
 export async function approve(id: string, comment?: string): Promise<ActionResult> {
+  const parsed = approveCommentSchema.safeParse({ id, comment });
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
+
   const ctx = await resolveContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
@@ -94,9 +102,8 @@ export async function approve(id: string, comment?: string): Promise<ActionResul
 }
 
 export async function reject(id: string, reason: string): Promise<ActionResult> {
-  if (!reason || !reason.trim()) {
-    return { ok: false, error: "Reason is required" };
-  }
+  const parsed = rejectReasonSchema.safeParse({ id, reason });
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
 
   const ctx = await resolveContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
@@ -139,6 +146,9 @@ export async function reject(id: string, reason: string): Promise<ActionResult> 
 }
 
 export async function defer(id: string): Promise<ActionResult> {
+  const parsed = deferSchema.safeParse({ id });
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
+
   const ctx = await resolveContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
