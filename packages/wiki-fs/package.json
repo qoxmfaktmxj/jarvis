@@ -1,0 +1,30 @@
+{
+  "name": "@jarvis/wiki-fs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./writer": "./src/writer.ts",
+    "./frontmatter": "./src/frontmatter.ts",
+    "./wikilink": "./src/wikilink.ts",
+    "./git": "./src/git.ts",
+    "./worktree": "./src/worktree.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.25.0",
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
+  }
+}

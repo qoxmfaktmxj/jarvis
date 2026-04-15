@@ -1,0 +1,26 @@
+{
+  "name": "@jarvis/wiki-agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./prompts/analysis": "./src/prompts/analysis.ts",
+    "./prompts/generation": "./src/prompts/generation.ts",
+    "./prompts/aliases-contract": "./src/prompts/aliases-contract.ts",
+    "./parsers/file-block": "./src/parsers/file-block.ts",
+    "./parsers/review-block": "./src/parsers/review-block.ts",
+    "./constants": "./src/constants.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
+  }
+}

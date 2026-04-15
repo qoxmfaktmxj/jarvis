@@ -55,6 +55,9 @@ const FTS_WEIGHT = 0.3;
 
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 
+/** Phase-W1 T5: op label for non-wiki retrieval/generation path. */
+const ASK_OP = 'ask' as const;
+
 // 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
   'gpt-5.4-mini': { in: 0.0005, out: 0.0015 },
@@ -469,7 +472,7 @@ export async function* generateAnswer(
     await assertBudget(meta.workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(meta.workspaceId, ASK_MODEL, meta.requestId);
+      await recordBlocked(meta.workspaceId, ASK_MODEL, meta.requestId, ASK_OP);
       yield { type: 'error', message: 'daily budget exceeded' };
       return;
     }
@@ -509,6 +512,7 @@ export async function* generateAnswer(
     yield { type: 'done', totalTokens: tokensIn + tokensOut };
 
     await logLlmCall({
+      op: ASK_OP,
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
       model: ASK_MODEL,
@@ -524,6 +528,7 @@ export async function* generateAnswer(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     await logLlmCall({
+      op: ASK_OP,
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
       model: ASK_MODEL,
@@ -581,7 +586,7 @@ export async function* askAI(
     await assertBudget(workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(workspaceId, process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini', query.requestId ?? null);
+      await recordBlocked(workspaceId, process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini', query.requestId ?? null, ASK_OP);
       yield { type: 'error', message: 'daily budget exceeded' };
       return;
     }

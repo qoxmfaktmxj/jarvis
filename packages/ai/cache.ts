@@ -1,5 +1,7 @@
 // packages/ai/cache.ts
 // Phase-7A PR#5: workspace/prompt/scope-aware LLM response cache.
+// Phase-W1 T5: cache key에 `op` 선택 필드 추가 (wiki.* op 분리 저장).
+//
 // Intentionally minimal: in-memory LRU, no Redis. The public API
 // (makeCacheKey/getCached/setCached) is stable so Phase-7B can swap
 // the storage backend without touching ask.ts.
@@ -8,6 +10,7 @@
 // replace it with Redis/pg while keeping the same function signatures.
 
 import { createHash } from 'node:crypto';
+import type { OpType } from '@jarvis/shared/constants';
 
 // ---------------------------------------------------------------------------
 // Key derivation
@@ -29,6 +32,15 @@ export interface CacheKeyParams {
   input: string;
   /** Concrete model identifier, e.g. "gpt-5.4-mini". */
   model: string;
+  /**
+   * Optional LLM op type. When present, the cache is keyed per-op so that
+   * e.g. a "wiki.query.synthesis" call never collides with an "ask" call
+   * that happens to share the same input string.
+   *
+   * Undefined by default for back-compat with existing non-op callers
+   * (ask/embed 기존 경로). wiki.* 호출은 반드시 op를 명시하도록 권고한다.
+   */
+  op?: OpType;
 }
 
 /**
@@ -43,6 +55,7 @@ export function makeCacheKey(params: CacheKeyParams): string {
     sensitivityScope: params.sensitivityScope,
     input: params.input,
     model: params.model,
+    op: params.op ?? null,
   });
   return createHash('sha256').update(canonical).digest('hex');
 }

@@ -18,7 +18,8 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "seed": "tsx seed/dev.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",

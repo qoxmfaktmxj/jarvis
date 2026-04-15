@@ -5,6 +5,8 @@ import { getRedis } from '@jarvis/db/redis';
 import { logLlmCall } from './logger.js';
 import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
 
+const EMBED_OP = 'embed' as const;
+
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!_openai) {
@@ -57,7 +59,7 @@ export async function generateEmbedding(
     await assertBudget(workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(workspaceId, EMBED_MODEL, requestId);
+      await recordBlocked(workspaceId, EMBED_MODEL, requestId, EMBED_OP);
     }
     throw err;
   }
@@ -76,6 +78,7 @@ export async function generateEmbedding(
 
     const tokensIn = response.usage?.prompt_tokens ?? 0;
     await logLlmCall({
+      op: EMBED_OP,
       workspaceId,
       requestId,
       model: EMBED_MODEL,
@@ -94,6 +97,7 @@ export async function generateEmbedding(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
     await logLlmCall({
+      op: EMBED_OP,
       workspaceId,
       requestId,
       model: EMBED_MODEL,
