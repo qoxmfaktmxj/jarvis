@@ -17,7 +17,19 @@ vi.mock('../embed.js', () => ({
 // Return one claim row + one fts row so retrieval has results (avoids
 // the "no results" fallback path that skips OpenAI entirely).
 vi.mock('@jarvis/db/client', () => ({
-  db: { execute: vi.fn() },
+  db: {
+    execute: vi.fn(),
+    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) })),
+  },
+}));
+
+// assertBudget issues its own db.execute call inside askAI. Mock the module
+// so the test's mockResolvedValueOnce sequence stays aligned with the
+// retrieval queries it actually cares about.
+vi.mock('../budget.js', () => ({
+  assertBudget: vi.fn().mockResolvedValue(undefined),
+  BudgetExceededError: class extends Error {},
+  recordBlocked: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@jarvis/auth/rbac', () => ({

@@ -57,7 +57,7 @@ describe("ask logs llm_call_log row", () => {
       /* drain */
     }
     expect(logLlmCallMock).toHaveBeenCalledTimes(1);
-    const row = logLlmCallMock.mock.calls[0][0];
+    const row = logLlmCallMock.mock.calls[0]![0];
     expect(row.status).toBe("ok");
     expect(row.inputTokens).toBe(10);
     expect(row.outputTokens).toBe(20);

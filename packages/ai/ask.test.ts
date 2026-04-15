@@ -11,6 +11,7 @@ vi.mock('./embed.js', () => ({
 vi.mock('@jarvis/db/client', () => ({
   db: {
     execute: vi.fn(),
+    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) })),
   },
 }));
 

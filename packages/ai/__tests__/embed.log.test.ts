@@ -44,7 +44,7 @@ describe("embed logs llm_call_log row", () => {
       requestId: "req-e-1",
     });
     expect(logLlmCallMock).toHaveBeenCalledTimes(1);
-    const row = logLlmCallMock.mock.calls[0][0];
+    const row = logLlmCallMock.mock.calls[0]![0];
     expect(row.status).toBe("ok");
     expect(row.model).toBe("text-embedding-3-small");
     expect(row.inputTokens).toBe(7);
