@@ -26,7 +26,8 @@ import {
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import { makeCacheKey, getCached, setCached } from './cache.js';
-import { featureHybridSearchMvp } from '@jarvis/db/feature-flags';
+import { featureHybridSearchMvp, featurePageFirstQuery } from '@jarvis/db/feature-flags';
+import { pageFirstAsk } from './page-first/index.js';
 import { createChatWithTokenFallback } from './openai-compat.js';
 import type {
   SSEEvent,
@@ -558,6 +559,16 @@ const UNIFIED_FINAL_GRAPH = 5;
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
+  // Phase-W2 T2: page-first navigation branch.
+  // When FEATURE_PAGE_FIRST_QUERY=true, delegate to the wiki page-first
+  // pipeline (lexical shortlist → 1-hop wikilink expansion → disk read →
+  // LLM synthesis with [[slug]] citations). The legacy vector+hybrid path
+  // below stays 100% intact so flag=off preserves existing behaviour.
+  if (featurePageFirstQuery()) {
+    yield* pageFirstAsk(query);
+    return;
+  }
+
   const { question, workspaceId, userPermissions, snapshotId, userCompany } = query;
 
   // ---------------------------------------------------------------------------

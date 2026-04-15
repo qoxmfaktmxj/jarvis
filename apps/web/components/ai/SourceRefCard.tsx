@@ -11,6 +11,7 @@ import type {
   CaseSourceRef,
   DirectorySourceRef,
   ChunkSourceRef,
+  WikiPageSourceRef,
 } from '@jarvis/ai/types';
 
 interface SourceRefCardProps {
@@ -29,7 +30,41 @@ export function SourceRefCard({ source, index }: SourceRefCardProps) {
   if (source.kind === 'case') return <CaseSourceCard source={source} index={index} />;
   if (source.kind === 'directory') return <DirectorySourceCard source={source} index={index} />;
   if (source.kind === 'chunk') return <ChunkSourceCard source={source} index={index} />;
+  if (source.kind === 'wiki-page') return <WikiPageSourceCard source={source} index={index} />;
   return <TextSourceCard source={source} index={index} />;
+}
+
+// ---------------------------------------------------------------------------
+// Wiki Page (Phase-W2 T2 page-first navigation)
+// ---------------------------------------------------------------------------
+function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; index: number }) {
+  const { label, variant } = confidenceLabel(source.confidence);
+  // Wiki URL convention: `/wiki/{workspaceId}/{path}` — the wiki router
+  // accepts either the raw slug or the full path, but pageId is the
+  // most stable anchor from the client's POV.
+  const href = `/wiki?page=${encodeURIComponent(source.pageId)}`;
+  return (
+    <Card className="border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 transition-colors dark:border-indigo-900 dark:bg-indigo-950/20">
+      <CardContent className="p-3 flex gap-3 items-start">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-900 text-xs font-semibold flex items-center justify-center dark:bg-indigo-900 dark:text-indigo-100">
+          W{index + 1}
+        </span>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href={href} className="text-sm font-medium text-indigo-800 hover:underline truncate dark:text-indigo-200">
+              {source.title}
+            </Link>
+            <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
+            <Badge variant="outline" className="text-xs shrink-0">{source.citation}</Badge>
+          </div>
+          <p className="text-[10px] text-muted-foreground truncate">{source.path}</p>
+          {source.origin === 'expand' && (
+            <p className="text-[10px] text-indigo-600 dark:text-indigo-400">↳ 1-hop wikilink</p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -65,7 +65,35 @@ export interface ChunkSourceRef {
   confidence: number;
 }
 
-export type SourceRef = TextSourceRef | GraphSourceRef | CaseSourceRef | DirectorySourceRef | ChunkSourceRef;
+// ---------------------------------------------------------------------------
+// Wiki Page SourceRef — page-first navigation (Phase-W2 T2)
+//
+// Emitted by `packages/ai/page-first/*` when the feature flag
+// FEATURE_PAGE_FIRST_QUERY is on. Citations are surfaced to the UI in
+// `[[page-slug]]` form; the editor can then resolve the slug to a real
+// wiki URL via `packages/wiki-fs/wikilink`.
+// ---------------------------------------------------------------------------
+export interface WikiPageSourceRef {
+  kind: "wiki-page";
+  pageId: string;
+  path: string;          // repo-relative, e.g. "auto/entities/MindVault.md"
+  slug: string;          // citation anchor, e.g. "mindvault"
+  title: string;
+  sensitivity: string;   // PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY
+  /** `[[page-slug]]` — convenience for the UI so it doesn't need to reformat. */
+  citation: string;
+  /** Rank origin: "shortlist" (lexical hit) or "expand" (1-hop wikilink). */
+  origin: "shortlist" | "expand";
+  confidence: number;
+}
+
+export type SourceRef =
+  | TextSourceRef
+  | GraphSourceRef
+  | CaseSourceRef
+  | DirectorySourceRef
+  | ChunkSourceRef
+  | WikiPageSourceRef;
 
 export interface Claim {
   text: string;
@@ -80,14 +108,29 @@ export interface AskResult {
   totalTokens: number;
 }
 
-export type SSEEventType = 'text' | 'sources' | 'done' | 'error' | 'route';
+export type SSEEventType = 'text' | 'sources' | 'done' | 'error' | 'route' | 'meta';
 
 export interface SSETextEvent { type: 'text'; content: string }
 export interface SSESourcesEvent { type: 'sources'; sources: SourceRef[] }
 export interface SSEDoneEvent { type: 'done'; totalTokens: number }
 export interface SSEErrorEvent { type: 'error'; message: string }
 export interface SSERouteEvent { type: 'route'; lane: string; confidence: number }
-export type SSEEvent = SSETextEvent | SSESourcesEvent | SSEDoneEvent | SSEErrorEvent | SSERouteEvent;
+/**
+ * Phase-W2 T2: side-channel metadata event.
+ *
+ * Currently used by page-first navigation to signal whether the user's
+ * question+answer is a candidate for "Save as Page" (i.e. synthesized from
+ * wiki pages and not a trivial lookup). Kept generic (`Record<string, unknown>`)
+ * so future retrieval modes can add fields without widening the union.
+ */
+export interface SSEMetaEvent { type: 'meta'; meta: Record<string, unknown> }
+export type SSEEvent =
+  | SSETextEvent
+  | SSESourcesEvent
+  | SSEDoneEvent
+  | SSEErrorEvent
+  | SSERouteEvent
+  | SSEMetaEvent;
 
 export interface RetrievedClaim {
   id: string;

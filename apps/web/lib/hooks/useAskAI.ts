@@ -187,6 +187,7 @@ export function useAskAI(): UseAskAIReturn {
           if (s.kind === 'graph') return `graph:${s.nodeId}`;
           if (s.kind === 'case') return `case:${s.caseId}`;
           if (s.kind === 'directory') return `directory:${s.entryId}`;
+          if (s.kind === 'wiki-page') return `wiki-page:${s.pageId}`;
           return `chunk:${s.chunkId}`;
         });
 

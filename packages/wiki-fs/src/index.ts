@@ -13,6 +13,11 @@ export {
 } from "./writer.js";
 
 export {
+  readPage,
+  wikiRoot,
+} from "./reader.js";
+
+export {
   parseFrontmatter,
   serializeFrontmatter,
   splitFrontmatter,

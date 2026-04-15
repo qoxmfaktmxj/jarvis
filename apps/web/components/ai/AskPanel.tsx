@@ -237,9 +237,23 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                       {!isStreaming && sources.length > 0 && (
                         <div className="space-y-1.5 pt-1">
                           <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
-                          {sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.kind === 'graph' ? source.nodeId : source.kind === 'case' ? source.caseId : source.kind === 'directory' ? source.entryId : source.chunkId}-${sourceIndex}`} source={source} index={sourceIndex} />
-                          ))}
+                          {sources.map((source, sourceIndex) => {
+                            const keyPart =
+                              source.kind === 'text'
+                                ? source.pageId
+                                : source.kind === 'graph'
+                                  ? source.nodeId
+                                  : source.kind === 'case'
+                                    ? source.caseId
+                                    : source.kind === 'directory'
+                                      ? source.entryId
+                                      : source.kind === 'wiki-page'
+                                        ? source.pageId
+                                        : source.chunkId;
+                            return (
+                              <SourceRefCard key={`${keyPart}-${sourceIndex}`} source={source} index={sourceIndex} />
+                            );
+                          })}
                         </div>
                       )}
 
