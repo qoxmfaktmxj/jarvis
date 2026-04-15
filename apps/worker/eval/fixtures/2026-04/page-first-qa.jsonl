@@ -1,0 +1,30 @@
+{"id":"qa-001","query":"1년차 신입사원의 연차는 어떻게 계산되나요?","expectedPages":["hr/leaves/annual-leave.md"],"answerPatterns":["월 1일","1년 미만","11일"],"sensitivityRequired":"public"}
+{"id":"qa-002","query":"병가를 사용하려면 어떤 절차를 밟아야 하나요?","expectedPages":["hr/leaves/sick-leave.md","hr/forms/medical-certificate.md"],"answerPatterns":["진단서","3일 이상","인사팀"],"sensitivityRequired":"public"}
+{"id":"qa-003","query":"반차는 하루에 몇 번까지 신청할 수 있나요?","expectedPages":["hr/leaves/half-day-leave.md"],"answerPatterns":["오전","오후","1회"],"sensitivityRequired":"public"}
+{"id":"qa-004","query":"연차 사용 촉진 제도는 언제 시행되나요?","expectedPages":["hr/leaves/annual-leave.md","hr/policies/leave-promotion.md"],"answerPatterns":["7월","10월","서면 통보"],"sensitivityRequired":"public"}
+{"id":"qa-005","query":"미사용 연차는 금전으로 보상받을 수 있나요?","expectedPages":["hr/leaves/annual-leave.md","hr/payroll/leave-compensation.md"],"answerPatterns":["연차수당","통상임금","미사용"],"sensitivityRequired":"public"}
+{"id":"qa-006","query":"경조금은 어떤 경우에 얼마나 지급되나요?","expectedPages":["hr/benefits/congratulations-condolences.md"],"answerPatterns":["결혼","부모","100만원"],"sensitivityRequired":"public"}
+{"id":"qa-007","query":"출산휴가는 며칠까지 사용 가능한가요?","expectedPages":["hr/leaves/maternity-leave.md"],"answerPatterns":["90일","45일","고용보험"],"sensitivityRequired":"public"}
+{"id":"qa-008","query":"성과평가는 어떤 기준으로 진행되나요?","expectedPages":["hr/evaluation/performance-review.md"],"answerPatterns":["KPI","상대평가","연 2회"],"sensitivityRequired":"public"}
+{"id":"qa-009","query":"건강검진은 회사에서 지원하나요?","expectedPages":["hr/benefits/health-checkup.md"],"answerPatterns":["연 1회","종합검진","지정 병원"],"sensitivityRequired":"public"}
+{"id":"qa-010","query":"자녀 학자금 지원 제도에 대해 알려주세요.","expectedPages":["hr/benefits/education-support.md"],"answerPatterns":["자녀","학자금","분기별"],"sensitivityRequired":"public"}
+{"id":"qa-011","query":"사외에서 VPN에 접속하는 방법은?","expectedPages":["it/network/vpn-setup.md"],"answerPatterns":["OTP","사내계정","FortiClient"],"sensitivityRequired":"internal"}
+{"id":"qa-012","query":"재택 근무 시 원격 접속은 어떻게 하나요?","expectedPages":["it/network/remote-access.md","it/security/remote-work-policy.md"],"answerPatterns":["VPN","가상데스크탑","승인"],"sensitivityRequired":"internal"}
+{"id":"qa-013","query":"사내 비밀번호 정책은 어떻게 되나요?","expectedPages":["it/security/password-policy.md"],"answerPatterns":["12자 이상","90일","재사용 금지"],"sensitivityRequired":"internal"}
+{"id":"qa-014","query":"보안 사고가 발생했을 때 어디에 신고해야 하나요?","expectedPages":["it/security/incident-report.md"],"answerPatterns":["security@","CERT","즉시 신고"],"sensitivityRequired":"internal"}
+{"id":"qa-015","query":"외부 USB 저장장치 사용이 가능한가요?","expectedPages":["it/security/removable-media-policy.md"],"answerPatterns":["사전 승인","암호화","DLP"],"sensitivityRequired":"internal"}
+{"id":"qa-016","query":"구매 요청서는 어떤 결재 라인을 거치나요?","expectedPages":["process/procurement/purchase-request.md"],"answerPatterns":["팀장","구매팀","재무"],"sensitivityRequired":"public"}
+{"id":"qa-017","query":"국내 출장 신청 방법을 알려주세요.","expectedPages":["process/travel/domestic-travel.md"],"answerPatterns":["출장신청서","일비","교통비"],"sensitivityRequired":"public"}
+{"id":"qa-018","query":"접대비는 얼마까지 사용 가능한가요?","expectedPages":["process/expense/entertainment.md"],"answerPatterns":["1인당 4만원","증빙","법인카드"],"sensitivityRequired":"public"}
+{"id":"qa-019","query":"법인카드 사용 후 영수증 처리는 어떻게 하나요?","expectedPages":["process/expense/corporate-card.md"],"answerPatterns":["7일 이내","증빙 첨부","ERP"],"sensitivityRequired":"public"}
+{"id":"qa-020","query":"결재가 반려된 경우 재상신 방법은?","expectedPages":["process/approval/approval-flow.md"],"answerPatterns":["반려 사유","수정","재상신"],"sensitivityRequired":"public"}
+{"id":"qa-021","query":"개발팀 조직 구조는 어떻게 되어 있나요?","expectedPages":["org/teams/engineering.md"],"answerPatterns":["백엔드","프론트엔드","플랫폼"],"sensitivityRequired":"public"}
+{"id":"qa-022","query":"인사 담당자는 누구인가요?","expectedPages":["org/contacts/hr-contacts.md"],"answerPatterns":["인사팀","담당자","내선"],"sensitivityRequired":"public"}
+{"id":"qa-023","query":"대회의실 예약 시스템은 어디에서 사용하나요?","expectedPages":["facilities/meeting-rooms/booking.md"],"answerPatterns":["예약 시스템","30분 단위","취소"],"sensitivityRequired":"public"}
+{"id":"qa-024","query":"사내 시스템에 접속하려면 어떤 계정이 필요한가요?","expectedPages":["it/accounts/sso-onboarding.md"],"answerPatterns":["SSO","사번","초기 비밀번호"],"sensitivityRequired":"public"}
+{"id":"qa-025","query":"부서 이동 시 필요한 행정 절차는?","expectedPages":["org/process/transfer.md"],"answerPatterns":["인수인계","이관","승인"],"sensitivityRequired":"public"}
+{"id":"qa-026","query":"계약서 검토는 어느 팀에 요청해야 하나요?","expectedPages":["legal/contracts/review-process.md"],"answerPatterns":["법무팀","3영업일","검토요청서"],"sensitivityRequired":"confidential"}
+{"id":"qa-027","query":"NDA 체결 절차를 알려주세요.","expectedPages":["legal/contracts/nda.md"],"answerPatterns":["표준 NDA","법무 검토","서명"],"sensitivityRequired":"confidential"}
+{"id":"qa-028","query":"회사의 지식재산권(IP) 정책은 어떻게 되나요?","expectedPages":["legal/ip/ip-policy.md"],"answerPatterns":["직무발명","귀속","보상"],"sensitivityRequired":"confidential"}
+{"id":"qa-029","query":"외부에 공개 가능한 정보 기준이 있나요?","expectedPages":["legal/disclosure/external-disclosure.md"],"answerPatterns":["공개 등급","사전 승인","홍보팀"],"sensitivityRequired":"confidential"}
+{"id":"qa-030","query":"영업 비밀로 분류된 정보는 어떻게 취급하나요?","expectedPages":["legal/ip/trade-secret.md"],"answerPatterns":["Confidential","접근 통제","서약서"],"sensitivityRequired":"confidential"}

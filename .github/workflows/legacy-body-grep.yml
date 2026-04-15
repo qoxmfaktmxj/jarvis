@@ -1,0 +1,33 @@
+name: legacy-body-grep
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  legacy-body-grep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Grep for legacy body field access
+        shell: bash
+        run: |
+          set +e
+          matches=$(grep -rnE 'mdxContent|wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
+          status=$?
+          set -e
+
+          if [ $status -eq 0 ] && [ -n "$matches" ]; then
+            echo "::error::Legacy body field access detected. Use wiki_pages.content instead."
+            echo "$matches"
+            exit 1
+          fi
+
+          echo "OK: no legacy body field access found."
+          exit 0

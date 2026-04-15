@@ -1,0 +1,74 @@
+name: schema-drift
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  schema-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: jarvis
+          POSTGRES_DB: jarvis_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      NODE_ENV: test
+      OPENAI_API_KEY: dummy-for-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - name: Get pnpm store dir
+        id: pnpm-cache
+        shell: bash
+        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure pgvector extension
+        run: |
+          PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Run DB migrations
+        run: pnpm db:migrate
+
+      - name: Schema drift check
+        run: node scripts/check-schema-drift.mjs --ci

@@ -1,0 +1,36 @@
+{
+  "WikiGraph": {
+    "title": "Knowledge Graph",
+    "loading": "Loading graph...",
+    "nodeCount": "Nodes",
+    "edgeCount": "Edges",
+    "clickToNavigate": "Click a node to open the corresponding wiki page."
+  },
+  "WikiEditor": {
+    "manualOnlyBanner": "This page is for manual/ editing only. The auto/ tree is managed by the LLM.",
+    "save": "Save",
+    "saving": "Saving...",
+    "loading": "Loading editor...",
+    "toolbar": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "link": "Link",
+      "codeBlock": "Code block",
+      "heading": "Heading",
+      "bulletList": "Bullet list",
+      "orderedList": "Ordered list"
+    },
+    "frontmatter": {
+      "title": "Title",
+      "sensitivity": "Sensitivity",
+      "tags": "Tags",
+      "public": "Public",
+      "internal": "Internal",
+      "confidential": "Confidential"
+    },
+    "wikilink": {
+      "placeholder": "Search page name...",
+      "noResults": "No results"
+    }
+  }
+}

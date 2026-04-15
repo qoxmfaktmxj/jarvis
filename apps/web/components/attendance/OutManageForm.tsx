@@ -122,7 +122,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
 
   return (
     <>
-      {React.cloneElement(children as React.ReactElement, {
+      {React.cloneElement(children as React.ReactElement<{ onClick: () => void }>, {
         onClick: () => setOpen(true),
       })}
       <Dialog open={open} onOpenChange={setOpen}>

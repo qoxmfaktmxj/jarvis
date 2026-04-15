@@ -112,7 +112,31 @@
       "requestedBy": "요청자",
       "pending": "대기 중",
       "approve": "승인",
-      "reject": "반려"
+      "reject": "거절",
+      "defer": "보류",
+      "approveConfirm": "이 요청을 승인하시겠습니까?",
+      "rejectConfirm": "이 요청을 거절하시겠습니까?",
+      "deferConfirm": "이 요청을 보류하시겠습니까?",
+      "commentLabel": "승인 사유 (선택사항)",
+      "reasonLabel": "거절 이유 (필수)",
+      "kindFilterLabel": "종류",
+      "kind": {
+        "all": "전체",
+        "contradiction": "모순 검출",
+        "lintReport": "린트 리포트",
+        "sensitivityEscalation": "민감도 승급",
+        "boundaryViolation": "경계 위반"
+      },
+      "statusFilter": {
+        "all": "전체",
+        "pending": "대기",
+        "approved": "승인됨",
+        "rejected": "거절됨",
+        "deferred": "보류됨"
+      },
+      "processing": "처리 중...",
+      "errorOccurred": "오류가 발생했습니다.",
+      "cancel": "취소"
     },
     "SearchAnalytics": {
       "title": "검색 분석",
@@ -438,5 +462,54 @@
       "save": "저장",
       "cancel": "취소"
     }
+  },
+  "Wiki": {
+    "title": "위키",
+    "search": "페이지 검색...",
+    "notFound": "페이지를 찾을 수 없습니다.",
+    "accessDenied": "접근 권한이 없습니다.",
+    "lastUpdated": "최종 수정",
+    "edit": "편집",
+    "sensitivity": {
+      "public": "공개",
+      "internal": "내부",
+      "confidential": "기밀"
+    },
+    "noResults": "검색 결과가 없습니다."
+  },
+  "WikiEditor": {
+    "manualOnlyBanner": "이 페이지는 manual/ 편집 전용입니다. auto/ 영역은 LLM이 관리합니다.",
+    "save": "저장",
+    "saving": "저장 중...",
+    "loading": "에디터 로딩 중...",
+    "link": "링크 URL",
+    "toolbar": {
+      "bold": "굵게",
+      "italic": "기울기",
+      "link": "링크",
+      "codeBlock": "코드 블록",
+      "heading": "제목",
+      "bulletList": "불릿 목록",
+      "orderedList": "번호 목록"
+    },
+    "frontmatter": {
+      "title": "제목",
+      "sensitivity": "공개 범위",
+      "tags": "태그",
+      "public": "공개",
+      "internal": "내부",
+      "confidential": "기밀"
+    },
+    "wikilink": {
+      "placeholder": "페이지 이름 입력...",
+      "noResults": "결과 없음"
+    }
+  },
+  "WikiGraph": {
+    "title": "지식 그래프",
+    "loading": "그래프를 불러오는 중...",
+    "nodeCount": "노드",
+    "edgeCount": "엣지",
+    "clickToNavigate": "노드를 클릭하면 해당 페이지로 이동합니다."
   }
 }
