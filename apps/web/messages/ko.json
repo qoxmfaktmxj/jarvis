@@ -138,7 +138,12 @@
       },
       "processing": "처리 중...",
       "errorOccurred": "오류가 발생했습니다.",
-      "cancel": "취소"
+      "cancel": "취소",
+      "pagination": {
+        "previous": "이전",
+        "next": "다음",
+        "pageInfo": "{page} / {total}"
+      }
     },
     "SearchAnalytics": {
       "title": "검색 분석",
@@ -472,10 +477,12 @@
     "accessDenied": "접근 권한이 없습니다.",
     "lastUpdated": "최종 수정",
     "edit": "편집",
+    "empty": "페이지가 없습니다.",
     "sensitivity": {
       "public": "공개",
       "internal": "내부",
-      "confidential": "기밀"
+      "confidential": "기밀",
+      "restricted": "제한됨"
     },
     "noResults": "검색 결과가 없습니다."
   },
@@ -485,6 +492,9 @@
     "saving": "저장 중...",
     "loading": "에디터 로딩 중...",
     "link": "링크 URL",
+    "saveSuccess": "저장되었습니다. (커밋 {sha})",
+    "saveFailed": "저장 실패: {reason}",
+    "boundaryViolation": "manual/ 경로가 아닌 파일은 편집할 수 없습니다.",
     "toolbar": {
       "bold": "굵게",
       "italic": "기울기",
@@ -504,7 +514,9 @@
     },
     "wikilink": {
       "placeholder": "페이지 이름 입력...",
-      "noResults": "결과 없음"
+      "noResults": "결과 없음",
+      "searching": "검색 중...",
+      "searchFailed": "검색 실패"
     }
   },
   "WikiGraph": {
@@ -512,7 +524,9 @@
     "loading": "그래프를 불러오는 중...",
     "nodeCount": "노드",
     "edgeCount": "엣지",
-    "clickToNavigate": "노드를 클릭하면 해당 페이지로 이동합니다."
+    "clickToNavigate": "노드를 클릭하면 해당 페이지로 이동합니다.",
+    "empty": "이 워크스페이스에 빌드 완료된 그래프 스냅샷이 없습니다.",
+    "loadFailed": "그래프를 불러오지 못했습니다."
   },
   "WikiIngest": {
     "manual": {
@@ -544,6 +558,30 @@
         "contentTooLarge": "본문이 200KB를 초과합니다.",
         "submitFailed": "전송 실패. 잠시 후 다시 시도하세요."
       }
+    }
+  },
+  "Notices": {
+    "title": "공지사항",
+    "new": "공지사항 작성",
+    "edit": "공지사항 수정",
+    "delete": "공지사항 삭제",
+    "deleteConfirm": "정말 삭제하시겠습니까?",
+    "sensitivity": {
+      "label": "공개 범위",
+      "PUBLIC": "전체 공개",
+      "INTERNAL": "내부 공개"
+    },
+    "pinned": "상단 고정",
+    "publishedAt": "게시 일시",
+    "expiresAt": "만료 일시",
+    "fields": {
+      "title": "제목",
+      "body": "내용"
+    },
+    "empty": "등록된 공지사항이 없습니다.",
+    "actions": {
+      "save": "저장",
+      "cancel": "취소"
     }
   }
 }

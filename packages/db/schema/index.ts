@@ -25,3 +25,4 @@ export * from "./wiki-page-source-ref.js";
 export * from "./wiki-commit-log.js";
 export * from "./wiki-review-queue.js";
 export * from "./wiki-lint-report.js";
+export * from "./notice.js";

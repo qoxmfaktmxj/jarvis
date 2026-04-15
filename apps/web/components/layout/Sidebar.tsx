@@ -7,6 +7,7 @@ import {
   Calendar,
   FolderKanban,
   LayoutDashboard,
+  Megaphone,
   MessageSquare,
   Search,
   Server,
@@ -22,6 +23,7 @@ const navItems: ReadonlyArray<{
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/systems", label: "Systems", icon: Server },
   { href: "/knowledge", label: "Knowledge", icon: BookOpen },
+  { href: "/notices", label: "Notices", icon: Megaphone },
   { href: "/search", label: "Search", icon: Search },
   { href: "/ask", label: "Ask AI", icon: MessageSquare },
   { href: "/attendance", label: "Attendance", icon: Calendar }

@@ -24,3 +24,47 @@ describe("permissions.ts graph additions", () => {
     expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.GRAPH_BUILD);
   });
 });
+
+describe("permissions.ts notice additions", () => {
+  it("exposes notice:* constants", () => {
+    expect(PERMISSIONS.NOTICE_READ).toBe("notice:read");
+    expect(PERMISSIONS.NOTICE_CREATE).toBe("notice:create");
+    expect(PERMISSIONS.NOTICE_UPDATE).toBe("notice:update");
+    expect(PERMISSIONS.NOTICE_DELETE).toBe("notice:delete");
+  });
+
+  it("grants ADMIN every notice permission (full set)", () => {
+    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_READ);
+    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_CREATE);
+    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_UPDATE);
+    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_DELETE);
+  });
+
+  it("grants MANAGER read/create/update but NOT delete", () => {
+    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_READ);
+    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_CREATE);
+    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_UPDATE);
+    expect(ROLE_PERMISSIONS.MANAGER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  });
+
+  it("grants HR read/create/update but NOT delete", () => {
+    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_READ);
+    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_CREATE);
+    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_UPDATE);
+    expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  });
+
+  it("grants DEVELOPER only notice:read", () => {
+    expect(ROLE_PERMISSIONS.DEVELOPER).toContain(PERMISSIONS.NOTICE_READ);
+    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_CREATE);
+    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_UPDATE);
+    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  });
+
+  it("grants VIEWER only notice:read", () => {
+    expect(ROLE_PERMISSIONS.VIEWER).toContain(PERMISSIONS.NOTICE_READ);
+    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_CREATE);
+    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_UPDATE);
+    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  });
+});
