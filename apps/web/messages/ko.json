@@ -495,6 +495,7 @@
     "saveSuccess": "저장되었습니다. (커밋 {sha})",
     "saveFailed": "저장 실패: {reason}",
     "boundaryViolation": "manual/ 경로가 아닌 파일은 편집할 수 없습니다.",
+    "projectionFailed": "디스크에 저장되었으나 색인 업데이트에 실패했습니다. 잠시 후 다시 저장해 주세요.",
     "toolbar": {
       "bold": "굵게",
       "italic": "기울기",

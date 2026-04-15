@@ -6,6 +6,7 @@ import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
+import { and, eq } from "drizzle-orm";
 import { PERMISSIONS } from "@jarvis/shared/constants";
 import { wikiSavePayloadSchema } from "@jarvis/shared/validation";
 import {
@@ -13,6 +14,7 @@ import {
   defaultBotAuthor,
   parseFrontmatter,
   serializeFrontmatter,
+  type WikiSensitivity,
 } from "@jarvis/wiki-fs";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
 import * as path from "node:path";
@@ -98,11 +100,41 @@ export async function saveWikiPage(
   } catch {
     return { ok: false, error: "invalid_input" };
   }
+  // 보안 필드는 클라이언트 입력에서 제거 — 기존 DB 값 유지 (A안)
+  const {
+    sensitivity: _s,
+    requiredPermission: _rp,
+    publishedStatus: _ps,
+    ...safeFm
+  } = parsed.data.frontmatter;
+
+  // 기존 DB row에서 보안 필드 조회 (신규 페이지는 INTERNAL/knowledge:read defaults)
+  const existingRow = await db
+    .select({
+      sensitivity: wikiPageIndex.sensitivity,
+      requiredPermission: wikiPageIndex.requiredPermission,
+    })
+    .from(wikiPageIndex)
+    .where(
+      and(
+        eq(wikiPageIndex.workspaceId, parsed.data.workspaceId),
+        eq(wikiPageIndex.path, repoRelPath),
+      ),
+    )
+    .limit(1);
+
+  const securityFields = existingRow[0] ?? {
+    sensitivity: "INTERNAL" as WikiSensitivity,
+    requiredPermission: "knowledge:read" as string | null,
+  };
+
   const mergedFm = {
-    ...parsed.data.frontmatter,
+    ...safeFm,
     workspaceId: parsed.data.workspaceId,
     authority: "manual" as const,
     updated: new Date().toISOString(),
+    sensitivity: (securityFields.sensitivity ?? "INTERNAL") as WikiSensitivity,
+    requiredPermission: securityFields.requiredPermission ?? "knowledge:read",
   };
   const fileContent = serializeFrontmatter(mergedFm, incomingBody);
 
@@ -164,9 +196,12 @@ export async function saveWikiPage(
 
   } catch (err) {
     console.error("[wiki:manual:save] projection upsert failed:", err);
-    // git commit 은 성공했으므로 사용자에게는 ok 처리하되 로그 남김
+    // git commit은 성공했으나 index가 stale — projection_failed로 사용자에게 알린다
+    revalidatePath("/wiki/[workspaceId]/[...path]", "page");
+    return { ok: false, error: "projection_failed" };
   }
 
-  revalidatePath(`/wiki/${parsed.data.workspaceId}/${pageSlugClean}`);
+  // catch-all 라우트는 패턴 형식으로 revalidate해야 한다
+  revalidatePath("/wiki/[workspaceId]/[...path]", "page");
   return { ok: true, sha };
 }

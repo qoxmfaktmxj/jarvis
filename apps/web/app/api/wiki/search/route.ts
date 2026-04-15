@@ -44,19 +44,25 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   const q = parsed.data.q.trim();
-  const pattern = `%${q}%`;
+
+  // 빈 쿼리는 전체 목록 노출을 막기 위해 즉시 빈 결과 반환
+  if (!q) {
+    return NextResponse.json({ pages: [] });
+  }
+
+  // LIKE 와일드카드 이스케이프 (%, _, \) — ilike 파라미터화와 별도로 필요
+  const escaped = q.replace(/[\\%_]/g, "\\$&");
+  const pattern = `%${escaped}%`;
 
   const baseWhere = and(
     eq(wikiPageIndex.workspaceId, parsed.data.workspaceId),
     eq(wikiPageIndex.publishedStatus, "published"),
   );
 
-  const where = q
-    ? and(
-        baseWhere,
-        or(ilike(wikiPageIndex.title, pattern), ilike(wikiPageIndex.slug, pattern)),
-      )
-    : baseWhere;
+  const where = and(
+    baseWhere,
+    or(ilike(wikiPageIndex.title, pattern), ilike(wikiPageIndex.slug, pattern)),
+  );
 
   const rows = await db
     .select({

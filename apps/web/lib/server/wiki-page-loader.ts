@@ -51,9 +51,20 @@ export async function loadWikiPageForView(
   let content: string;
   try {
     content = await readUtf8(resolveWikiPath(meta.path));
-  } catch {
-    // 디스크 파일이 없거나 읽기 실패 — projection drift 로 간주하고 null 반환
-    return null;
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") {
+      // 파일이 없음 — projection drift로 간주하고 null 반환.
+      // silent swallow 가 아니라 운영 관찰성을 위해 warn 으로 남긴다.
+      console.warn(
+        "[wiki-page-loader] projection drift: file missing for",
+        { workspaceId, slug, path: meta.path },
+      );
+      return null;
+    }
+    // EACCES, EIO 등 디스크/권한 오류는 500으로 전파
+    console.error("[wiki-page-loader] disk read failed:", err);
+    throw err;
   }
 
   const { data: frontmatter, body } = parseFrontmatter(content);

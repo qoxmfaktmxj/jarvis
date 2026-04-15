@@ -57,6 +57,8 @@ export default function EditPageClientShell({
     switch (err) {
       case "boundary_violation":
         return t("boundaryViolation");
+      case "projection_failed":
+        return t("projectionFailed");
       case "forbidden":
         return "forbidden";
       case "invalid_input":

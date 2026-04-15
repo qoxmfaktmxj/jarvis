@@ -51,7 +51,8 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
   const kind = pickKind(typeof sp.kind === 'string' ? sp.kind : undefined);
   const page = pickPage(typeof sp.page === 'string' ? sp.page : undefined);
 
-  const workspaceId = session!.workspaceId;
+  if (!session) throw new Error("unauthenticated");
+  const workspaceId = session.workspaceId;
 
   const baseFilters = [eq(reviewRequest.workspaceId, workspaceId)];
   if (status !== 'all') baseFilters.push(eq(reviewRequest.status, status));

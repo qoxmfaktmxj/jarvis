@@ -8,7 +8,26 @@ import type {
   GraphEdge,
   GraphNode,
 } from "@/components/GraphViewer/VisNetwork";
-import { canViewSensitivity } from "./wiki-sensitivity.js";
+import {
+  canViewSensitivity,
+  type DbSensitivity,
+} from "./wiki-sensitivity.js";
+
+/**
+ * 세션 권한 매트릭스를 역방향으로 읽어 허용 sensitivity 목록을 계산.
+ * `canViewSensitivity` 규칙과 반드시 일치해야 함.
+ */
+function allowedSensitivitiesForSession(
+  session: JarvisSession,
+): DbSensitivity[] {
+  const candidates: DbSensitivity[] = [
+    "PUBLIC",
+    "INTERNAL",
+    "RESTRICTED",
+    "SECRET_REF_ONLY",
+  ];
+  return candidates.filter((s) => canViewSensitivity(session, s));
+}
 
 /**
  * apps/web/lib/server/wiki-graph-loader.ts
@@ -39,8 +58,35 @@ export async function loadWikiGraphData(
   workspaceId: string,
   session: JarvisSession,
 ): Promise<WikiGraphData> {
-  // 1) published 페이지 + 인바운드 카운트 (LEFT JOIN + GROUP BY)
-  //    최신 updatedAt 순으로 상위 N개 (MAX_NODES). sensitivity 필터는 이후 in-memory.
+  // 0) 세션 권한 기반 허용 sensitivity 목록 선계산.
+  //    권한이 전혀 없으면(KNOWLEDGE_READ 없음) 빈 결과로 즉시 반환.
+  const allowedSensitivities = allowedSensitivitiesForSession(session);
+
+  // 전체 published 페이지 수(권한과 무관)는 디버깅용으로 별도 집계.
+  const [totalRow] = await db
+    .select({
+      count: sql<number>`COUNT(*)::int`,
+    })
+    .from(wikiPageIndex)
+    .where(
+      and(
+        eq(wikiPageIndex.workspaceId, workspaceId),
+        eq(wikiPageIndex.publishedStatus, "published"),
+      ),
+    );
+  const totalPublishedCount = Number(totalRow?.count ?? 0);
+
+  if (allowedSensitivities.length === 0) {
+    return {
+      nodes: [],
+      edges: [],
+      filteredOutCount: totalPublishedCount,
+      totalPublishedCount,
+    };
+  }
+
+  // 1) published + sensitivity 허용 페이지 + 인바운드 카운트 (LEFT JOIN + GROUP BY)
+  //    sensitivity 필터를 DB WHERE 에 포함해 MAX_NODES 가 가시 노드 기준으로 동작.
   const pageRows = await db
     .select({
       id: wikiPageIndex.id,
@@ -64,6 +110,7 @@ export async function loadWikiGraphData(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
         eq(wikiPageIndex.publishedStatus, "published"),
+        inArray(wikiPageIndex.sensitivity, allowedSensitivities),
       ),
     )
     .groupBy(
@@ -77,13 +124,11 @@ export async function loadWikiGraphData(
     .orderBy(desc(wikiPageIndex.updatedAt))
     .limit(MAX_NODES);
 
-  const totalPublishedCount = pageRows.length;
-
-  // 2) sensitivity 필터 (세션 기준)
+  // 2) sensitivity 는 이미 DB 에서 걸렀지만, 방어적으로 한 번 더 확인.
   const visible = pageRows.filter((r) =>
     canViewSensitivity(session, r.sensitivity),
   );
-  const filteredOutCount = totalPublishedCount - visible.length;
+  const filteredOutCount = Math.max(0, totalPublishedCount - visible.length);
 
   if (visible.length === 0) {
     return {
@@ -94,30 +139,19 @@ export async function loadWikiGraphData(
     };
   }
 
-  // 3) 인바운드 카운트 → node size 매핑 (log 스케일 근사)
-  const maxInbound = visible.reduce(
-    (acc, r) => Math.max(acc, Number(r.inboundCount ?? 0)),
-    0,
-  );
-
-  const nodes: GraphNode[] = visible.map((r) => {
-    const inbound = Number(r.inboundCount ?? 0);
-    const size =
-      maxInbound > 0
-        ? SIZE_MIN + ((SIZE_MAX - SIZE_MIN) * inbound) / maxInbound
-        : SIZE_MIN;
-    return {
-      id: r.id,
-      label: r.title,
-      group: r.type,
-      pageSlug: r.slug,
-      size: Math.round(size),
-    };
-  });
-
-  // 4) 엣지: kind='direct', toPageId 존재, 양끝이 visible 집합에 포함.
+  // 3) 엣지: kind='direct', toPageId 존재, 양끝이 visible 집합에 포함.
   const visibleIds = new Set(visible.map((r) => r.id));
   const pageIdList = Array.from(visibleIds);
+
+  // 가드: 가시 노드가 없으면 엣지 쿼리 자체를 생략.
+  if (pageIdList.length === 0) {
+    return {
+      nodes: [],
+      edges: [],
+      filteredOutCount,
+      totalPublishedCount,
+    };
+  }
 
   const edgeRows = await db
     .select({
@@ -131,21 +165,51 @@ export async function loadWikiGraphData(
         eq(wikiPageLink.workspaceId, workspaceId),
         eq(wikiPageLink.kind, "direct"),
         isNotNull(wikiPageLink.toPageId),
-        // DB 쪽에서도 한 번 걸러서 전송량 축소 (from/to 둘 다 검사는 in-memory).
+        // DB 쪽에서 양끝 모두 visible 집합으로 제한 (전송량 축소 + 정확성).
         inArray(wikiPageLink.fromPageId, pageIdList),
+        inArray(wikiPageLink.toPageId, pageIdList),
       ),
     );
 
   const edges: GraphEdge[] = [];
+  // visible 엣지 기준으로 inbound 수 재집계.
+  const visibleInboundCount = new Map<string, number>();
   for (const e of edgeRows) {
     if (!e.toPageId) continue;
+    // 양끝 visible 여부는 DB 에서 걸렀지만 방어적 재확인.
     if (!visibleIds.has(e.toPageId)) continue;
+    if (!visibleIds.has(e.fromPageId)) continue;
     edges.push({
       id: e.id,
       from: e.fromPageId,
       to: e.toPageId,
     });
+    visibleInboundCount.set(
+      e.toPageId,
+      (visibleInboundCount.get(e.toPageId) ?? 0) + 1,
+    );
   }
+
+  // 4) 인바운드 카운트(가시 엣지 기준) → node size 매핑.
+  const maxInbound = visible.reduce(
+    (acc, r) => Math.max(acc, visibleInboundCount.get(r.id) ?? 0),
+    0,
+  );
+
+  const nodes: GraphNode[] = visible.map((r) => {
+    const inbound = visibleInboundCount.get(r.id) ?? 0;
+    const size =
+      maxInbound > 0
+        ? SIZE_MIN + ((SIZE_MAX - SIZE_MIN) * inbound) / maxInbound
+        : SIZE_MIN;
+    return {
+      id: r.id,
+      label: r.title,
+      group: r.type,
+      pageSlug: r.slug,
+      size: Math.round(size),
+    };
+  });
 
   return {
     nodes,

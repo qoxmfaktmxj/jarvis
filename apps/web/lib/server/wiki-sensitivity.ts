@@ -10,7 +10,11 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
  * DB sensitivity 규약: PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY.
  * - PUBLIC, INTERNAL: KNOWLEDGE_READ
  * - RESTRICTED: KNOWLEDGE_READ + KNOWLEDGE_REVIEW(승급된 권한)
- * - SECRET_REF_ONLY: SYSTEM_ACCESS_SECRET (본문 차단, 메타만)
+ * - SECRET_REF_ONLY: KNOWLEDGE_READ + SYSTEM_ACCESS_SECRET
+ *   (SYSTEM_ACCESS_SECRET 이 있으면 본문까지 열람 허용. 권한이 없으면
+ *    canViewSensitivity 가 false 를 반환해 페이지 자체가 차단됨.
+ *    "본문 대신 메타만" 식의 partial-view 는 현재 구현되어 있지 않음 —
+ *    W2 시점 기준 SECRET_REF_ONLY 는 '시스템 시크릿 소유자 전용' 의미.)
  */
 export type DbSensitivity =
   | "PUBLIC"
