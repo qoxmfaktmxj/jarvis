@@ -1,209 +1,311 @@
 # Jarvis
 
-AI 비서와 사내 지식 검색이 결합된 사내 업무 시스템 모노레포입니다.
+**LLM이 raw 자료를 읽어 사내 위키를 컴파일하고, 사용자는 compiled wiki를 탐색하는 엔터프라이즈 지식 시스템.**
 
-Jarvis는 단순한 포털이 아니라, **사내 위키/시스템/프로젝트/근태 데이터를 한 곳에서 조회하고**, **6개 검색 레인 기반 질의응답으로 필요한 정보를 빠르게 찾는 것**을 목표로 합니다. 현재 레포는 Next.js 기반 웹 앱, 문서 인제스트와 임베딩을 처리하는 워커, 공통 비즈니스 로직 패키지로 분리된 구조를 가지고 있습니다.
+Jarvis는 검색 포털이 아닙니다. [Karpathy의 LLM Wiki 구상](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)을 엔터프라이즈 멀티테넌트 환경(5000명 규모)으로 확장한 **지식 컴파일·북키핑 자동화 플랫폼**입니다. 원문 업로드·검색·청크 임베딩은 수단일 뿐이고, 제품의 본체는 **LLM이 지속 편집하는 영속 위키**입니다.
+
+> **2026-04-15 피벗.** "6-레인 RAG 포털"에서 "LLM Wiki 컴파일 시스템"으로 정체성을 재정의했습니다. 구 README는 [`docs/_archive/2026-04-pivot/README.rag-era.md`](docs/_archive/2026-04-pivot/README.rag-era.md)에 보존되어 있습니다. 최상위 스키마·워크플로 규약은 [`WIKI-AGENTS.md`](WIKI-AGENTS.md)를 먼저 참고하세요.
 
 ---
 
 ## 1. 이 프로젝트가 해결하려는 문제
 
-사내 업무 시스템은 보통 아래 문제가 동시에 존재합니다.
+사내 지식 시스템이 계속 실패하는 원인은 **검색의 약점**이 아니라 **지식의 휘발과 파편화**입니다.
 
-- 문서, 프로젝트, 시스템 정보가 여러 저장소에 흩어져 있음
-- 검색이 약해서 필요한 정보를 찾는 시간이 길어짐
-- 권한별로 노출해야 하는 정보 수준이 다름
-- 파일 업로드 후 검색/AI 활용까지 이어지는 파이프라인이 없음
-- 대시보드, 근태, 프로젝트, 시스템 정보가 서로 분절되어 있음
+- 사람들이 질문하고 답을 얻지만, 그 답이 **어디에도 축적되지 않습니다**. 다음 사람이 같은 질문을 반복합니다.
+- 정책·규정·시스템 정보가 **여러 위키·티켓·Slack 채널·개인 메모**에 흩어져 정본이 흐려집니다.
+- 누군가 편집하거나 구조를 갱신할 사람이 없으니, 2년 된 위키가 **반만 맞는 상태**로 방치됩니다.
+- 새 자료가 들어와도 관련 페이지들을 **교차 갱신할 사람**이 없습니다.
+- 결국 "검색이 안 되니 AI로 감추자"라는 RAG로 넘어가지만, RAG는 원문 조각을 섞을 뿐 **지식을 정리하지 않습니다**.
 
-Jarvis는 이 문제를 아래 방식으로 풀려고 합니다.
-
-- **4-표면 지식 베이스**(정본/디렉터리/사례/파생)를 중심으로 문서 구조화
-- **6-레인 Ask AI 라우터**로 질문 의도에 맞는 최적 검색 경로 선택
-- **PostgreSQL FTS + pg_trgm + pgvector** 기반 하이브리드 검색 제공
-- **AI 질문/답변(Ask AI)** 에 검색 결과를 근거로 붙여 출처 포함 응답 제공
-- **OIDC SSO + RBAC** 기반으로 권한별 정보 접근 제어
-- **Graphify 코드 분석 파이프라인**으로 문서/코드 구조 추출
+Jarvis는 이 문제를 다르게 풉니다. **LLM을 관리자처럼 운영**합니다. LLM은 raw 자료를 읽고, 관련 페이지 10~15개를 동시에 수정하고, 교차 링크를 자동 유지하고, 모순을 플래그하고, 낡은 주장을 업데이트합니다. 사용자는 **compiled wiki**를 탐색하며, 질문에는 raw chunk가 아니라 완성된 페이지가 답합니다.
 
 ---
 
-## 2. 핵심 아키텍처
+## 2. Karpathy LLM Wiki 방식 — 왜 RAG가 아닌가
 
-### 2.1 4-표면 지식 모델
+RAG는 "질문 시점에 원문 조각을 섞어 답을 만드는" 아키텍처입니다. 장점은 구현이 단순하다는 것뿐이고, 단점은 다음과 같습니다.
 
-지식은 4가지 표면으로 분류됩니다.
+| RAG (구 Jarvis 방식) | LLM Wiki (현 Jarvis 방식) |
+|---------------------|---------------------------|
+| 원문 청크를 매번 재검색·재합성 | 한 번 컴파일한 페이지를 재사용 |
+| 지식이 누적되지 않음 | Git 이력으로 영속 축적 |
+| 모순·중복 탐지 불가 | Lint 잡이 주기적으로 감지 |
+| 편집자·관리자 개념 없음 | LLM이 편집·합성·교차링크 |
+| 임베딩·벡터 인프라 부담 | 텍스트 파일 + Git + DB projection |
+| 답변 품질이 검색 품질에 종속 | 답변 품질이 compiled wiki 품질에 종속 |
 
-| 표면 | 설명 | 예시 |
-|------|------|------|
-| **canonical** | 정본 위키 - 사람이 작성·검토한 정책·절차 | 휴가 신청 절차, HR 규정 |
-| **directory** | 디렉터리 - 시스템 링크, 담당자, 양식 | 이수HR 바로가기, 근태 담당자 연락처 |
-| **case** | 사례 레이어 - TSVD999 문의/사례 (74,342행) | "권장휴가 언제부터?", "VPN 설정 어떻게?" |
-| **derived** | 파생 - Graphify 분석, LLM 생성 콘텐츠 | 코드 구조도, 자동 정리된 FAQ |
+**핵심 전환:** 검색을 좋게 만드는 대신, **대상 자체를 compiled wiki로 만들고** 거기에서 답한다. 과거 종이책 시대의 백과사전이 "색인"이 아니라 "편집된 정본"이었던 것과 같은 원리다. 검색은 컴파일된 지식을 빠르게 찾기 위한 보조일 뿐, 1차 소스가 아니다.
 
-### 2.2 6-레인 Ask AI 라우터
-
-사용자의 질문을 한국어 키워드 매칭으로 분석해 최적 검색 경로를 선택합니다.
-
-| 레인 | 시그널 | 우선 검색 대상 |
-|------|--------|----------------|
-| **text-first** | "정책", "규정", "규칙" | 정본 위키 (knowledge_claim) |
-| **graph-first** | "구조", "연결", "아키텍처" | 그래프 노드/엣지 |
-| **case-first** | "장애", "에러", "사례", "예전에" | TSVD999 선례 (precedent_case) |
-| **directory-first** | "어디서", "링크", "담당자" | 디렉터리 항목 (directory_entry) |
-| **action-first** | "어떻게 해", "방법", "신청" | 디렉터리 + 정본 조합 |
-| **tutor-first** | "설명해", "가르쳐", "알려줘" | 모든 소스 + 단계별 응답 |
-
-### 2.3 데이터 흐름
-
-```
-User Question
-  ↓
-6-Lane Router (한국어 키워드 매칭)
-  ↓
-{
-  text-first   → knowledge_claim vector search (OpenAI embedding)
-  graph-first  → graph_node/edge retrieval (Graphify)
-  case-first   → precedent_case vector search (TF-IDF + semantic)
-  directory-first → directory_entry ILIKE (keyword match)
-  action-first → directory + knowledge hybrid
-  tutor-first  → all sources + tutorial mode
-}
-  ↓
-OpenAI gpt-5.4-mini (configurable via ASK_AI_MODEL)
-  ↓
-Answer + [source:N] citations
-  ↓
-AnswerCard (structured response with sections)
-```
+**MindVault 실패 회귀 방지:** 2026-04-14에 폐기된 MindVault 프로젝트는 이 전환 없이 "청크 + 임베딩 + 그래프 시각화"만으로 위키를 대체하려다 실패했습니다. 원인·재발 방지 체크리스트는 [§14. MindVault 회귀 방지](#14-mindvault-회귀-방지-체크리스트)에 있습니다.
 
 ---
 
-## 3. 기술 스택
+## 3. 핵심 아키텍처 — 3-레이어 모델
 
-| 영역 | 기술 |
+Jarvis는 세 개의 독립 레이어로 구성됩니다. 각 레이어는 **저장소·편집권·진실원천**이 서로 다릅니다.
+
+| 레이어 | 책임 | 저장소 | 편집권 |
+|--------|------|--------|--------|
+| **Raw Sources** | 업로드된 PDF/DOCX/이미지/음성 원문 | MinIO (불변) + DB 메타 (`raw_source`) | LLM 읽기 전용 |
+| **Wiki Pages** | 엔티티·개념·요약·합성 마크다운 | 디스크 `wiki/{workspaceId}/**/*.md` + Git | LLM 독점 편집 (auto) + 사람 편집 (manual) |
+| **Schema** | `WIKI-AGENTS.md` + `.claude/commands/wiki-*.md` | 코드베이스 | 사용자+LLM 공동 진화 |
+
+### 3.1 진실원천 규칙 (중요)
+
+**Wiki 콘텐츠의 SSoT는 디스크/Git입니다.** DB에는 **색인·권한·감사·메타만** projection됩니다. 이 규칙이 핵심입니다.
+
+```
+wiki/{workspaceId}/auto/entities/김민석.md        ← SSoT (본문)
+          ↓ (projection)
+wiki_page_index (title, frontmatter, gitSha, ...)  ← DB (색인)
+```
+
+- DB에 본문 필드(`mdxContent`, `body`)는 **없거나 캐시 강등**됩니다.
+- 페이지 변경은 반드시 Git 커밋을 거쳐 워커가 DB를 동기화합니다.
+- DB만 직접 수정하는 경로는 **버그**입니다.
+
+### 3.2 사용자는 웹 UI로만 접근
+
+디스크 `wiki/` 디렉터리는 **서버 내부 전용 스토리지**입니다. 사용자가 Obsidian이나 VS Code로 직접 열지 않습니다. 접근은 전부 Next.js 웹 UI + HTTP API 경유이며, 권한 게이팅·sensitivity 필터·감사 로그가 전부 이 경로에서만 동작합니다.
+
+---
+
+## 4. 4가지 오퍼레이션
+
+모든 지식 흐름은 네 가지 오퍼레이션으로 환원됩니다. 상세 사양은 [`WIKI-AGENTS.md` §3](WIKI-AGENTS.md)을 참고하세요.
+
+### 4.1 Ingest — 다수 페이지 동시 갱신
+
+**한 번의 ingest = 여러 페이지 동시 갱신.** 이게 핵심입니다. 새 자료 1개를 받으면 관련 페이지 10~15개가 같이 업데이트됩니다. MindVault가 빠뜨린 단계입니다.
+
+```
+[입력]  raw_source 1건
+[Step A — Analysis LLM]
+         index.md 로드 → 관련 페이지 후보 선정 → 10~15개 Read
+         JSON 반환: { newPages, updatePages, contradictions, linkSuggestions }
+[Step B — Generation LLM]
+         각 페이지 본문 완성 + [[wikilink]] 자동 삽입 + frontmatter 채우기
+[Step C — Write]
+         temp worktree patch → validate → main에 fast-forward merge
+         log.md append + DB projection sync (wiki_page_index, wiki_page_link, ...)
+[Step D — Review queue]
+         contradictions / sensitivity 상승 / PII 감지 → review_queue
+```
+
+### 4.2 Query — Page-first Navigation
+
+**raw chunk를 검색하지 않습니다. compiled wiki page를 검색합니다.**
+
+```
+사용자 질문
+  → index.md 로드 + wiki_page_index lexical shortlist (title/alias/tags, pg_trgm)
+  → wiki_page_link 1-hop 확장 (linkedPages + inbound hub)
+  → 권한 + sensitivity 필터
+  → top 5~8 페이지 Read
+  → LLM 답변 + [[wikilink]] 인용
+  → [Save as Page] → wiki/auto/syntheses/{slug}.md
+```
+
+제거된 경로: 벡터 유사도 검색, `document_chunks`, BM25+vector+RRF 하이브리드, raw chunk retrieval. 페이지 500개 이상 + 한국어 동의어 부족 시에만 qmd-MCP를 **compiled wiki 위에** 추가 검토합니다.
+
+### 4.3 Lint — 주기적 건강검진
+
+주 1회 크론. `apps/worker/src/jobs/wiki-lint.ts`.
+
+- Orphan pages (인바운드 링크 0)
+- Broken wikilinks
+- No-outlinks pages
+- Contradictions (같은 주제의 상충 주장, LLM semantic lint)
+- Stale claims (최신 소스에 의해 대체된 낡은 주장)
+- Missing cross-refs (관련도 높은 페이지 간 누락 링크 제안)
+
+출력은 `wiki/_system/lint-report-{YYYY-MM-DD}.md` + `wiki_review_queue`로 들어가고, 관리자가 승인하면 auto에 적용됩니다.
+
+### 4.4 Graph — Graphify 구조 보조
+
+**Graphify는 구조 보조 엔진이지 지식 컴파일러가 아닙니다.** 경계를 분명히 합니다.
+
+| 담당 | 역할 |
 |------|------|
-| **AI 생성** | OpenAI (`gpt-5.4-mini` default, via `ASK_AI_MODEL` env var) |
-| **AI 임베딩** | OpenAI (`text-embedding-3-small`) + TF-IDF (사례용) |
-| **코드 분석** | Graphify (tree-sitter AST + NetworkX + Leiden/Louvain, 결정론적 파이프라인) |
-| **모노레포** | pnpm workspace, Turborepo |
-| **웹** | Next.js 15.5, React 19, TypeScript |
-| **DB** | PostgreSQL 16 + pgvector + pg_trgm |
-| **ORM** | Drizzle ORM |
-| **캐시** | Redis |
-| **스토리지** | MinIO |
-| **잡 큐** | pg-boss |
-| **스타일/UI** | Tailwind CSS 4, Lucide, React Hook Form |
-| **문서 파싱** | pdfjs-dist, mammoth |
-| **인증** | OIDC (`openid-client`) |
-| **테스트** | Vitest (단위), Playwright (E2E) |
+| Graphify (네이티브 바이너리) | 코드 AST 파싱 + facts extraction + link suggestion + graph viewer |
+| LLM ingest | 자연어 합성, 엔티티/개념 페이지 본문 작성 |
+
+- Graphify 결과는 `wiki/auto/derived/code/**`에 **격리**됩니다.
+- Graphify가 entity/concept 페이지의 본문을 **직접 덮어쓰지 않습니다.**
+- LLM ingest가 필요 시 Graphify 결과를 Read하고 합성해서 본문을 만듭니다.
+- 신뢰도 태깅: `EXTRACTED` (AST 확실) / `INFERRED` (LLM 추론 confidence 0.0~1.0) / `AMBIGUOUS` (review_queue).
 
 ---
 
-## 4. 주요 모듈
+## 5. Auto vs Manual 편집 경계
 
-### 웹 앱 (`apps/web`)
+**LLM과 사람이 같은 파일을 섞어 편집하면 안 됩니다.** 다음 ingest 때 인간 수정이 묻히거나 LLM이 오염된 문장을 재활용합니다.
 
-주요 화면/영역은 아래와 같습니다.
+```
+wiki/{workspaceId}/
+  auto/              ← LLM 독점 편집, 사람은 Read만
+    sources/         ← 원본 소스별 요약 페이지
+    entities/        ← 인물·조직·시스템 엔티티
+    concepts/        ← 개념·정책·용어
+    syntheses/       ← Query 답변 중 "Save as Page" 된 것
+    derived/code/    ← Graphify가 생성한 코드 페이지 (격리)
 
-- Dashboard (Knowledge Debt Radar, Drift Detection)
-- Ask AI (6-Lane Router + Simple/Expert Mode)
-- Search
-- Knowledge Base (4-Surface Editor)
-- Projects
-- Systems
-- Attendance
-- Admin
-- Profile
-- Login / SSO
+  manual/            ← 사람 편집, LLM은 Read만
+    overrides/       ← 법무/보안 예외, auto 오버라이드
+    notes/           ← 관리자 해설·메모
 
-### 백그라운드 워커 (`apps/worker`)
+  _system/           ← auto — 린트/감사 리포트
+    lint-report-*.md
+    contradictions.md
+    orphans.md
+```
 
-워커는 아래 작업을 담당합니다.
+**auto 페이지가 manual 오버라이드를 참조하는 법:**
 
-- 업로드 파일 인제스트 및 텍스트 추출
-- 문서 chunk 분할 및 임베딩 생성
-- Graphify 코드 분석 파이프라인 (AST + LLM extraction)
-- 문서 summary 컴파일
-- 오래된 문서(stale page) 점검
-- 인기 검색 집계
-- 오래된 로그/버전 정리
+```markdown
+<!-- wiki/auto/concepts/휴가-정책.md (LLM 편집) -->
+# 휴가 정책
+본문 ...
 
-### 공통 패키지 (`packages/*`)
+## Manual Overrides
+- [[manual/overrides/휴가-정책-법무-주석]] — 법무팀 예외 조항
+- [[manual/notes/휴가-정책-2026-변경]] — 관리자 메모
+```
 
-- `@jarvis/ai` : 6-레인 라우터, 질의 임베딩, RAG 검색, 답변 생성, SSE 이벤트 타입, HR 튜터
-- `@jarvis/auth` : OIDC, 세션, RBAC, 권한 기반 필터링
-- `@jarvis/db` : Drizzle 스키마 (39개 테이블), 마이그레이션
-- `@jarvis/search` : 검색 어댑터, 하이브리드 랭킹, 하이라이팅
-- `@jarvis/secret` : secret reference 추상화
-- `@jarvis/shared` : 권한 상수, 공통 타입, validation
-
----
-
-## 5. 데이터 모델 개요
-
-### 5.1 Knowledge (정본 위키)
-
-- `knowledge_page` — 문서 (surface/authority/domain/owner_team/audience/review_cycle_days 포함)
-- `knowledge_page_version` — 버전 관리 (MDX 콘텐츠)
-- `knowledge_claim` — 검색/AI용 청크 단위 분해 (OpenAI 1536d embedding)
-- `knowledge_page_owner` — 소유자 매핑
-- `knowledge_page_tag` — 태그
-
-### 5.2 Case (사례 레이어)
-
-- `precedent_case` — TSVD999 문의·사례 (74,342행, TF-IDF 1536d embedding)
-- `case_cluster` — TF-IDF 기반 문의 군집 (562개 클러스터)
-- `case_cluster_member` — 클러스터 멤버십
-
-### 5.3 Directory (디렉터리)
-
-- `directory_entry` — 시스템 링크, 양식, 담당자, 도구 (31개 항목)
-
-### 5.4 Graph (Graphify 결과)
-
-- `graph_snapshot` — 빌드 작업 메타데이터
-- `graph_node` — AST 노드 (파일, 함수, 클래스 등)
-- `graph_edge` — 호출/임포트/상속 관계
-- `graph_community` — Leiden 감지 커뮤니티
-
-### 5.5 Project
-
-- `project`, `project_task`, `project_inquiry`, `project_staff`
-
-### 5.6 System / Attendance / Search / Audit
-
-- `system`, `system_access`
-- `attendance`, `out_manage`, `out_manage_detail`
-- `search_log`, `search_synonym`, `popular_search`
-- `audit_log`, `raw_source`, `attachment`, `review_request`
-
-**총 39개 테이블**
+**Lint 규칙:** `manual/` 파일이 바뀌면 관련 `auto/` 페이지를 `stale=true`로 마크 → 다음 ingest에서 LLM이 재고려.
 
 ---
 
-## 6. 환경변수 가이드
+## 6. 기술 스택
+
+| 영역 | 기술 | 비고 |
+|------|------|------|
+| **모노레포** | pnpm workspace, Turborepo | |
+| **웹** | Next.js 15.5 (App Router), React 19, TypeScript | port 3010 |
+| **백그라운드 워커** | pg-boss 기반 Node 워커 | workspace당 single-writer 큐 |
+| **DB (projection만)** | PostgreSQL 16 + pg_trgm + unaccent | 본문은 디스크, DB는 색인 |
+| **Wiki 파일시스템** | on-disk `wiki/{workspaceId}/` + Git (workspace당 독립 repo) | SSoT |
+| **ORM** | Drizzle ORM | `pnpm db:generate` 필수 |
+| **스토리지** | MinIO (raw source 불변 저장) | |
+| **캐시/세션** | Redis | |
+| **LLM** | OpenAI (`ASK_AI_MODEL`, 기본 `gpt-5.4-mini`) | Analysis/Generation 2-step |
+| **구조 보조** | Graphify 네이티브 바이너리 (tree-sitter AST + NetworkX + Leiden) | 결정론적, API 키 불필요 |
+| **인증** | OIDC (Authorization Code + PKCE) + `openid-client` | Redis 세션 |
+| **테스트** | Vitest (단위), Playwright (E2E) | |
+
+**pgvector는 유지되나 비활성화.** 읽기·쓰기 경로는 전부 feature flag로 차단되며, 2~3 릴리스 안정 후 DROP 마이그레이션 예정입니다 ([§9](#9-환경변수-가이드) `FEATURE_RAW_CHUNK_QUERY=false`).
+
+---
+
+## 7. 디렉터리 구조
+
+```text
+.
+├─ apps/
+│  ├─ web/                         # Next.js 웹 애플리케이션 (포트 3010)
+│  │  ├─ app/                      # App Router pages / API routes / server actions
+│  │  ├─ components/               # 도메인 UI 컴포넌트
+│  │  ├─ e2e/                      # Playwright E2E
+│  │  └─ lib/                      # queries, hooks, server auth helpers
+│  └─ worker/                      # pg-boss 워커 (ingest / lint / graphify / cleanup)
+│     └─ src/
+│        ├─ jobs/                  # wiki-ingest, wiki-lint, graphify-build, ...
+│        └─ lib/                   # MinIO, PDF parser, text chunker
+├─ packages/
+│  ├─ ai/                          # LLM 프롬프트·답변 생성·citation stream
+│  ├─ auth/                        # OIDC, session, RBAC
+│  ├─ db/                          # Drizzle schema (projection 테이블), migrations
+│  ├─ search/                      # page-first lexical + pg_trgm + 1-hop link expansion
+│  ├─ secret/                      # secret reference abstraction
+│  ├─ shared/                      # constants / types / validation
+│  ├─ wiki-fs/                     # (Phase-W1) 디스크 write + git commit + frontmatter parser
+│  └─ wiki-agent/                  # (Phase-W1) Analysis/Generation 프롬프트 + ingest 오케스트레이터
+├─ wiki/
+│  └─ {workspaceId}/               # workspace당 독립 git repo
+│     ├─ .git/
+│     ├─ index.md                  # auto — 전체 페이지 카탈로그
+│     ├─ log.md                    # auto — ingest/query/lint 시간순 기록
+│     ├─ auto/                     # LLM 독점 편집
+│     ├─ manual/                   # 사람 편집
+│     └─ _system/                  # auto — 린트/감사 리포트
+├─ docs/
+│  ├─ _archive/2026-04-pivot/      # 구 README 등 피벗 이전 문서 보존
+│  ├─ superpowers/                 # 설계 메모 / 스펙 문서
+│  ├─ guidebook/                   # ISU 가이드북 원본 + 정규화
+│  ├─ canonical/                   # 기존 정본 시드 (위키 초기 import 용도)
+│  ├─ analysis/                    # 피벗 분석 / 결정 기록
+│  └─ plan/                        # 통합 계획 문서
+├─ docker/                         # Dockerfile.{web,worker} + compose + secrets/
+├─ data/                           # 초기 시드 데이터 (가이드북, 사례 등)
+├─ scripts/
+│  └─ check-schema-drift.mjs       # Claude Code hook / CI / pre-commit 공용
+├─ .claude/
+│  ├─ agents/                      # jarvis-planner/builder/integrator
+│  ├─ commands/                    # wiki-ingest, wiki-query, wiki-lint, wiki-graph (Phase-W1)
+│  └─ skills/                      # jarvis-feature 외 스킬
+├─ WIKI-AGENTS.md                  # 지식 하네스 (이 파일의 상위)
+├─ CLAUDE.md / AGENTS.md           # 코드 하네스 (Claude Code / Codex)
+├─ package.json, pnpm-workspace.yaml, turbo.json, tsconfig.json
+└─ .env.example
+```
+
+---
+
+## 8. 데이터 모델 개요 (Projection 스키마)
+
+**중요:** 이 테이블들은 **색인·감사·권한·메타만** 담습니다. 페이지 본문은 전부 디스크입니다.
+
+| 테이블 | 역할 |
+|--------|------|
+| `wiki_page_index` | 파일시스템 미러 — path, title, frontmatter, workspaceId, sensitivity, updatedAt, gitSha |
+| `wiki_page_link` | 아웃바운드·인바운드 `[[wikilink]]` 그래프 |
+| `wiki_page_source_ref` | 페이지 ↔ `raw_source` 연결 |
+| `wiki_commit_log` | 모든 Git 커밋 메타 (author, operation, affectedPages, reasoning) |
+| `wiki_review_queue` | contradictions / sensitivity 상승 / PII 감지 → 관리자 승인 대기 |
+| `wiki_lint_report` | 주간 lint 결과 스냅샷 |
+| `raw_source`, `attachment` | 업로드 원문 메타 + MinIO 경로 |
+| `audit_log` | 감사 |
+| `directory_entry` | 사내 시스템 링크·양식·담당자 (업무 시스템 쪽, 유지) |
+| `project`, `project_task`, `attendance`, ... | 프로젝트·근태·시스템 (기존 업무 시스템 유지) |
+
+**삭제 대상 (비활성화 후 DROP 예정):** `knowledge_page.mdxContent`, `knowledge_claim.embedding`, `document_chunks`, `wiki_sources.body`, `wiki_concepts.body`.
+
+---
+
+## 9. 환경변수 가이드
+
+### 9.1 공통 (기존 유지)
 
 | 변수명 | 필수 | 설명 |
 |---|---:|---|
 | `DATABASE_URL` | 예 | PostgreSQL 연결 문자열 |
 | `REDIS_URL` | 예 | Redis 연결 문자열 |
-| `MINIO_ENDPOINT` | 예 | MinIO 호스트 |
-| `MINIO_PORT` | 예 | MinIO 포트 |
-| `MINIO_USE_SSL` | 아니오 | `true` 이면 SSL 사용 |
-| `MINIO_ACCESS_KEY` | 예 | MinIO 접근 키 |
-| `MINIO_SECRET_KEY` | 예 | MinIO 시크릿 키 |
-| `MINIO_BUCKET` | 아니오 | 버킷 이름 (기본값: `jarvis-files`) |
-| `OIDC_ISSUER` | 예 | OIDC issuer URL |
-| `OIDC_CLIENT_ID` | 예 | OIDC client id |
-| `OIDC_CLIENT_SECRET` | 예 | OIDC client secret |
-| `NEXTAUTH_URL` | 예 | OIDC callback URL 구성에 사용되는 앱 외부 URL |
-| `SESSION_SECRET` | 예 | 세션 서명용 비밀키 (32자 이상) |
-| `OPENAI_API_KEY` | 예 | Ask AI 답변 + 임베딩 생성용 (OpenAI) |
-| `ASK_AI_MODEL` | 아니오 | Ask AI 모델 (기본값: `gpt-5.4-mini`) |
-| `GRAPHIFY_BIN` | 아니오 | Graphify 바이너리 경로 (기본값: `graphify`). 결정론적 — API 키 불필요 |
-| `NODE_ENV` | 아니오 | `development`, `production` 등 |
+| `MINIO_ENDPOINT` / `MINIO_PORT` / `MINIO_USE_SSL` | 예 | MinIO 접근 정보 |
+| `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` / `MINIO_BUCKET` | 예 | MinIO 자격증명, 버킷 (기본 `jarvis-files`) |
+| `OIDC_ISSUER` / `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | 예 | OIDC discovery / 클라이언트 |
+| `NEXTAUTH_URL` | 예 | OIDC callback URL 구성용 |
+| `SESSION_SECRET` | 예 | 세션 서명 (32자 이상) |
+| `OPENAI_API_KEY` | 예 | Analysis/Generation LLM 호출 |
+| `ASK_AI_MODEL` | 아니오 | 기본 `gpt-5.4-mini` |
+| `GRAPHIFY_BIN` | 아니오 | Graphify 바이너리 경로 (기본 `graphify`). 결정론적 — API 키 불필요 |
+| `NODE_ENV` | 아니오 | `development`, `production` |
 
-예시 (개발 환경 기준):
+### 9.2 Wiki 파일시스템 / 피벗 관련 (신규)
+
+| 변수명 | 기본 | 설명 |
+|---|---|---|
+| `WIKI_ROOT` | `./wiki` | 디스크 위키 저장 루트 (workspace별 하위 디렉터리) |
+| `FEATURE_WIKI_FS_MODE` | `false` → `true` | 디스크/Git 모드 활성화 (피벗 main switch) |
+| `FEATURE_PAGE_FIRST_QUERY` | `false` → `true` | `ask.ts`를 page-first navigation으로 |
+| `FEATURE_RAW_CHUNK_QUERY` | `true` → `false` | 레거시 RAG 경로 비활성화 |
+| `FEATURE_TWO_STEP_INGEST` | `false` → `true` | Two-Step CoT ingest (Analysis → Generation) |
+| `FEATURE_WIKI_LINT_CRON` | `false` → `true` | 주간 lint 크론 |
+| `FEATURE_GRAPHIFY_DERIVED_PAGES` | `true` | Graphify `wiki/auto/derived/code/**` 생성 |
+| `LLM_DAILY_BUDGET_USD` | `100` | workspace당 일일 LLM 예산 상한 |
+| `LLM_CACHE_TTL_SECONDS` | `2592000` | 프롬프트 캐시 TTL (30일) |
+
+### 9.3 개발 환경 예시 `.env`
 
 ```env
 DATABASE_URL=postgresql://jarvis:jarvispass@localhost:5436/jarvis
@@ -220,95 +322,54 @@ OIDC_ISSUER=https://auth.example.com/realms/your-org
 OIDC_CLIENT_ID=jarvis-web
 OIDC_CLIENT_SECRET=change-me
 NEXTAUTH_URL=http://localhost:3010
-
 SESSION_SECRET=dev-session-secret-32-chars-min!!
 
 OPENAI_API_KEY=sk-...
 ASK_AI_MODEL=gpt-5.4-mini
 GRAPHIFY_BIN=graphify
+
+WIKI_ROOT=./wiki
+FEATURE_WIKI_FS_MODE=true
+FEATURE_PAGE_FIRST_QUERY=true
+FEATURE_RAW_CHUNK_QUERY=false
+FEATURE_TWO_STEP_INGEST=true
+FEATURE_WIKI_LINT_CRON=true
+FEATURE_GRAPHIFY_DERIVED_PAGES=true
+LLM_DAILY_BUDGET_USD=100
+LLM_CACHE_TTL_SECONDS=2592000
 ```
 
 ---
 
-## 7. 디렉터리 구조
+## 10. 빠른 시작
 
-```text
-.
-├─ apps/
-│  ├─ web/                 # Next.js 웹 애플리케이션 (포트 3010)
-│  │  ├─ app/              # App Router pages / API routes / server actions
-│  │  ├─ components/       # 도메인 UI 컴포넌트
-│  │  ├─ e2e/              # Playwright E2E 테스트
-│  │  └─ lib/              # queries, hooks, server auth helpers
-│  └─ worker/              # 문서 인제스트, 임베딩, Graphify 파이프라인
-│     └─ src/
-│        ├─ jobs/          # ingest, embed, graphify-build, cleanup 등
-│        └─ lib/           # MinIO, PDF parser, text chunker
-├─ packages/
-│  ├─ ai/                  # 6-Lane Router, Ask AI, 튜터, 임베딩, citation stream
-│  ├─ auth/                # OIDC, session, RBAC
-│  ├─ db/                  # Drizzle schema (39 tables), migrations
-│  ├─ search/              # PostgreSQL 기반 검색 엔진
-│  ├─ secret/              # secret reference abstraction
-│  └─ shared/              # constants / types / validation
-├─ docs/
-│  ├─ superpowers/         # 설계 메모 / 스펙 문서
-│  ├─ guidebook/           # ISU 가이드북 원본 + 정규화 (95개 정본)
-│  ├─ canonical/           # 정본 위키 마크다운 (95개 항목)
-│  └─ plan/                # 통합 계획 문서
-├─ docker/
-│  ├─ init-db/             # PostgreSQL extension bootstrap SQL
-│  ├─ secrets/             # .gitignore'd secret files (prod only)
-│  ├─ Dockerfile.web       # Next.js 멀티스테이지 빌드
-│  ├─ Dockerfile.worker    # Worker 멀티스테이지 빌드
-│  ├─ nginx.conf           # Nginx 프록시 설정
-│  ├─ entrypoint.sh        # Docker secret → env var 주입
-│  ├─ docker-compose.yml   # 프로덕션 (postgres/redis/minio/web/worker/nginx)
-│  └─ docker-compose.dev.yml  # 개발 오버라이드
-├─ data/
-│  ├─ canonical/           # 정본 가이드북 & 마크다운 (95개)
-│  └─ casedata/            # TSVD999 사례 데이터 (74,342 rows)
-├─ package.json
-├─ pnpm-workspace.yaml
-├─ turbo.json
-└─ .env.example
-```
-
----
-
-## 8. 개발 환경 요구사항
-
-권장 버전은 아래와 같습니다.
+### 10.1 요구사항
 
 - Node.js **22+**
 - pnpm **9+**
 - Docker / Docker Compose
-- PostgreSQL, Redis, MinIO를 직접 띄우지 않는다면 Docker Compose 사용 권장
-- OpenAI API Key (생성·임베딩 통합)
+- OpenAI API Key
+- (선택) Graphify 네이티브 바이너리 — 코드 저장소 분석 시
 
----
-
-## 9. 빠른 시작
-
-### 9.1 저장소 준비
+### 10.2 저장소 준비
 
 ```bash
 git clone https://github.com/qoxmfaktmxj/jarvis.git
 cd jarvis
 cp .env.example .env
+# .env를 §9 가이드에 따라 보강
 ```
 
-`.env.example`는 최소 예시 수준이므로, 실제 실행 전 위 **환경변수 가이드**를 기준으로 보강하는 것을 권장합니다.
-
-### 9.2 인프라 실행
-
-개발 환경 (Next.js는 `pnpm dev`로 별도 실행):
+### 10.3 인프라 기동
 
 ```bash
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio
+docker compose \
+  -f docker/docker-compose.yml \
+  -f docker/docker-compose.dev.yml \
+  up -d postgres redis minio
 ```
 
-개발 환경에서 실행되는 서비스 (호스트 포트):
+개발 환경 포트:
 
 | 서비스 | 호스트 포트 |
 |--------|------------|
@@ -317,45 +378,27 @@ docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up 
 | MinIO API | `9100` |
 | MinIO Console | `9101` |
 
-> 프로덕션 배포는 [15. 운영/배포 시 고려사항](#15-운영배포-시-고려사항) 참고.
-
-### 9.3 의존성 설치
+### 10.4 의존성 + 마이그레이션
 
 ```bash
 pnpm install
-```
-
-### 9.4 데이터베이스 마이그레이션
-
-```bash
 pnpm db:generate
 pnpm db:migrate
 ```
 
-초기 확장(extension)은 Docker의 `init-db/01-extensions.sql`에서 준비됩니다.
+초기 PostgreSQL 확장은 `docker/init-db/01-extensions.sql`에서 준비됩니다 (`pg_trgm`, `unaccent`, 레거시 호환용 `pgvector`).
 
-### 9.5 애플리케이션 실행
-
-루트에서 web과 worker를 동시에 실행합니다:
+### 10.5 실행
 
 ```bash
-pnpm dev
+pnpm dev                              # web + worker 동시 실행
+pnpm --filter @jarvis/web dev         # 웹만 (포트 3010)
+pnpm --filter @jarvis/worker dev      # 워커만 (pg-boss)
 ```
 
-포트: web → `3010`, worker는 별도 포트 없음 (pg-boss 기반 백그라운드 워커).
-
-개별 실행이 필요한 경우:
-- 웹만: `pnpm --filter @jarvis/web dev`
-- 워커만: `pnpm --filter @jarvis/worker dev`
-
----
-
-## 10. 주요 스크립트
-
-루트 스크립트:
+### 10.6 주요 스크립트
 
 ```bash
-pnpm dev
 pnpm build
 pnpm test
 pnpm lint
@@ -364,301 +407,181 @@ pnpm db:generate
 pnpm db:migrate
 pnpm db:push
 pnpm db:studio
+node scripts/check-schema-drift.mjs   # Drizzle schema ↔ _journal drift 확인
 ```
 
-웹 앱 전용:
+CI/pre-commit에서는 blocking 모드 사용:
 
 ```bash
-pnpm --filter @jarvis/web dev
-pnpm --filter @jarvis/web build
-pnpm --filter @jarvis/web test
-```
-
-워커 전용:
-
-```bash
-pnpm --filter @jarvis/worker dev
-pnpm --filter @jarvis/worker build
-pnpm --filter @jarvis/worker start
+node scripts/check-schema-drift.mjs --ci          # CI (exit 1 on drift)
+node scripts/check-schema-drift.mjs --precommit   # local pre-commit
 ```
 
 ---
 
-## 11. 검색 설계
+## 11. 인증 / 인가 / 감사
 
-현재 검색 계층은 PostgreSQL 위에서 동작합니다.
+### 11.1 인증
 
-### 검색 요소
-
-- Full-text search (`search_vector`)
-- trigram similarity (`pg_trgm`)
-- freshness score
-- synonym expansion
-- facet counting
-- admin explain view
-- fallback chain (FTS → trigram 등)
-- 회사 컨텍스트 부스트 (사례 검색에서 동일 회사 선례 우선)
-
-### 검색 결과에서 기대하는 것
-
-- 오타에 비교적 강함
-- 최신 문서 우선 보정 가능
-- 민감도/페이지 타입 필터 가능
-- 사례 검색에서 회사별 필터링 가능
-- 추후 외부 검색엔진으로 확장 가능하도록 `SearchAdapter` 추상화 유지
-
----
-
-## 12. Ask AI 설계
-
-Ask AI는 "LLM 단독 답변"이 아니라, **6-레인 라우터 기반 최적 검색 + RAG** 흐름입니다.
-
-### 처리 순서
-
-1. 사용자 질문을 한국어 키워드로 분석
-2. 6-레인 라우터로 최적 검색 경로 결정
-3. 해당 레인의 소스에서 관련 정보 검색
-   - text-first: knowledge_claim 벡터 유사도
-   - graph-first: graph_node/edge 조회
-   - case-first: precedent_case 벡터 + 회사 부스트
-   - directory-first: directory_entry ILIKE 검색
-   - action-first: directory + knowledge 조합
-   - tutor-first: 모든 소스 + 단계별 설명
-4. sensitivity/권한 조건에 따라 필터링
-5. OpenAI (기본: gpt-5.4-mini) 모델로 답변 생성
-6. `[source:N]` 기반 출처 추출
-7. SSE로 텍스트/소스/완료 이벤트 스트리밍
-8. AnswerCard에서 구조화된 응답 표시
-
-### 응답 구조 (AnswerCard)
-
-- 주요 답변 (텍스트)
-- 근거 문서 (knowledge_page links)
-- 디렉터리 바로가기 (관련 시스템/양식)
-- 사례 참고 (유사 선례)
-- 그래프 컨텍스트 (관련 구조)
-- 다음 액션 (권장 단계)
-- 소유 팀 (문의 대상)
-
-### Simple/Expert 모드
-
-- **Simple**: 2~3 문장 답변, 핵심만 강조
-- **Expert**: 상세 답변, 사례·그래프·근거 모두 표시
-
----
-
-## 13. Graphify 코드 분석 파이프라인
-
-Graphify는 **코드 파일을 업로드하면 자동으로 AST 분석 + LLM semantic extraction을 수행**합니다.
-
-### 처리 단계
-
-1. 파일 분류 및 민감 파일 제외 (detect.py)
-2. 19언어 AST + Claude semantic extraction (extract.py)
-3. NetworkX 그래프 조립 (build.py)
-4. Leiden 커뮤니티 감지 (cluster.py)
-5. 분석 인사이트 (analyze.py) — god nodes, surprising connections
-6. GRAPH_REPORT.md 자동 생성 (report.py)
-7. 커뮤니티별 wiki 문서 생성 (wiki.py)
-8. graph.html (vis.js interactive) + graph.json export (export.py)
-9. DB에 graph_node/graph_edge/graph_community 레코드 저장
-
-### 핵심 특징
-
-- **결정론적 추출**: tree-sitter AST + NetworkX 그래프 구축 + Leiden/Louvain 커뮤니티 (LLM 호출 없음). 의미 기반 보강이 필요하면 @jarvis/ai 경유로 별도 단계 수행
-- **자동 wiki 생성**: 코드 구조에 기반한 설명서 자동 생성
-- **쿼리 엔진**: MCP server로 graph-native 검색 지원
-- **증분 빌드**: SHA256 캐시로 변경된 파일만 재분석
-- **보안**: URL validation, SSRF 차단, path traversal 방지
-
-> **주의**: Graphify는 **Python 유틸리티/skill**입니다. CLI 명령 `graphify install` 또는 `graphify cli`는 없습니다. worker는 subprocess로 Graphify를 호출합니다.
-
----
-
-## 14. 파일 업로드와 인제스트 파이프라인
-
-### 기본 흐름
-
-1. 파일이 MinIO에 저장됨
-2. 웹 API가 `raw_source`/`attachment` 메타데이터를 저장함
-3. `pg-boss` 큐에 작업 등록
-4. 워커가 처리
-
-### 3가지 병렬 파이프라인
-
-| 파이프라인 | 트리거 | 처리 | 결과 |
-|----------|--------|------|------|
-| **텍스트 인제스트** | ingest job | PDF/DOCX/text/JSON 텍스트 추출 | parsed_content 저장 |
-| **임베딩 + RAG** | embed job | chunk split → OpenAI embedding (1536d) | knowledge_claim + vector |
-| **Graphify 분석** | graphify-build job | ZIP/파일 → AST extraction → 그래프 조립 | graph_node/edge/community + wiki |
-
-### 지원 포맷
-
-- PDF
-- DOCX
-- Text/
-- JSON
-- ZIP (Graphify용 코드 저장소)
-- 기타 바이너리 파일은 placeholder 처리
-
----
-
-## 15. 인증 / 인가
-
-### 인증
-
-- OIDC discovery 사용
-- Authorization Code + PKCE
+- OIDC discovery (Authorization Code + PKCE)
 - `state`, `nonce` 검증
-- Redis 기반 세션 저장
-- `sessionId` 쿠키 사용
+- Redis 세션 저장 + `sessionId` 쿠키
 
-### 인가
+### 11.2 인가 (RBAC + sensitivity)
 
-- 역할(Role)과 권한(Permission) 개념을 둘 다 사용
-- 화면/API 진입 시 권한 검사
-- 문서 민감도 4단계 (PUBLIC, INTERNAL, RESTRICTED, SECRET_REF_ONLY)를 고려한 접근 제어
-- 그래프/사례는 권한 기반 필터링
+파일시스템에는 RBAC가 없으므로, **frontmatter + 서버 미들웨어 게이트**로 풀어냅니다.
 
+```yaml
+# wiki/{workspaceId}/auto/concepts/보안-정책.md 의 frontmatter 예시
 ---
-
-## 16. 백그라운드 작업
-
-워커가 등록하는 잡은 아래와 같습니다.
-
-| 잡 이름 | 설명 |
-|---|---|
-| `ingest` | 업로드 파일 텍스트 추출 |
-| `embed` | knowledge claim 임베딩 생성 + 벡터 저장 |
-| `compile` | summary 생성 및 검색 벡터 준비 |
-| `graphify-build` | Graphify 코드 분석 파이프라인 |
-| `check-freshness` | 오래된 문서 점검 (Knowledge Debt Radar) |
-| `check-drift` | 문서-시스템 참조 일관성 검증 (Drift Detection) |
-| `aggregate-popular` | 인기 검색 집계 |
-| `cleanup` | 오래된 로그/버전 정리 |
-
-스케줄 작업 예시:
-
-- stale page check: 매일 09:00
-- drift check: 매일 08:00
-- popular search aggregation: 매주 일요일 00:00
-- cleanup: 매월 1일 00:00
-
+title: "보안 정책"
+type: concept
+workspaceId: "uuid"
+sensitivity: RESTRICTED          # PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY
+requiredPermission: "knowledge:read"
+sources: ["raw_source_id_1"]
+aliases: ["보안규정"]
+authority: auto                   # auto | manual
+linkedPages: ["인증-정책", "..."]
 ---
+```
 
-## 17. 테스트와 품질 관리
+- 워크스페이스 격리: `wiki/{workspaceId}/` 별 독립 Git repo.
+- 서버 API만 파일을 읽으며, 사용자는 웹 UI를 통해서만 접근.
+- 모든 변경은 `wiki_commit_log`에 projection + 정기 S3 미러 백업.
 
-레포에는 아래 성격의 테스트 파일이 포함되어 있습니다.
+### 11.3 Single-Writer + Git 규약
 
-- AI 관련 테스트 (라우터, 임베딩, 답변 생성)
-- 검색/대시보드 일부 테스트
-- 서버 액션 테스트
-- 워커 유틸 테스트
+Git merge conflict는 **LLM lint가 해결하지 않습니다.** conflict 자체를 피합니다.
 
-실무 운영 전에는 아래 항목을 추가하는 것을 권장합니다.
+- workspace당 pg-boss singleton queue (concurrency=1)
+- ingest 워커는 temp worktree에서 patch 생성 → validate → main에 fast-forward만 허용
+- 실패 시 commit 없이 `ingest_dlq`로
+- hourly squash 금지 (audit history rewrite 위험)
+- git gc/pack은 주 1회 별도 크론 (mirror branch에서)
 
-- API 통합 테스트
-- 권한 시나리오 테스트
-- 검색 relevance 회귀 테스트
-- Graphify 파이프라인 테스트
-- GitHub Actions 기반 CI
+커밋 메시지 규약:
 
-Playwright E2E 테스트는 `apps/web/e2e/`에 있으며, Redis session inject 방식으로 OIDC 로그인을 우회합니다:
-
-```bash
-pnpm --filter @jarvis/web exec playwright test
+```
+[ingest]    {sourceTitle} — N pages updated
+[lint]      {date} — M issues flagged
+[synthesis] {query snippet} → {page path}
+[manual]    {author} — {reason}
 ```
 
 ---
 
-## 18. 운영/배포 시 고려사항
+## 12. 하네스 (Code + Knowledge)
 
-### Docker 배포
+Jarvis에는 두 개의 하네스가 있습니다.
 
-```bash
-# 1. 시크릿 파일 생성
-mkdir -p docker/secrets
-echo -n 'your-pg-password'   > docker/secrets/pg_password.txt
-echo -n 'jarvisadmin'        > docker/secrets/minio_user.txt
-echo -n 'jarvispassword'     > docker/secrets/minio_password.txt
-echo -n 'your-session-secret-32chars' > docker/secrets/session_secret.txt
-echo -n 'sk-...'             > docker/secrets/openai_api_key.txt
+| 하네스 | 규정 파일 | 역할 |
+|--------|-----------|------|
+| **코드 하네스** | [`CLAUDE.md`](CLAUDE.md), [`AGENTS.md`](AGENTS.md) | 기능 구현 (planner → builder → integrator 3단계) |
+| **지식 하네스** | [`WIKI-AGENTS.md`](WIKI-AGENTS.md) | LLM이 위키를 운영하는 규약 (4 오퍼레이션·auto/manual·single-writer·RBAC) |
 
-# 2. 환경변수 설정 (OIDC 등)
-export OIDC_ISSUER=https://auth.example.com/realms/jarvis
-export OIDC_CLIENT_ID=jarvis-web
-export OIDC_CLIENT_SECRET=your-client-secret
-export APP_URL=https://jarvis.example.com
-export ASK_AI_MODEL=gpt-5.4-mini
+**슬래시 커맨드 (Phase-W1에서 이식):**
 
-# 3. 이미지 빌드 + 기동
-bash scripts/start-prod.sh
-```
+- `/wiki-ingest {raw_source_id}` — Two-Step CoT ingest
+- `/wiki-query {question}` — page-first navigation 답변
+- `/wiki-lint` — 주간 lint 수동 실행
+- `/wiki-graph {workspaceId}` — Graphify snapshot + 그래프 페이지 빌드
 
-### 권장 사항
-
-- OIDC Provider는 별도 운영 환경(Okta, Azure AD, Entra 등)으로 분리
-- Redis는 세션/레이트리밋 용도로 안정적으로 운영
-- PostgreSQL에는 `pgvector`, `pg_trgm`, `unaccent` 확장 설치 필수
-- MinIO 또는 S3 호환 스토리지 사용
-- OpenAI API key는 `docker/secrets/openai_api_key.txt` 파일로 관리 (`.gitignore` 적용)
-- worker를 web과 별도 프로세스로 운영 (compose에서 별도 서비스로 분리)
-- Graphify 바이너리는 worker 컨테이너에 설치 (또는 PATH에 포함)
-
-### 추가로 고려할 것
-
-- observability (request id, queue metrics, tracing)
-- secret manager 연동
-- 검색 relevance 모니터링
-- 테넌트/워크스페이스 분리 검증 자동화
-- Graphify 분석 결과 캐시 정책
+**자동화:** `.claude/settings.json` PostToolUse 훅이 Drizzle schema drift를 advisory로 감지. CI/pre-commit은 동일 스크립트(`scripts/check-schema-drift.mjs`)를 blocking 모드로 재사용.
 
 ---
 
-## 19. 현재 상태 요약
+## 13. 도입 로드맵
+
+피벗 직후의 4-단계 로드맵입니다. 상세는 [`WIKI-AGENTS.md §10`](WIKI-AGENTS.md) 참조.
+
+### Phase-W1 (이번 스프린트, ~5일)
+1. `WIKI-AGENTS.md` 초안 (완료)
+2. `packages/wiki-fs/` — 디스크 write + git commit + frontmatter parser + `[[wikilink]]` parser
+3. `packages/wiki-agent/prompts/` — `reference_only/llm_wiki/`에서 Analysis/Generation 프롬프트 포팅
+4. `.claude/commands/wiki-*.md` 4개 이식
+5. `wiki_page_index`, `wiki_commit_log` 등 projection 테이블 마이그레이션
+
+### Phase-W2 (~5일)
+6. `ask.ts`를 `FEATURE_PAGE_FIRST_QUERY` 뒤로 분기 — page-first 구현
+7. `ingest.ts`를 Two-Step CoT로 재작성 (multi-page update 포함)
+8. workspace당 single-writer 큐 (pg-boss singleton)
+9. `wiki-lint` 크론 잡
+10. "Save as Page" 경로
+
+### Phase-W3 (~3일)
+11. manual/auto 경계 구현 + lint 규칙
+12. Graphify `wiki/auto/derived/code/**` 격리
+13. 기존 RAG 경로 `FEATURE_RAW_CHUNK_QUERY=false`로 비활성화
+14. 운영 모니터링 + eval fixture를 page QA 기준으로 재구성
+
+### Phase-W4 (안정화 후)
+15. 페이지 500 돌파 시점에 qmd-MCP 도입 검토
+16. 벡터 스키마 DROP 마이그레이션 (2~3 릴리스 안정 후)
+
+---
+
+## 14. MindVault 회귀 방지 체크리스트
+
+MindVault가 실패한 조건이 Jarvis 초기 설계에 그대로 있었습니다. 각 체크포인트에서 통과 확인. (출처: [`WIKI-AGENTS.md §11`](WIKI-AGENTS.md))
+
+- [ ] **LLM 합성 단계 존재** — ingest에 LLM 호출이 있고, tree-sitter/structure 추출만으로 끝나지 않는다
+- [ ] **한 번의 ingest가 다수 페이지 업데이트** — 신규 1장만 만들고 끝나는 게 아니라 관련 페이지 10~15개를 동시 수정
+- [ ] **한국어 동의어 매칭** — `aliases` frontmatter + `pg_trgm` + (필요시) qmd-MCP. "마인드볼트" ≠ "MindVault" 함정 회피
+- [ ] **교차 참조 자동 유지** — `[[wikilink]]` 자동 생성·검증·lint
+- [ ] **모순 플래그** — lint 잡이 contradictions 탐지 후 `wiki_review_queue`로
+- [ ] **페이지가 1급 시민** — 청크가 아니라 페이지가 답변 소스
+- [ ] **auto/manual 분리** — 사람 편집이 묻히지 않는다
+- [ ] **컨텍스트 품질 측정** — 답변에 관련없는 페이지가 top-5에 오면 알람
+
+이 8항 중 **하나라도 통과 못 하면 MindVault 재현 위험**으로 보고 피벗을 되돌리는 것이 맞습니다.
+
+---
+
+## 15. 현재 상태 요약
 
 | 항목 | 상태 |
 |------|------|
-| 웹 UI (대시보드, Ask AI, 검색) | ✓ 완료 |
-| 4-표면 지식 모델 | ✓ 완료 |
-| 6-레인 Ask AI 라우터 | ✓ 완료 |
-| Simple/Expert 모드 | ✓ 완료 |
-| TSVD999 사례 레이어 (74,342 행) | ✓ 완료 |
-| TF-IDF 군집화 (562 클러스터) | ✓ 완료 |
-| 디렉터리 (31개 항목) | ✓ 완료 |
-| Graphify 코드 분석 파이프라인 | ✓ 완료 |
-| Knowledge Debt Radar | ✓ 완료 |
-| Drift Detection | ✓ 완료 |
-| AnswerCard (구조화 응답) | ✓ 완료 |
-| 정본 가이드북 시드 (95개) | ✓ 완료 |
-| HR 튜터 (가이드/퀴즈/시뮬레이션) | ✓ 완료 |
-| 테스트 커버리지 확대 | ⏳ 진행 중 |
-| CI/CD 파이프라인 | ⏳ 진행 중 |
+| `WIKI-AGENTS.md` v1 초안 | 완료 (2026-04-15) |
+| 구 RAG README 아카이브 | 완료 (`docs/_archive/2026-04-pivot/`) |
+| `packages/wiki-fs/` | 착수 전 (Phase-W1) |
+| `packages/wiki-agent/` | 착수 전 (Phase-W1) |
+| projection 테이블 마이그레이션 | 착수 전 (Phase-W1) |
+| Page-first Query (`ask.ts`) | 착수 전 (Phase-W2) |
+| Two-Step CoT Ingest | 착수 전 (Phase-W2) |
+| Single-writer 큐 | 착수 전 (Phase-W2) |
+| wiki-lint 크론 | 착수 전 (Phase-W2) |
+| auto/manual 경계 | 착수 전 (Phase-W3) |
+| 레거시 RAG 비활성화 | 착수 전 (Phase-W3) |
+| 벡터 스키마 DROP | 착수 전 (Phase-W4) |
+| 기존 업무 시스템 (프로젝트·근태·디렉터리) | 유지 — 피벗 영향 범위 밖 |
+| OIDC SSO / RBAC / sensitivity | 유지 — frontmatter 통합 예정 |
+| Graphify 파이프라인 | 유지 — `wiki/auto/derived/code/**` 격리로 재구성 |
 
 ---
 
-## 20. 현재 레포를 기준으로 우선 정리하면 좋은 항목
+## 16. 참고 문서
 
-1. **테스트 커버리지 확대** — API 통합 테스트, 권한 시나리오 테스트
-2. **CI/CD 자동화** — GitHub Actions 기반 배포 파이프라인
-3. **모니터링/옵저버빌리티** — request ID, queue metrics, performance tracing
-4. **운영 대시보드** — API rate limit, Graphify 처리 상태, 임베딩 품질 모니터링
-5. **검색 relevance 회귀 테스트** — 정기 검색 품질 확인
+| 주제 | 경로 |
+|------|------|
+| 지식 하네스 (SSoT) | [`WIKI-AGENTS.md`](WIKI-AGENTS.md) |
+| 코드 하네스 (Claude Code) | [`CLAUDE.md`](CLAUDE.md) |
+| 코드 하네스 (Codex) | [`AGENTS.md`](AGENTS.md) |
+| 구 RAG 시대 README | [`docs/_archive/2026-04-pivot/README.rag-era.md`](docs/_archive/2026-04-pivot/README.rag-era.md) |
+| 피벗 분석 기록 | [`docs/analysis/`](docs/analysis/) |
+| Karpathy 원 gist | https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f |
+| `reference_only/llm_wiki/` *(로컬 전용)* | Tauri 구현체 (프롬프트·파일 포맷 포팅 대상) |
+| `reference_only/llm-wiki-agent/` *(로컬 전용)* | Claude Code 스킬 (`.claude/commands/` 포팅 대상) |
+| `reference_only/graphify/` *(로컬 전용)* | 네이티브 바이너리 (통합 완료) |
+| `reference_only/qmd/` *(로컬 전용)* | 500+ 페이지 규모 시 도입 후보 |
+| `reference_only/mindvault/` *(로컬 전용)* | **실패 경고 사례** (2026-04-14 폐기, 함정 분석용) |
+
+> **참고:** `reference_only/` 폴더는 로컬 개발 머신의 `C:\Users\kms\Desktop\dev\reference_only\`에 위치하며, 저장소에 포함되지 않습니다. 외부 참조 레포 5개(합계 수백 MB)를 분석·포팅 원본으로만 사용하고, 라이선스·유지보수 비용 때문에 서브모듈로 편입하지 않습니다.
 
 ---
 
-## 21. 마지막 메모
+## 17. 변경 이력
 
-이 레포는 이미 단순 CRUD 수준을 넘어,
-
-- 4-표면 지식 관리
-- 6-레인 의도 기반 라우팅
-- 하이브리드 벡터/FTS/사례 검색
-- RAG 기반 AI 답변 생성
-- 코드 AST + LLM 그래프 분석
-- 문서 인제스트 자동화
-- 권한 기반 내부 포털
-
-까지 엮으려는 방향성이 분명합니다.
-
-정리만 잘 되면 **"사내 위키 + 검색 + 운영 포털 + AI 비서 + 코드 분석"** 을 하나의 플랫폼으로 발전시키기 좋은 기반입니다.
+| 날짜 | 변경 | 사유 |
+|------|------|------|
+| 2026-04-15 | README 전면 재작성 — "RAG 6-레인 포털"에서 "LLM Wiki 컴파일 시스템"으로 정체성 재정의 | Karpathy LLM Wiki 방향 피벗 확정. `WIKI-AGENTS.md` v1과 정합성 정렬. 구 README는 `docs/_archive/2026-04-pivot/README.rag-era.md`에 보존. MindVault 실패 회귀 방지 체크리스트 명시. |
