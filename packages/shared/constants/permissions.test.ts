@@ -19,8 +19,8 @@ describe("permissions.ts graph additions", () => {
     expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.GRAPH_BUILD);
   });
 
-  it("does NOT grant graph permissions to HR by default", () => {
-    expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.GRAPH_READ);
+  it("grants graph:read to HR (Phase-W2 C3 B안) but NOT graph:build", () => {
+    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.GRAPH_READ);
     expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.GRAPH_BUILD);
   });
 });
