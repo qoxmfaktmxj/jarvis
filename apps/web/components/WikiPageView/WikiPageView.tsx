@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { WikiPage } from './mockWikiPages';
+import type { WikiPage } from './types';
 
 const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g;
 

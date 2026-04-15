@@ -1,8 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { WikiPageView } from '@/components/WikiPageView';
-import type { WikiPage } from '@/components/WikiPageView';
+import { WikiPageView, type WikiPage } from '@/components/WikiPageView';
 
 type WikiPageWithNavProps = {
   page: WikiPage;

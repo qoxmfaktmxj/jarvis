@@ -1,6 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { PERMISSIONS } from "@jarvis/shared/constants";
+import { readUtf8, exists } from "@jarvis/wiki-fs";
+import * as path from "node:path";
+import { requirePageSession } from "@/lib/server/page-auth";
+import { getWikiRepoRoot } from "@/lib/server/repo-root";
 import EditPageClientShell from "./_client-shell";
 
 interface EditPageProps {
@@ -10,31 +15,42 @@ interface EditPageProps {
   }>;
 }
 
-// Phase-W1 stub content. Real loading lands in Phase-W2 with a server query
-// against the manual/ tree.
-const MOCK_MARKDOWN = `---
-title: Sample Manual Page
-sensitivity: internal
-tags: [onboarding, sample]
+export const dynamic = "force-dynamic";
+
+const EMPTY_TEMPLATE = `---
+title: ""
+sensitivity: INTERNAL
+tags: []
 ---
 
-# Sample Manual Page
-
-This is a **mock** manual page used for the Phase-W1 editor preview.
-
-- Try \`[[onboarding/welcome]]\` to test wiki links.
-- Toolbar covers headings, lists, bold/italic, code blocks.
-
-\`\`\`ts
-// Code blocks use lowlight for syntax highlighting.
-export const hello = (name: string) => \`Hello, \${name}\`;
-\`\`\`
 `;
 
 export default async function ManualWikiEditPage({ params }: EditPageProps) {
-  const { workspaceId, path } = await params;
+  const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_UPDATE, "/dashboard");
+  const { workspaceId, path: pathSeg } = await params;
   const t = await getTranslations("WikiEditor");
-  const slug = (path ?? []).join("/");
+  const slug = (pathSeg ?? []).join("/");
+
+  // workspace 일치 검증 — 다른 워크스페이스 편집 차단
+  if (session.workspaceId !== workspaceId) {
+    return (
+      <div className="max-w-5xl mx-auto py-16 px-4 text-center text-sm text-red-600">
+        forbidden
+      </div>
+    );
+  }
+
+  const repoRoot = getWikiRepoRoot();
+  const fileAbs = path.join(repoRoot, "wiki", workspaceId, "manual", `${slug}.md`);
+
+  let initialContent = EMPTY_TEMPLATE;
+  if (await exists(fileAbs)) {
+    try {
+      initialContent = await readUtf8(fileAbs);
+    } catch (err) {
+      console.error("[wiki:manual:edit] read failed:", err);
+    }
+  }
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
@@ -55,7 +71,7 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
       </div>
 
       <EditPageClientShell
-        initialContent={MOCK_MARKDOWN}
+        initialContent={initialContent}
         workspaceId={workspaceId}
         pageSlug={slug}
       />

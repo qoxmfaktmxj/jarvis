@@ -1,15 +1,8 @@
-export type WikiPageMeta = {
-  slug: string;
-  title: string;
-  sensitivity: 'public' | 'internal' | 'confidential';
-  tags: string[];
-  updatedAt: string;
-  workspaceId: string;
-};
-
-export type WikiPage = WikiPageMeta & {
-  content: string;
-};
+// Phase-W2: WikiPage / WikiPageMeta types moved to ./types.ts
+// This file now contains only the Storybook fixture data. Re-export the types
+// for back-compat with existing Storybook imports.
+import type { WikiPage, WikiPageMeta } from './types';
+export type { WikiPage, WikiPageMeta };
 
 const DEFAULT_WORKSPACE = 'default';
 

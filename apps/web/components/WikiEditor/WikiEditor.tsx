@@ -124,23 +124,22 @@ function serializeFrontmatter(fm: Frontmatter): string {
   return `---\n${lines.join("\n")}\n---\n\n`;
 }
 
-// Mock until the page index API lands. Keep this list small and obviously fake
-// so tests can match against deterministic strings.
-const MOCK_PAGES: ReadonlyArray<{ slug: string; title: string }> = [
-  { slug: "onboarding/welcome", title: "Welcome" },
-  { slug: "onboarding/checklist", title: "Onboarding Checklist" },
-  { slug: "hr/leave-policy", title: "Leave Policy" },
-  { slug: "hr/expense-policy", title: "Expense Policy" },
-  { slug: "engineering/runbooks", title: "Engineering Runbooks" },
-  { slug: "engineering/release-process", title: "Release Process" },
-  { slug: "security/incident-response", title: "Incident Response" },
-];
-
 interface SuggestState {
   open: boolean;
   query: string;
   position: { top: number; left: number } | null;
 }
+
+interface WikiSearchPage {
+  slug: string;
+  title: string;
+  path: string;
+}
+
+type SuggestFetchState =
+  | { state: "idle"; pages: WikiSearchPage[] }
+  | { state: "loading"; pages: WikiSearchPage[] }
+  | { state: "error"; pages: WikiSearchPage[] };
 
 export function WikiEditor({
   initialContent,
@@ -231,14 +230,47 @@ export function WikiEditor({
     return () => window.removeEventListener("showWikiLinkSuggest", onSuggest);
   }, [editor]);
 
-  const filteredPages = useMemo(() => {
-    const q = suggest.query.trim().toLowerCase();
-    if (!q) return MOCK_PAGES.slice(0, 6);
-    return MOCK_PAGES.filter(
-      (p) =>
-        p.slug.toLowerCase().includes(q) || p.title.toLowerCase().includes(q),
-    ).slice(0, 6);
-  }, [suggest.query]);
+  // Phase-W2: 자동완성을 GET /api/wiki/search 로 교체. AbortController + 150ms debounce.
+  const [fetchState, setFetchState] = useState<SuggestFetchState>({
+    state: "idle",
+    pages: [],
+  });
+
+  useEffect(() => {
+    if (!suggest.open) return;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams({
+        workspaceId,
+        q: suggest.query,
+        limit: "6",
+      });
+      setFetchState((prev) => ({ state: "loading", pages: prev.pages }));
+      fetch(`/api/wiki/search?${params.toString()}`, {
+        signal: controller.signal,
+        credentials: "same-origin",
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json() as Promise<{ pages: WikiSearchPage[] }>;
+        })
+        .then((data) => {
+          setFetchState({ state: "idle", pages: data.pages ?? [] });
+        })
+        .catch((err: unknown) => {
+          if ((err as { name?: string })?.name === "AbortError") return;
+          setFetchState((prev) => ({ state: "error", pages: prev.pages }));
+        });
+    }, 150);
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [suggest.open, suggest.query, workspaceId]);
+
+  const filteredPages = fetchState.pages;
+  const isLoading = fetchState.state === "loading";
+  const isErrored = fetchState.state === "error";
 
   const insertWikiLink = (slug: string, title: string) => {
     if (!editor) return;
@@ -311,7 +343,15 @@ export function WikiEditor({
                 />
               </div>
               <ul className="max-h-60 overflow-auto py-1">
-                {filteredPages.length === 0 ? (
+                {isLoading ? (
+                  <li className="px-3 py-2 text-sm text-gray-400">
+                    {tWikilink("searching")}
+                  </li>
+                ) : isErrored ? (
+                  <li className="px-3 py-2 text-sm text-red-600">
+                    {tWikilink("searchFailed")}
+                  </li>
+                ) : filteredPages.length === 0 ? (
                   <li className="px-3 py-2 text-sm text-gray-400">
                     {tWikilink("noResults")}
                   </li>
