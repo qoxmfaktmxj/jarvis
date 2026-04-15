@@ -4,7 +4,12 @@
     "loading": "Loading graph...",
     "nodeCount": "Nodes",
     "edgeCount": "Edges",
-    "clickToNavigate": "Click a node to open the corresponding wiki page."
+    "clickToNavigate": "Click a node to open the corresponding wiki page.",
+    "empty": "No graph snapshot has been built for this workspace yet.",
+    "emptyNoPages": "No published wiki pages yet. Create a page first.",
+    "emptyAllFiltered": "No wiki pages are visible with your current permissions.",
+    "filteredHint": "{count} page(s) hidden by permission settings.",
+    "loadFailed": "Failed to load the graph."
   },
   "WikiEditor": {
     "manualOnlyBanner": "This page is for manual/ editing only. The auto/ tree is managed by the LLM.",

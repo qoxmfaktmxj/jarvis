@@ -16,6 +16,7 @@ import { resolveWikiPath } from "./repo-root.js";
  * - SSoT 는 디스크. wikiPageIndex 는 색인/메타 전용.
  * - body 는 wikiPageIndex.path 를 통해 repo-root 기준으로 readUtf8.
  * - frontmatter / body 분리는 @jarvis/wiki-fs 의 parseFrontmatter 사용.
+ * - publishedStatus='published' 필터 — draft/archived 는 뷰어 페이지에서 숨김.
  * - sensitivity / 권한 체크는 호출자(page.tsx) 에서 수행 — 이 함수는 데이터만 반환.
  */
 export interface LoadedWikiPage {
@@ -39,6 +40,7 @@ export async function loadWikiPageForView(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
         eq(wikiPageIndex.slug, slug),
+        eq(wikiPageIndex.publishedStatus, "published"),
       ),
     )
     .limit(1);

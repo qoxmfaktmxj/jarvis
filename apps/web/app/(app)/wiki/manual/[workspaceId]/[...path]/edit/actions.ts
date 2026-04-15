@@ -21,7 +21,8 @@ export type SaveWikiPageError =
   | "forbidden"
   | "invalid_input"
   | "git_failed"
-  | "boundary_violation";
+  | "boundary_violation"
+  | "projection_failed";
 
 export type SaveWikiPageResult =
   | { ok: true; sha: string }
@@ -90,7 +91,13 @@ export async function saveWikiPage(
   }
 
   // body 와 frontmatter 분리/병합 (입력 markdown 에 frontmatter 가 포함된 경우 우선)
-  const { body: incomingBody } = parseFrontmatter(parsed.data.markdown);
+  let incomingBody: string;
+  try {
+    const parsed0 = parseFrontmatter(parsed.data.markdown);
+    incomingBody = parsed0.body;
+  } catch {
+    return { ok: false, error: "invalid_input" };
+  }
   const mergedFm = {
     ...parsed.data.frontmatter,
     workspaceId: parsed.data.workspaceId,

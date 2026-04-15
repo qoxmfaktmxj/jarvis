@@ -18,9 +18,26 @@ import {
 import { chunkText } from '../lib/text-chunker.js';
 import { generateEmbedding } from '@jarvis/ai/embed';
 import OpenAI from 'openai';
+import { analyze } from './ingest/analyze.js';
+import { generate } from './ingest/generate.js';
+import { writeAndCommit } from './ingest/write-and-commit.js';
+import { recordReviewQueue } from './ingest/review-queue.js';
+import type { WikiSensitivity } from '@jarvis/wiki-fs';
 
 export interface IngestJobData {
   rawSourceId: string;
+}
+
+/**
+ * Feature flag — switch ingest from the legacy single-page knowledge_page
+ * pipeline to the W2 wiki-fs Two-Step CoT pipeline.
+ *
+ * Read inline because `packages/db/feature-flags.ts` does not export a
+ * dedicated helper yet (W2-T1 keeps the flag local to the worker rather
+ * than churning the shared module).
+ */
+function featureWikiFsMode(): boolean {
+  return process.env['FEATURE_WIKI_FS_MODE'] === 'true';
 }
 
 const INGEST_MODEL = process.env['INGEST_AI_MODEL'] ?? 'gpt-5.4-mini';
@@ -74,16 +91,20 @@ async function extractText(buffer: Buffer, mimeType: string): Promise<string> {
 }
 
 /**
- * Two-step ingest pipeline (Phase-7B).
+ * Legacy two-step ingest pipeline (Phase-7B).
  *
  * Step 1: Chunk safeText → SHA-256 hash + embedding per chunk → upsert document_chunks
  *         (only when FEATURE_DOCUMENT_CHUNKS_WRITE=true)
  * Step 2: LLM synthesis → upsert knowledge_page (draft, generated) + knowledge_claims
  *         (non-fatal: LLM errors are caught and logged)
  *
+ * Renamed from `twoStepIngest` in W2-T1: the new wiki-fs path is
+ * `wikiTwoStepIngest` below. The legacy alias `twoStepIngest` remains
+ * exported for backward compatibility with existing integration tests.
+ *
  * Exported for testability.
  */
-export async function twoStepIngest(
+export async function legacyTwoStepIngest(
   rawSourceId: string,
   workspaceId: string,
   safeText: string,
@@ -205,6 +226,141 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
   }
 }
 
+/**
+ * Backward-compatible alias for the legacy ingest path. Existing tests
+ * (`apps/worker/src/__tests__/integration/two-step-ingest.test.ts`) import
+ * `twoStepIngest` directly — keep the name pointing at the legacy impl
+ * because the wiki path requires a workspace git repo + LLM responses that
+ * the legacy DB-only test does not exercise.
+ */
+export const twoStepIngest = legacyTwoStepIngest;
+
+/**
+ * Wiki two-step ingest pipeline (Phase-W2 §3.1).
+ *
+ * Step 0 (PII guard) is performed by the caller (`processIngest`).
+ *
+ * Step A — Analysis LLM     → AnalysisResult + shortlisted existing pages
+ * Step B — Generation LLM    → FILE blocks + REVIEW blocks
+ * Step C — Validate + commit → temp worktree → atomicWrite → ff-merge → DB
+ * Step D — Review queue      → contradictions / sensitivity / pii signals
+ *
+ * Failure modes:
+ *  - Step A/B LLM fault → bubble up; processIngest catches and marks
+ *    raw_source.ingestStatus='error' (caller decides retry).
+ *  - Step C validate fail → ingest_dlq INSERT, NO commit, return ok=false.
+ *  - Worktree cleanup is guaranteed via try/finally inside writeAndCommit.
+ *
+ * The DoD requires ≥8 page updates per ingest. We do not throw when count
+ * is below 8 (the LLM may legitimately produce fewer); instead we surface
+ * `result.contentPageCount` so observability can alert.
+ */
+export async function wikiTwoStepIngest(
+  rawSourceId: string,
+  workspaceId: string,
+  safeText: string,
+  sensitivity: string,
+  opts: {
+    sourceTitle?: string;
+    sourceFileName?: string;
+    folderContext?: string;
+    previousSensitivity?: string;
+    piiHits?: string[];
+  } = {},
+): Promise<{
+  ok: boolean;
+  pageCount: number;
+  commitSha?: string;
+  failures: Array<{ path: string; rule: string; detail: string }>;
+}> {
+  const sourceTitle = opts.sourceTitle ?? `raw_source/${rawSourceId}`;
+  const runId = `${Date.now()}-${rawSourceId.slice(0, 8)}`;
+
+  // ── Step A ──
+  const stepA = await analyze({
+    rawSourceId,
+    workspaceId,
+    safeText,
+    ...(opts.sourceFileName !== undefined ? { sourceFileName: opts.sourceFileName } : {}),
+    ...(opts.folderContext !== undefined ? { folderContext: opts.folderContext } : {}),
+  });
+
+  // ── Step B ──
+  const stepB = await generate({
+    rawSourceId,
+    workspaceId,
+    safeText,
+    analysis: stepA.analysis,
+    existingPages: stepA.existingPages,
+    ...(opts.sourceFileName !== undefined ? { sourceFileName: opts.sourceFileName } : {}),
+    ...(opts.folderContext !== undefined ? { folderContext: opts.folderContext } : {}),
+  });
+
+  if (stepB.fileBlocks.length === 0) {
+    console.warn(
+      `[ingest] wikiTwoStepIngest: Generation produced 0 FILE blocks for rawSourceId=${rawSourceId}`,
+    );
+    // Treat as validate failure with a synthetic rule so observers route via DLQ.
+    return {
+      ok: false,
+      pageCount: 0,
+      failures: [{ path: '(none)', rule: 'no-file-blocks', detail: 'Generation LLM produced no FILE blocks' }],
+    };
+  }
+
+  // ── Step C ──
+  const stepC = await writeAndCommit({
+    rawSourceId,
+    workspaceId,
+    fileBlocks: stepB.fileBlocks,
+    reviewBlocks: stepB.reviewBlocks,
+    sourceSensitivity: sensitivity as WikiSensitivity,
+    sourceTitle,
+    runId,
+    rawText: stepB.rawText,
+  });
+
+  if (!stepC.ok) {
+    return {
+      ok: false,
+      pageCount: stepC.contentPageCount,
+      failures: stepC.failures,
+    };
+  }
+
+  // ── Step D ──
+  await recordReviewQueue({
+    workspaceId,
+    rawSourceId,
+    ...(stepC.commitSha !== undefined ? { commitSha: stepC.commitSha } : {}),
+    analysis: stepA.analysis,
+    reviewBlocks: stepB.reviewBlocks,
+    affectedPagePaths: stepC.affectedPaths,
+    previousSensitivity: (opts.previousSensitivity ?? sensitivity) as WikiSensitivity,
+    newSensitivity: sensitivity as WikiSensitivity,
+    piiHits: opts.piiHits ?? [],
+  });
+
+  console.log(
+    `[ingest] wikiTwoStepIngest done rawSourceId=${rawSourceId} ` +
+      `commit=${stepC.commitSha?.slice(0, 8)} new=${stepC.newPageCount} ` +
+      `updated=${stepC.updatedPageCount} content=${stepC.contentPageCount}`,
+  );
+
+  const result: {
+    ok: boolean;
+    pageCount: number;
+    commitSha?: string;
+    failures: Array<{ path: string; rule: string; detail: string }>;
+  } = {
+    ok: true,
+    pageCount: stepC.contentPageCount,
+    failures: [],
+  };
+  if (stepC.commitSha !== undefined) result.commitSha = stepC.commitSha;
+  return result;
+}
+
 export async function ingestHandler(
   jobs: PgBoss.Job<IngestJobData>[],
 ): Promise<void> {
@@ -315,22 +471,59 @@ async function processIngest(
     // ---- End Step 0 ----
 
     // ---- Step 1+2: Two-step ingest (feature flagged) ----
+    // Track infra/ingest errors so the raw_source row is NOT marked `done`
+    // when we silently swallowed an exception — that was previously hiding
+    // real failures (e.g. OpenAI 5xx, git repo corruption) from operators.
+    let twoStepError: Error | null = null;
     if (featureTwoStepIngest()) {
       try {
-        await twoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
+        if (featureWikiFsMode()) {
+          // W2 path — multi-page wiki update via wiki-fs + git.
+          const fileNameOpt: { sourceFileName?: string } = source.storagePath
+            ? { sourceFileName: source.storagePath.split('/').pop() ?? source.storagePath }
+            : {};
+          await wikiTwoStepIngest(
+            rawSourceId,
+            source.workspaceId,
+            safeText,
+            newSensitivity,
+            {
+              sourceTitle: source.storagePath ?? `manual/${rawSourceId}`,
+              ...fileNameOpt,
+              previousSensitivity: currentSensitivity,
+              // PiiHit[] → string[] (kind label) for the review queue payload.
+              piiHits: piiHits.map((h) => h.kind),
+            },
+          );
+        } else {
+          // Legacy single-page knowledge_page path.
+          await legacyTwoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
+        }
       } catch (err) {
-        // non-fatal: log and continue
-        console.warn(`[ingest] twoStepIngest failed rawSourceId=${rawSourceId}: ${String(err)}`);
+        // Log and capture. We intentionally do NOT re-throw so PII-redacted
+        // parsedContent still lands on raw_source, but the status reflects
+        // the failure (see status branching below).
+        twoStepError = err instanceof Error ? err : new Error(String(err));
+        console.warn(
+          `[ingest] twoStepIngest failed rawSourceId=${rawSourceId}: ${twoStepError.message}`,
+        );
       }
     }
     // ---- End two-step ingest ----
 
-    // Update raw_source with parsed content (redacted)
+    // Update raw_source with parsed content (redacted).
+    // If two-step ingest threw an infra/LLM error, mark status=error and
+    // record the failure in metadata so the op console can surface it.
+    const finalStatus = twoStepError ? 'error' : 'done';
+    const finalMetadata = twoStepError
+      ? { wikiIngestError: twoStepError.message.slice(0, 2000) }
+      : undefined;
     await db
       .update(rawSource)
       .set({
         parsedContent: safeText,
-        ingestStatus: 'done',
+        ingestStatus: finalStatus,
+        ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
         updatedAt: new Date(),
       })
       .where(eq(rawSource.id, rawSourceId));

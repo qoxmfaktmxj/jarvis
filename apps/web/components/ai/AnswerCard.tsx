@@ -22,6 +22,7 @@ import type {
   GraphSourceRef,
   CaseSourceRef,
   DirectorySourceRef,
+  WikiPageSourceRef,
 } from '@jarvis/ai/types';
 import { ClaimBadge } from './ClaimBadge';
 
@@ -41,6 +42,7 @@ function categorizeSources(sources: SourceRef[]) {
   const graph: GraphSourceRef[] = [];
   const cases: CaseSourceRef[] = [];
   const directory: DirectorySourceRef[] = [];
+  const wikiPages: WikiPageSourceRef[] = [];
 
   for (const s of sources) {
     switch (s.kind) {
@@ -56,10 +58,14 @@ function categorizeSources(sources: SourceRef[]) {
       case 'directory':
         directory.push(s);
         break;
+      case 'wiki-page':
+        wikiPages.push(s);
+        break;
+      // 'chunk' sources are citation-only; no dedicated section needed
     }
   }
 
-  return { text, graph, cases, directory };
+  return { text, graph, cases, directory, wikiPages };
 }
 
 // ---------------------------------------------------------------------------
@@ -275,6 +281,33 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Section: 위키 페이지 (page-first navigation sources)
+// ---------------------------------------------------------------------------
+function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
+  if (sources.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <FileText className="h-3.5 w-3.5 text-indigo-600" />
+        <span className="text-xs font-semibold text-gray-700">위키 페이지</span>
+      </div>
+      <div className="space-y-1">
+        {sources.map((s, i) => (
+          <Link
+            key={`${s.pageId}-${i}`}
+            href={`/wiki?page=${encodeURIComponent(s.pageId)}`}
+            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-indigo-800 hover:bg-indigo-50 transition-colors"
+          >
+            <Badge variant="outline" className="text-[10px] shrink-0">{s.citation}</Badge>
+            <span className="truncate">{s.title}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Section: 그래프 컨텍스트 (Graph sources)
 // ---------------------------------------------------------------------------
 function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
@@ -367,8 +400,8 @@ function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
 // Main Component
 // ---------------------------------------------------------------------------
 export function AnswerCard({ answer, sources }: AnswerCardProps) {
-  const { text, graph, cases, directory } = categorizeSources(sources);
-  const hasSections = text.length > 0 || graph.length > 0 || cases.length > 0 || directory.length > 0;
+  const { text, graph, cases, directory, wikiPages } = categorizeSources(sources);
+  const hasSections = text.length > 0 || graph.length > 0 || cases.length > 0 || directory.length > 0 || wikiPages.length > 0;
 
   if (!hasSections) {
     // No sources — just render the answer text
@@ -409,6 +442,14 @@ export function AnswerCard({ answer, sources }: AnswerCardProps) {
           <>
             <Separator />
             <CaseSection sources={cases} />
+          </>
+        )}
+
+        {/* 위키 페이지 (page-first) */}
+        {wikiPages.length > 0 && (
+          <>
+            <Separator />
+            <WikiPageSection sources={wikiPages} />
           </>
         )}
 
