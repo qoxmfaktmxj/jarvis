@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { approve, defer, reject } from "../actions";
+import { ReviewCommentEditor } from "./ReviewCommentEditor";
 
 type ActionKind = "approve" | "reject" | "defer";
 
@@ -100,7 +100,7 @@ export function ApprovalDialog({ item, action, children }: ApprovalDialogProps) 
         {children}
       </span>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
             {item.pageTitle ? (
@@ -116,12 +116,11 @@ export function ApprovalDialog({ item, action, children }: ApprovalDialogProps) 
                 <label className="text-sm font-medium" htmlFor="approval-comment">
                   {t("commentLabel")}
                 </label>
-                <Textarea
-                  id="approval-comment"
+                <ReviewCommentEditor
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  rows={3}
-                  disabled={submitting}
+                  onChange={setComment}
+                  placeholder={t("commentPlaceholder")}
+                  readOnly={submitting}
                 />
               </div>
             )}
@@ -131,13 +130,11 @@ export function ApprovalDialog({ item, action, children }: ApprovalDialogProps) 
                 <label className="text-sm font-medium" htmlFor="approval-reason">
                   {t("reasonLabel")}
                 </label>
-                <Textarea
-                  id="approval-reason"
+                <ReviewCommentEditor
                   value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={3}
-                  disabled={submitting}
-                  required
+                  onChange={setReason}
+                  placeholder={t("reasonPlaceholder")}
+                  readOnly={submitting}
                 />
               </div>
             )}

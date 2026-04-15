@@ -3,3 +3,4 @@ export * from "./knowledge.js";
 export * from "./search.js";
 export * from "./system.js";
 export * from "./review-queue.js";
+export * from "./raw-source.js";

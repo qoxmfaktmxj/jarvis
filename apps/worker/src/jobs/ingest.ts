@@ -237,16 +237,25 @@ async function processIngest(
       throw new Error(`raw_source not found: ${rawSourceId}`);
     }
 
-    if (!source.storagePath) {
-      throw new Error(`raw_source has no storagePath: ${rawSourceId}`);
+    // Manual (수동 입력) source — parsedContent is provided by the user,
+    // so skip MinIO download / extractText. Everything downstream
+    // (PII guard, two-step ingest) runs identically on the provided text.
+    const isManual =
+      source.sourceType === 'manual' && typeof source.parsedContent === 'string';
+
+    let extractedText: string;
+    if (isManual) {
+      extractedText = source.parsedContent!;
+    } else {
+      if (!source.storagePath) {
+        throw new Error(`raw_source has no storagePath: ${rawSourceId}`);
+      }
+      // Download file from MinIO
+      const buffer = await downloadFromMinio(source.storagePath);
+      // Extract text
+      const mimeType = source.mimeType ?? 'application/octet-stream';
+      extractedText = await extractText(buffer, mimeType);
     }
-
-    // Download file from MinIO
-    const buffer = await downloadFromMinio(source.storagePath);
-
-    // Extract text
-    const mimeType = source.mimeType ?? 'application/octet-stream';
-    const extractedText = await extractText(buffer, mimeType);
 
     // ---- Step 0: PII / SECRET guard (single-pass) ----
     // Run each scan exactly once to avoid redundant regex sweeps.

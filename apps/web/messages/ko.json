@@ -513,5 +513,37 @@
     "nodeCount": "노드",
     "edgeCount": "엣지",
     "clickToNavigate": "노드를 클릭하면 해당 페이지로 이동합니다."
+  },
+  "WikiIngest": {
+    "manual": {
+      "title": "수동 입력",
+      "description": "파일 업로드 대신 텍스트를 직접 붙여넣어 위키 수집 파이프라인에 전달합니다.",
+      "sensitivity": {
+        "PUBLIC": "전체 공개",
+        "INTERNAL": "내부 전용",
+        "RESTRICTED": "제한됨",
+        "SECRET_REF_ONLY": "기밀"
+      },
+      "form": {
+        "titleLabel": "제목",
+        "titlePlaceholder": "예: 2026-04 보안 교육 자료",
+        "contentLabel": "본문",
+        "sensitivityLabel": "공개 범위",
+        "authorNoteLabel": "수집 메모 (선택)",
+        "authorNoteHelp": "이 원본의 출처·작성 맥락을 적어두세요.",
+        "submit": "수집 파이프라인에 전송",
+        "submitting": "전송 중..."
+      },
+      "result": {
+        "success": "수집 요청이 접수되었습니다. rawSourceId: {id}",
+        "pendingJob": "백그라운드 잡이 2-Step CoT 파이프라인을 실행합니다."
+      },
+      "errors": {
+        "titleRequired": "제목을 입력하세요.",
+        "contentRequired": "본문을 입력하세요.",
+        "contentTooLarge": "본문이 200KB를 초과합니다.",
+        "submitFailed": "전송 실패. 잠시 후 다시 시도하세요."
+      }
+    }
   }
 }
