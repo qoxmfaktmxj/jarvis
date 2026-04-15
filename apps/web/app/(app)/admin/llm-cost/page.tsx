@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 
 export const dynamic = 'force-dynamic';
 
-interface Row {
+interface Row extends Record<string, unknown> {
   workspace_id: string;
   model: string;
   calls: string;

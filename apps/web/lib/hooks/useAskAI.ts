@@ -186,7 +186,8 @@ export function useAskAI(): UseAskAIReturn {
           if (s.kind === 'text') return `text:${s.pageId}`;
           if (s.kind === 'graph') return `graph:${s.nodeId}`;
           if (s.kind === 'case') return `case:${s.caseId}`;
-          return `directory:${s.entryId}`;
+          if (s.kind === 'directory') return `directory:${s.entryId}`;
+          return `chunk:${s.chunkId}`;
         });
 
       const res = await fetch('/api/ask/feedback', {

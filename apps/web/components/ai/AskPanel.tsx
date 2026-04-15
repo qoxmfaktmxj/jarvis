@@ -238,7 +238,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                         <div className="space-y-1.5 pt-1">
                           <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
                           {sources.map((source, sourceIndex) => (
-                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.kind === 'graph' ? source.nodeId : source.kind === 'case' ? source.caseId : source.entryId}-${sourceIndex}`} source={source} index={sourceIndex} />
+                            <SourceRefCard key={`${source.kind === 'text' ? source.pageId : source.kind === 'graph' ? source.nodeId : source.kind === 'case' ? source.caseId : source.kind === 'directory' ? source.entryId : source.chunkId}-${sourceIndex}`} source={source} index={sourceIndex} />
                           ))}
                         </div>
                       )}

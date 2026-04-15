@@ -20,6 +20,16 @@ const nextConfig: NextConfig = {
     "@jarvis/ai",
     "@jarvis/secret"
   ],
+  // Sentry (and its import-in-the-middle hook) is Node-only. Keep it
+  // external so webpack never tries to bundle worker_threads/module for
+  // the browser or edge bundles. Pair with the NEXT_RUNTIME guard in
+  // instrumentation.ts.
+  serverExternalPackages: [
+    "@sentry/node",
+    "@sentry/node-core",
+    "import-in-the-middle",
+    "require-in-the-middle"
+  ],
   webpack(config) {
     config.resolve.extensionAlias = {
       ...(config.resolve.extensionAlias ?? {}),
