@@ -2,6 +2,7 @@
 
 import { FormEvent, Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { TEMP_DEV_ACCOUNTS } from '@/lib/auth/dev-accounts';
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -21,7 +22,7 @@ function LoginContent() {
   const isDev = process.env.NODE_ENV !== 'production';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [devError, setDevError] = useState<string | null>(null);
 
   const ssoHref = useMemo(
@@ -31,37 +32,47 @@ function LoginContent() {
 
   async function handleDevLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSubmitting(true);
+    if (isLoading) return;
+    setIsLoading(true);
     setDevError(null);
 
     try {
       const response = await fetch('/api/auth/dev-login', {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { error?: string } | null;
         setDevError(payload?.error ?? '로그인에 실패했습니다.');
+        setIsLoading(false);
         return;
       }
 
+      // 성공: 로딩 상태 유지한 채로 이동 (페이지가 언마운트되므로 리셋 불필요)
       window.location.assign(redirectTo);
     } catch {
       setDevError('로그인 요청 중 오류가 발생했습니다.');
-    } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   }
 
+  function handleSsoClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    if (isLoading) return;
+    setIsLoading(true);
+    window.location.assign(ssoHref);
+  }
+
   return (
-    <div className="rounded-lg bg-white p-8 shadow-md">
+    <div className="relative rounded-lg bg-white p-8 shadow-md">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-white/80 backdrop-blur-[2px]">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <p className="text-sm font-medium text-gray-600">로그인 중...</p>
+        </div>
+      )}
       <div className="mb-8 text-center">
         <h1 className="text-2xl font-bold text-gray-900">Jarvis</h1>
         <p className="mt-1 text-gray-500">사내 포털에 로그인하세요</p>
@@ -93,7 +104,8 @@ function LoginContent() {
                 autoComplete="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                disabled={isLoading}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
                 placeholder="admin"
               />
             </div>
@@ -109,7 +121,8 @@ function LoginContent() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                disabled={isLoading}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
                 placeholder="admin123!"
               />
             </div>
@@ -120,10 +133,10 @@ function LoginContent() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isLoading}
               className="block w-full rounded-lg bg-gray-900 px-4 py-3 text-center font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {isSubmitting ? '로그인 중...' : '개발 계정으로 로그인'}
+              개발 계정으로 로그인
             </button>
           </form>
 
@@ -160,6 +173,7 @@ function LoginContent() {
           <div className="border-t border-dashed border-gray-200 pt-5">
             <a
               href={ssoHref}
+              onClick={handleSsoClick}
               className="block w-full rounded-lg bg-blue-600 px-4 py-3 text-center font-medium text-white transition-colors hover:bg-blue-700"
             >
               회사 계정으로 로그인
@@ -173,6 +187,7 @@ function LoginContent() {
         <div className="space-y-3">
           <a
             href={ssoHref}
+            onClick={handleSsoClick}
             className="block w-full rounded-lg bg-blue-600 px-4 py-3 text-center font-medium text-white transition-colors hover:bg-blue-700"
           >
             회사 계정으로 로그인
