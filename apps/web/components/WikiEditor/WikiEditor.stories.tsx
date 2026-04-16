@@ -6,7 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react';
  * (CodeBlockLowlight, window.* 의존, dynamic-import wrapper 가정 등.)
  *
  * 디자인 재구성을 기다리는 단계이므로, 일단 placeholder 스토리만 노출하고
- * 실제 동작 검증은 e2e (`/wiki/manual/[workspaceId]/[path]/edit`)에서 수행한다.
+ * 실제 동작 검증은 e2e (`/wiki/manual/[workspaceId]/edit/[path]`)에서 수행한다.
  * 후속 작업으로 mock 가능해지면 실제 <WikiEditor /> 렌더로 교체.
  */
 
@@ -36,7 +36,7 @@ export const Placeholder: StoryObj = {
         Storybook에서 직접 렌더하지 않고 placeholder만 노출합니다.
       </p>
       <p style={{ marginTop: 4, fontSize: 12, color: '#9ca3af' }}>
-        실제 동작은 <code>/wiki/manual/[workspaceId]/[path]/edit</code> 또는 e2e 스위트에서
+        실제 동작은 <code>/wiki/manual/[workspaceId]/edit/[path]</code> 또는 e2e 스위트에서
         확인하세요.
       </p>
     </div>

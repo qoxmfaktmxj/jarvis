@@ -33,6 +33,12 @@ async function main() {
 
   await ensureBucket();
 
+  // pg-boss v10: queues must be created before schedule/work.
+  // Sequential to avoid DDL deadlocks on pgboss.queue.
+  for (const q of ['ingest', 'embed', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup']) {
+    await boss.createQueue(q);
+  }
+
   await boss.work('ingest', { batchSize: 5 }, ingestHandler);
   await boss.work('embed', { batchSize: 3 }, embedHandler);
   await boss.work('compile', { batchSize: 3 }, compileHandler);
@@ -51,6 +57,7 @@ async function main() {
   // Only register when the feature flag is ON so the cron does not fire
   // in environments that have not opted in.
   if (featureWikiLintCron()) {
+    await boss.createQueue(WIKI_LINT_QUEUE);
     await boss.schedule(WIKI_LINT_QUEUE, WIKI_LINT_CRON, {});
     await boss.work(WIKI_LINT_QUEUE, wikiLintHandler);
     logger.info({ cron: WIKI_LINT_CRON }, '[worker] wiki-lint cron registered');
