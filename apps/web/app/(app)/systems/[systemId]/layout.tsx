@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { Badge } from "@/components/ui/badge";
 import { SystemTabs } from "@/components/system/SystemTabs";
+import { PageHeader } from "@/components/patterns/PageHeader";
 import { getSystem } from "@/lib/queries/systems";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -27,20 +28,20 @@ export default async function SystemDetailLayout({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            {system.name}
-          </h1>
-          {system.environment ? (
-            <Badge variant="secondary">{system.environment}</Badge>
-          ) : null}
-          {system.category ? <Badge variant="outline">{system.category}</Badge> : null}
-        </div>
-        {system.description ? (
-          <p className="text-sm text-gray-500">{system.description}</p>
-        ) : null}
-      </div>
+      <PageHeader
+        eyebrow="System"
+        title={system.name}
+        description={system.description ?? undefined}
+        accent={system.name?.slice(0, 3).toUpperCase()}
+        meta={
+          <div className="flex items-center gap-2">
+            {system.environment ? (
+              <Badge variant="secondary">{system.environment}</Badge>
+            ) : null}
+            {system.category ? <Badge variant="outline">{system.category}</Badge> : null}
+          </div>
+        }
+      />
 
       <SystemTabs systemId={systemId} />
       <div>{children}</div>

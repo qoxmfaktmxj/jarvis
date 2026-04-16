@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSystem } from "@/lib/queries/systems";
 import { requirePageSession } from "@/lib/server/page-auth";
@@ -31,16 +32,15 @@ export default async function SystemRunbookPage({
       <CardHeader>
         <CardTitle>{t("runbook")}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm text-gray-600">
+      <CardContent className="space-y-3 text-sm text-surface-600">
         {system.knowledgePageId ? (
           <>
             <p>{t("runbookLinked")}</p>
-            <Link
-              href={`/knowledge/${system.knowledgePageId}`}
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-300 px-3 font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              Open Knowledge Page
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/knowledge/${system.knowledgePageId}`}>
+                Open Knowledge Page
+              </Link>
+            </Button>
           </>
         ) : (
           <>
@@ -49,12 +49,11 @@ export default async function SystemRunbookPage({
               monitoring notes for this system.
             </p>
             {canEdit ? (
-              <Link
-                href={`/knowledge/new?systemId=${systemId}&type=runbook`}
-                className="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-3 font-medium text-white transition-colors hover:bg-blue-700"
-              >
-                Create Runbook
-              </Link>
+              <Button asChild size="sm">
+                <Link href={`/knowledge/new?systemId=${systemId}&type=runbook`}>
+                  Create Runbook
+                </Link>
+              </Button>
             ) : null}
           </>
         )}

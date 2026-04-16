@@ -2,7 +2,10 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectTable } from "@/components/project/ProjectTable";
+import { PageHeader } from "@/components/patterns/PageHeader";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isoWeekNumber } from "@/lib/date-utils";
 import { listProjects } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -41,38 +44,30 @@ export default async function ProjectsPage({
     q
   });
 
+  const canCreate = session.permissions.includes(PERMISSIONS.PROJECT_CREATE);
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            {t("title")}
-          </h1>
-          <p className="text-sm text-gray-500">
-            {t("description", { total: result.meta.total })}
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Projects"
+        title={t("title")}
+        description={t("description", { total: result.meta.total })}
+        accent={`W${isoWeekNumber(new Date())}`}
+        meta={
+          canCreate ? (
+            <Button asChild>
+              <Link href="/projects/new">{t("newProject")}</Link>
+            </Button>
+          ) : null
+        }
+      />
 
-        {session.permissions.includes(PERMISSIONS.PROJECT_CREATE) ? (
-          <Link
-            href="/projects/new"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            {t("newProject")}
-          </Link>
-        ) : null}
-      </div>
-
-      <form className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_180px_auto]">
-        <Input
-          name="q"
-          defaultValue={q}
-          placeholder={t("title")}
-        />
+      <form className="grid gap-3 rounded-xl border border-surface-200 bg-card p-4 shadow-sm md:grid-cols-[1fr_180px_auto]">
+        <Input name="q" defaultValue={q} placeholder={t("title")} />
         <select
           name="status"
           defaultValue={status ?? ""}
-          className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="">{t("allStatuses")}</option>
           <option value="active">{t("statuses.active")}</option>
@@ -80,12 +75,9 @@ export default async function ProjectsPage({
           <option value="completed">{t("statuses.completed")}</option>
           <option value="archived">{t("statuses.archived")}</option>
         </select>
-        <button
-          type="submit"
-          className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
+        <Button type="submit" variant="outline">
           {t("applyFilters")}
-        </button>
+        </Button>
       </form>
 
       <ProjectTable

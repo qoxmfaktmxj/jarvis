@@ -3,7 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { SystemCard } from "@/components/system/SystemCard";
+import { EmptyState } from "@/components/patterns/EmptyState";
+import { PageHeader } from "@/components/patterns/PageHeader";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isoWeekNumber } from "@/lib/date-utils";
 import { listSystems } from "@/lib/queries/systems";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -45,30 +49,26 @@ export default async function SystemsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t("title")}</h1>
-          <p className="text-sm text-gray-500">
-            {t("description", { total: result.pagination.total })}
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Systems"
+        title={t("title")}
+        description={t("description", { total: result.pagination.total })}
+        accent={`W${isoWeekNumber(new Date())}`}
+        meta={
+          canCreate ? (
+            <Button asChild>
+              <Link href="/systems/new">{t("registerSystem")}</Link>
+            </Button>
+          ) : null
+        }
+      />
 
-        {canCreate ? (
-          <Link
-            href="/systems/new"
-            className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            {t("registerSystem")}
-          </Link>
-        ) : null}
-      </div>
-
-      <form className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_180px_180px_auto]">
+      <form className="grid gap-3 rounded-xl border border-surface-200 bg-card p-4 shadow-sm md:grid-cols-[1fr_180px_180px_auto]">
         <Input name="q" defaultValue={params.q} placeholder={t("searchPlaceholder")} />
         <select
           name="category"
           defaultValue={params.category ?? ""}
-          className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="">{t("allCategories")}</option>
           <option value="web">web</option>
@@ -80,25 +80,20 @@ export default async function SystemsPage({
         <select
           name="environment"
           defaultValue={params.environment ?? ""}
-          className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           <option value="">{t("allEnvironments")}</option>
           <option value="prod">prod</option>
           <option value="staging">staging</option>
           <option value="dev">dev</option>
         </select>
-        <button
-          type="submit"
-          className="inline-flex h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
+        <Button type="submit" variant="outline">
           {t("applyFilters")}
-        </button>
+        </Button>
       </form>
 
       {result.data.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-16 text-center text-sm text-gray-500">
-          {t("empty")}
-        </div>
+        <EmptyState title={t("empty")} />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {result.data.map((system) => (

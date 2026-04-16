@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ArchiveProjectButton } from "@/components/project/ArchiveProjectButton";
 import { ProjectForm } from "@/components/project/ProjectForm";
+import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { getProjectById } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -28,36 +29,36 @@ export default async function ProjectSettingsPage({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="mb-6 space-y-1">
-          <h2 className="text-lg font-semibold text-gray-900">Project Settings</h2>
-          <p className="text-sm text-gray-500">
+      <section>
+        <SectionHeader title="Project Settings" />
+        <div className="rounded-xl border border-surface-200 bg-card p-6 shadow-sm">
+          <p className="mb-6 text-sm text-surface-500">
             Update the metadata that appears across the workspace.
           </p>
+          <ProjectForm
+            mode="edit"
+            projectId={projectId}
+            defaultValues={{
+              code: project.code,
+              name: project.name,
+              description: project.description ?? "",
+              status: project.status as "active" | "on-hold" | "completed" | "archived",
+              startDate: project.startDate ?? "",
+              endDate: project.endDate ?? ""
+            }}
+          />
         </div>
-        <ProjectForm
-          mode="edit"
-          projectId={projectId}
-          defaultValues={{
-            code: project.code,
-            name: project.name,
-            description: project.description ?? "",
-            status: project.status as "active" | "on-hold" | "completed" | "archived",
-            startDate: project.startDate ?? "",
-            endDate: project.endDate ?? ""
-          }}
-        />
-      </div>
+      </section>
 
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
-        <div className="mb-4 space-y-1">
-          <h2 className="text-lg font-semibold text-rose-900">Danger Zone</h2>
-          <p className="text-sm text-rose-700">
+      <section>
+        <SectionHeader title="Danger Zone" />
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-6">
+          <p className="mb-4 text-sm text-destructive">
             Archiving keeps the record but removes it from the active project flow.
           </p>
+          <ArchiveProjectButton projectId={projectId} />
         </div>
-        <ArchiveProjectButton projectId={projectId} />
-      </div>
+      </section>
     </div>
   );
 }

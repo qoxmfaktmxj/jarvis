@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { SystemForm } from "@/components/system/SystemForm";
+import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { getSystem } from "@/lib/queries/systems";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -55,9 +56,9 @@ export default async function EditSystemPage({
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">Edit System</h2>
-        <p className="text-sm text-gray-500">
+      <div>
+        <SectionHeader title="Edit System" />
+        <p className="text-sm text-surface-500">
           Update metadata, ownership context, and linked operational resources.
         </p>
       </div>
