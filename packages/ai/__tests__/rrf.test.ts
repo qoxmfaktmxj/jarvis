@@ -10,6 +10,7 @@ vi.mock('openai', () => {
 
 // Mock heavy dependencies that are not needed for pure rrfMerge tests
 vi.mock('@jarvis/db/client', () => ({ db: {} }));
+// 레거시 경로 테스트용 — 프로덕션 기본값은 true
 vi.mock('@jarvis/db/feature-flags', () => ({
   featurePageFirstQuery: () => false,
 }));

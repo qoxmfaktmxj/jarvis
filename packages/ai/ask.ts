@@ -96,6 +96,10 @@ export function rrfMerge(
 // ---------------------------------------------------------------------------
 // Text Claims Retrieval (기존 로직 유지)
 // ---------------------------------------------------------------------------
+/**
+ * @deprecated use page-first path (featurePageFirstQuery=true).
+ * Retained as fallback and for tutor.ts.
+ */
 export async function retrieveRelevantClaims(
   question: string,
   workspaceId: string,
@@ -458,11 +462,11 @@ const UNIFIED_FINAL_GRAPH = 5;
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
-  // Phase-W2 T2: page-first navigation branch.
-  // When FEATURE_PAGE_FIRST_QUERY=true, delegate to the wiki page-first
-  // pipeline (lexical shortlist → 1-hop wikilink expansion → disk read →
-  // LLM synthesis with [[slug]] citations). The legacy vector+hybrid path
-  // below stays 100% intact so flag=off preserves existing behaviour.
+  // Page-first path (DEFAULT since B4 Phase 2).
+  // Delegates to the wiki page-first pipeline (lexical shortlist → 1-hop
+  // wikilink expansion → disk read → LLM synthesis with [[slug]] citations).
+  // The legacy vector+hybrid path below stays 100% intact so
+  // FEATURE_PAGE_FIRST_QUERY=false preserves existing behaviour.
   if (featurePageFirstQuery()) {
     yield* pageFirstAsk(query);
     return;
@@ -537,6 +541,7 @@ export async function* askAI(
   let dirResult: Awaited<ReturnType<typeof searchDirectory>> | null = null;
 
   try {
+    // TODO: 레거시 fallback — FEATURE_PAGE_FIRST_QUERY=false 시에만 도달
     const claimsTask = retrieveRelevantClaims(question, workspaceId, userPermissions)
       .catch((err) => {
         console.error('[ask] Text retrieval failed:', err instanceof Error ? err.message : err);

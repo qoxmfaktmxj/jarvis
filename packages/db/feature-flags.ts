@@ -8,15 +8,16 @@ export function featureTwoStepIngest(): boolean {
 /**
  * Phase-W2 T2: page-first navigation for `askAI`.
  *
- * When true, `packages/ai/ask.ts` routes the query through the page-first
- * pipeline (wiki_page_index lexical shortlist → 1-hop wikilink expansion →
- * disk read → LLM synthesis with `[[page-slug]]` citations).
+ * When true (default since B4 Phase 2), `packages/ai/ask.ts` routes the
+ * query through the page-first pipeline (wiki_page_index lexical shortlist
+ * → 1-hop wikilink expansion → disk read → LLM synthesis with
+ * `[[page-slug]]` citations).
  *
- * When false (default), the legacy knowledge_claim hybrid retrieval path
- * runs unchanged.
+ * When false, the legacy knowledge_claim hybrid retrieval path runs
+ * unchanged.
  */
 export function featurePageFirstQuery(): boolean {
-  return process.env.FEATURE_PAGE_FIRST_QUERY === "true";
+  return process.env['FEATURE_PAGE_FIRST_QUERY'] !== 'false';
 }
 
 /**

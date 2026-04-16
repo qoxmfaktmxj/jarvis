@@ -9,6 +9,7 @@ import { createChatWithTokenFallback } from './openai-compat.js';
 // Module-level singleton — shared across all tutor invocations
 const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
+// NOTE: tutor는 레거시 claims 경로를 직접 사용 (page-first 미적용)
 import { retrieveRelevantClaims } from './ask.js';
 import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
 import { searchDirectory, toDirectorySourceRef } from './directory-context.js';
