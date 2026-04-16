@@ -1,5 +1,5 @@
 // packages/search/pg-search.ts
-import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
 import { sql } from 'drizzle-orm';
@@ -350,14 +350,14 @@ export class PgSearchAdapter implements SearchAdapter {
 
   /**
    * Returns SQL WHERE fragment to exclude pages the user cannot access,
-   * based on session.permissions (mirrors canAccessSensitivity in packages/auth/rbac.ts).
+   * based on session.permissions (mirrors legacyCanAccessSensitivity in packages/auth/rbac.ts).
    *
    * - SYSTEM_ACCESS_SECRET or ADMIN_ALL → no filter (can see everything)
    * - SYSTEM_READ only                  → exclude SECRET_REF_ONLY
    * - no elevated permission            → exclude RESTRICTED + SECRET_REF_ONLY
    */
   private buildSecretFilter(userPermissions: string[]): string {
-    return buildKnowledgeSensitivitySqlFilter(userPermissions);
+    return buildLegacyKnowledgeSensitivitySqlFilter(userPermissions);
   }
 
   /**

@@ -1,5 +1,5 @@
 // packages/search/facet-counter.ts
-import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchFacets } from './types.js';
@@ -15,7 +15,7 @@ export async function countFacets(
   tsqueryExpr: string,
   userPermissions: string[] = [],
 ): Promise<SearchFacets> {
-  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions);
+  const sensitivityFilter = buildLegacyKnowledgeSensitivitySqlFilter(userPermissions);
 
   const [pageTypeRows, sensitivityRows] = await Promise.all([
     db.execute<{ page_type: string; count: string }>(sql`

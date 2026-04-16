@@ -46,8 +46,8 @@ export const WithWikiLinks: Story = {
   },
 };
 
-// 4. ConfidentialPage — sensitivity=confidential (보너스)
-export const ConfidentialPage: Story = {
+// 4. RestrictedPage — sensitivity=restricted
+export const RestrictedPage: Story = {
   args: {
     page: findPage('legal/contracts/nda'),
   },

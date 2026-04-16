@@ -16,7 +16,8 @@ const SENSITIVITY_VARIANT: Record<
 > = {
   public: 'success',
   internal: 'warning',
-  confidential: 'destructive',
+  restricted: 'warning',
+  secret: 'destructive',
 };
 
 type WikiPageViewProps = {
@@ -122,7 +123,7 @@ export function WikiPageView({
     : new Set();
   const t = useTranslations('Wiki');
   const showEdit =
-    page.slug.startsWith('manual/') && page.sensitivity !== 'confidential';
+    page.slug.startsWith('manual/') && page.sensitivity !== 'secret';
 
   const formattedDate = new Date(page.updatedAt).toLocaleDateString('ko-KR', {
     year: 'numeric',

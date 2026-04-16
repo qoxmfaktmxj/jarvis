@@ -177,7 +177,7 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'legal/contracts/nda',
     title: 'NDA 안내',
-    sensitivity: 'confidential',
+    sensitivity: 'restricted',
     tags: ['법무', '계약', 'NDA'],
     updatedAt: '2026-03-30T16:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,

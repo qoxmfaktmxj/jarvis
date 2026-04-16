@@ -337,12 +337,14 @@ async function projectPages(opts: {
   const now = new Date();
   const rows = contentBlocks.map((block) => {
     const slug = path.basename(block.relPath).replace(/\.md$/, "");
+    const routeKey = block.relPath.replace(/\.md$/, "");
     const fm = block.frontmatter;
     return {
       workspaceId: opts.workspaceId,
       path: block.wikiPath,
       title: fm.title || slug,
       slug,
+      routeKey,
       type: (fm.type as string) ?? "concept",
       authority: (fm.authority as string) ?? "auto",
       sensitivity: (fm.sensitivity as string) ?? "INTERNAL",
@@ -350,7 +352,7 @@ async function projectPages(opts: {
       frontmatter: fm as Record<string, unknown>,
       gitSha: opts.commitSha,
       stale: false,
-      publishedStatus: "draft" as const,
+      publishedStatus: "published" as const,
     };
   });
 
@@ -364,6 +366,7 @@ async function projectPages(opts: {
         // row receives its own update payload in this batched upsert.
         title: sql`excluded.title`,
         slug: sql`excluded.slug`,
+        routeKey: sql`excluded.route_key`,
         type: sql`excluded.type`,
         authority: sql`excluded.authority`,
         sensitivity: sql`excluded.sensitivity`,
@@ -391,6 +394,23 @@ async function projectLinks(opts: {
 }): Promise<void> {
   const executor: DbOrTx = opts.tx ?? db;
 
+  // Query ALL existing pages in this workspace so wikilinks to pages outside
+  // the current batch can be resolved (fixes toPageId = NULL bug).
+  const existingPageRows = await executor
+    .select({ id: wikiPageIndex.id, path: wikiPageIndex.path })
+    .from(wikiPageIndex)
+    .where(eq(wikiPageIndex.workspaceId, opts.workspaceId));
+
+  const existingPagePathToId = new Map<string, string>(
+    existingPageRows.map((r) => [r.path, r.id]),
+  );
+
+  // Merge: batch-upserted pages take priority over stale DB rows.
+  const allPagePaths = new Map<string, string>([
+    ...existingPagePathToId,
+    ...opts.pathToId,
+  ]);
+
   // Collect all `fromPageId`s once so we can wipe their outbound direct links
   // in a SINGLE DELETE ... WHERE from_page_id IN (...) instead of one per block.
   const fromIds: string[] = [];
@@ -406,7 +426,7 @@ async function projectLinks(opts: {
 
   for (const block of opts.blocks) {
     if (block.isBookkeeping) continue;
-    const fromId = opts.pathToId.get(block.wikiPath);
+    const fromId = allPagePaths.get(block.wikiPath);
     if (!fromId) continue;
     fromIds.push(fromId);
 
@@ -415,17 +435,17 @@ async function projectLinks(opts: {
       const targetRaw = link.target.trim();
       if (!targetRaw) continue;
       const targetWithExt = targetRaw.endsWith(".md") ? targetRaw : `${targetRaw}.md`;
-      // Try to resolve: same-batch first, then projection.
+      // Try to resolve: same-batch first, then existing DB pages.
       const candidates = [
         `wiki/${opts.workspaceId}/${targetWithExt}`,
         targetWithExt,
       ];
       let toPath: string | null = null;
       for (const c of candidates) {
-        if (opts.pathToId.has(c)) { toPath = c; break; }
+        if (allPagePaths.has(c)) { toPath = c; break; }
       }
       const finalToPath = toPath ?? targetWithExt;
-      const toPageId = toPath ? opts.pathToId.get(toPath) ?? null : null;
+      const toPageId = toPath ? allPagePaths.get(toPath) ?? null : null;
 
       rowsToInsert.push({
         workspaceId: opts.workspaceId,

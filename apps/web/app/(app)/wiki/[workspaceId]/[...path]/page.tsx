@@ -36,7 +36,7 @@ type WikiDetailPageProps = {
 export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
   const { workspaceId, path } = await params;
-  const slug = path.join('/');
+  const routeKey = path.join('/');
 
   // Phase-W2: workspace 일치 검증 (다른 워크스페이스 페이지는 접근 불가).
   // 세션 워크스페이스가 아니면 명시적 403.
@@ -44,7 +44,7 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
     forbidden();
   }
 
-  const loaded = await loadWikiPageForView(workspaceId, slug);
+  const loaded = await loadWikiPageForView(workspaceId, routeKey);
   if (!loaded) {
     // DB 에 페이지가 없거나 publishedStatus != 'published' / 디스크 drift → 404.
     notFound();

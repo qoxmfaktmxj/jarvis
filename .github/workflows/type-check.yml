@@ -41,5 +41,5 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Type check (apps/web)
-        run: pnpm --filter @jarvis/web type-check
+      - name: Type check (monorepo)
+        run: pnpm -r --if-present run type-check

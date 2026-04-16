@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-export type Sensitivity = "public" | "internal" | "confidential";
+export type Sensitivity = "public" | "internal" | "restricted" | "secret";
 
 export interface Frontmatter {
   title: string;
@@ -165,7 +165,8 @@ export function FrontmatterPanel({
             <SelectContent>
               <SelectItem value="public">{t("public")}</SelectItem>
               <SelectItem value="internal">{t("internal")}</SelectItem>
-              <SelectItem value="confidential">{t("confidential")}</SelectItem>
+              <SelectItem value="restricted">{t("restricted")}</SelectItem>
+              <SelectItem value="secret">{t("secret")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

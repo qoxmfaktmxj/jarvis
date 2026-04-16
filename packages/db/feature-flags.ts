@@ -1,5 +1,5 @@
 // packages/db/feature-flags.ts
-// 중앙화된 DB 관련 feature flag 읽기. 모든 flag는 기본 false.
+// 중앙화된 DB 관련 feature flag 읽기. 각 함수의 JSDoc에 기본값이 명시되어 있습니다.
 
 export function featureTwoStepIngest(): boolean {
   return process.env.FEATURE_TWO_STEP_INGEST === "true";
@@ -15,6 +15,8 @@ export function featureTwoStepIngest(): boolean {
  *
  * When false, the legacy knowledge_claim hybrid retrieval path runs
  * unchanged.
+ *
+ * @defaultValue true (`FEATURE_PAGE_FIRST_QUERY !== 'false'`)
  */
 export function featurePageFirstQuery(): boolean {
   return process.env['FEATURE_PAGE_FIRST_QUERY'] !== 'false';

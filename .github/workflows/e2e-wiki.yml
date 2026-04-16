@@ -1,0 +1,104 @@
+name: E2E — Wiki
+
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths:
+      - 'apps/web/e2e/wiki-*.spec.ts'
+      - 'apps/web/app/**/wiki/**'
+      - 'apps/worker/src/jobs/ingest/**'
+      - 'packages/ai/page-first/**'
+  pull_request:
+    paths:
+      - 'apps/web/e2e/wiki-*.spec.ts'
+      - 'apps/web/app/**/wiki/**'
+      - 'apps/worker/src/jobs/ingest/**'
+      - 'packages/ai/page-first/**'
+
+jobs:
+  e2e-wiki:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: jarvis
+          POSTGRES_PASSWORD: jarvis
+          POSTGRES_DB: jarvis_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U jarvis -d jarvis_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      DATABASE_URL: postgres://jarvis:jarvis@localhost:5432/jarvis_test
+      NODE_ENV: test
+      OPENAI_API_KEY: dummy-for-tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Get pnpm store dir
+        id: pnpm-cache
+        shell: bash
+        run: echo "store=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.store }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Ensure pgvector extension
+        run: |
+          PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
+            -c "CREATE EXTENSION IF NOT EXISTS vector;"
+
+      - name: Run DB migrations
+        run: |
+          pnpm db:migrate 2>&1 | tee /tmp/migrate.log
+          EXIT=${PIPESTATUS[0]}
+          if [ $EXIT -ne 0 ]; then
+            echo "=== Migration failed. Log tail ==="
+            tail -50 /tmp/migrate.log
+          fi
+          exit $EXIT
+
+      - name: Install Playwright
+        run: pnpm --filter @jarvis/web exec playwright install --with-deps chromium
+
+      - name: Run wiki E2E
+        run: pnpm --filter @jarvis/web exec playwright test e2e/wiki-viewer.spec.ts e2e/wiki-query.spec.ts e2e/wiki-ingest.spec.ts
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-wiki-results
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+          if-no-files-found: ignore
