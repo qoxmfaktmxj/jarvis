@@ -42,8 +42,9 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r bg-muted/40 px-3 py-6">
-        <p className="mb-4 px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <aside className="w-56 shrink-0 border-r border-surface-200 bg-surface-50 px-3 py-6">
+        <p className="mb-4 px-2 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-isu-600">
+          <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
           {t('title')}
         </p>
         <nav className="flex flex-col gap-1">
@@ -51,7 +52,7 @@ export default async function AdminLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="rounded-md px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-100 hover:text-surface-900"
             >
               {item.label}
             </Link>

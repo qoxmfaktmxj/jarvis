@@ -2,13 +2,6 @@
  * apps/web/app/(app)/admin/wiki/review-queue/page.tsx
  *
  * Phase-W3 T5 — Wiki review queue 관리자 UI (RSC).
- *
- * - 스코프: `wiki_review_queue` 전체 (kind + status 필터 가능).
- * - 기존 `admin/wiki/boundary-violations` 페이지와 레이아웃 일관성을 맞추되,
- *   approve/reject를 지원한다.
- * - admin layout에서 `isAdmin` 게이트가 이미 걸려 있으므로, 여기서는 추가로
- *   `KNOWLEDGE_REVIEW` 권한(또는 ADMIN_ALL)을 검사해 non-admin 리뷰어에게도
- *   진입을 허용할 경로를 확보한다.
  */
 
 import { forbidden, redirect } from "next/navigation";
@@ -23,6 +16,10 @@ import { hasPermission, isAdmin } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/patterns/PageHeader";
+import { DataTableShell } from "@/components/patterns/DataTableShell";
+import { EmptyState } from "@/components/patterns/EmptyState";
 
 import { ApprovalDialog } from "./_components/ApprovalDialog";
 
@@ -69,30 +66,16 @@ function pickPage(raw: string | undefined): number {
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
-/**
- * kind별 Badge 색상 매핑.
- * shadcn Badge는 variant="default|secondary|destructive|outline" 만 지원하므로,
- * 더 세분화된 색은 Tailwind 클래스로 직접 부여한다.
- */
-function kindBadgeClass(kind: string): string {
-  switch (kind) {
-    case "contradiction":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "lint":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
-    case "heal":
-      return "bg-blue-100 text-blue-800 border-blue-200";
-    case "sensitivity_promotion":
-      return "bg-purple-100 text-purple-800 border-purple-200";
-    case "ingest_fail":
-      return "bg-red-100 text-red-800 border-red-200";
-    case "boundary_violation":
-      return "bg-orange-100 text-orange-800 border-orange-200";
-    case "pii":
-      return "bg-red-100 text-red-800 border-red-200";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+function kindBadgeVariant(
+  kind: string,
+): "default" | "secondary" | "destructive" | "outline" {
+  if (kind === "contradiction" || kind === "ingest_fail" || kind === "pii") {
+    return "destructive";
   }
+  if (kind === "boundary_violation" || kind === "lint") {
+    return "secondary";
+  }
+  return "outline";
 }
 
 function statusBadgeVariant(
@@ -113,8 +96,6 @@ export default async function WikiReviewQueuePage({
 
   if (!session) redirect("/login");
 
-  // Admin layout이 이미 isAdmin 게이트를 수행하지만, page-level에서
-  // KNOWLEDGE_REVIEW 권한을 명시적으로 재확인한다 (non-admin 리뷰어 경로 대비).
   if (
     !isAdmin(session) &&
     !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW)
@@ -179,69 +160,97 @@ export default async function WikiReviewQueuePage({
     return qs ? `?${qs}` : "";
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {t("description", { count: total })}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 border-b pb-3">
-        <div className="flex gap-1">
-          {STATUS_VALUES.map((s) => {
-            const active = s === status;
-            return (
-              <a
-                key={s}
-                href={filterHref({ status: s })}
-                className={
-                  active
-                    ? "px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground font-medium"
-                    : "px-3 py-1.5 text-sm rounded-md hover:bg-muted text-muted-foreground"
-                }
-              >
+  const filters = (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex gap-1">
+        {STATUS_VALUES.map((s) => {
+          const active = s === status;
+          return (
+            <Button
+              key={s}
+              asChild
+              size="sm"
+              variant={active ? "default" : "ghost"}
+            >
+              <a href={filterHref({ status: s })}>
                 {t(`statusFilter.${s}` as never)}
               </a>
+            </Button>
+          );
+        })}
+      </div>
+
+      <div className="ml-auto flex flex-wrap items-center gap-2">
+        <span className="text-sm text-surface-600">
+          {t("kindFilterLabel")}:
+        </span>
+        <div className="flex flex-wrap gap-1">
+          {KIND_VALUES.map((k) => {
+            const active = k === kind;
+            return (
+              <Button
+                key={k}
+                asChild
+                size="sm"
+                variant={active ? "default" : "outline"}
+                className="h-7 px-2 text-xs"
+              >
+                <a href={filterHref({ kind: k })}>{t(`kind.${k}` as never)}</a>
+              </Button>
             );
           })}
         </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <label
-            className="text-sm text-muted-foreground"
-            htmlFor="wiki-kind-filter"
-          >
-            {t("kindFilterLabel")}:
-          </label>
-          <div className="flex flex-wrap gap-1">
-            {KIND_VALUES.map((k) => {
-              const active = k === kind;
-              return (
-                <a
-                  key={k}
-                  href={filterHref({ kind: k })}
-                  className={
-                    active
-                      ? "px-2 py-1 text-xs rounded-md bg-primary text-primary-foreground font-medium"
-                      : "px-2 py-1 text-xs rounded-md hover:bg-muted text-muted-foreground border"
-                  }
-                >
-                  {t(`kind.${k}` as never)}
-                </a>
-              );
-            })}
-          </div>
-        </div>
       </div>
+    </div>
+  );
 
-      {rows.length === 0 ? (
-        <div className="border rounded-md p-8 text-center text-muted-foreground">
-          {t("empty")}
-        </div>
-      ) : (
-        <div className="border rounded-md divide-y">
+  const pagination =
+    totalPages > 1 ? (
+      <>
+        <Button asChild variant="outline" size="sm" disabled={page <= 1}>
+          {page <= 1 ? (
+            <span className="pointer-events-none opacity-50">
+              {t("pagination.previous")}
+            </span>
+          ) : (
+            <a href={pageHref(Math.max(1, page - 1))}>
+              {t("pagination.previous")}
+            </a>
+          )}
+        </Button>
+        <span className="text-sm text-surface-500">
+          {t("pagination.pageInfo", { page, total: totalPages })}
+        </span>
+        <Button asChild variant="outline" size="sm" disabled={page >= totalPages}>
+          {page >= totalPages ? (
+            <span className="pointer-events-none opacity-50">
+              {t("pagination.next")}
+            </span>
+          ) : (
+            <a href={pageHref(Math.min(totalPages, page + 1))}>
+              {t("pagination.next")}
+            </a>
+          )}
+        </Button>
+      </>
+    ) : undefined;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Wiki Review Queue"
+        title={t("title")}
+        description={t("description", { count: total })}
+      />
+
+      <DataTableShell
+        rowCount={rows.length}
+        filters={filters}
+        empty={<EmptyState title={t("empty")} />}
+        pagination={pagination}
+      >
+        <ul className="divide-y divide-surface-200">
           {rows.map((row) => {
             const shortSha = (row.commitSha ?? "").slice(0, 10);
             const affectedCount = Array.isArray(row.affectedPages)
@@ -249,15 +258,15 @@ export default async function WikiReviewQueuePage({
               : 0;
 
             return (
-              <div
+              <li
                 key={row.id}
                 className="flex items-start gap-4 px-4 py-3"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge
-                      variant="outline"
-                      className={`shrink-0 ${kindBadgeClass(row.kind)}`}
+                      variant={kindBadgeVariant(row.kind)}
+                      className="shrink-0"
                     >
                       {t(`kind.${row.kind}` as never)}
                     </Badge>
@@ -268,22 +277,22 @@ export default async function WikiReviewQueuePage({
                       {t(`statusFilter.${row.status}` as never)}
                     </Badge>
                     {affectedCount > 0 ? (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-surface-500">
                         {t("affectedPages", { count: affectedCount })}
                       </span>
                     ) : null}
                     {shortSha ? (
-                      <span className="text-xs text-muted-foreground font-mono">
+                      <span className="font-mono text-xs text-surface-500">
                         {shortSha}
                       </span>
                     ) : null}
                   </div>
                   {row.description ? (
-                    <p className="text-sm mt-1.5 whitespace-pre-wrap break-words">
+                    <p className="mt-1.5 whitespace-pre-wrap break-words text-sm text-surface-700">
                       {row.description}
                     </p>
                   ) : null}
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="mt-1 text-xs text-surface-500">
                     {row.createdAt.toISOString()}
                   </p>
                 </div>
@@ -295,41 +304,11 @@ export default async function WikiReviewQueuePage({
                     description={row.description}
                   />
                 ) : null}
-              </div>
+              </li>
             );
           })}
-        </div>
-      )}
-
-      {totalPages > 1 ? (
-        <div className="flex items-center justify-between pt-2">
-          <a
-            href={pageHref(Math.max(1, page - 1))}
-            aria-disabled={page <= 1}
-            className={
-              page <= 1
-                ? "px-3 py-1.5 text-sm rounded-md text-muted-foreground pointer-events-none opacity-40"
-                : "px-3 py-1.5 text-sm rounded-md hover:bg-muted"
-            }
-          >
-            {t("pagination.previous")}
-          </a>
-          <span className="text-sm text-muted-foreground">
-            {t("pagination.pageInfo", { page, total: totalPages })}
-          </span>
-          <a
-            href={pageHref(Math.min(totalPages, page + 1))}
-            aria-disabled={page >= totalPages}
-            className={
-              page >= totalPages
-                ? "px-3 py-1.5 text-sm rounded-md text-muted-foreground pointer-events-none opacity-40"
-                : "px-3 py-1.5 text-sm rounded-md hover:bg-muted"
-            }
-          >
-            {t("pagination.next")}
-          </a>
-        </div>
-      ) : null}
+        </ul>
+      </DataTableShell>
     </div>
   );
 }

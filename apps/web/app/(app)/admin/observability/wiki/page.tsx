@@ -2,26 +2,6 @@
  * apps/web/app/(app)/admin/observability/wiki/page.tsx
  *
  * Phase-W3 v4-W3-T5 — Admin wiki observability dashboard.
- *
- * Layout: 7 widgets rendered from server-side Drizzle queries, wrapped in a
- * client component (`WikiObservabilityClient`) that performs a 30s
- * `router.refresh()` tick. Access control is enforced upstream by
- * `apps/web/app/(app)/admin/layout.tsx` (`isAdmin(session)` redirect).
- *
- * Widget list (spec §W3-T5):
- *   1. Daily ingest counts — last 7 days from `wiki_commit_log`.
- *   2. page-first query count — last 24h from `llm_call_log`
- *      filtered by `prompt_version = PAGE_FIRST_PROMPT_VERSION`.
- *      (The proposed `op` column from llm-ops.ts is not yet migrated;
- *      prompt_version is the interim identifier — see Track B1.)
- *   3. commit log integrity — latest `wiki_commit_log` row / staleness.
- *   4. `wiki_page_index` total pages + per-workspace distribution.
- *   5. auto/manual boundary violations — pending count from
- *      `wiki_review_queue` where `kind='boundary_violation'`.
- *   6. Latest lint report summary from `wiki_lint_report`.
- *   7. Review queue pending totals from `wiki_review_queue`.
- *
- * All Korean strings are hardcoded by spec (admin-only page).
  */
 
 import { headers } from "next/headers";
@@ -37,20 +17,51 @@ import {
 import { getSession } from "@jarvis/auth/session";
 
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { PageHeader } from "@/components/patterns/PageHeader";
+import { DataTableShell } from "@/components/patterns/DataTableShell";
 import { WikiObservabilityClient } from "./WikiObservabilityClient";
+
+function StatCard({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  tone?: "default" | "warn" | "danger";
+}) {
+  const toneClass =
+    tone === "danger"
+      ? "border-destructive/30 bg-destructive/5"
+      : tone === "warn"
+        ? "border-amber-300 bg-amber-50"
+        : "border-surface-200 bg-white";
+  return (
+    <section className={`flex flex-col gap-2 rounded-xl border p-5 ${toneClass}`}>
+      <p className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
+        {label}
+      </p>
+      <p className="text-display text-4xl font-bold leading-none tracking-tight text-surface-900 tabular-nums">
+        {value}
+      </p>
+      {hint ? <p className="text-xs text-surface-500">{hint}</p> : null}
+    </section>
+  );
+}
 
 export const dynamic = "force-dynamic";
 
-/**
- * `llm_call_log.op` 컬럼이 추가됨 (Track B1 완료). wiki 쿼리 op는
- * `wiki.query.%` 패턴으로 필터한다. prompt_version fallback은
- * op 컬럼 마이그레이션 이전 데이터 호환을 위해 유지.
- */
 const PAGE_FIRST_PROMPT_VERSION = "2026-04-v1-pagefirst";
-
-// ────────────────────────────────────────────────────────────────────────────
-// Types
-// ────────────────────────────────────────────────────────────────────────────
 
 interface DailyCount {
   day: string;
@@ -86,10 +97,6 @@ interface DashboardData {
   reviewQueueByKind: Array<{ kind: string; count: number }>;
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Query helpers
-// ────────────────────────────────────────────────────────────────────────────
-
 async function fetchDailyIngest(workspaceId: string): Promise<DailyCount[]> {
   const rows = await db.execute<{ day: string; count: string }>(sql`
     SELECT to_char(date_trunc('day', created_at), 'YYYY-MM-DD') AS day,
@@ -105,8 +112,6 @@ async function fetchDailyIngest(workspaceId: string): Promise<DailyCount[]> {
 }
 
 async function fetchPageFirstQueryCount(workspaceId: string): Promise<number> {
-  // op 컬럼 추가 이후: wiki.query.% op로 필터. 마이그레이션 이전 데이터 호환을 위해
-  // prompt_version fallback도 유지한다. 기존 데이터가 모두 소진되면 fallback 제거 가능.
   const rows = await db.execute<{ count: string }>(sql`
     SELECT COUNT(*)::text AS count
     FROM llm_call_log
@@ -219,40 +224,6 @@ async function fetchReviewQueueStats(workspaceId: string) {
   };
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Widgets
-// ────────────────────────────────────────────────────────────────────────────
-
-function StatCard({
-  label,
-  value,
-  hint,
-  tone = "default",
-}: {
-  label: string;
-  value: string | number;
-  hint?: string;
-  tone?: "default" | "warn" | "danger";
-}) {
-  const toneClass =
-    tone === "danger"
-      ? "border-red-300 bg-red-50 dark:bg-red-950/20"
-      : tone === "warn"
-        ? "border-amber-300 bg-amber-50 dark:bg-amber-950/20"
-        : "border bg-card";
-  return (
-    <div className={`rounded-md px-4 py-3 ${toneClass}`}>
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-      {hint ? (
-        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-      ) : null}
-    </div>
-  );
-}
-
 function formatRelative(d: Date | null): string {
   if (!d) return "기록 없음";
   const diffMs = Date.now() - d.getTime();
@@ -264,10 +235,6 @@ function formatRelative(d: Date | null): string {
   const days = Math.round(hours / 24);
   return `${days}일 전`;
 }
-
-// ────────────────────────────────────────────────────────────────────────────
-// Page
-// ────────────────────────────────────────────────────────────────────────────
 
 async function loadDashboard(workspaceId: string): Promise<DashboardData> {
   const [
@@ -322,21 +289,17 @@ export default async function WikiObservabilityPage() {
   return (
     <WikiObservabilityClient renderedAt={renderedAt}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Wiki 운영 모니터링
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            ingest 처리량, page-first 쿼리, commit 무결성, lint 결과 등
-            위키 파이프라인 건강 상태를 한 화면에 모읍니다.
-            Workspace: <code>{data.workspaceId}</code>
-          </p>
-        </div>
+        <PageHeader
+          accent="AD"
+          eyebrow="Admin · Wiki Observability"
+          title="Wiki 운영 모니터링"
+          description={`ingest 처리량, page-first 쿼리, commit 무결성, lint 결과 등 위키 파이프라인 건강 상태. Workspace: ${data.workspaceId}`}
+        />
 
-        {/* 최상단 3대 핵심 지표 */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Top KPIs */}
+        <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
           <StatCard
-            label="일별 ingest 건수 (최근 7일 합계)"
+            label="일별 ingest 건수 (최근 7일)"
             value={data.dailyIngestTotal}
             hint={
               data.dailyIngest.length > 0
@@ -347,7 +310,7 @@ export default async function WikiObservabilityPage() {
           <StatCard
             label="page-first 쿼리 (최근 24h)"
             value={data.pageFirstQueryCount24h}
-            hint={`op LIKE 'wiki.query.%' (fallback: prompt_version)`}
+            hint="op LIKE 'wiki.query.%' (fallback: prompt_version)"
           />
           <StatCard
             label="commit log 무결성"
@@ -369,89 +332,87 @@ export default async function WikiObservabilityPage() {
           />
         </section>
 
-        {/* ingest 일별 breakdown */}
-        <section className="border rounded-md">
-          <header className="px-4 py-2 border-b bg-muted/30">
-            <h2 className="text-sm font-semibold">일별 ingest 추이 (최근 7일)</h2>
-          </header>
-          {data.dailyIngest.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
+        {/* Daily ingest breakdown */}
+        <DataTableShell
+          rowCount={data.dailyIngest.length}
+          empty={
+            <div className="px-4 py-8 text-center text-sm text-surface-500">
               최근 7일 동안 ingest 커밋이 없습니다.
-            </p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-muted/20 text-left">
-                <tr>
-                  <th className="px-4 py-2">날짜</th>
-                  <th className="px-4 py-2 text-right">건수</th>
-                  <th className="px-4 py-2">분포</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const max = Math.max(
-                    1,
-                    ...data.dailyIngest.map((r) => r.count),
-                  );
-                  return data.dailyIngest.map((r) => (
-                    <tr key={r.day} className="border-t">
-                      <td className="px-4 py-2 font-mono text-xs">{r.day}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">
-                        {r.count}
-                      </td>
-                      <td className="px-4 py-2">
-                        <div
-                          className="h-2 bg-primary/70 rounded"
-                          style={{
-                            width: `${Math.max(4, (r.count / max) * 100)}%`,
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ));
-                })()}
-              </tbody>
-            </table>
-          )}
-        </section>
+            </div>
+          }
+        >
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>날짜</TableHead>
+                <TableHead className="text-right">건수</TableHead>
+                <TableHead>분포</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(() => {
+                const max = Math.max(
+                  1,
+                  ...data.dailyIngest.map((r) => r.count),
+                );
+                return data.dailyIngest.map((r) => (
+                  <TableRow key={r.day}>
+                    <TableCell className="font-mono text-xs">{r.day}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {r.count}
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className="h-2 rounded bg-primary/70"
+                        style={{
+                          width: `${Math.max(4, (r.count / max) * 100)}%`,
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ));
+              })()}
+            </TableBody>
+          </Table>
+        </DataTableShell>
 
-        {/* 페이지 총수 + 타입 분포 */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="border rounded-md">
-            <header className="px-4 py-2 border-b bg-muted/30 flex justify-between items-center">
-              <h2 className="text-sm font-semibold">wiki_page_index 총 페이지</h2>
+        {/* Pages + type distribution */}
+        <section className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-surface-200 bg-white">
+            <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
+              <h2 className="text-sm font-semibold text-surface-900">wiki_page_index 총 페이지</h2>
               <Badge variant="outline">{data.totalPages}</Badge>
             </header>
             {data.typeDistribution.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">
+              <p className="p-4 text-sm text-surface-500">
                 페이지 인덱스가 비어 있습니다.
               </p>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-muted/20 text-left">
-                  <tr>
-                    <th className="px-4 py-2">type</th>
-                    <th className="px-4 py-2 text-right">개수</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>type</TableHead>
+                    <TableHead className="text-right">개수</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {data.typeDistribution.map((r) => (
-                    <tr key={r.type} className="border-t">
-                      <td className="px-4 py-2 font-mono text-xs">{r.type}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">
+                    <TableRow key={r.type}>
+                      <TableCell className="font-mono text-xs">{r.type}</TableCell>
+                      <TableCell className="text-right tabular-nums">
                         {r.count}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             )}
           </div>
 
-          {/* auto/manual 경계 위반 */}
-          <div className="border rounded-md">
-            <header className="px-4 py-2 border-b bg-muted/30 flex justify-between items-center">
-              <h2 className="text-sm font-semibold">auto/manual 경계 위반</h2>
+          {/* Boundary violations */}
+          <div className="rounded-xl border border-surface-200 bg-white">
+            <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
+              <h2 className="text-sm font-semibold text-surface-900">auto/manual 경계 위반</h2>
               <Badge
                 variant={
                   data.boundaryViolationsPending > 0
@@ -462,12 +423,12 @@ export default async function WikiObservabilityPage() {
                 pending {data.boundaryViolationsPending}
               </Badge>
             </header>
-            <div className="p-4 text-sm text-muted-foreground space-y-2">
+            <div className="space-y-2 p-4 text-sm text-surface-500">
               {data.boundaryViolationsPending === 0 ? (
                 <p>경계 위반이 없습니다. ({" "}
                   <a
                     href="/admin/wiki/boundary-violations"
-                    className="underline hover:text-foreground"
+                    className="underline hover:text-surface-900"
                   >
                     위반 로그
                   </a>
@@ -481,7 +442,7 @@ export default async function WikiObservabilityPage() {
                   의 auto/manual 경계 위반이 pending 상태입니다.{" "}
                   <a
                     href="/admin/wiki/boundary-violations"
-                    className="underline hover:text-foreground"
+                    className="underline hover:text-surface-900"
                   >
                     위반 로그 열기 →
                   </a>
@@ -491,10 +452,10 @@ export default async function WikiObservabilityPage() {
           </div>
         </section>
 
-        {/* Lint 결과 요약 */}
-        <section className="border rounded-md">
-          <header className="px-4 py-2 border-b bg-muted/30 flex justify-between items-center">
-            <h2 className="text-sm font-semibold">최근 Lint 리포트</h2>
+        {/* Lint report */}
+        <div className="rounded-xl border border-surface-200 bg-white">
+          <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
+            <h2 className="text-sm font-semibold text-surface-900">최근 Lint 리포트</h2>
             {data.latestLintReport ? (
               <Badge variant="outline">
                 {data.latestLintReport.reportDate}
@@ -504,7 +465,7 @@ export default async function WikiObservabilityPage() {
             )}
           </header>
           {data.latestLintReport ? (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-0 divide-x divide-y md:divide-y-0">
+            <div className="grid grid-cols-2 divide-y divide-surface-200 md:grid-cols-5 md:divide-x md:divide-y-0">
               <LintCell label="orphan" value={data.latestLintReport.orphan} />
               <LintCell
                 label="broken link"
@@ -521,16 +482,16 @@ export default async function WikiObservabilityPage() {
               <LintCell label="stale" value={data.latestLintReport.stale} />
             </div>
           ) : (
-            <p className="p-4 text-sm text-muted-foreground">
+            <p className="p-4 text-sm text-surface-500">
               아직 lint 리포트가 없습니다. 주간 cron이 실행된 후 표시됩니다.
             </p>
           )}
-        </section>
+        </div>
 
-        {/* 리뷰 큐 */}
-        <section className="border rounded-md">
-          <header className="px-4 py-2 border-b bg-muted/30 flex justify-between items-center">
-            <h2 className="text-sm font-semibold">리뷰 큐 (pending)</h2>
+        {/* Review queue */}
+        <div className="rounded-xl border border-surface-200 bg-white">
+          <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
+            <h2 className="text-sm font-semibold text-surface-900">리뷰 큐 (pending)</h2>
             <Badge
               variant={
                 data.reviewQueuePending > 0 ? "destructive" : "outline"
@@ -540,30 +501,30 @@ export default async function WikiObservabilityPage() {
             </Badge>
           </header>
           {data.reviewQueueByKind.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
+            <p className="p-4 text-sm text-surface-500">
               pending 리뷰 항목이 없습니다.
             </p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="bg-muted/20 text-left">
-                <tr>
-                  <th className="px-4 py-2">kind</th>
-                  <th className="px-4 py-2 text-right">개수</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>kind</TableHead>
+                  <TableHead className="text-right">개수</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {data.reviewQueueByKind.map((r) => (
-                  <tr key={r.kind} className="border-t">
-                    <td className="px-4 py-2 font-mono text-xs">{r.kind}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">
+                  <TableRow key={r.kind}>
+                    <TableCell className="font-mono text-xs">{r.kind}</TableCell>
+                    <TableCell className="text-right tabular-nums">
                       {r.count}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           )}
-        </section>
+        </div>
       </div>
     </WikiObservabilityClient>
   );
@@ -572,13 +533,13 @@ export default async function WikiObservabilityPage() {
 function LintCell({ label, value }: { label: string; value: number }) {
   const tone =
     value === 0
-      ? "text-muted-foreground"
+      ? "text-surface-500"
       : value >= 10
         ? "text-destructive"
-        : "text-foreground";
+        : "text-surface-900";
   return (
     <div className="px-4 py-3">
-      <p className="text-xs uppercase tracking-wider text-muted-foreground">
+      <p className="text-xs uppercase tracking-wider text-surface-500">
         {label}
       </p>
       <p className={`mt-1 text-2xl font-semibold tabular-nums ${tone}`}>

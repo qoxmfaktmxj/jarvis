@@ -1,5 +1,11 @@
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table';
+import { PageHeader }     from '@/components/patterns/PageHeader';
+import { DataTableShell } from '@/components/patterns/DataTableShell';
+import { EmptyState }     from '@/components/patterns/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,40 +37,45 @@ async function fetchRows(): Promise<Row[]> {
 export default async function LlmCostPage() {
   const rows = await fetchRows();
   return (
-    <main className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">LLM Cost — 최근 7일</h1>
-      <p className="text-sm text-gray-500 mb-4">
-        workspace × model 기준 집계. blocked = 예산 차단으로 기록된 호출 수.
-      </p>
-      <table className="w-full text-sm border-collapse">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="text-left p-2">Workspace</th>
-            <th className="text-left p-2">Model</th>
-            <th className="text-right p-2">Calls</th>
-            <th className="text-right p-2">Total (USD)</th>
-            <th className="text-right p-2">Blocked</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className="border-t">
-              <td className="p-2 font-mono text-xs">{r.workspace_id}</td>
-              <td className="p-2">{r.model}</td>
-              <td className="p-2 text-right">{r.calls}</td>
-              <td className="p-2 text-right">${Number(r.total_cost).toFixed(4)}</td>
-              <td className="p-2 text-right">{r.blocked}</td>
-            </tr>
-          ))}
-          {rows.length === 0 && (
-            <tr>
-              <td className="p-4 text-center text-gray-400" colSpan={5}>
-                최근 7일 호출 기록이 없습니다.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </main>
+    <div className="space-y-6">
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · LLM Cost"
+        title="LLM Cost — 최근 7일"
+        description="workspace × model 기준 집계. blocked = 예산 차단으로 기록된 호출 수."
+      />
+      <DataTableShell
+        rowCount={rows.length}
+        empty={
+          <EmptyState
+            title="LLM cost"
+            description="최근 7일 호출 기록이 없습니다."
+          />
+        }
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Workspace</TableHead>
+              <TableHead>Model</TableHead>
+              <TableHead className="text-right">Calls</TableHead>
+              <TableHead className="text-right">Total (USD)</TableHead>
+              <TableHead className="text-right">Blocked</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-mono text-xs">{r.workspace_id}</TableCell>
+                <TableCell>{r.model}</TableCell>
+                <TableCell className="text-right tabular-nums">{r.calls}</TableCell>
+                <TableCell className="text-right tabular-nums">${Number(r.total_cost).toFixed(4)}</TableCell>
+                <TableCell className="text-right tabular-nums">{r.blocked}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </DataTableShell>
+    </div>
   );
 }

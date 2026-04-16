@@ -1,14 +1,7 @@
 /**
  * apps/web/app/(app)/admin/wiki/boundary-violations/page.tsx
  *
- * Phase-W3 v4-W3-T1 — admin dashboard for wiki auto/manual boundary
- * violations. RSC; reads `wiki_review_queue` rows with
- * `kind='boundary_violation'` scoped to the current workspace.
- *
- * Mirrors the existing admin/review-queue page layout (headers → session →
- * drizzle query → list rendering) so we stay aligned on structure even
- * though this page is narrower in scope (read-only; approvals happen in
- * the main review-queue UI).
+ * Phase-W3 v4-W3-T1 — admin dashboard for wiki auto/manual boundary violations.
  */
 
 import { headers } from "next/headers";
@@ -19,6 +12,9 @@ import { wikiReviewQueue } from "@jarvis/db/schema";
 import { getSession } from "@jarvis/auth/session";
 
 import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/patterns/PageHeader";
+import { DataTableShell } from "@/components/patterns/DataTableShell";
+import { EmptyState } from "@/components/patterns/EmptyState";
 
 const PAGE_SIZE = 50;
 
@@ -73,22 +69,23 @@ export default async function BoundaryViolationsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Wiki 경계 위반
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          LLM이 `wiki/manual/**`을, 사람이 `wiki/auto/**`을 건드린 커밋을
-          기록합니다. 최근 {PAGE_SIZE}건.
-        </p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Wiki Boundary"
+        title="Wiki 경계 위반"
+        description={`LLM이 wiki/manual/**을, 사람이 wiki/auto/**을 건드린 커밋 기록. 최근 ${PAGE_SIZE}건.`}
+      />
 
-      {rows.length === 0 ? (
-        <div className="border rounded-md p-8 text-center text-muted-foreground">
-          위반 없음 — auto/manual 경계가 정상입니다.
-        </div>
-      ) : (
-        <div className="border rounded-md divide-y">
+      <DataTableShell
+        rowCount={rows.length}
+        empty={
+          <EmptyState
+            title="위반 없음"
+            description="auto/manual 경계가 정상입니다."
+          />
+        }
+      >
+        <ul className="divide-y divide-surface-200">
           {rows.map((row) => {
             const payload = readPayload(row.payload);
             const kindLabel = violationLabel(payload.kind);
@@ -100,22 +97,22 @@ export default async function BoundaryViolationsPage() {
             );
 
             return (
-              <div
+              <li
                 key={row.id}
                 className="flex items-start gap-4 px-4 py-3"
               >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-surface-900">
                     <code>{path}</code>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="mt-0.5 text-xs text-surface-500">
                     {author}
                     {shortSha ? ` · ${shortSha}` : ""}
                     {" · "}
                     {row.createdAt.toISOString()}
                   </p>
                   {row.description ? (
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="mt-1 text-xs text-surface-500">
                       {row.description}
                     </p>
                   ) : null}
@@ -126,11 +123,11 @@ export default async function BoundaryViolationsPage() {
                 <Badge variant="outline" className="shrink-0">
                   {row.status}
                 </Badge>
-              </div>
+              </li>
             );
           })}
-        </div>
-      )}
+        </ul>
+      </DataTableShell>
     </div>
   );
 }

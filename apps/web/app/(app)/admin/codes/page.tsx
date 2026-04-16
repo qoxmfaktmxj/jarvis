@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { CodeTable } from '@/components/admin/CodeTable';
 import type { CodeGroup } from '@/lib/queries/admin';
+import { PageHeader } from '@/components/patterns/PageHeader';
 
 export default function AdminCodesPage() {
   const t = useTranslations('Admin.Codes');
@@ -22,12 +23,14 @@ export default function AdminCodesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Codes"
+        title={t('title')}
+        description={t('description')}
+      />
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-surface-500">Loading...</p>
       ) : (
         <CodeTable initialGroups={groups} onRefresh={fetchGroups} />
       )}
