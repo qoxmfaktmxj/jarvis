@@ -1,7 +1,21 @@
 # Jarvis Current State Document
 
-**Last Updated**: 2026-04-15  
-**Status**: Phases 0–7A Complete  
+> ⚠️ **[ARCHIVED — RAG 시대 문서]**  
+> 이 문서는 2026-04-15 Karpathy LLM Wiki 피벗 이전 상태를 기록한 **역사적 스냅샷**입니다.  
+> Phase-W3 완료 이후 아키텍처 현황은 아래를 참조하세요:
+>
+> - **아키텍처 원칙**: [`WIKI-AGENTS.md`](../WIKI-AGENTS.md) — 3-레이어 모델, 4-operation 계약, Single-Writer+Git 규칙, RBAC, Feature flags
+> - **전략 개요**: [`README.md`](../README.md) — Karpathy-first 전환 배경, RAG vs LLM Wiki 비교표
+> - **현행 통합 계획**: [`docs/analysis/99-integration-plan-v4.md`](analysis/99-integration-plan-v4.md) — Phase-W4 계획 (v4 초안)
+> - **보관 위치**: [`docs/_archive/2026-04-pivot/`](_archive/2026-04-pivot/) — 이 문서의 과거 전체 버전 보관 예정
+>
+> 아래 내용은 **"6-Lane Ask AI Router" / "Phase 0–7A Complete"** 등 구 RAG 시대 정의이며,  
+> 현재 코드베이스(Phase-W, `packages/wiki-fs`, `packages/wiki-agent`, `packages/ai/page-first`)를 반영하지 않습니다.
+
+---
+
+**Last Updated**: 2026-04-15 (RAG 시대 스냅샷 — Karpathy 피벗 이전)  
+**Status**: ~~Phases 0–7A Complete~~ → **W3 Complete (Karpathy-first)**  
 **Scope**: 5000-user enterprise portal, 1-week sprint baseline
 
 ---

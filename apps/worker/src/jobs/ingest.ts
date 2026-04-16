@@ -2,6 +2,8 @@ import type PgBoss from 'pg-boss';
 import { db } from '@jarvis/db/client';
 import { rawSource } from '@jarvis/db/schema/file';
 import { reviewQueue } from '@jarvis/db/schema/review-queue';
+// @legacy-rag — knowledgePage/knowledgeClaim DB 경로. Phase-W4에서 삭제 예정.
+// 현재 featureWikiFsMode=true 분기에서는 이 경로를 타지 않음 (legacyTwoStepIngest 전용).
 import { knowledgePage, knowledgeClaim } from '@jarvis/db/schema/knowledge';
 import {
   featureTwoStepIngest,
@@ -17,6 +19,7 @@ import {
   redactPII,
   type Sensitivity,
 } from '../lib/pii-redactor.js';
+// @legacy-rag — claim 임베딩용 (legacyTwoStepIngest 내부 사용). Phase-W4에서 삭제 예정.
 import { generateEmbedding } from '@jarvis/ai/embed';
 import OpenAI from 'openai';
 import { analyze } from './ingest/analyze.js';

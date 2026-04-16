@@ -8,13 +8,11 @@
 //   - budget-guard가 workspace별 일일 예산 집계 시 wiki.* 호출도 전부 합산 대상이 되도록
 //     op 문자열을 일관되게 유지한다.
 //
-// DB 연계 주의 (B1 의존):
-//   - 현재 `llm_call_log` 테이블에는 `op` 컬럼이 없다 (Track B1 작업 중).
-//   - B1에서 컬럼이 추가되면 `logLlmCall`의 `op` 필드를 그대로 INSERT 값으로
-//     매핑하기만 하면 된다. 지금은 애플리케이션 레이어 관측(pino structured log)과
-//     테스트 검증용으로만 사용한다.
-//   - 예산 집계(`assertBudget`)는 op 컬럼 없이도 workspace + date + status='ok'로
-//     합산하므로 wiki.* 호출이 동일 경로로 INSERT되기만 하면 자동으로 포함된다.
+// DB 연계 (B1 완료):
+//   - `llm_call_log` 테이블에 `op` varchar(50) nullable 컬럼이 추가됨.
+//   - `logLlmCall`의 `op` 필드가 DB INSERT에 매핑되어 있다.
+//   - 예산 집계(`assertBudget`)는 workspace + date + status='ok'로 합산하므로
+//     wiki.* 호출이 동일 경로로 INSERT되면 자동 포함된다.
 
 /** 기존(비 wiki) LLM 호출 op 타입. */
 export const CORE_OPS = [

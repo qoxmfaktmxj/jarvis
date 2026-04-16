@@ -17,25 +17,19 @@
  * Usage:
  *   tsx apps/worker/eval/runners/page-first-baseline.ts [--output results.md]
  *
- * NOTE:
- *   Wiring this up to the live page-first pipeline requires a real DB
- *   connection + a workspace with ingested pages + a user-permissions vector.
- *   To keep the runner importable (and CI-safe) without those prerequisites,
- *   the shortlist call is left as a `// TODO` placeholder. When running
- *   against a live environment, uncomment the `lexicalShortlist` call and
- *   supply workspaceId / userPermissions via env.
+ * Modes:
+ *   - LIVE: When `EVAL_WORKSPACE_ID` env is set, calls the real `lexicalShortlist`
+ *     against a running DB. Requires DB connection + ingested workspace.
+ *   - DRY-RUN: When `EVAL_WORKSPACE_ID` is absent, validates fixture structure and
+ *     reports baseline recall (0%) for all queries. Useful for CI and fixture QA.
  *
- *   Real import path (per `packages/ai/page-first/shortlist.ts`):
- *     import { lexicalShortlist } from "@jarvis/ai/page-first/shortlist";
- *   That export is NOT yet declared in `packages/ai/package.json` → a follow-up
- *   task can add `"./page-first/shortlist": "./page-first/shortlist.ts"` to
- *   the exports map when we enable live runs.
+ * Environment variables:
+ *   EVAL_WORKSPACE_ID   — workspace UUID (enables live mode)
+ *   EVAL_USER_PERMS     — comma-separated permission strings (defaults to "knowledge:read")
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-
-// import { lexicalShortlist } from "@jarvis/ai/page-first/shortlist"; // enable for live runs
 
 interface Fixture {
   query: string;
@@ -47,96 +41,184 @@ interface Fixture {
 
 interface EvalResult {
   query: string;
+  expectedPages: string[];
   retrievedPages: string[];
   hit: boolean;
-  recall: number; // 0..1
+  /** Per-query recall: |expected ∩ retrieved| / |expected|. 1.0 when expectedPages is empty. */
+  recall: number;
+}
+
+interface EvalSummary {
+  mode: "live" | "dry-run";
+  total: number;
+  hit: number;
+  recall5: number;
+  results: EvalResult[];
 }
 
 const TOP_K = 5;
 
-export async function runEval(fixturePath: string): Promise<EvalResult[]> {
+/**
+ * Dynamically import lexicalShortlist only when needed (live mode).
+ * This avoids pulling in DB deps when running dry-run in CI.
+ */
+async function importShortlist() {
+  const mod = await import("@jarvis/ai/page-first/shortlist");
+  return mod.lexicalShortlist;
+}
+
+function parseFixtures(fixturePath: string): Fixture[] {
   const lines = readFileSync(fixturePath, "utf-8")
     .split("\n")
     .filter((l) => l.trim().length > 0);
 
-  const fixtures: Fixture[] = lines.map((l, idx) => {
+  return lines.map((l, idx) => {
     try {
-      return JSON.parse(l) as Fixture;
+      const parsed = JSON.parse(l) as Fixture;
+      // Validate required fields
+      if (typeof parsed.query !== "string" || !parsed.query.trim()) {
+        throw new Error("missing or empty 'query'");
+      }
+      if (!Array.isArray(parsed.expectedPages)) {
+        throw new Error("missing or invalid 'expectedPages'");
+      }
+      return parsed;
     } catch (err) {
       throw new Error(
-        `page-qa.jsonl line ${idx + 1}: invalid JSON — ${
+        `page-qa.jsonl line ${idx + 1}: invalid fixture — ${
           err instanceof Error ? err.message : String(err)
         }`,
       );
     }
   });
+}
+
+function computeRecall(expected: string[], retrieved: string[]): number {
+  if (expected.length === 0) return 1;
+  const retrievedSet = new Set(retrieved);
+  const hits = expected.filter((ep) => retrievedSet.has(ep)).length;
+  return hits / expected.length;
+}
+
+function computeHit(expected: string[], retrieved: string[]): boolean {
+  if (expected.length === 0) return true;
+  const retrievedSet = new Set(retrieved);
+  return expected.some((ep) => retrievedSet.has(ep));
+}
+
+export async function runEval(fixturePath: string): Promise<EvalSummary> {
+  const fixtures = parseFixtures(fixturePath);
+
+  const workspaceId = process.env["EVAL_WORKSPACE_ID"];
+  const userPermissions = (
+    process.env["EVAL_USER_PERMS"] ?? "knowledge:read"
+  ).split(",");
+
+  const isLive = !!workspaceId;
+  const mode = isLive ? "live" : "dry-run";
+
+  let lexicalShortlist:
+    | Awaited<ReturnType<typeof importShortlist>>
+    | null = null;
+
+  if (isLive) {
+    // EVAL_WORKSPACE_ID가 설정된 상태에서 import 실패는 환경 문제이므로 throw.
+    // 조용히 dry-run으로 폴백하면 recall@5=0%를 정상 결과로 오해할 수 있다.
+    lexicalShortlist = await importShortlist();
+  }
+
+  if (!isLive) {
+    console.log("[eval] DRY-RUN mode — EVAL_WORKSPACE_ID not set.");
+    console.log(
+      "[eval] Fixture structure validation only. Set EVAL_WORKSPACE_ID to enable live recall measurement.",
+    );
+  }
 
   const results: EvalResult[] = [];
 
   for (const fixture of fixtures) {
-    // TODO(v4-W3-T4-live): 실제 page-first shortlist 호출 연결.
-    //
-    //   const hits = await lexicalShortlist({
-    //     workspaceId: process.env.EVAL_WORKSPACE_ID!,
-    //     userPermissions: (process.env.EVAL_USER_PERMS ?? "").split(","),
-    //     question: fixture.query,
-    //     topK: TOP_K,
-    //   });
-    //   const retrievedPages = hits.map((h) => h.path);
-    //
-    // 라이브 실행에는 DB 연결 + 인덱싱된 워크스페이스가 필요하므로 지금은
-    // placeholder. 현재 구조만 검증한다.
-    const retrievedPages: string[] = [];
+    let retrievedPages: string[] = [];
 
-    const hit =
-      fixture.expectedPages.length === 0 ||
-      fixture.expectedPages.some((ep) => retrievedPages.includes(ep));
+    if (lexicalShortlist && workspaceId) {
+      try {
+        const hits = await lexicalShortlist({
+          workspaceId,
+          userPermissions,
+          question: fixture.query,
+          topK: TOP_K,
+        });
+        retrievedPages = hits.map((h) => h.path);
+      } catch (err) {
+        console.warn(
+          `[eval] shortlist failed for query "${fixture.query}":`,
+          err instanceof Error ? err.message : err,
+        );
+        // Keep retrievedPages empty — counts as miss
+      }
+    }
 
-    const recall =
-      fixture.expectedPages.length === 0
-        ? 1
-        : fixture.expectedPages.filter((ep) => retrievedPages.includes(ep))
-            .length / fixture.expectedPages.length;
+    const hit = computeHit(fixture.expectedPages, retrievedPages);
+    const recall = computeRecall(fixture.expectedPages, retrievedPages);
 
     results.push({
       query: fixture.query,
+      expectedPages: fixture.expectedPages,
       retrievedPages,
       hit,
       recall,
     });
   }
 
-  return results;
+  const total = results.length;
+  const hitCount = results.filter((r) => r.hit).length;
+  const recall5 = total === 0 ? 0 : hitCount / total;
+
+  return { mode, total, hit: hitCount, recall5, results };
 }
 
-function formatReport(results: EvalResult[]): string {
-  const total = results.length;
-  const hits = results.filter((r) => r.hit).length;
-  const recall5 = total === 0 ? 0 : hits / total;
+function formatReport(summary: EvalSummary): string {
+  const { mode, total, hit, recall5, results } = summary;
 
   return `# Page-First Eval Baseline (${new Date().toISOString().slice(0, 10)})
+
+## 설정
+
+| 항목 | 값 |
+|------|-----|
+| 모드 | ${mode} |
+| Top-K | ${TOP_K} |
+| Fixture 수 | ${total} |
 
 ## 결과
 
 | 지표 | 값 |
 |------|-----|
 | 총 쿼리 수 | ${total} |
-| Hit 수 | ${hits} |
+| Hit 수 | ${hit} |
 | Recall@${TOP_K} | ${(recall5 * 100).toFixed(1)}% |
-| 목표 | ≥ 70% (W3 게이트) |
+| 목표 | >= 70% (W3 게이트) |
 
 ## 상세
 
 ${results
   .map(
-    (r) =>
-      `- **${r.query}** → hit=${r.hit}, recall=${r.recall.toFixed(2)}` +
-      (r.retrievedPages.length
-        ? `, retrieved=[${r.retrievedPages.join(", ")}]`
-        : ""),
+    (r, i) =>
+      `${i + 1}. **${r.query}**\n` +
+      `   - expected: [${r.expectedPages.join(", ")}]\n` +
+      `   - retrieved: [${r.retrievedPages.join(", ")}]\n` +
+      `   - hit=${r.hit}, recall=${r.recall.toFixed(2)}`,
   )
   .join("\n")}
 `;
+}
+
+function printConsoleSummary(summary: EvalSummary): void {
+  console.log("---");
+  console.log(`mode: ${summary.mode}`);
+  console.log(
+    `total: ${summary.total}, hit: ${summary.hit}, recall@5: ${summary.recall5.toFixed(2)}`,
+  );
+  console.log("---");
 }
 
 async function main(): Promise<void> {
@@ -145,8 +227,7 @@ async function main(): Promise<void> {
     "apps/worker/eval/fixtures/2026-04/page-qa.jsonl",
   );
 
-  const results = await runEval(fixturePath);
-  const report = formatReport(results);
+  const summary = await runEval(fixturePath);
 
   const outputIdx = process.argv.indexOf("--output");
   const outputPath =
@@ -154,21 +235,20 @@ async function main(): Promise<void> {
       ? process.argv[outputIdx + 1]!
       : "eval-baseline.md";
 
+  const report = formatReport(summary);
   writeFileSync(outputPath, report, "utf-8");
 
-  const hits = results.filter((r) => r.hit).length;
-  const recall5 = results.length === 0 ? 0 : hits / results.length;
+  printConsoleSummary(summary);
   console.log(`Report written to ${outputPath}`);
-  console.log(`Recall@${TOP_K}: ${(recall5 * 100).toFixed(1)}%`);
 }
 
 // Only auto-run when invoked as a script (not when imported by tests).
 const invokedDirectly =
   typeof process !== "undefined" &&
   process.argv[1] &&
-  process.argv[1].replace(/\\/g, "/").endsWith(
-    "apps/worker/eval/runners/page-first-baseline.ts",
-  );
+  process.argv[1]
+    .replace(/\\/g, "/")
+    .endsWith("apps/worker/eval/runners/page-first-baseline.ts");
 
 if (invokedDirectly) {
   main().catch((err) => {

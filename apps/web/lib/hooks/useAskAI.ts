@@ -188,7 +188,10 @@ export function useAskAI(): UseAskAIReturn {
           if (s.kind === 'case') return `case:${s.caseId}`;
           if (s.kind === 'directory') return `directory:${s.entryId}`;
           if (s.kind === 'wiki-page') return `wiki-page:${s.pageId}`;
-          return `unknown:${(s as { kind: string }).kind}`;
+          // SourceRef union을 완전히 소진했으므로 s는 never.
+          // 런타임 안전망(새 kind 추가 시 TS 컴파일 에러로 발견).
+          const _exhaustive: never = s;
+          return `unknown:${(_exhaustive as unknown as { kind: string }).kind}`;
         });
 
       const res = await fetch('/api/ask/feedback', {

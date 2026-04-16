@@ -7,7 +7,12 @@
     ".": "./index.ts",
     "./types": "./types.ts",
     "./embed": "./embed.ts",
-    "./ask": "./ask.ts"
+    "./ask": "./ask.ts",
+    "./page-first": "./page-first/index.ts",
+    "./page-first/shortlist": "./page-first/shortlist.ts",
+    "./page-first/expand": "./page-first/expand.ts",
+    "./page-first/read-pages": "./page-first/read-pages.ts",
+    "./page-first/synthesize": "./page-first/synthesize.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

@@ -67,6 +67,12 @@ export async function detectDrift(workspaceId: string): Promise<DriftReport> {
   const drifts: DriftItem[] = [];
   const now = new Date().toISOString();
 
+  // TODO: B4 Phase 2 — knowledgePage → wikiPageIndex + wiki-fs(readPage) 전환
+  // 현재 knowledgePage.surface/domain/ownerTeam/reviewCycleDays 필드에 의존하며,
+  // 이 필드들은 wikiPageIndex에 존재하지 않음.
+  // knowledgePageVersion.mdxContent도 wiki-fs readPage()로 대체 가능하나,
+  // wikiPageIndex.path 기반 매핑이 선행되어야 안전.
+
   // 1. canonical 문서 + 최신 버전 조회
   const pages = await db
     .select({

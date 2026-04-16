@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { canAccessKnowledgeSensitivity, hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -12,6 +14,7 @@ type Props = { params: Promise<{ pageId: string }> };
 
 export default async function KnowledgePageView({ params }: Props) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
+  const t = await getTranslations('Knowledge');
 
   const { pageId } = await params;
   const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
@@ -26,6 +29,16 @@ export default async function KnowledgePageView({ params }: Props) {
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">
+      {/* B4 Phase 1: Legacy route deprecation banner */}
+      <div className="mb-4 rounded-md border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+        <p>
+          {t('deprecationBanner')}{' '}
+          <Link href="/wiki" className="font-medium underline hover:text-yellow-900">
+            {t('deprecationLink')}
+          </Link>
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
         <article className="min-w-0">
           <header className="mb-6">

@@ -28,6 +28,8 @@ export const llmCallLog = pgTable(
     durationMs: integer("duration_ms").default(0).notNull(),
     // 'ok' | 'error' | 'blocked_by_budget'
     status: varchar("status", { length: 30 }).notNull(),
+    // 'wiki.shortlist' | 'wiki.expand' | 'wiki.synthesize' | 'wiki.ingest.analyze' | 'ask.text' | 'ask.case' | ...
+    op: varchar("op", { length: 50 }),
     blockedBy: text("blocked_by"),
     errorCode: text("error_code"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -39,6 +41,7 @@ export const llmCallLog = pgTable(
     requestIdx: index("idx_llm_call_log_request").on(t.requestId),
     createdAtIdx: index("idx_llm_call_log_created_at").on(t.createdAt),
     budgetIdx: index("idx_llm_call_log_budget").on(t.workspaceId, t.createdAt),
+    opIdx: index("idx_llm_call_log_op").on(t.op),
   }),
 );
 

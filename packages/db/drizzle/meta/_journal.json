@@ -141,6 +141,13 @@
       "when": 1776302622509,
       "tag": "0019_absurd_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1776302895035,
+      "tag": "0020_faulty_deathstrike",
+      "breakpoints": true
     }
   ]
 }

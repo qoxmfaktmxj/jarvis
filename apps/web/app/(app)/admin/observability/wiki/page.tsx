@@ -42,11 +42,9 @@ import { WikiObservabilityClient } from "./WikiObservabilityClient";
 export const dynamic = "force-dynamic";
 
 /**
- * Mirror of `PAGE_FIRST_PROMPT_VERSION` from
- * `packages/ai/page-first/synthesize.ts`. `@jarvis/ai` does not export the
- * `page-first` subpath, so the constant is duplicated here with a source-of-
- * truth pointer. Keep these two values in lockstep until an `op` column is
- * added to `llm_call_log` (see `packages/shared/constants/llm-ops.ts`).
+ * `llm_call_log.op` 컬럼이 추가됨 (Track B1 완료). wiki 쿼리 op는
+ * `wiki.query.%` 패턴으로 필터한다. prompt_version fallback은
+ * op 컬럼 마이그레이션 이전 데이터 호환을 위해 유지.
  */
 const PAGE_FIRST_PROMPT_VERSION = "2026-04-v1-pagefirst";
 
@@ -107,11 +105,13 @@ async function fetchDailyIngest(workspaceId: string): Promise<DailyCount[]> {
 }
 
 async function fetchPageFirstQueryCount(workspaceId: string): Promise<number> {
+  // op 컬럼 추가 이후: wiki.query.% op로 필터. 마이그레이션 이전 데이터 호환을 위해
+  // prompt_version fallback도 유지한다. 기존 데이터가 모두 소진되면 fallback 제거 가능.
   const rows = await db.execute<{ count: string }>(sql`
     SELECT COUNT(*)::text AS count
     FROM llm_call_log
     WHERE workspace_id = ${workspaceId}::uuid
-      AND prompt_version = ${PAGE_FIRST_PROMPT_VERSION}
+      AND (op LIKE 'wiki.query.%' OR prompt_version = ${PAGE_FIRST_PROMPT_VERSION})
       AND created_at >= now() - interval '24 hours'
   `);
   return Number(rows.rows[0]?.count ?? 0);
@@ -347,7 +347,7 @@ export default async function WikiObservabilityPage() {
           <StatCard
             label="page-first 쿼리 (최근 24h)"
             value={data.pageFirstQueryCount24h}
-            hint={`prompt_version = ${PAGE_FIRST_PROMPT_VERSION}`}
+            hint={`op LIKE 'wiki.query.%' (fallback: prompt_version)`}
           />
           <StatCard
             label="commit log 무결성"

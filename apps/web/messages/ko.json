@@ -174,6 +174,8 @@
         "sensitivity_promotion": "민감도 승급",
         "ingest_fail": "수집 실패",
         "boundary_violation": "경계 위반",
+        "synonym_conflict": "동의어 충돌",
+        "integrity_violation": "무결성 위반",
         "pii": "PII"
       },
       "statusFilter": {
@@ -470,6 +472,8 @@
     "duration": "근무 시간"
   },
   "Knowledge": {
+    "deprecationBanner": "이 경로는 레거시입니다. 새 위키 뷰어로 이동해 주세요.",
+    "deprecationLink": "위키로 이동",
     "PageEditor": {
       "title": "제목",
       "slug": "슬러그",

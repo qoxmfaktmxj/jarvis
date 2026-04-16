@@ -18,23 +18,29 @@ export async function loadOrphanOutboundSlugs(
   workspaceId: string,
   fromPageId: string,
 ): Promise<string[]> {
-  const rows = await db
-    .select({ toPath: wikiPageLink.toPath })
-    .from(wikiPageLink)
-    .where(
-      and(
-        eq(wikiPageLink.workspaceId, workspaceId),
-        eq(wikiPageLink.fromPageId, fromPageId),
-        eq(wikiPageLink.kind, "direct"),
-        isNull(wikiPageLink.toPageId),
-      ),
-    );
+  try {
+    const rows = await db
+      .select({ toPath: wikiPageLink.toPath })
+      .from(wikiPageLink)
+      .where(
+        and(
+          eq(wikiPageLink.workspaceId, workspaceId),
+          eq(wikiPageLink.fromPageId, fromPageId),
+          eq(wikiPageLink.kind, "direct"),
+          isNull(wikiPageLink.toPageId),
+        ),
+      );
 
-  // toPath 는 nullable 이지만 orphan direct link 에서는 반드시 채워져 있음.
-  // 혹시 NULL 이 섞이면 방어적으로 제거.
-  const slugs = new Set<string>();
-  for (const r of rows) {
-    if (r.toPath) slugs.add(r.toPath);
+    // toPath 는 nullable 이지만 orphan direct link 에서는 반드시 채워져 있음.
+    // 혹시 NULL 이 섞이면 방어적으로 제거.
+    const slugs = new Set<string>();
+    for (const r of rows) {
+      if (r.toPath) slugs.add(r.toPath);
+    }
+    return [...slugs];
+  } catch {
+    // wiki_page_link 테이블 조회 실패 시 뷰어 전체를 500으로 만들지 않는다.
+    // orphan 링크 표시 기능만 비활성화(빈 배열 반환)하고 정상 렌더링을 유지.
+    return [];
   }
-  return [...slugs];
 }

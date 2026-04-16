@@ -2,11 +2,11 @@ import { db } from "@jarvis/db/client";
 import {
   auditLog,
   attendance,
-  knowledgePage,
   menuItem,
   popularSearch,
   project,
-  projectTask
+  projectTask,
+  wikiPageIndex
 } from "@jarvis/db/schema";
 import {
   and,
@@ -269,41 +269,36 @@ export async function getStalePages(
   now: Date = new Date(),
   database: DashboardDb = db
 ): Promise<StalePage[]> {
+  // B4 Phase 1: wikiPageIndex.stale 기반으로 전환.
+  // wiki_page_index.stale은 ingest 파이프라인이 freshness SLA에 따라 설정하는 boolean.
+  // overdueDays는 wikiPageIndex에 없으므로 updatedAt 기준 근사값을 사용한다.
   const rows = await database
     .select({
-      id: knowledgePage.id,
-      title: knowledgePage.title,
-      publishStatus: knowledgePage.publishStatus,
-      freshnessSlaDays: knowledgePage.freshnessSlaDays,
-      lastVerifiedAt: knowledgePage.lastVerifiedAt,
-      createdAt: knowledgePage.createdAt
+      id: wikiPageIndex.id,
+      title: wikiPageIndex.title,
+      updatedAt: wikiPageIndex.updatedAt,
     })
-    .from(knowledgePage)
+    .from(wikiPageIndex)
     .where(
       and(
-        eq(knowledgePage.workspaceId, workspaceId),
-        eq(knowledgePage.publishStatus, "published")
+        eq(wikiPageIndex.workspaceId, workspaceId),
+        eq(wikiPageIndex.stale, true),
+        eq(wikiPageIndex.publishedStatus, "published")
       )
     )
-    .orderBy(asc(knowledgePage.lastVerifiedAt))
+    .orderBy(asc(wikiPageIndex.updatedAt))
     .limit(20);
 
-  return rows
-    .filter((row) => isKnowledgePageStale(row, now))
-    .map((row) => {
-      const lastReviewedAt = row.lastVerifiedAt ?? row.createdAt;
-      const staleAfter = new Date(lastReviewedAt);
-      staleAfter.setUTCDate(staleAfter.getUTCDate() + row.freshnessSlaDays);
-
-      return {
-        id: row.id,
-        title: row.title,
-        lastReviewedAt,
-        overdueDays: Math.floor(
-          (now.getTime() - staleAfter.getTime()) / (1000 * 60 * 60 * 24)
-        )
-      };
-    });
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    lastReviewedAt: row.updatedAt,
+    // TODO: B4 Phase 2 — wikiPageIndex에 freshnessSlaDays/lastVerifiedAt 추가 시 정확한 overdueDays 계산
+    // updatedAt은 ingest 시점이라 음수가 될 수 있으므로 Math.max(0, ...) 적용
+    overdueDays: Math.max(0, Math.floor(
+      (now.getTime() - row.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+    )),
+  }));
 }
 
 export async function getSearchTrends(

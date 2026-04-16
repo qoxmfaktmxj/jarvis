@@ -25,9 +25,9 @@ export function withRequestId(requestId: string) {
  *   duration, status, blockedBy, errorCode.
  * - Phase-W1 T5 추가(op/wiki 메타): op, sensitivityScope, pagePath.
  *
- * `op`, `sensitivityScope`, `pagePath`는 DB 컬럼이 아직 없다 (Track B1에서 추가 예정).
- * 따라서 현재는 pino structured log에만 기록되고 DB INSERT에서는 제외된다.
- * B1에서 컬럼이 추가되면 `insertRow` 매핑에 필드를 추가하기만 하면 된다.
+ * `op`은 DB 컬럼으로 추가됨 (Track B1 완료). INSERT에 포함된다.
+ * `sensitivityScope`, `pagePath`는 DB 컬럼이 아직 없다 (별도 Track 예정).
+ * 해당 컬럼 추가 시 `insertRow` 매핑에 필드를 추가하면 된다.
  */
 export interface LlmCallLogRow {
   /** LLM 호출 op 타입. 예: "ask", "embed", "wiki.ingest.analysis". */
@@ -60,9 +60,8 @@ export async function logLlmCall(row: LlmCallLogRow): Promise<void> {
     });
   }
 
-  // NOTE (Track B1 의존):
-  //   `op`, `sensitivity_scope`, `page_path` DB 컬럼이 추가되면 아래 insertRow에
-  //   대응 필드를 포함시키면 된다. 현재는 컬럼이 없어서 INSERT에서 제외.
+  // NOTE: `sensitivity_scope`, `page_path` DB 컬럼은 아직 없다 (별도 Track).
+  //   해당 컬럼이 추가되면 insertRow에 필드를 포함시키면 된다.
   const insertRow: NewLlmCallLog = {
     workspaceId: row.workspaceId,
     requestId: row.requestId ?? undefined,
@@ -73,6 +72,7 @@ export async function logLlmCall(row: LlmCallLogRow): Promise<void> {
     costUsd: row.costUsd,
     durationMs: row.durationMs,
     status: row.status,
+    op: row.op ?? undefined,
     blockedBy: row.blockedBy ?? undefined,
     errorCode: row.errorCode ?? undefined,
   };

@@ -1,6 +1,6 @@
 # Jarvis — Claude Code Guide
 
-사내 업무 시스템 + 사내 위키 + RAG AI 포털 통합. Next.js 15 모노레포(`apps/web`, `apps/worker`, `packages/*`).
+사내 업무 시스템 + LLM 컴파일 위키 통합 (Karpathy LLM Wiki 방식). Next.js 15 모노레포(`apps/web`, `apps/worker`, `packages/*`).
 
 ## 하네스: Jarvis Feature Development
 
@@ -21,3 +21,4 @@
 | 2026-04-10 | 초기 구성 (경량 3인 팀) | 전체 | 사내 업무 시스템 + 사내 위키 통합 프로젝트 경량 하네스 요청 |
 | 2026-04-10 | Drizzle schema drift 훅 + Codex용 `AGENTS.md` 추가 | `.claude/settings.json`, `scripts/check-schema-drift.mjs`, `AGENTS.md` | 경량 훅 1(advisory) 설치 + Codex CLI에서도 동일 원칙 따르도록 지시문 미러링 |
 | 2026-04-14 | schema-drift hook에 `--ci`/`--precommit` blocking 모드 추가 | `scripts/check-schema-drift.mjs`, `scripts/tests/check-schema-drift.test.mjs` | G5 게이트: 의도적 drift에서 CI exit 1 보장 (Phase-7A PR#4) |
+| 2026-04-15 | Karpathy LLM Wiki 피벗 반영 — 자기정의 업데이트 | L3 자기정의 ("RAG AI 포털" → "LLM 컴파일 위키") | CLAUDE.md가 RAG 시대 정체성을 system prompt에 주입하는 drift 수정. Phase-W3 이후 실제 아키텍처 반영 |

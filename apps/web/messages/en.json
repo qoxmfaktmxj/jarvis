@@ -41,6 +41,10 @@
   "Wiki": {
     "accessDenied": "Access denied."
   },
+  "Knowledge": {
+    "deprecationBanner": "This page uses a legacy route. Please use the new wiki viewer.",
+    "deprecationLink": "Go to Wiki"
+  },
   "Admin": {
     "nav": {
       "title": "Admin",
@@ -84,6 +88,8 @@
         "sensitivity_promotion": "Sensitivity Promotion",
         "ingest_fail": "Ingest Fail",
         "boundary_violation": "Boundary Violation",
+        "synonym_conflict": "Synonym Conflict",
+        "integrity_violation": "Integrity Violation",
         "pii": "PII"
       },
       "statusFilter": {
