@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Familjen_Grotesk, Hahmlet } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
+import { AxeInit } from "@/lib/a11y/axe-init";
 import "./globals.css";
 
 /**
@@ -45,6 +46,7 @@ export default async function RootLayout({
         style={{ fontFamily: "var(--font-body), system-ui, sans-serif" }}
       >
         <NextIntlClientProvider messages={messages}>
+          <AxeInit />
           {children}
         </NextIntlClientProvider>
       </body>

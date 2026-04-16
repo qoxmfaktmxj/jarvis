@@ -9,7 +9,9 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit --incremental false",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
