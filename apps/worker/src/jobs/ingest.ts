@@ -12,6 +12,7 @@ import {
 import { upsertChunks } from '@jarvis/db/writers/document-chunks';
 import { eq, sql } from 'drizzle-orm';
 import * as mammoth from 'mammoth';
+import { logger } from '../lib/observability/index.js';
 import { minioClient, BUCKET } from '../lib/minio-client.js';
 import { parsePdf } from '../lib/pdf-parser.js';
 import {
@@ -365,7 +366,8 @@ async function processIngest(
   job: PgBoss.Job<IngestJobData>,
 ): Promise<void> {
   const { rawSourceId } = job.data;
-  console.log(`[ingest] Starting job for rawSourceId=${rawSourceId}`);
+  const startMs = Date.now();
+  logger.info({ rawSourceId }, '[ingest] start');
 
   // Mark as processing
   await db
@@ -431,8 +433,9 @@ async function processIngest(
           updatedAt: new Date(),
         })
         .where(eq(rawSource.id, rawSourceId));
-      console.log(
-        `[ingest] SECRET hit rawSourceId=${rawSourceId} keywords=${secretHits.join(',')}`,
+      logger.warn(
+        { rawSourceId, keywords: secretHits, durationMs: Date.now() - startMs },
+        '[ingest] SECRET hit — queued for review',
       );
       return;
     }
@@ -496,8 +499,9 @@ async function processIngest(
         // parsedContent still lands on raw_source, but the status reflects
         // the failure (see status branching below).
         twoStepError = err instanceof Error ? err : new Error(String(err));
-        console.warn(
-          `[ingest] twoStepIngest failed rawSourceId=${rawSourceId}: ${twoStepError.message}`,
+        logger.warn(
+          { rawSourceId, err: twoStepError },
+          '[ingest] twoStepIngest failed',
         );
       }
     }
@@ -520,12 +524,22 @@ async function processIngest(
       })
       .where(eq(rawSource.id, rawSourceId));
 
-    console.log(
-      `[ingest] Done rawSourceId=${rawSourceId} chars=${safeText.length}`,
-    );
+    const durationMs = Date.now() - startMs;
+    if (twoStepError) {
+      logger.error(
+        { rawSourceId, durationMs, chars: safeText.length, err: twoStepError },
+        '[ingest] failed (two-step error, raw_source marked error)',
+      );
+    } else {
+      logger.info(
+        { rawSourceId, durationMs, chars: safeText.length },
+        '[ingest] success',
+      );
+    }
   } catch (err) {
+    const durationMs = Date.now() - startMs;
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[ingest] Error rawSourceId=${rawSourceId}: ${message}`);
+    logger.error({ rawSourceId, durationMs, err }, '[ingest] failed');
     await db
       .update(rawSource)
       .set({

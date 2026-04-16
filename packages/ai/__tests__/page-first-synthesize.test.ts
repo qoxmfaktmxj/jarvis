@@ -44,8 +44,16 @@ vi.mock("../openai-compat.js", () => ({
 // budget mock — 기본은 통과, 특정 테스트에서 assertBudget 을 재설정.
 vi.mock("../budget.js", () => {
   class BudgetExceededError extends Error {
-    constructor(message = "budget exceeded") {
-      super(message);
+    constructor(
+      public workspaceId: string,
+      public spent: number,
+      public limit: number,
+    ) {
+      super(
+        `LLM daily budget exceeded for workspace ${workspaceId}: $${spent.toFixed(
+          4,
+        )} >= $${limit.toFixed(2)}`,
+      );
       this.name = "BudgetExceededError";
     }
   }
@@ -204,7 +212,7 @@ describe("synthesizePageFirstAnswer — SSE event contract", () => {
   // ---------------------------------------------------------------------
   it("emits single error event and returns when assertBudget throws BudgetExceededError", async () => {
     vi.mocked(assertBudget).mockRejectedValueOnce(
-      new BudgetExceededError("daily budget exceeded"),
+      new BudgetExceededError(WS, 10.5, 10),
     );
 
     const events = await collect(
