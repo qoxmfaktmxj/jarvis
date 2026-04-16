@@ -145,7 +145,7 @@ export async function retrieveRelevantClaims(
         kp.id AS page_id,
         ts_rank_cd(kp.search_vector, websearch_to_tsquery('simple', ${question})) AS fts_rank
       FROM knowledge_page kp
-      WHERE kp.id = ANY(${pageIds}::uuid[])
+      WHERE kp.id = ANY(ARRAY[${sql.join(pageIds.map(id => sql`${id}::uuid`), sql`, `)}])
     `,
   );
 
