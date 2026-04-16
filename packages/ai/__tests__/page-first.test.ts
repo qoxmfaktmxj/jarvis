@@ -86,7 +86,10 @@ function resetDb() {
 describe("lexicalShortlist", () => {
   beforeEach(resetDb);
 
-  it("returns rows and filters by requiredPermission in app layer", async () => {
+  it("returns rows filtered by requiredPermission in SQL WHERE", async () => {
+    // requiredPermission is now enforced in SQL WHERE — the mock simulates
+    // the DB already having filtered out p2 (requiredPermission=admin:all)
+    // because the user only has knowledge:read.
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [
         {
@@ -99,16 +102,6 @@ describe("lexicalShortlist", () => {
           updated_at: new Date("2026-04-10"),
           score: 9.5,
         },
-        {
-          id: "p2",
-          path: "auto/entities/B.md",
-          title: "Beta",
-          slug: "beta",
-          sensitivity: "RESTRICTED",
-          required_permission: "admin:all",
-          updated_at: new Date("2026-04-09"),
-          score: 8.0,
-        },
       ],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
@@ -119,7 +112,6 @@ describe("lexicalShortlist", () => {
       question: "alpha에 대해 알려줘",
     });
 
-    // p2 has requiredPermission=admin:all which the user doesn't have.
     expect(hits.map((h) => h.id)).toEqual(["p1"]);
   });
 
@@ -250,8 +242,11 @@ describe("readTopPages", () => {
       maxCharsPerPage: 10, // tiny so even our short mock body gets truncated
     });
 
-    expect(out).toHaveLength(5);
-    expect(out[0]?.content.endsWith("…[truncated]")).toBe(true);
+    expect(out.ok).toBe(true);
+    if (out.ok) {
+      expect(out.pages).toHaveLength(5);
+      expect(out.pages[0]?.content.endsWith("…[truncated]")).toBe(true);
+    }
   });
 });
 

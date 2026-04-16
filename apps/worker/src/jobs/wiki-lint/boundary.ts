@@ -19,6 +19,8 @@
  * directly from worker jobs.
  */
 
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { GitRepo } from "@jarvis/wiki-fs";
 
 /** Prefix marking a commit as authored by the LLM (per WIKI-AGENTS §5). */
@@ -63,6 +65,12 @@ export async function detectBoundaryViolations(
   repoPath: string,
   opts: DetectBoundaryViolationsOptions = {},
 ): Promise<BoundaryViolation[]> {
+  // Guard: if .git does not exist, the workspace repo has not been
+  // bootstrapped yet. Return empty to avoid crashing the entire lint run.
+  if (!existsSync(path.join(repoPath, ".git"))) {
+    return [];
+  }
+
   const sinceDays = opts.sinceDays ?? 7;
   const maxCommits = opts.maxCommits ?? 500;
   const sinceMs = Date.now() - sinceDays * 86400_000;
@@ -79,7 +87,13 @@ export async function detectBoundaryViolations(
     const isLlm = commit.author.email.startsWith(LLM_AUTHOR_PREFIX);
 
     for (const rawPath of commit.affectedPaths) {
-      const file = rawPath.replace(/\\/g, "/");
+      // Normalize: strip backslashes, remove `wiki/{workspaceId}/` prefix
+      // that may appear when git log returns monorepo-root-relative paths
+      // instead of workspace-sub-repo-relative paths, and strip leading slash.
+      const file = rawPath
+        .replace(/\\/g, "/")
+        .replace(/^wiki\/[^/]+\//, "")
+        .replace(/^\//, "");
 
       if (isLlm && isManualPath(file)) {
         violations.push({
