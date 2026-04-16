@@ -40,7 +40,6 @@ async function loginWithRole(page: Page, opts: LoginOptions): Promise<void> {
     roles: [opts.role],
     permissions: [...permissions],
     orgId: undefined,
-    ssoSubject: opts.userId ?? TEST_USER_ID,
     createdAt: now,
     expiresAt: now + SESSION_TTL * 1000,
   });

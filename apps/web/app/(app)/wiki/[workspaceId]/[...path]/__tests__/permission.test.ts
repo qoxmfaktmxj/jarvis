@@ -42,7 +42,6 @@ function makeSession(
     name: "Test User",
     roles: [role],
     permissions: [...((ROLE_PERMISSIONS[role] as string[]) ?? [])],
-    ssoSubject: "sub-test",
     createdAt: Date.now(),
     expiresAt: Date.now() + 3600_000,
     ...overrides,

@@ -41,7 +41,7 @@ All architecture phases (0–7A) are complete. The system is ready for:
 
 | Phase | Objective | Status | Key Deliverables |
 |-------|-----------|--------|------------------|
-| **Phase 0** | Foundation (schema, auth, search) | ✓ Complete | 39-table schema, OIDC, RBAC |
+| **Phase 0** | Foundation (schema, auth, search) | ✓ Complete | 39-table schema, 이메일+비밀번호 인증, RBAC |
 | **Phase 1** | Core RAG (embeddings, retrieval) | ✓ Complete | OpenAI embeddings, vector search |
 | **Phase 2** | Case Layer (TSVD999 import) | ✓ Complete | 74,342 cases, TF-IDF clustering |
 | **Phase 3** | Directory & Router (6-lane) | ✓ Complete | 31 directory entries, keyword router |

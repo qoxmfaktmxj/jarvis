@@ -24,7 +24,7 @@ jarvis/
 │     └─ src/jobs/  # ingest, embed, compile, cleanup, freshness, popular
 ├─ packages/
 │  ├─ ai/           # RAG, embedding, citation stream (Anthropic + OpenAI)
-│  ├─ auth/         # OIDC + Redis session + RBAC
+│  ├─ auth/         # 이메일+비밀번호 + Redis session + RBAC
 │  ├─ db/           # Drizzle schema, migrations, Postgres/Redis client
 │  ├─ search/       # Hybrid search adapter (FTS + trigram + pgvector)
 │  ├─ secret/       # secret reference abstraction
@@ -44,7 +44,7 @@ jarvis/
 | 오브젝트 스토리지 | MinIO | 버킷: `jarvis-files` |
 | 잡 큐 | pg-boss | 워커 프로세스 분리 |
 | AI | Anthropic (생성) + OpenAI (임베딩) | citation 포함 SSE |
-| 인증 | OIDC (`openid-client`) | Authorization Code + PKCE |
+| 인증 | 이메일+비밀번호 (Redis 세션) | |
 | i18n | next-intl | 단일 로케일(ko), 네임스페이스 기반 |
 | 테스트 | Vitest + Playwright | E2E는 Redis session inject |
 | 스타일 | Tailwind CSS 4 | 디자인 재구성 예정 |

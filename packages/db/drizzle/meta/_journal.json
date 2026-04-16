@@ -148,6 +148,13 @@
       "when": 1776302895035,
       "tag": "0020_faulty_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1776309185265,
+      "tag": "0021_acoustic_argent",
+      "breakpoints": true
     }
   ]
 }

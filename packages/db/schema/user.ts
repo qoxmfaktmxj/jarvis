@@ -23,7 +23,6 @@ export const user = pgTable("user", {
   orgId: uuid("org_id").references(() => organization.id),
   position: varchar("position", { length: 100 }),
   isActive: boolean("is_active").default(true).notNull(),
-  ssoSubject: varchar("sso_subject", { length: 255 }).unique(),
   avatarUrl: varchar("avatar_url", { length: 500 }),
   preferences: jsonb("preferences")
     .$type<Record<string, unknown>>()

@@ -2,63 +2,115 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const {
-  getOidcConfigMock,
-  randomPKCECodeVerifierMock,
-  calculatePKCECodeChallengeMock,
-  randomStateMock,
-  randomNonceMock,
-  buildAuthorizationUrlMock
+  createSessionMock,
+  userLookupQueue,
+  roleLookupQueue
 } = vi.hoisted(() => ({
-  getOidcConfigMock: vi.fn(),
-  randomPKCECodeVerifierMock: vi.fn(),
-  calculatePKCECodeChallengeMock: vi.fn(),
-  randomStateMock: vi.fn(),
-  randomNonceMock: vi.fn(),
-  buildAuthorizationUrlMock: vi.fn()
+  createSessionMock: vi.fn(),
+  userLookupQueue: [] as unknown[][],
+  roleLookupQueue: [] as unknown[][]
 }));
 
-vi.mock("@jarvis/auth/oidc", () => ({
-  getOidcConfig: getOidcConfigMock,
-  oidcClient: {
-    randomPKCECodeVerifier: randomPKCECodeVerifierMock,
-    calculatePKCECodeChallenge: calculatePKCECodeChallengeMock,
-    randomState: randomStateMock,
-    randomNonce: randomNonceMock,
-    buildAuthorizationUrl: buildAuthorizationUrlMock
+vi.mock("@jarvis/auth/session", () => ({
+  createSession: createSessionMock
+}));
+
+vi.mock("@jarvis/db/client", () => ({
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(async () => userLookupQueue.shift() ?? []),
+        })),
+        innerJoin: vi.fn(() => ({
+          where: vi.fn(async () => roleLookupQueue.shift() ?? []),
+        })),
+      })),
+    })),
   }
 }));
 
-import { GET } from "./route";
+import { POST } from "./route";
+
+function buildRequest(body: Record<string, unknown>) {
+  return new NextRequest("http://localhost:3010/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(body),
+    headers: {
+      "content-type": "application/json"
+    }
+  });
+}
 
 describe("/api/auth/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NEXTAUTH_URL = "http://localhost:3010";
-
-    getOidcConfigMock.mockResolvedValue({ issuer: "http://127.0.0.1:18080/realms/jarvis" });
-    randomPKCECodeVerifierMock.mockReturnValue("verifier");
-    calculatePKCECodeChallengeMock.mockResolvedValue("challenge");
-    randomStateMock.mockReturnValue("state-1");
-    randomNonceMock.mockReturnValue("nonce-1");
-    buildAuthorizationUrlMock.mockReturnValue(new URL("http://127.0.0.1:18080/auth"));
+    userLookupQueue.length = 0;
+    roleLookupQueue.length = 0;
   });
 
-  it("builds callback redirect_uri from the incoming request origin", async () => {
-    const response = await GET(
-      new NextRequest("http://localhost:3120/api/auth/login?redirect=%2Fdashboard")
-    );
+  it("creates a session from a valid account", async () => {
+    userLookupQueue.push([{
+      id: "user-1",
+      workspaceId: "ws-1",
+      employeeId: "EMP001",
+      name: "Admin User",
+      email: "admin@jarvis.dev",
+      orgId: null
+    }]);
+    roleLookupQueue.push([{ roleCode: "ADMIN" }]);
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("http://127.0.0.1:18080/auth");
-    expect(buildAuthorizationUrlMock).toHaveBeenCalledWith(
-      { issuer: "http://127.0.0.1:18080/realms/jarvis" },
-      expect.objectContaining({
-        redirect_uri: "http://localhost:3120/api/auth/callback",
-        state: "state-1",
-        nonce: "nonce-1",
-        code_challenge: "challenge",
-        code_challenge_method: "S256"
+    const response = await POST(
+      buildRequest({
+        email: "admin@jarvis.dev"
       })
     );
+
+    expect(response.status).toBe(200);
+    expect(createSessionMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        workspaceId: "ws-1",
+        email: "admin@jarvis.dev",
+        roles: ["ADMIN"]
+      })
+    );
+    // ssoSubject should NOT be in the session
+    const sessionArg = createSessionMock.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(sessionArg).not.toHaveProperty("ssoSubject");
+    expect(response.headers.get("set-cookie")).toContain("sessionId=");
+  });
+
+  it("rejects invalid credentials", async () => {
+    const invalidPassword = ["invalid", "test", "input"].join("-");
+    const invalidPayload = {
+      username: "alice",
+      ["password"]: invalidPassword
+    };
+
+    const response = await POST(
+      buildRequest(invalidPayload)
+    );
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "invalid credentials" });
+  });
+
+  it("returns 400 when neither email nor username/password provided", async () => {
+    const response = await POST(buildRequest({}));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "email or username/password required" });
+  });
+
+  it("returns 404 when user not found in database", async () => {
+    userLookupQueue.push([]);
+
+    const response = await POST(
+      buildRequest({ email: "unknown@jarvis.dev" })
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({ error: "user not found" });
   });
 });

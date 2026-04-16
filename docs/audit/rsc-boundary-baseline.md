@@ -10,11 +10,10 @@
 
 ```
 $ node scripts/audit-rsc-boundary.mjs
-[R4 WARN]    apps/web/app/api/auth/callback/route.ts:1 — route.ts에 db import 있으나 권한/세션 체크 없음
 [R4 WARN]    apps/web/app/api/auth/dev-login/route.ts:1 — route.ts에 db import 있으나 권한/세션 체크 없음
 
 --- Summary ---
-ERROR: 0건, WARN: 2건
+ERROR: 0건, WARN: 1건
 ```
 
 - **Exit code (기본 `--warn` 모드):** 0
@@ -27,11 +26,10 @@ ERROR: 0건, WARN: 2건
 - R5 ("use client" → 비공개 env 직접 접근) 위반 없음.
 - 클라이언트 번들에 서버 시크릿 유출 경로 정적 검출 없음.
 
-### WARN (2건) — 구조적 false positive, 의도적 예외
+### WARN (1건) — 구조적 false positive, 의도적 예외
 
 | 파일 | 이유 | 판단 |
 |------|------|------|
-| `apps/web/app/api/auth/callback/route.ts` | OIDC 콜백 핸들러. 사용자가 미인증 상태에서 실행되는 인증 플로우 자체 (`createSession()` 발급). `requireApiSession` 적용 불가. | false positive |
 | `apps/web/app/api/auth/dev-login/route.ts` | 개발 전용 bypass. `NODE_ENV === "production"` 시 404 반환. 프로덕션 비활성. | false positive |
 
 ## heuristic 보정 이력
@@ -56,12 +54,12 @@ const AUTH_CHECK = /\b(requirePermission|requireSession|assertSession|getServerS
 
 ## 재실행 기준점
 
-- 현재 기준선: **ERROR 0 / WARN 2**
-- 향후 ERROR 1건 이상 증가 또는 WARN 3건 이상 시 regression으로 간주.
-- 잔여 2건(`auth/callback`, `auth/dev-login`)은 W4 allowlist 경로 처리 예정.
+- 현재 기준선: **ERROR 0 / WARN 1**
+- 향후 ERROR 1건 이상 증가 또는 WARN 2건 이상 시 regression으로 간주.
+- 잔여 1건(`auth/dev-login`)은 W4 allowlist 경로 처리 예정.
 
 ## 향후 조치 (W4)
 
-1. R4 스캐너에 `auth/callback`, `auth/dev-login` 경로 allowlist 추가 → WARN 0건 달성
+1. R4 스캐너에 `auth/dev-login` 경로 allowlist 추가 → WARN 0건 달성
 2. `pnpm audit:rsc --error`를 CI blocking 단계로 승격
 3. `resolveContext`는 로컬 헬퍼명이라 향후 동명 비인증 함수 도입 시 false negative 위험 — 명명 규칙 가이드라인 수립 검토

@@ -8,7 +8,6 @@ export interface JarvisSession {
   roles: string[];
   permissions: string[];
   orgId?: string;
-  ssoSubject: string;
   createdAt: number;
   expiresAt: number;
 }

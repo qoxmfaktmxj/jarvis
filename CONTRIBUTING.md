@@ -58,7 +58,7 @@ cp .env.example .env.local
 - `WIKI_ROOT` — 호스트 경로면 절대경로로 치환 (컨테이너 내부면 `/app/wiki` 유지)
 - `WIKI_LLM_WRITE_TOKEN` — 개발용 기본값 유지 가능, 운영에서는 필수 교체
 
-OIDC 관련 변수(`OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`)는 로컬 개발에서는 기본값 유지해도 됩니다. 로그인 페이지의 dev 계정 로그인을 사용합니다.
+인증은 이메일+비밀번호 방식입니다. 로컬 개발에서는 로그인 페이지의 dev 계정을 사용합니다.
 
 ### 3.3 인프라 기동
 

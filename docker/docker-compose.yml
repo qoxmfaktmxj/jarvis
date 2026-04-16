@@ -83,10 +83,6 @@ services:
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
-      # OIDC — set to your production OIDC provider (Okta, Azure AD, Entra, etc.)
-      OIDC_ISSUER: ${OIDC_ISSUER:-}
-      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
-      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
       APP_URL: ${APP_URL:-http://localhost}
     # entrypoint.sh reads these secret files and exports as env vars:
     #   pg_password     → DATABASE_URL

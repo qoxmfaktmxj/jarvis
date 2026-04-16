@@ -1,55 +1,79 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getOidcConfig, oidcClient } from "@jarvis/auth/oidc";
+import { eq } from "drizzle-orm";
+import { createSession } from "@jarvis/auth/session";
+import { db } from "@jarvis/db/client";
+import { role, user, userRole } from "@jarvis/db/schema";
+import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { findTempDevAccount } from "@/lib/auth/dev-accounts";
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  // Validate redirect is a safe relative path only (no open redirect)
-  const rawRedirect = searchParams.get("redirect") ?? "/dashboard";
-  const redirectTo =
-    rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") && !rawRedirect.includes("://")
-      ? rawRedirect
-      : "/dashboard";
-  const appUrl = new URL(request.url).origin;
-  const redirectUri = `${appUrl}/api/auth/callback`;
+export async function POST(request: NextRequest) {
+  const payload = await request.json() as {
+    email?: string;
+    username?: string;
+    password?: string;
+  };
 
-  try {
-    const config = await getOidcConfig();
+  let loginEmail = payload.email;
 
-    // PKCE S256
-    const codeVerifier = oidcClient.randomPKCECodeVerifier();
-    const codeChallenge = await oidcClient.calculatePKCECodeChallenge(codeVerifier);
-
-    // state and nonce
-    const state = oidcClient.randomState();
-    const nonce = oidcClient.randomNonce();
-
-    const authUrl = oidcClient.buildAuthorizationUrl(config, {
-      redirect_uri: redirectUri,
-      scope: "openid profile email",
-      state,
-      nonce,
-      code_challenge: codeChallenge,
-      code_challenge_method: "S256",
-    });
-
-    const response = NextResponse.redirect(authUrl.toString());
-
-    const cookieOpts = {
-      httpOnly: true,
-      secure: process.env["NODE_ENV"] === "production",
-      maxAge: 60 * 10,
-      sameSite: "lax" as const,
-      path: "/",
-    };
-
-    response.cookies.set("oidc_pkce", codeVerifier, cookieOpts);
-    response.cookies.set("oidc_state", state, cookieOpts);
-    response.cookies.set("oidc_nonce", nonce, cookieOpts);
-    response.cookies.set("oidc_redirect", redirectTo, cookieOpts);
-
-    return response;
-  } catch (error) {
-    console.error("[auth] login error:", error);
-    return NextResponse.redirect(new URL("/login?error=auth_init_failed", request.url));
+  if (!loginEmail && payload.username && payload.password) {
+    const account = findTempDevAccount(payload.username, payload.password);
+    if (!account) {
+      return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
+    }
+    loginEmail = account.email;
   }
+
+  if (!loginEmail) {
+    return NextResponse.json({ error: "email or username/password required" }, { status: 400 });
+  }
+
+  const [dbUser] = await db
+    .select()
+    .from(user)
+    .where(eq(user.email, loginEmail))
+    .limit(1);
+
+  if (!dbUser) {
+    return NextResponse.json({ error: "user not found" }, { status: 404 });
+  }
+
+  const userRoleRows = await db
+    .select({ roleCode: role.code })
+    .from(userRole)
+    .innerJoin(role, eq(userRole.roleId, role.id))
+    .where(eq(userRole.userId, dbUser.id));
+
+  const roles = userRoleRows.map((row) => row.roleCode.toUpperCase());
+  const permissions = [
+    ...new Set(roles.flatMap((roleCode) => ROLE_PERMISSIONS[roleCode] ?? []))
+  ];
+
+  const sessionId = randomUUID();
+  const now = Date.now();
+
+  await createSession({
+    id: sessionId,
+    userId: dbUser.id,
+    workspaceId: dbUser.workspaceId,
+    employeeId: dbUser.employeeId,
+    name: dbUser.name ?? "User",
+    email: dbUser.email ?? loginEmail,
+    roles,
+    permissions,
+    orgId: dbUser.orgId ?? undefined,
+    createdAt: now,
+    expiresAt: now + 8 * 60 * 60 * 1000,
+  });
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set("sessionId", sessionId, {
+    httpOnly: true,
+    secure: process.env["NODE_ENV"] === "production",
+    maxAge: 8 * 60 * 60,
+    sameSite: "lax",
+    path: "/",
+  });
+
+  return response;
 }

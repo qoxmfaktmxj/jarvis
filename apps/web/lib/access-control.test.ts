@@ -17,7 +17,6 @@ function makeSession(permissions: string[], roles: string[] = ["VIEWER"]): Jarvi
     name: "Test User",
     roles,
     permissions,
-    ssoSubject: "sso-user-1",
     createdAt: Date.now(),
     expiresAt: Date.now() + 60_000
   };

@@ -65,7 +65,7 @@ async function seed() {
     .insert(project)
     .values([
       { workspaceId: wsId, code: 'PORTAL', name: 'Portal Rewrite', description: 'Jarvis enterprise portal v2', status: 'active', createdBy: adminUser.id },
-      { workspaceId: wsId, code: 'AUTH', name: 'Auth Migration', description: 'Migrate to SSO', status: 'active', createdBy: aliceUser.id },
+      { workspaceId: wsId, code: 'AUTH', name: 'Auth Migration', description: 'Auth system improvements', status: 'active', createdBy: aliceUser.id },
       { workspaceId: wsId, code: 'SEARCH', name: 'Search Upgrade', description: 'Improve PostgreSQL hybrid search relevance', status: 'planning', createdBy: bobUser.id },
     ])
     .returning();
@@ -78,7 +78,7 @@ async function seed() {
     { projectId: projects[0]!.id, title: 'Implement auth', status: 'done', assigneeId: aliceUser.id },
     { projectId: projects[0]!.id, title: 'Build dashboard', status: 'in_progress', assigneeId: aliceUser.id },
     { projectId: projects[0]!.id, title: 'File upload', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[1]!.id, title: 'SSO provider setup', status: 'in_progress', assigneeId: aliceUser.id },
+    { projectId: projects[1]!.id, title: 'Login flow setup', status: 'in_progress', assigneeId: aliceUser.id },
     { projectId: projects[1]!.id, title: 'User migration script', status: 'todo', assigneeId: adminUser.id },
     { projectId: projects[2]!.id, title: 'Tune PostgreSQL ranking weights', status: 'todo', assigneeId: bobUser.id },
     { projectId: projects[2]!.id, title: 'Backfill knowledge embeddings', status: 'todo', assigneeId: bobUser.id },

@@ -7,8 +7,7 @@
     ".": "./index.ts",
     "./types": "./types.ts",
     "./session": "./session.ts",
-    "./rbac": "./rbac.ts",
-    "./oidc": "./oidc.ts"
+    "./rbac": "./rbac.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
@@ -16,8 +15,7 @@
   },
   "dependencies": {
     "@jarvis/db": "workspace:*",
-    "@jarvis/shared": "workspace:*",
-    "openid-client": "^6.0.0"
+    "@jarvis/shared": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
