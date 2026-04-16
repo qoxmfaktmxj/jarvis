@@ -211,12 +211,13 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
   });
 
   // ---------------------------------------------------------------------
-  // 6) requiredPermission 세트 페이지 — 해당 권한 있으면 포함, 없으면 제외
+  // 6) requiredPermission — now enforced in SQL WHERE (push-down).
+  //    The mock simulates the DB already filtering by requiredPermission.
+  //    We verify the SQL contains the requiredPermission WHERE clause and
+  //    that the app layer correctly maps results.
   // ---------------------------------------------------------------------
-  it("requiredPermission: included when user has it, excluded otherwise", async () => {
-    // DB 는 sensitivity 필터를 통과한 행 2개를 반환 (둘 다 RESTRICTED 가 아님).
-    // 그 중 p2 는 requiredPermission="admin:users:read" 를 요구.
-    // 케이스 A — 권한 없음.
+  it("requiredPermission: SQL WHERE filters by permission; app layer maps results", async () => {
+    // 케이스 A — 권한 없음: DB only returns p1 (p2 filtered out by SQL WHERE).
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [
         {
@@ -229,16 +230,6 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
           updated_at: new Date(),
           score: 9,
         },
-        {
-          id: "p2",
-          path: "b.md",
-          title: "Beta",
-          slug: "beta",
-          sensitivity: "INTERNAL",
-          required_permission: PERMISSIONS.USER_READ,
-          updated_at: new Date(),
-          score: 8,
-        },
       ],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
@@ -250,7 +241,14 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     });
     expect(without.map((h) => h.id)).toEqual(["p1"]);
 
-    // 케이스 B — 권한 있음.
+    // Verify SQL contains required_permission WHERE clause.
+    const serializedA = stringifyQuery(
+      vi.mocked(db.execute).mock.calls[0]?.[0],
+    );
+    expect(serializedA).toContain("required_permission IS NULL");
+    expect(serializedA).toContain("required_permission = ANY");
+
+    // 케이스 B — 권한 있음: DB returns both p1 and p2.
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [
         {
@@ -284,7 +282,7 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     });
     expect(withPerm.map((h) => h.id).sort()).toEqual(["p1", "p2"]);
 
-    // 케이스 C — admin:all 은 어떤 requiredPermission 도 통과.
+    // 케이스 C — admin:all 은 SQL WHERE 가 통과시킨다.
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [
         {
@@ -310,9 +308,9 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
   });
 
   // ---------------------------------------------------------------------
-  // 7) topK 기본값 20
+  // 7) topK 기본값 20 → SQL LIMIT = topK * 3 (overfetch for perm filtering)
   // ---------------------------------------------------------------------
-  it("topK defaults to 20 (reflected in LIMIT placeholder)", async () => {
+  it("topK defaults to 20 — SQL LIMIT is topK*3=60 (overfetch)", async () => {
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -327,15 +325,16 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     const serialized = stringifyQuery(
       vi.mocked(db.execute).mock.calls[0]?.[0],
     );
-    // drizzle 은 LIMIT ${topK} 의 파라미터 값도 직렬화 결과에 담는다.
-    expect(serialized).toContain("20");
+    // drizzle 은 LIMIT ${fetchLimit} 의 파라미터 값도 직렬화 결과에 담는다.
+    // topK=20, fetchLimit = topK*3 = 60.
+    expect(serialized).toContain("60");
     expect(serialized).toMatch(/LIMIT/i);
   });
 
   // ---------------------------------------------------------------------
-  // 8) topK 커스텀 값 전달 — 파라미터 반영 확인
+  // 8) topK 커스텀 값 전달 — SQL LIMIT = topK * 3
   // ---------------------------------------------------------------------
-  it("topK override is passed through to the SQL LIMIT", async () => {
+  it("topK override is passed through to the SQL LIMIT as topK*3", async () => {
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -351,14 +350,15 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     const serialized = stringifyQuery(
       vi.mocked(db.execute).mock.calls[0]?.[0],
     );
-    expect(serialized).toContain("5");
+    // topK=5, fetchLimit = 5*3 = 15.
+    expect(serialized).toContain("15");
     expect(serialized).toMatch(/LIMIT/i);
   });
 
   // ---------------------------------------------------------------------
-  // 9) 질문 토큰화 — 의미있는 토큰이 ILIKE 인자로 전달된다
+  // 9) 질문 토큰화 — 의미있는 토큰이 unnest(tokenArray) 인자로 전달된다
   // ---------------------------------------------------------------------
-  it("tokenizes question and injects ILIKE %token% params", async () => {
+  it("tokenizes question and passes tokens as array params for unnest scoring", async () => {
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -373,16 +373,17 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     const serialized = stringifyQuery(
       vi.mocked(db.execute).mock.calls[0]?.[0],
     );
-    // stopword "is/the" 는 제거되고 실제 의미 토큰은 %tok% 형태로 실린다.
-    expect(serialized).toContain("%vacation%");
-    expect(serialized).toContain("%policy%");
-    expect(serialized).toContain("%연차%");
+    // Tokens are passed as array elements to unnest() — not as inline %tok% patterns.
+    // The SQL uses `'%' || t || '%'` for ILIKE matching within the unnest subquery.
+    expect(serialized).toContain('"vacation"');
+    expect(serialized).toContain('"policy"');
+    expect(serialized).toContain('"연차"');
   });
 
   // ---------------------------------------------------------------------
   // 10) stopword/짧은 토큰 제거 (2자 미만 및 '뭐야' 계열)
   // ---------------------------------------------------------------------
-  it("drops stopwords and <2-char fragments from the ILIKE pattern list", async () => {
+  it("drops stopwords and <2-char fragments from the token array", async () => {
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -398,8 +399,12 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     const serialized = stringifyQuery(
       vi.mocked(db.execute).mock.calls[0]?.[0],
     );
-    expect(serialized).toContain("%vacation%");
-    expect(serialized).not.toContain("%뭐야%");
-    expect(serialized).not.toContain("%a%");
+    // Tokens are passed as array elements; stopwords and short fragments excluded.
+    expect(serialized).toContain('"vacation"');
+    expect(serialized).not.toContain('"뭐야"');
+    // "a" is 1 char and dropped; but we can't just check for not containing "a"
+    // since it appears in many places. Check token array doesn't include it.
+    // The token array in the serialized output should be ["vacation"] only.
+    expect(serialized).toMatch(/\["vacation"\]/);
   });
 });

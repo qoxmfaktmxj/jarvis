@@ -57,16 +57,21 @@ export async function* pageFirstAsk(
         PAGE_FIRST_SYNTH_OP,
       );
       yield { type: "error", message: "daily budget exceeded" };
+      yield { type: "done", totalTokens: 0 };
       return;
     }
     throw err;
   }
 
   // 2. Cache key — include op so we never collide with legacy askAI.
+  //    permissionFingerprint ensures users with different ACLs never share
+  //    a cached response (P0 fix: cache key ACL isolation).
+  const permFingerprint = [...(userPermissions ?? [])].sort().join(",");
   const cacheKey = makeCacheKey({
     promptVersion: PAGE_FIRST_PROMPT_VERSION,
     workspaceId,
     sensitivityScope,
+    permissionFingerprint: permFingerprint,
     input: question,
     model: PAGE_FIRST_MODEL,
     op: PAGE_FIRST_SYNTH_OP,
@@ -138,11 +143,20 @@ export async function* pageFirstAsk(
   }
 
   // 6. Read top pages from disk
-  const pages = await readTopPages({
+  const readResult = await readTopPages({
     workspaceId,
     candidates,
     topN: 7,
   });
+
+  if (!readResult.ok) {
+    // High drift — too many pages missing from disk vs index.
+    yield { type: "error", message: "wiki index drift: most pages could not be read from disk" };
+    yield { type: "done", totalTokens: 0 };
+    return;
+  }
+
+  const pages = readResult.pages;
 
   // 7. Synthesize answer + stream events; collect for cache persistence.
   for await (const evt of synthesizePageFirstAnswer({
