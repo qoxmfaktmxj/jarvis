@@ -7,26 +7,27 @@ import { role, user, userRole } from "@jarvis/db/schema";
 import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { findTempDevAccount } from "@/lib/auth/dev-accounts";
 
+// Development-only login endpoint. Blocked in production.
 export async function POST(request: NextRequest) {
+  if (process.env["NODE_ENV"] === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const payload = await request.json() as {
-    email?: string;
     username?: string;
     password?: string;
   };
 
-  let loginEmail = payload.email;
-
-  if (!loginEmail && payload.username && payload.password) {
-    const account = findTempDevAccount(payload.username, payload.password);
-    if (!account) {
-      return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
-    }
-    loginEmail = account.email;
+  if (!payload.username || !payload.password) {
+    return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
 
-  if (!loginEmail) {
-    return NextResponse.json({ error: "email or username/password required" }, { status: 400 });
+  const account = findTempDevAccount(payload.username, payload.password);
+  if (!account) {
+    return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
+
+  const loginEmail = account.email;
 
   const [dbUser] = await db
     .select()
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     .limit(1);
 
   if (!dbUser) {
-    return NextResponse.json({ error: "user not found" }, { status: 404 });
+    return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
   const userRoleRows = await db
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set("sessionId", sessionId, {
     httpOnly: true,
-    secure: process.env["NODE_ENV"] === "production",
+    secure: false,
     maxAge: 8 * 60 * 60,
     sameSite: "lax",
     path: "/",

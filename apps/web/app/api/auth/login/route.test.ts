@@ -49,7 +49,7 @@ describe("/api/auth/login", () => {
     roleLookupQueue.length = 0;
   });
 
-  it("creates a session from a valid account", async () => {
+  it("creates a session from valid dev credentials", async () => {
     userLookupQueue.push([{
       id: "user-1",
       workspaceId: "ws-1",
@@ -62,7 +62,8 @@ describe("/api/auth/login", () => {
 
     const response = await POST(
       buildRequest({
-        email: "admin@jarvis.dev"
+        username: "admin",
+        password: "admin123!"
       })
     );
 
@@ -75,42 +76,35 @@ describe("/api/auth/login", () => {
         roles: ["ADMIN"]
       })
     );
-    // ssoSubject should NOT be in the session
     const sessionArg = createSessionMock.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(sessionArg).not.toHaveProperty("ssoSubject");
     expect(response.headers.get("set-cookie")).toContain("sessionId=");
   });
 
   it("rejects invalid credentials", async () => {
-    const invalidPassword = ["invalid", "test", "input"].join("-");
-    const invalidPayload = {
-      username: "alice",
-      ["password"]: invalidPassword
-    };
-
     const response = await POST(
-      buildRequest(invalidPayload)
+      buildRequest({ username: "alice", password: ["wrong", "password"].join("-") })
     );
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: "invalid credentials" });
   });
 
-  it("returns 400 when neither email nor username/password provided", async () => {
+  it("returns 400 when username or password is missing", async () => {
     const response = await POST(buildRequest({}));
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: "email or username/password required" });
+    await expect(response.json()).resolves.toEqual({ error: "username and password required" });
   });
 
-  it("returns 404 when user not found in database", async () => {
+  it("returns 401 when dev account email is not seeded in database", async () => {
     userLookupQueue.push([]);
 
     const response = await POST(
-      buildRequest({ email: "unknown@jarvis.dev" })
+      buildRequest({ username: "admin", password: "admin123!" })
     );
 
-    expect(response.status).toBe(404);
-    await expect(response.json()).resolves.toEqual({ error: "user not found" });
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "invalid credentials" });
   });
 });

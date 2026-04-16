@@ -42,7 +42,8 @@ function LoginContent() {
         return;
       }
 
-      window.location.assign(redirectTo);
+      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      window.location.assign(safeRedirect);
     } catch {
       setLoginError('로그인 요청 중 오류가 발생했습니다.');
       setIsLoading(false);
