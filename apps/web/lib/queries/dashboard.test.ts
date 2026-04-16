@@ -47,14 +47,13 @@ vi.mock("@jarvis/db/schema", () => ({
     status: "project.status",
     workspaceId: "project.workspaceId"
   },
-  knowledgePage: {
-    id: "page.id",
-    title: "page.title",
-    publishStatus: "page.publishStatus",
-    lastVerifiedAt: "page.lastVerifiedAt",
-    freshnessSlaDays: "page.freshnessSlaDays",
-    createdAt: "page.createdAt",
-    workspaceId: "page.workspaceId"
+  wikiPageIndex: {
+    id: "wiki.id",
+    title: "wiki.title",
+    updatedAt: "wiki.updatedAt",
+    stale: "wiki.stale",
+    publishedStatus: "wiki.publishedStatus",
+    workspaceId: "wiki.workspaceId"
   },
   popularSearch: {
     query: "search.query",
@@ -222,36 +221,33 @@ describe("dashboard queries", () => {
   });
 
   it("returns only stale pages from raw rows", async () => {
+    // B4 Phase 1: getStalePages는 wikiPageIndex.stale=true 행만 DB에서 받아 매핑한다.
+    // 필터링은 DB 쿼리(WHERE stale=true)에서 이미 완료되므로 mock은 stale 행만 반환.
     const selectMock = db.select as unknown as Mock;
+    const updatedAt = new Date("2026-01-01T00:00:00.000Z");
     selectMock.mockReturnValue(
       createChain([
         {
           id: "page-1",
           title: "Old",
-          publishStatus: "published",
-          freshnessSlaDays: 30,
-          lastVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
-          createdAt: new Date("2025-12-01T00:00:00.000Z")
-        },
-        {
-          id: "page-2",
-          title: "Fresh",
-          publishStatus: "published",
-          freshnessSlaDays: 90,
-          lastVerifiedAt: new Date("2026-04-01T00:00:00.000Z"),
-          createdAt: new Date("2026-01-01T00:00:00.000Z")
+          updatedAt
         }
       ])
     );
 
-    const result = await getStalePages("ws-1", new Date("2026-04-15T00:00:00.000Z"));
+    const now = new Date("2026-04-15T00:00:00.000Z");
+    const result = await getStalePages("ws-1", now);
+
+    const expectedOverdueDays = Math.floor(
+      (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
 
     expect(result).toEqual([
       {
         id: "page-1",
         title: "Old",
-        lastReviewedAt: new Date("2026-01-01T00:00:00.000Z"),
-        overdueDays: 74
+        lastReviewedAt: updatedAt,
+        overdueDays: expectedOverdueDays
       }
     ]);
   });
