@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getDashboardData } from "@/lib/queries/dashboard";
 import { requirePageSession } from "@/lib/server/page-auth";
+import { isoWeekNumber } from "@/lib/date-utils";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { AttendanceSummaryWidget } from "./_components/AttendanceSummaryWidget";
 import { MyTasksWidget } from "./_components/MyTasksWidget";
@@ -11,17 +12,6 @@ import { SearchTrendsWidget } from "./_components/SearchTrendsWidget";
 import { StalePagesWidget } from "./_components/StalePagesWidget";
 
 export const dynamic = "force-dynamic";
-
-/** ISO week number (1–53) for the given Date. */
-function isoWeekNumber(date: Date): number {
-  const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNumber = (target.getUTCDay() + 6) % 7;
-  target.setUTCDate(target.getUTCDate() - dayNumber + 3);
-  const firstThursday = new Date(Date.UTC(target.getUTCFullYear(), 0, 4));
-  const firstThursdayDay = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayDay + 3);
-  return 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 3600 * 1000));
-}
 
 export default async function DashboardPage() {
   const t = await getTranslations("Dashboard");

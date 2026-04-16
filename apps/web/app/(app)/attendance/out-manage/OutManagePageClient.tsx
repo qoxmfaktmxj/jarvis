@@ -6,6 +6,7 @@ import { OutManageTable } from '@/components/attendance/OutManageTable';
 import { OutManageForm } from '@/components/attendance/OutManageForm';
 import { TimeDetailSheet } from '@/components/attendance/TimeDetailSheet';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import { Plus } from 'lucide-react';
 import type { OutManageRecord } from '@/lib/queries/attendance';
 
@@ -25,19 +26,20 @@ export function OutManagePageClient({ initialRecords, isManager }: OutManagePage
   }
 
   return (
-    <div className="container mx-auto max-w-5xl py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-          <p className="text-sm text-gray-500">{t('description')}</p>
-        </div>
-        <OutManageForm>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            New Request
-          </Button>
-        </OutManageForm>
-      </div>
+    <div className="container mx-auto max-w-5xl py-6 space-y-8">
+      <PageHeader
+        eyebrow="Attendance · Out-manage"
+        title={t('title')}
+        description={t('description')}
+        meta={
+          <OutManageForm>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              New Request
+            </Button>
+          </OutManageForm>
+        }
+      />
 
       <OutManageTable
         records={initialRecords}
