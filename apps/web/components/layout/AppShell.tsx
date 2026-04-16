@@ -9,11 +9,11 @@ export function AppShell({
   userName: string;
 }) {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: "var(--background)" }}>
       <Topbar userName={userName} />
       <Sidebar />
       <main className="min-h-screen pl-[var(--sidebar-width)] pt-[var(--topbar-height)]">
-        <div className="p-6">{children}</div>
+        <div className="mx-auto max-w-[1400px] px-8 py-8">{children}</div>
       </main>
     </div>
   );

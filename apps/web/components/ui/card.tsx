@@ -1,6 +1,11 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
+/**
+ * Card — ISU Brand Design System
+ * No heavy shadows. Subtle border with brand-tinted surface.
+ * Clean separation via spacing, not visual weight.
+ */
 export function Card({
   className,
   ...props
@@ -8,9 +13,12 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-gray-200 bg-white shadow-sm",
+        "rounded-xl border bg-white/80 backdrop-blur-[2px]",
         className
       )}
+      style={{
+        borderColor: "var(--border)",
+      }}
       {...props}
     />
   );
@@ -23,9 +31,10 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4",
+        "flex items-start justify-between gap-3 px-5 py-4",
         className
       )}
+      style={{ borderBottom: "1px solid var(--surface-100)" }}
       {...props}
     />
   );
@@ -37,7 +46,8 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-sm font-semibold text-gray-900", className)}
+      className={cn("text-display text-sm font-semibold", className)}
+      style={{ color: "var(--surface-900)" }}
       {...props}
     />
   );
@@ -56,10 +66,8 @@ export function CardFooter({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "border-t border-gray-100 px-5 py-4",
-        className
-      )}
+      className={cn("px-5 py-4", className)}
+      style={{ borderTop: "1px solid var(--surface-100)" }}
       {...props}
     />
   );

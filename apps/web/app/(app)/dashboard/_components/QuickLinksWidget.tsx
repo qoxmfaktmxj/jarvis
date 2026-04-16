@@ -1,46 +1,44 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { MenuItem } from "@/lib/queries/dashboard";
 
+/**
+ * QuickLinksWidget — flow layout.
+ * Horizontal chip row. No card, no border box. Chips wrap on overflow.
+ */
 export function QuickLinksWidget({ items }: { items: MenuItem[] }) {
   const t = useTranslations("Dashboard.QuickLinks");
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {items.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("empty")}</p>
-        ) : (
-          <ul className="space-y-2">
-            {items.map((item) => (
-              <li key={item.id}>
-                <Link
-                  href={item.path ?? "/dashboard"}
-                  className="group flex items-center justify-between rounded-xl border border-gray-200 px-3 py-3 transition-colors hover:border-blue-300 hover:bg-blue-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
-                      {item.label.slice(0, 1).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                      <p className="text-xs text-gray-500">{item.path}</p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-0.5 group-hover:text-blue-600" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+    <section aria-label={t("title")}>
+      <div className="mb-3 flex items-baseline gap-3">
+        <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
+          {t("title")}
+        </h2>
+        <span className="h-px flex-1 bg-surface-200" aria-hidden />
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-sm text-surface-500">{t("empty")}</p>
+      ) : (
+        <ul className="flex flex-wrap gap-2">
+          {items.map((item) => (
+            <li key={item.id}>
+              <Link
+                href={item.path ?? "/dashboard"}
+                className="group inline-flex items-center gap-2 rounded-md border border-surface-200 bg-white px-3 py-1.5 text-sm text-surface-700 transition-colors duration-150 hover:border-isu-300 hover:bg-isu-50 hover:text-isu-700"
+              >
+                <span className="text-display text-[11px] font-semibold text-surface-400 group-hover:text-isu-500">
+                  {item.label.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
