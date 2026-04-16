@@ -29,8 +29,11 @@ function formatSSE(event: SSEEvent): string {
  * Users with different clearance levels must NOT share cache entries — a
  * RESTRICTED-level response must never be served to a PUBLIC/INTERNAL caller.
  *
- * Knowledge level: aligns with PRIVILEGED_KNOWLEDGE_PERMISSIONS in packages/auth/rbac.ts
- *   (KNOWLEDGE_UPDATE, KNOWLEDGE_REVIEW, ADMIN_ALL can see RESTRICTED/SECRET_REF_ONLY).
+ * Knowledge level: aligns with W3-T5 buildWikiSensitivitySqlFilter rules.
+ *   Only KNOWLEDGE_REVIEW and ADMIN_ALL may access RESTRICTED content.
+ *   KNOWLEDGE_UPDATE alone (DEVELOPER role) no longer grants RESTRICTED access
+ *   after W3-T5 — mapping it to 'restricted' here would cause cache poisoning
+ *   (ADMIN/REVIEWER answers leaked to DEVELOPER callers).
  *
  * Graph dimension: graph:read gates graph-lane retrieval in ask.ts. A response that
  *   includes graph context must NOT be served to a non-graph-read caller from cache.
@@ -39,12 +42,12 @@ function deriveSensitivityScope(workspaceId: string, permissions: string[]): str
   let level: string;
   if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
     level = 'secret';
+  } else if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
+    level = 'restricted';
   } else if (
-    permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW) ||
+    permissions.includes(PERMISSIONS.KNOWLEDGE_READ) ||
     permissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE)
   ) {
-    level = 'restricted';
-  } else if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
     level = 'internal';
   } else {
     level = 'public';

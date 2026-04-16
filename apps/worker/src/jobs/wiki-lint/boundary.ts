@@ -104,12 +104,22 @@ export async function detectBoundaryViolations(
   return violations;
 }
 
-/** Pure predicate — exported so tests can exercise without a repo. */
+/**
+ * Pure predicate — exported so tests can exercise without a repo.
+ *
+ * NOTE: paths are relative to the **workspace sub-repo root** (not the monorepo
+ * root), so they begin with `auto/` — not `wiki/auto/`. The CI workflow
+ * (`wiki-boundary-check.yml`) checks against the monorepo root and therefore
+ * uses `wiki/auto/**`; boundary.ts operates inside an already-scoped repo and
+ * must use the shorter prefix.
+ */
 export function isAutoPath(repoRelativePath: string): boolean {
-  return repoRelativePath.replace(/\\/g, "/").startsWith("wiki/auto/");
+  const p = repoRelativePath.replace(/\\/g, "/");
+  return p.startsWith("auto/") || p === "auto";
 }
 
-/** Pure predicate — exported so tests can exercise without a repo. */
+/** Pure predicate — see `isAutoPath` for path-root context. */
 export function isManualPath(repoRelativePath: string): boolean {
-  return repoRelativePath.replace(/\\/g, "/").startsWith("wiki/manual/");
+  const p = repoRelativePath.replace(/\\/g, "/");
+  return p.startsWith("manual/") || p === "manual";
 }

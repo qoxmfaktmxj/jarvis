@@ -11,6 +11,7 @@
  *   진입을 허용할 경로를 확보한다.
  */
 
+import { forbidden, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { getTranslations } from "next-intl/server";
@@ -35,6 +36,8 @@ const KIND_VALUES = [
   "sensitivity_promotion",
   "ingest_fail",
   "boundary_violation",
+  "synonym_conflict",
+  "integrity_violation",
   "pii",
 ] as const;
 
@@ -108,7 +111,7 @@ export default async function WikiReviewQueuePage({
   const headersList = await headers();
   const session = await getSession(headersList.get("x-session-id") ?? "");
 
-  if (!session) throw new Error("unauthenticated");
+  if (!session) redirect("/login");
 
   // Admin layout이 이미 isAdmin 게이트를 수행하지만, page-level에서
   // KNOWLEDGE_REVIEW 권한을 명시적으로 재확인한다 (non-admin 리뷰어 경로 대비).
@@ -116,7 +119,7 @@ export default async function WikiReviewQueuePage({
     !isAdmin(session) &&
     !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW)
   ) {
-    throw new Error("forbidden");
+    forbidden();
   }
 
   const workspaceId = session.workspaceId;

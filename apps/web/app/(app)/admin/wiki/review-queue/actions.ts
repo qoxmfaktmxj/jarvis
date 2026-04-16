@@ -14,6 +14,11 @@
  *   `reviewedByUserId` 기록.
  * - `affectedPages`가 있으면 해당 `wiki_page_index` 행들의 `stale = true`로 올려
  *   재-ingest/reindex가 필요함을 표시한다.
+ *
+ * 동시성 안전:
+ * - approve/reject 전체를 단일 `db.transaction()` 내에서 실행.
+ * - UPDATE 시 `.returning()` 으로 영향 행 수를 검증 → 0 행이면 다른 프로세스가
+ *   먼저 처리한 것으로 간주해 side-effect(stale 마킹, audit 로그)를 실행하지 않는다.
  */
 
 import { revalidatePath } from "next/cache";
@@ -79,41 +84,6 @@ async function resolveContext(): Promise<
   };
 }
 
-async function loadOwnedItem(id: string, workspaceId: string) {
-  const rows = await db
-    .select({
-      id: wikiReviewQueue.id,
-      status: wikiReviewQueue.status,
-      payload: wikiReviewQueue.payload,
-      affectedPages: wikiReviewQueue.affectedPages,
-    })
-    .from(wikiReviewQueue)
-    .where(
-      and(
-        eq(wikiReviewQueue.id, id),
-        eq(wikiReviewQueue.workspaceId, workspaceId),
-      ),
-    )
-    .limit(1);
-  return rows[0] ?? null;
-}
-
-async function markAffectedPagesStale(
-  affectedPages: string[] | null | undefined,
-  workspaceId: string,
-): Promise<void> {
-  if (!affectedPages || affectedPages.length === 0) return;
-  await db
-    .update(wikiPageIndex)
-    .set({ stale: true, updatedAt: new Date() })
-    .where(
-      and(
-        eq(wikiPageIndex.workspaceId, workspaceId),
-        inArray(wikiPageIndex.id, affectedPages),
-      ),
-    );
-}
-
 export async function approveReviewItem(
   id: string,
   notes?: string,
@@ -125,55 +95,98 @@ export async function approveReviewItem(
   const ctx = await resolveContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
+  // 예상된(비-예외) 중단 코드를 트랜잭션 밖으로 전달하는 sentinel
+  let txErrorCode: string | null = null;
+
   try {
-    const owned = await loadOwnedItem(id, ctx.workspaceId);
-    if (!owned) return { ok: false, error: "not_found" };
-    if (owned.status !== "pending") {
-      return { ok: false, error: "already_resolved" };
-    }
+    await db.transaction(async (tx) => {
+      const rows = await tx
+        .select({
+          id: wikiReviewQueue.id,
+          status: wikiReviewQueue.status,
+          payload: wikiReviewQueue.payload,
+          affectedPages: wikiReviewQueue.affectedPages,
+        })
+        .from(wikiReviewQueue)
+        .where(
+          and(
+            eq(wikiReviewQueue.id, id),
+            eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
+          ),
+        )
+        .limit(1);
 
-    const reviewedAt = new Date();
-    const prevPayload =
-      (owned.payload as Record<string, unknown> | null | undefined) ?? {};
-    const nextPayload: Record<string, unknown> = {
-      ...prevPayload,
-      approvedBy: ctx.userId,
-      approvedAt: reviewedAt.toISOString(),
-      ...(notes && notes.trim().length > 0
-        ? { notes: notes.trim() }
-        : {}),
-    };
+      const owned = rows[0] ?? null;
+      if (!owned) {
+        txErrorCode = "not_found";
+        throw new Error("tx_abort");
+      }
+      if (owned.status !== "pending") {
+        txErrorCode = "already_resolved";
+        throw new Error("tx_abort");
+      }
 
-    await db
-      .update(wikiReviewQueue)
-      .set({
-        status: "approved",
-        reviewedAt,
-        reviewedByUserId: ctx.userId,
-        payload: nextPayload,
-      })
-      .where(
-        and(
-          eq(wikiReviewQueue.id, id),
-          eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
-          eq(wikiReviewQueue.status, "pending"),
-        ),
-      );
+      const reviewedAt = new Date();
+      const prevPayload =
+        (owned.payload as Record<string, unknown> | null | undefined) ?? {};
+      const nextPayload: Record<string, unknown> = {
+        ...prevPayload,
+        approvedBy: ctx.userId,
+        approvedAt: reviewedAt.toISOString(),
+        ...(notes && notes.trim().length > 0
+          ? { notes: notes.trim() }
+          : {}),
+      };
 
-    await markAffectedPagesStale(owned.affectedPages, ctx.workspaceId);
+      const updated = await tx
+        .update(wikiReviewQueue)
+        .set({
+          status: "approved",
+          reviewedAt,
+          reviewedByUserId: ctx.userId,
+          payload: nextPayload,
+        })
+        .where(
+          and(
+            eq(wikiReviewQueue.id, id),
+            eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
+            eq(wikiReviewQueue.status, "pending"),
+          ),
+        )
+        .returning({ id: wikiReviewQueue.id });
 
-    await db.insert(auditLog).values({
-      workspaceId: ctx.workspaceId,
-      userId: ctx.userId,
-      action: "wiki_review.approve",
-      resourceType: "wiki_review_queue",
-      resourceId: id,
-      ipAddress: ctx.ipAddress as unknown as string | null,
-      userAgent: ctx.userAgent,
-      details: { notes: notes ?? null },
-      success: true,
+      // 다른 요청이 먼저 처리한 경우 — side-effect 없이 중단
+      if (updated.length === 0) {
+        txErrorCode = "already_resolved";
+        throw new Error("tx_abort");
+      }
+
+      if (owned.affectedPages && owned.affectedPages.length > 0) {
+        await tx
+          .update(wikiPageIndex)
+          .set({ stale: true, updatedAt: new Date() })
+          .where(
+            and(
+              eq(wikiPageIndex.workspaceId, ctx.workspaceId),
+              inArray(wikiPageIndex.id, owned.affectedPages),
+            ),
+          );
+      }
+
+      await tx.insert(auditLog).values({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        action: "wiki_review.approve",
+        resourceType: "wiki_review_queue",
+        resourceId: id,
+        ipAddress: ctx.ipAddress as unknown as string | null,
+        userAgent: ctx.userAgent,
+        details: { notes: notes ?? null },
+        success: true,
+      });
     });
   } catch (err) {
+    if (txErrorCode) return { ok: false, error: txErrorCode };
     console.error("wiki-review-queue.approve failed:", err);
     return { ok: false, error: "approve_failed" };
   }
@@ -196,53 +209,94 @@ export async function rejectReviewItem(
   const ctx = await resolveContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
+  let txErrorCode: string | null = null;
+
   try {
-    const owned = await loadOwnedItem(id, ctx.workspaceId);
-    if (!owned) return { ok: false, error: "not_found" };
-    if (owned.status !== "pending") {
-      return { ok: false, error: "already_resolved" };
-    }
+    await db.transaction(async (tx) => {
+      const rows = await tx
+        .select({
+          id: wikiReviewQueue.id,
+          status: wikiReviewQueue.status,
+          payload: wikiReviewQueue.payload,
+          affectedPages: wikiReviewQueue.affectedPages,
+        })
+        .from(wikiReviewQueue)
+        .where(
+          and(
+            eq(wikiReviewQueue.id, id),
+            eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
+          ),
+        )
+        .limit(1);
 
-    const reviewedAt = new Date();
-    const prevPayload =
-      (owned.payload as Record<string, unknown> | null | undefined) ?? {};
-    const nextPayload: Record<string, unknown> = {
-      ...prevPayload,
-      rejectedBy: ctx.userId,
-      rejectedAt: reviewedAt.toISOString(),
-      rejectionReason: reason.trim(),
-    };
+      const owned = rows[0] ?? null;
+      if (!owned) {
+        txErrorCode = "not_found";
+        throw new Error("tx_abort");
+      }
+      if (owned.status !== "pending") {
+        txErrorCode = "already_resolved";
+        throw new Error("tx_abort");
+      }
 
-    await db
-      .update(wikiReviewQueue)
-      .set({
-        status: "rejected",
-        reviewedAt,
-        reviewedByUserId: ctx.userId,
-        payload: nextPayload,
-      })
-      .where(
-        and(
-          eq(wikiReviewQueue.id, id),
-          eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
-          eq(wikiReviewQueue.status, "pending"),
-        ),
-      );
+      const reviewedAt = new Date();
+      const prevPayload =
+        (owned.payload as Record<string, unknown> | null | undefined) ?? {};
+      const nextPayload: Record<string, unknown> = {
+        ...prevPayload,
+        rejectedBy: ctx.userId,
+        rejectedAt: reviewedAt.toISOString(),
+        rejectionReason: reason.trim(),
+      };
 
-    await markAffectedPagesStale(owned.affectedPages, ctx.workspaceId);
+      const updated = await tx
+        .update(wikiReviewQueue)
+        .set({
+          status: "rejected",
+          reviewedAt,
+          reviewedByUserId: ctx.userId,
+          payload: nextPayload,
+        })
+        .where(
+          and(
+            eq(wikiReviewQueue.id, id),
+            eq(wikiReviewQueue.workspaceId, ctx.workspaceId),
+            eq(wikiReviewQueue.status, "pending"),
+          ),
+        )
+        .returning({ id: wikiReviewQueue.id });
 
-    await db.insert(auditLog).values({
-      workspaceId: ctx.workspaceId,
-      userId: ctx.userId,
-      action: "wiki_review.reject",
-      resourceType: "wiki_review_queue",
-      resourceId: id,
-      ipAddress: ctx.ipAddress as unknown as string | null,
-      userAgent: ctx.userAgent,
-      details: { reason: reason.trim() },
-      success: true,
+      if (updated.length === 0) {
+        txErrorCode = "already_resolved";
+        throw new Error("tx_abort");
+      }
+
+      if (owned.affectedPages && owned.affectedPages.length > 0) {
+        await tx
+          .update(wikiPageIndex)
+          .set({ stale: true, updatedAt: new Date() })
+          .where(
+            and(
+              eq(wikiPageIndex.workspaceId, ctx.workspaceId),
+              inArray(wikiPageIndex.id, owned.affectedPages),
+            ),
+          );
+      }
+
+      await tx.insert(auditLog).values({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        action: "wiki_review.reject",
+        resourceType: "wiki_review_queue",
+        resourceId: id,
+        ipAddress: ctx.ipAddress as unknown as string | null,
+        userAgent: ctx.userAgent,
+        details: { reason: reason.trim() },
+        success: true,
+      });
     });
   } catch (err) {
+    if (txErrorCode) return { ok: false, error: txErrorCode };
     console.error("wiki-review-queue.reject failed:", err);
     return { ok: false, error: "reject_failed" };
   }

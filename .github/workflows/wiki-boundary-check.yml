@@ -16,6 +16,8 @@ name: wiki-boundary-check
 on:
   push:
     branches: [main]
+    paths:
+      - 'wiki/**'
   pull_request:
     branches: [main]
     paths:
@@ -35,10 +37,17 @@ jobs:
         shell: bash
         run: |
           set +e
+          # On push events, HEAD == origin/main already — use event range instead.
+          # On pull_request events, origin/main..HEAD correctly covers the PR commits.
+          if [ "${{ github.event_name }}" = "push" ]; then
+            GIT_RANGE="${{ github.event.before }}..${{ github.sha }}"
+          else
+            GIT_RANGE="origin/main..HEAD"
+          fi
           # LLM author touched wiki/manual/**?
-          llm_manual=$(git log --format="%ae %s" origin/main..HEAD -- 'wiki/manual/**' 2>/dev/null | grep -E '^jarvis-llm@' || true)
+          llm_manual=$(git log --format="%ae %s" "$GIT_RANGE" -- 'wiki/manual/**' 2>/dev/null | grep -E '^jarvis-llm@' || true)
           # Human author touched wiki/auto/**?
-          human_auto=$(git log --format="%ae %s" origin/main..HEAD -- 'wiki/auto/**' 2>/dev/null | grep -vE '^jarvis-llm@' | grep -vE '^$' || true)
+          human_auto=$(git log --format="%ae %s" "$GIT_RANGE" -- 'wiki/auto/**' 2>/dev/null | grep -vE '^jarvis-llm@' | grep -vE '^$' || true)
           set -e
 
           violation=0

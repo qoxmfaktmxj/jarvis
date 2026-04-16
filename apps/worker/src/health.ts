@@ -34,6 +34,12 @@ export function startHealthServer(port = 9090): void {
     }
   });
 
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    // EADDRINUSE / EACCES at startup — log and continue; worker still operates.
+    // k8s liveness probe will fail on its own if the health port is unavailable.
+    console.error(`[health] Server error (port ${port}):`, err.code ?? err.message);
+  });
+
   server.listen(port, () => {
     console.log(`[health] Worker healthcheck server listening on port ${port}`);
   });

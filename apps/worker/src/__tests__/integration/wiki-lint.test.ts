@@ -18,8 +18,40 @@ import {
 import { isHubPath } from "../../jobs/wiki-lint/orphans.js";
 import { buildCandidatePairs } from "../../jobs/wiki-lint/contradictions.js";
 import { lexicalSimilarity } from "../../jobs/wiki-lint/missing-cross-refs.js";
+import { isAutoPath, isManualPath } from "../../jobs/wiki-lint/boundary.js";
 
 describe("wiki-lint helpers", () => {
+  describe("boundary predicates (isAutoPath / isManualPath)", () => {
+    it("matches sub-repo relative auto/ paths", () => {
+      expect(isAutoPath("auto/concepts/hr-reform.md")).toBe(true);
+      expect(isAutoPath("auto/")).toBe(true);
+      expect(isAutoPath("auto")).toBe(true);
+    });
+
+    it("matches sub-repo relative manual/ paths", () => {
+      expect(isManualPath("manual/guides/onboarding.md")).toBe(true);
+      expect(isManualPath("manual/")).toBe(true);
+      expect(isManualPath("manual")).toBe(true);
+    });
+
+    it("does NOT match monorepo-rooted wiki/auto/ paths", () => {
+      // boundary.ts operates inside a workspace sub-repo; these paths should
+      // not match (they would match in CI which runs from the monorepo root).
+      expect(isAutoPath("wiki/auto/concepts/foo.md")).toBe(false);
+      expect(isManualPath("wiki/manual/guides/bar.md")).toBe(false);
+    });
+
+    it("does not cross-match auto vs manual", () => {
+      expect(isAutoPath("manual/guides/foo.md")).toBe(false);
+      expect(isManualPath("auto/concepts/foo.md")).toBe(false);
+    });
+
+    it("normalizes windows separators", () => {
+      expect(isAutoPath("auto\\concepts\\foo.md")).toBe(true);
+      expect(isManualPath("manual\\guides\\bar.md")).toBe(true);
+    });
+  });
+
   describe("isHubPath", () => {
     it("flags index.md / log.md / _system paths", () => {
       expect(isHubPath("wiki/ws1/index.md")).toBe(true);
