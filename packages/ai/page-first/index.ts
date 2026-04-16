@@ -105,6 +105,7 @@ export async function* pageFirstAsk(
     const message =
       err instanceof Error ? err.message : "shortlist failed";
     yield { type: "error", message };
+    yield { type: "done", totalTokens: 0 };
     return;
   }
 

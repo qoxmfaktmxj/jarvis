@@ -155,6 +155,13 @@
       "when": 1776309185265,
       "tag": "0021_acoustic_argent",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1776314892482,
+      "tag": "0022_needy_paibok",
+      "breakpoints": true
     }
   ]
 }

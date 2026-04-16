@@ -93,7 +93,7 @@ export interface AskResult {
   totalTokens: number;
 }
 
-export type SSEEventType = 'text' | 'sources' | 'done' | 'error' | 'route' | 'meta';
+export type SSEEventType = 'text' | 'sources' | 'done' | 'error' | 'route' | 'meta' | 'conversation';
 
 export interface SSETextEvent { type: 'text'; content: string }
 export interface SSESourcesEvent { type: 'sources'; sources: SourceRef[] }
@@ -109,13 +109,16 @@ export interface SSERouteEvent { type: 'route'; lane: string; confidence: number
  * so future retrieval modes can add fields without widening the union.
  */
 export interface SSEMetaEvent { type: 'meta'; meta: Record<string, unknown> }
+/** 대화 히스토리: 새 대화 생성 시 클라이언트에 conversationId 전달. */
+export interface SSEConversationEvent { type: 'conversation'; conversationId: string }
 export type SSEEvent =
   | SSETextEvent
   | SSESourcesEvent
   | SSEDoneEvent
   | SSEErrorEvent
   | SSERouteEvent
-  | SSEMetaEvent;
+  | SSEMetaEvent
+  | SSEConversationEvent;
 
 export interface RetrievedClaim {
   id: string;

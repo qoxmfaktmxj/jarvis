@@ -71,6 +71,14 @@ model: opus
 |------|------------------|------|
 | `listKnowledgePages` | `eq(sensitivity, session.maxSensitivity)` 적용 | OK |
 
+## Wiki 경계 검증 (해당할 경우)
+| 항목 | 상태 |
+|------|------|
+| auto/ 경로에 사람 편집 UI 노출 안 함 (viewer only) | |
+| manual/ 경로에 LLM 출력 직접 쓰기 안 함 (review-queue 경유) | |
+| wiki-fs API 경유 여부 (fs.writeFile 직접 호출 검사) | |
+| wiki_page_index projection 테이블에 본문 쓰기 없음 | |
+
 ## 발견된 이슈
 1. **[P1]** i18n 보간 변수 불일치: `Knowledge.Detail.pinnedAt` — ko.json `{date}` vs 컴포넌트 `when`
 2. ...

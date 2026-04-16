@@ -37,10 +37,8 @@ export function SourceRefCard({ source, index }: SourceRefCardProps) {
 // ---------------------------------------------------------------------------
 function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; index: number }) {
   const { label, variant } = confidenceLabel(source.confidence);
-  // Wiki URL convention: `/wiki/{workspaceId}/{path}` — the wiki router
-  // accepts either the raw slug or the full path, but pageId is the
-  // most stable anchor from the client's POV.
-  const href = `/wiki?page=${encodeURIComponent(source.pageId)}`;
+  // Wiki URL convention: `/wiki/{workspaceId}/{slug}`
+  const href = `/wiki/default/${encodeURIComponent(source.slug)}`;
   return (
     <Card className="border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 transition-colors dark:border-indigo-900 dark:bg-indigo-950/20">
       <CardContent className="p-3 flex gap-3 items-start">

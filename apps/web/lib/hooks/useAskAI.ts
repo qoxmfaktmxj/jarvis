@@ -12,10 +12,11 @@ export interface AskAIState {
   lane: string | null;
   totalTokens: number | null;
   feedbackSent: 'up' | 'down' | null;
+  conversationId: string | null;
 }
 
 export interface UseAskAIReturn extends AskAIState {
-  ask: (question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert' }) => void;
+  ask: (question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert'; conversationId?: string }) => void;
   reset: () => void;
   sendFeedback: (rating: 'up' | 'down', comment?: string) => Promise<void>;
 }
@@ -29,6 +30,7 @@ const initialState: AskAIState = {
   lane: null,
   totalTokens: null,
   feedbackSent: null,
+  conversationId: null,
 };
 
 export function useAskAI(): UseAskAIReturn {
@@ -44,12 +46,12 @@ export function useAskAI(): UseAskAIReturn {
     setState(initialState);
   }, []);
 
-  const ask = useCallback((question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert' }) => {
+  const ask = useCallback((question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert'; conversationId?: string }) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setState({
+    setState((current) => ({
       isStreaming: true,
       answer: "",
       sources: [],
@@ -58,14 +60,20 @@ export function useAskAI(): UseAskAIReturn {
       lane: null,
       totalTokens: null,
       feedbackSent: null,
-    });
+      conversationId: opts?.conversationId ?? current.conversationId,
+    }));
 
     (async () => {
       try {
         const response = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question, snapshotId: opts?.snapshotId, mode: opts?.mode }),
+          body: JSON.stringify({
+            question,
+            snapshotId: opts?.snapshotId,
+            mode: opts?.mode,
+            conversationId: opts?.conversationId,
+          }),
           signal: controller.signal,
         });
 
@@ -159,9 +167,20 @@ export function useAskAI(): UseAskAIReturn {
                 isStreaming: false,
                 error: event.message,
               }));
+            } else if (event.type === "conversation") {
+              setState((current) => ({
+                ...current,
+                conversationId: event.conversationId,
+              }));
             }
+            // meta 등 기타 이벤트는 무시 (UI 영향 없음)
           }
         }
+
+        // 안전망: 서버가 done 이벤트 없이 스트림을 닫은 경우
+        setState((current) =>
+          current.isStreaming ? { ...current, isStreaming: false } : current
+        );
       } catch (error) {
         if ((error as Error).name === "AbortError") {
           return;

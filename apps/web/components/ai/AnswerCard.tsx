@@ -295,7 +295,7 @@ function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
         {sources.map((s, i) => (
           <Link
             key={`${s.pageId}-${i}`}
-            href={`/wiki?page=${encodeURIComponent(s.pageId)}`}
+            href={`/wiki/default/${encodeURIComponent(s.slug)}`}
             className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-indigo-800 hover:bg-indigo-50 transition-colors"
           >
             <Badge variant="outline" className="text-[10px] shrink-0">{s.citation}</Badge>

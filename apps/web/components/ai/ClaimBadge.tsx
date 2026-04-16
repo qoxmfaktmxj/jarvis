@@ -65,7 +65,7 @@ function getSourceMeta(source: SourceRef): {
         label: 'W',
         hoverTitle: source.title,
         hoverDetail: `${source.citation} · ${source.path}`,
-        href: `/wiki?page=${encodeURIComponent(source.pageId)}`,
+        href: `/wiki/default/${encodeURIComponent(source.slug)}`,
         colorClass:
           'inline-flex items-center justify-center rounded-full bg-indigo-100 px-1 text-indigo-800 text-[10px] font-bold hover:bg-indigo-200 transition-colors dark:bg-indigo-900 dark:text-indigo-100',
       };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useRouter } from "next/navigation";
 import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
 import type { AskMode, SourceRef } from "@jarvis/ai/types";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,7 @@ import { AnswerCard } from "./AnswerCard";
 import { ClaimBadge } from "./ClaimBadge";
 import { SourceRefCard } from "./SourceRefCard";
 
-interface HistoryEntry {
+export interface HistoryEntry {
   question: string;
   answer: string;
   sources: SourceRef[];
@@ -23,6 +24,10 @@ interface AskPanelProps {
   initialQuestion?: string;
   initialScope?: { id: string; title: string } | null;
   popularQuestions?: string[];
+  /** 기존 대화 복원 시 conversationId. undefined이면 새 대화. */
+  conversationId?: string;
+  /** 기존 대화 복원 시 서버에서 로드한 메시지 히스토리. */
+  initialMessages?: HistoryEntry[];
 }
 
 function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
@@ -48,12 +53,20 @@ function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
   );
 }
 
-export function AskPanel({ initialQuestion = "", initialScope = null, popularQuestions = [] }: AskPanelProps) {
+export function AskPanel({
+  initialQuestion = "",
+  initialScope = null,
+  popularQuestions = [],
+  conversationId: initialConversationId,
+  initialMessages = [],
+}: AskPanelProps) {
+  const router = useRouter();
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
   const [askMode, setAskMode] = useState<AskMode>('simple');
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const { isStreaming, answer, sources, error, question, lane, feedbackSent, ask, reset, sendFeedback } = useAskAI();
+  const [history, setHistory] = useState<HistoryEntry[]>(initialMessages);
+  const [activeConversationId, setActiveConversationId] = useState<string | undefined>(initialConversationId);
+  const { isStreaming, answer, sources, error, question, lane, feedbackSent, conversationId: hookConversationId, ask, reset, sendFeedback } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -68,6 +81,15 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [answer]);
+
+  // SSE conversation 이벤트로 새 conversationId를 수신했을 때 URL 갱신.
+  useEffect(() => {
+    if (hookConversationId && hookConversationId !== activeConversationId) {
+      setActiveConversationId(hookConversationId);
+      router.replace(`/ask/${hookConversationId}`, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hookConversationId]);
 
   // history 이동은 "새 질문이 들어오는 시점"에만 한다.
   // 답변 완료 직후 live 블록을 없애면 피드백 버튼이 즉시 사라지므로,
@@ -85,11 +107,15 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
       });
     }
 
-    ask(trimmed, { snapshotId: activeScope?.id, mode: askMode });
+    ask(trimmed, {
+      snapshotId: activeScope?.id,
+      mode: askMode,
+      conversationId: activeConversationId,
+    });
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
-    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    if (event.key === "Enter" && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
       event.preventDefault();
       handleAsk(input);
     }
@@ -99,7 +125,10 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
     reset();
     setInput("");
     setHistory([]);
+    setActiveConversationId(undefined);
     textareaRef.current?.focus();
+    // 새 대화로 전환 — URL도 /ask 로 복귀
+    router.push("/ask");
   }
 
   const hasConversation = history.length > 0 || isStreaming || answer || !!error;
@@ -144,7 +173,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
           value={input}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="질문을 입력하세요... (Ctrl+Enter로 전송)"
+          placeholder="질문을 입력하세요... (Enter로 전송, Shift+Enter로 줄바꿈)"
           className="min-h-[84px] max-h-[240px] resize-none border-0 bg-transparent px-1 py-1 pr-2 text-sm shadow-none focus-visible:ring-0"
           disabled={isStreaming}
         />
@@ -165,7 +194,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
             className="h-9 w-9 rounded-xl"
             onClick={() => handleAsk(input)}
             disabled={isStreaming || !input.trim()}
-            title="전송 (Ctrl+Enter)"
+            title="전송 (Enter)"
           >
             {isStreaming ? (
               <Loader2 className="h-4 w-4 animate-spin" />

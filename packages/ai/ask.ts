@@ -446,6 +446,7 @@ export async function* generateAnswer(
       errorCode: message,
     });
     yield { type: 'error', message };
+    yield { type: 'done', totalTokens: tokensIn + tokensOut };
   }
 }
 
@@ -502,6 +503,7 @@ export async function* askAI(
     if (err instanceof BudgetExceededError) {
       await recordBlocked(workspaceId, process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini', query.requestId ?? null, ASK_OP);
       yield { type: 'error', message: 'daily budget exceeded' };
+      yield { type: 'done', totalTokens: 0 };
       return;
     }
     throw err;
@@ -583,6 +585,7 @@ export async function* askAI(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Retrieval failed';
     yield { type: 'error', message };
+    yield { type: 'done', totalTokens: 0 };
     return;
   }
 
