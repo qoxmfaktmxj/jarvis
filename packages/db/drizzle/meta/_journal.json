@@ -134,6 +134,13 @@
       "when": 1776232284314,
       "tag": "0018_free_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776302622509,
+      "tag": "0019_absurd_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }
