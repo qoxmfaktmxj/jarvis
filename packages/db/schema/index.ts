@@ -17,7 +17,6 @@ export * from "./directory.js";
 export * from "./feedback.js";
 export * from "./llm-call-log.js";
 export * from "./review-queue.js";
-export * from "./document-chunks.js";
 // Phase-W1 T4 — Wiki projection tables (WIKI-AGENTS.md §7)
 export * from "./wiki-page-index.js";
 export * from "./wiki-page-link.js";

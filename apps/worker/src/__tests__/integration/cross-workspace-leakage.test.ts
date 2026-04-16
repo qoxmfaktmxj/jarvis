@@ -2,9 +2,8 @@
 // Phase-7A PR#9 / G4: verifies that pgvector similarity search (via knowledge_claim)
 // filtered by workspace_id never returns rows belonging to a different workspace.
 //
-// DEPENDENCY NOTE: The plan calls for document_chunks (Lane C). Lane C is not yet
-// merged, so this test uses knowledge_claim + knowledge_page instead.
-// The isolation logic is identical: seed workspace A/B rows, query with
+// This test uses knowledge_claim + knowledge_page.
+// The isolation logic: seed workspace A/B rows, query with
 // workspaceId = A filter, assert no B rows are ever returned.
 //
 // TEST_DATABASE_URL environment variable must be set for this suite to run.

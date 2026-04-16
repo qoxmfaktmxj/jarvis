@@ -52,20 +52,6 @@ export interface DirectorySourceRef {
 }
 
 // ---------------------------------------------------------------------------
-// Document Chunks Layer SourceRef — hybrid BM25+vector retrieved chunks
-// ---------------------------------------------------------------------------
-export interface ChunkSourceRef {
-  kind: 'chunk';
-  chunkId: string;
-  documentType: string;
-  documentId: string;
-  chunkIndex: number;
-  excerpt: string;      // first 200 chars
-  sensitivity: string;
-  confidence: number;
-}
-
-// ---------------------------------------------------------------------------
 // Wiki Page SourceRef — page-first navigation (Phase-W2 T2)
 //
 // Emitted by `packages/ai/page-first/*` when the feature flag
@@ -92,7 +78,6 @@ export type SourceRef =
   | GraphSourceRef
   | CaseSourceRef
   | DirectorySourceRef
-  | ChunkSourceRef
   | WikiPageSourceRef;
 
 export interface Claim {
@@ -141,18 +126,6 @@ export interface RetrievedClaim {
   vectorSim: number;
   ftsRank: number;
   hybridScore: number;
-}
-
-export interface RetrievedChunk {
-  id: string;
-  documentType: string;
-  documentId: string;
-  chunkIndex: number;
-  content: string;
-  sensitivity: string;
-  vectorSim: number;
-  ftsRank: number;
-  rrfScore: number;
 }
 
 export type AskMode = 'simple' | 'expert';

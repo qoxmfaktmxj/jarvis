@@ -249,7 +249,7 @@ export function AskPanel({ initialQuestion = "", initialScope = null, popularQue
                                       ? source.entryId
                                       : source.kind === 'wiki-page'
                                         ? source.pageId
-                                        : source.chunkId;
+                                        : String(sourceIndex);
                             return (
                               <SourceRefCard key={`${keyPart}-${sourceIndex}`} source={source} index={sourceIndex} />
                             );

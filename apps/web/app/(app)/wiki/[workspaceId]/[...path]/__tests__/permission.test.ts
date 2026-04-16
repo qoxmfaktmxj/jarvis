@@ -109,7 +109,9 @@ describe("canViewSensitivity -- 5 roles x 4 sensitivities", () => {
     const session = makeSession(role);
 
     it.each(SENSITIVITIES)("sensitivity %s", (sensitivity) => {
-      const expected = EXPECTED_MATRIX[role][sensitivity];
+      const entry = EXPECTED_MATRIX[role];
+      if (!entry) throw new Error(`no matrix entry for ${role}`);
+      const expected = entry[sensitivity];
       expect(canViewSensitivity(session, sensitivity)).toBe(expected);
     });
   });

@@ -60,15 +60,6 @@ function getSourceMeta(source: SourceRef): {
         colorClass:
           'inline-flex items-center justify-center rounded-full bg-green-100 px-1 text-green-800 text-[10px] font-bold hover:bg-green-200 transition-colors dark:bg-green-900 dark:text-green-100',
       };
-    case 'chunk':
-      return {
-        label: 'Ch',
-        hoverTitle: `${source.documentType} · chunk ${source.chunkIndex}`,
-        hoverDetail: source.excerpt,
-        href: null,
-        colorClass:
-          'inline-flex items-center justify-center rounded-full bg-purple-100 px-1 text-purple-800 text-[10px] font-bold hover:bg-purple-200 transition-colors dark:bg-purple-900 dark:text-purple-100',
-      };
     case 'wiki-page':
       return {
         label: 'W',

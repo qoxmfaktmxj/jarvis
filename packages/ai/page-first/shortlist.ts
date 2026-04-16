@@ -7,8 +7,7 @@
  * the page-first design (WIKI-AGENTS.md §7, .claude/commands/wiki-query.md)
  * trusts the human-authored page title, slug, and `frontmatter.aliases` as
  * the first-pass relevance signal. Vector search exists in the legacy path
- * (`retrieveRelevantClaims` / `retrieveChunkHybrid`) and is bypassed here on
- * purpose.
+ * (`retrieveRelevantClaims`) and is bypassed here on purpose.
  *
  * Scoring:
  *   - title ILIKE hit      — highest weight

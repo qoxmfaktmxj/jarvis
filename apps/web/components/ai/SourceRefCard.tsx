@@ -1,5 +1,5 @@
 // apps/web/components/ai/SourceRefCard.tsx
-// 4종 SourceRef (text | graph | case | directory) 렌더러
+// 5종 SourceRef (text | graph | case | directory | wiki-page) 렌더러
 import Link from 'next/link';
 import { Network, Briefcase, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,7 +10,6 @@ import type {
   GraphSourceRef,
   CaseSourceRef,
   DirectorySourceRef,
-  ChunkSourceRef,
   WikiPageSourceRef,
 } from '@jarvis/ai/types';
 
@@ -29,7 +28,6 @@ export function SourceRefCard({ source, index }: SourceRefCardProps) {
   if (source.kind === 'graph') return <GraphSourceCard source={source} index={index} />;
   if (source.kind === 'case') return <CaseSourceCard source={source} index={index} />;
   if (source.kind === 'directory') return <DirectorySourceCard source={source} index={index} />;
-  if (source.kind === 'chunk') return <ChunkSourceCard source={source} index={index} />;
   if (source.kind === 'wiki-page') return <WikiPageSourceCard source={source} index={index} />;
   return <TextSourceCard source={source} index={index} />;
 }
@@ -60,33 +58,6 @@ function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; inde
           <p className="text-[10px] text-muted-foreground truncate">{source.path}</p>
           {source.origin === 'expand' && (
             <p className="text-[10px] text-indigo-600 dark:text-indigo-400">↳ 1-hop wikilink</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Chunk (Phase-7B two-step ingest)
-// ---------------------------------------------------------------------------
-function ChunkSourceCard({ source, index }: { source: ChunkSourceRef; index: number }) {
-  const { label, variant } = confidenceLabel(source.confidence);
-  return (
-    <Card className="hover:bg-muted/50 transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 text-purple-800 text-xs font-semibold flex items-center justify-center dark:bg-purple-900 dark:text-purple-100">
-          {index + 1}
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium truncate">
-              {source.documentType} · chunk {source.chunkIndex}
-            </span>
-            <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
-          </div>
-          {source.excerpt && (
-            <p className="text-xs text-muted-foreground line-clamp-2">{source.excerpt}</p>
           )}
         </div>
       </CardContent>

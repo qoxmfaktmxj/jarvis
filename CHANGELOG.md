@@ -5,7 +5,7 @@ Format: [버전/날짜] — 변경 유형 — 내용
 
 ---
 
-## [Unreleased] — Phase-W 진행 중 (2026-04-15~)
+## [Unreleased] — Phase-W 진행 중 (2026-04-16~)
 
 ### Added
 - Wiki Phase-C: GitHub Actions wiki-boundary-check, legacy-body-grep, type-check, schema-drift 워크플로
@@ -17,6 +17,32 @@ Format: [버전/날짜] — 변경 유형 — 내용
 - Wiki Phase-C: wiki-check.mjs 무결성 검증 스크립트
 - Wiki Phase-C: Storybook 초기 설정 (C6)
 - Wiki Phase-C: Playwright E2E 시나리오 spec skeleton (C7)
+
+---
+
+## [2026-04-16] — Phase-W3 완료 (T4-T8, X1-X7)
+
+### Added
+- T4: `FEATURE_WIKI_FS_MODE=true` 활성화, `.env.example` 정리
+- T5: Admin wiki review-queue 페이지 + approve/reject server actions + i18n (ko/en)
+- T6: Wiki viewer `forbidden()` HTTP 403 분기, orphan wikilink 표시 (`wiki-page-orphans.ts`)
+- T6: `apps/web/app/forbidden.tsx` — Next.js 15.1+ `authInterrupts` 전역 403 페이지
+- T7: Observability wiring — pino logger + pg-boss queue gauge (60s interval)
+- T8: RBAC 매트릭스 테스트 (rbac-matrix 45 + permission 54 = 99 케이스)
+- X2: `packages/ai` page-first 단위 테스트 27케이스 (shortlist/expand/synthesize)
+- X3: `packages/auth` wiki-sensitivity 35케이스 + rbac-permissions 25케이스
+- X4: Playwright E2E skeleton (wiki-viewer.spec.ts, wiki-graph.spec.ts)
+- X5: `apps/worker/src/lib/observability/{logger,metrics,index}.ts` 기반 모듈
+- X6: `drizzle/__drafts__/drop_document_chunks.sql` DROP 드래프트
+- X7: `docs/plan/2026-04-W3-gate.md` 게이트 검증 완료
+
+### Gate 검증 결과
+- worker type-check: PASS
+- ai type-check: PASS
+- schema drift: PASS (No drift)
+- auth 테스트: 125/125 PASS
+- ai 테스트: 77/77 PASS
+- web type-check: FAIL (permission.test.ts:112 TS2532 — 빌더 수정 대기)
 
 ---
 

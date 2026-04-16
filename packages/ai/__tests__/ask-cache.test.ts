@@ -36,14 +36,8 @@ vi.mock('@jarvis/auth/rbac', () => ({
   buildKnowledgeSensitivitySqlFilter: vi.fn().mockReturnValue(''),
 }));
 
-// Phase-W3 T4: raw chunk query is flag-gated. Tests that exercise the
-// chunk path need featureRawChunkQuery=true; the cache test itself does
-// not touch retrieveChunkHybrid (featureHybridSearchMvp defaults false),
-// but we still mock it for safety against future regressions.
 vi.mock('@jarvis/db/feature-flags', () => ({
-  featureHybridSearchMvp: () => false,
   featurePageFirstQuery: () => false,
-  featureRawChunkQuery: () => true,
 }));
 
 vi.mock('../graph-context.js', () => ({

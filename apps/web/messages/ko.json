@@ -13,7 +13,8 @@
       "settings": "설정",
       "llmCost": "LLM 비용",
       "wikiObservability": "위키 운영",
-      "wikiViolations": "경계 위반"
+      "wikiViolations": "경계 위반",
+      "wikiReviewQueue": "위키 리뷰 큐"
     },
     "Users": {
       "title": "사용자",

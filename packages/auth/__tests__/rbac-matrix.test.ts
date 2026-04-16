@@ -38,7 +38,7 @@ function fragmentAllows(fragment: string, sensitivity: Sensitivity): boolean {
   if (fragment === "AND 1 = 0") return false;
   const match = fragment.match(/IN \(([^)]+)\)/);
   if (!match) return false;
-  return match[1].includes(`'${sensitivity}'`);
+  return match[1]!.includes(`'${sensitivity}'`);
 }
 
 function makeSession(
@@ -129,7 +129,7 @@ describe("RBAC matrix -- wiki_page_index (5 roles x 4 sensitivities)", () => {
     it.each(SENSITIVITIES)(
       "buildWikiSensitivitySqlFilter -- sensitivity %s",
       (sensitivity) => {
-        const expected = EXPECTED_MATRIX[role][sensitivity];
+        const expected = EXPECTED_MATRIX[role]![sensitivity];
         expect(fragmentAllows(fragment, sensitivity)).toBe(expected);
       },
     );

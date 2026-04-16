@@ -26,7 +26,7 @@ import {
 } from './directory-context.js';
 import { routeQuestion, LANE_SOURCE_WEIGHTS } from './router.js';
 import { makeCacheKey, getCached, setCached } from './cache.js';
-import { featureHybridSearchMvp, featurePageFirstQuery, featureRawChunkQuery } from '@jarvis/db/feature-flags';
+import { featurePageFirstQuery } from '@jarvis/db/feature-flags';
 import { pageFirstAsk } from './page-first/index.js';
 import { createChatWithTokenFallback } from './openai-compat.js';
 import type {
@@ -36,9 +36,7 @@ import type {
   GraphSourceRef,
   CaseSourceRef,
   DirectorySourceRef,
-  ChunkSourceRef,
   RetrievedClaim,
-  RetrievedChunk,
 } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -176,90 +174,6 @@ export async function retrieveRelevantClaims(
 }
 
 // ---------------------------------------------------------------------------
-// Document Chunks Hybrid Retrieval (BM25 + vector + RRF)
-// ---------------------------------------------------------------------------
-const TOP_K_CHUNK_EACH = 20;
-const TOP_K_CHUNK_FINAL = 5;
-
-export async function retrieveChunkHybrid(
-  question: string,
-  workspaceId: string,
-  userPermissions: string[] = [],
-): Promise<RetrievedChunk[]> {
-  if (!featureRawChunkQuery()) {
-    throw new Error('[W3] FEATURE_RAW_CHUNK_QUERY is disabled. Use FEATURE_PAGE_FIRST_QUERY=true for wiki navigation.');
-  }
-  const embedding = await generateEmbedding(question);
-  const embeddingLiteral = `[${embedding.join(',')}]`;
-
-  // Sensitivity filter — mirrors buildKnowledgeSensitivitySqlFilter but for dc.sensitivity
-  const rawFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
-    .replace(/\bsensitivity\b/g, 'dc.sensitivity')
-    .trim();
-  const sensitivityClause = rawFilter ? sql.raw(` ${rawFilter}`) : sql.empty();
-
-  const vectorRows = await db.execute<{
-    id: string; document_type: string; document_id: string;
-    chunk_index: number; content: string; sensitivity: string; distance: number;
-  }>(sql`
-    SELECT dc.id, dc.document_type, dc.document_id, dc.chunk_index,
-           dc.content, dc.sensitivity,
-           (dc.embedding <=> ${embeddingLiteral}::vector) AS distance
-    FROM document_chunks dc
-    WHERE dc.workspace_id = ${workspaceId}::uuid
-      AND dc.embedding IS NOT NULL
-      ${sensitivityClause}
-    ORDER BY dc.embedding <=> ${embeddingLiteral}::vector
-    LIMIT ${TOP_K_CHUNK_EACH}
-  `);
-
-  const ftsRows = await db.execute<{
-    id: string; document_type: string; document_id: string;
-    chunk_index: number; content: string; sensitivity: string; fts_rank: number;
-  }>(sql`
-    SELECT dc.id, dc.document_type, dc.document_id, dc.chunk_index,
-           dc.content, dc.sensitivity,
-           ts_rank_cd(to_tsvector('simple', dc.content),
-                      websearch_to_tsquery('simple', ${question})) AS fts_rank
-    FROM document_chunks dc
-    WHERE dc.workspace_id = ${workspaceId}::uuid
-      AND to_tsvector('simple', dc.content) @@ websearch_to_tsquery('simple', ${question})
-      ${sensitivityClause}
-    ORDER BY fts_rank DESC
-    LIMIT ${TOP_K_CHUNK_EACH}
-  `);
-
-  if (vectorRows.rows.length === 0 && ftsRows.rows.length === 0) return [];
-
-  const byId = new Map<string, { document_type: string; document_id: string; chunk_index: number; content: string; sensitivity: string }>();
-  for (const r of vectorRows.rows) byId.set(r.id, r);
-  for (const r of ftsRows.rows) byId.set(r.id, r);
-
-  const merged = rrfMerge(
-    vectorRows.rows.map((r) => r.id),
-    ftsRows.rows.map((r) => r.id),
-  );
-
-  return merged.slice(0, TOP_K_CHUNK_FINAL).flatMap(({ id, score }) => {
-    const row = byId.get(id);
-    if (!row) return []; // defensive: should never happen
-    const vr = vectorRows.rows.find((r) => r.id === id);
-    const fr = ftsRows.rows.find((r) => r.id === id);
-    return {
-      id,
-      documentType: row.document_type,
-      documentId: row.document_id,
-      chunkIndex: Number(row.chunk_index),
-      content: row.content,
-      sensitivity: row.sensitivity,
-      vectorSim: vr ? 1 - Number(vr.distance) : 0,
-      ftsRank: fr ? Number(fr.fts_rank) : 0,
-      rrfScore: score,
-    };
-  });
-}
-
-// ---------------------------------------------------------------------------
 // OpenAI Client
 // ---------------------------------------------------------------------------
 const openai = new OpenAI({
@@ -332,7 +246,6 @@ export function assembleContext(
   graphCtx: GraphContext | null,
   cases: RetrievedCase[],
   entries: RetrievedEntry[],
-  chunks: RetrievedChunk[] = [],
 ): string {
   let idx = 1;
   const textEntries = claims.map(
@@ -373,12 +286,7 @@ export function assembleContext(
       `${e.url ? `URL: ${escapeXml(e.url)} | ` : ''}${e.ownerTeam ? `담당: ${escapeXml(e.ownerTeam)}` : ''}</source>`,
   );
 
-  const chunkEntries = chunks.map(
-    (c) =>
-      `  <source idx="${idx++}" kind="chunk" doc_type="${escapeXml(c.documentType)}" doc_id="${escapeXml(c.documentId)}">${escapeXml(c.content.slice(0, 300))}</source>`,
-  );
-
-  return `<context>\n${[...textEntries, ...graphEntries, ...caseEntries, ...dirEntries, ...chunkEntries].join('\n')}\n</context>`;
+  return `<context>\n${[...textEntries, ...graphEntries, ...caseEntries, ...dirEntries].join('\n')}\n</context>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -438,13 +346,12 @@ export async function* generateAnswer(
   dirSources: DirectorySourceRef[],
   mode: import('./types.js').AskMode = 'simple',
   meta: AskMeta = { workspaceId: '00000000-0000-0000-0000-000000000000', requestId: null },
-  chunks: RetrievedChunk[] = [],
 ): AsyncGenerator<SSEEvent> {
   let tokensIn = 0;
   let tokensOut = 0;
   const startedAt = Date.now();
 
-  // 통합 sources 배열 (idx 순서: text → graph → case → directory → chunk)
+  // 통합 sources 배열 (idx 순서: text → graph → case → directory)
   const allTextSources: TextSourceRef[] = claims.map((c) => ({
     kind: 'text',
     pageId: c.pageId,
@@ -453,22 +360,11 @@ export async function* generateAnswer(
     excerpt: c.claimText.slice(0, 200),
     confidence: c.hybridScore,
   }));
-  const chunkSources: ChunkSourceRef[] = chunks.map((c) => ({
-    kind: 'chunk' as const,
-    chunkId: c.id,
-    documentType: c.documentType,
-    documentId: c.documentId,
-    chunkIndex: c.chunkIndex,
-    excerpt: c.content.slice(0, 200),
-    sensitivity: c.sensitivity,
-    confidence: c.rrfScore,
-  }));
   const allSources: SourceRef[] = [
     ...allTextSources,
     ...graphSources,
     ...caseSources,
     ...dirSources,
-    ...chunkSources,
   ];
 
   // Budget gate BEFORE OpenAI call
@@ -731,24 +627,13 @@ export async function* askAI(
     return;
   }
 
-  // 5. 하이브리드 청크 검색 (feature flag)
-  let chunkResults: RetrievedChunk[] = [];
-  if (featureHybridSearchMvp()) {
-    try {
-      chunkResults = await retrieveChunkHybrid(question, workspaceId, query.userPermissions ?? []);
-    } catch (err) {
-      console.warn('[ask] retrieveChunkHybrid failed, degrading gracefully:', err);
-    }
-  }
-
-  // 6. 컨텍스트 조합 + 생성
+  // 5. 컨텍스트 조합 + 생성
   const context = assembleContext(
     weightedClaims,
     weightedGraph,
     graphCtx,
     weightedCases,
     weightedEntries,
-    chunkResults,
   );
 
   // Collect generation events, yield each one, then cache the whole response.
@@ -761,7 +646,6 @@ export async function* askAI(
     dirSources,
     query.mode ?? 'simple',
     { workspaceId, requestId: query.requestId ?? null },
-    chunkResults,
   )) {
     collectedEvents.push(evt);
     yield evt;

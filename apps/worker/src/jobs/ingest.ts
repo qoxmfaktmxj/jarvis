@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import type PgBoss from 'pg-boss';
 import { db } from '@jarvis/db/client';
 import { rawSource } from '@jarvis/db/schema/file';
@@ -6,10 +5,8 @@ import { reviewQueue } from '@jarvis/db/schema/review-queue';
 import { knowledgePage, knowledgeClaim } from '@jarvis/db/schema/knowledge';
 import {
   featureTwoStepIngest,
-  featureDocumentChunksWrite,
   featureWikiFsMode,
 } from '@jarvis/db/feature-flags';
-import { upsertChunks } from '@jarvis/db/writers/document-chunks';
 import { eq, sql } from 'drizzle-orm';
 import * as mammoth from 'mammoth';
 import { logger } from '../lib/observability/index.js';
@@ -20,7 +17,6 @@ import {
   redactPII,
   type Sensitivity,
 } from '../lib/pii-redactor.js';
-import { chunkText } from '../lib/text-chunker.js';
 import { generateEmbedding } from '@jarvis/ai/embed';
 import OpenAI from 'openai';
 import { analyze } from './ingest/analyze.js';
@@ -86,10 +82,8 @@ async function extractText(buffer: Buffer, mimeType: string): Promise<string> {
 /**
  * Legacy two-step ingest pipeline (Phase-7B).
  *
- * Step 1: Chunk safeText → SHA-256 hash + embedding per chunk → upsert document_chunks
- *         (only when FEATURE_DOCUMENT_CHUNKS_WRITE=true)
- * Step 2: LLM synthesis → upsert knowledge_page (draft, generated) + knowledge_claims
- *         (non-fatal: LLM errors are caught and logged)
+ * LLM synthesis → upsert knowledge_page (draft, generated) + knowledge_claims
+ * (non-fatal: LLM errors are caught and logged)
  *
  * Renamed from `twoStepIngest` in W2-T1: the new wiki-fs path is
  * `wikiTwoStepIngest` below. The legacy alias `twoStepIngest` remains
@@ -103,38 +97,7 @@ export async function legacyTwoStepIngest(
   safeText: string,
   sensitivity: string,
 ): Promise<void> {
-  // ---- Step 1: chunk + embed → document_chunks ----
-  const rawChunks = chunkText(safeText, 300, 50);
-  if (rawChunks.length === 0) return;
-
-  // Only write chunks if both flags are on
-  if (featureDocumentChunksWrite()) {
-    const chunksToWrite: Array<{
-      workspaceId: string; documentType: string; documentId: string;
-      chunkIndex: number; content: string; contentHash: string;
-      embedding: number[]; tokens: number; sensitivity: string;
-    }> = [];
-    // Sequential embedding to stay within OpenAI rate limits
-    for (let idx = 0; idx < rawChunks.length; idx++) {
-      const content = rawChunks[idx]!;
-      const contentHash = crypto.createHash('sha256').update(content).digest('hex');
-      const embedding = await generateEmbedding(content);
-      chunksToWrite.push({
-        workspaceId,
-        documentType: 'raw_source',
-        documentId: rawSourceId,
-        chunkIndex: idx,
-        content,
-        contentHash,
-        embedding,
-        tokens: Math.ceil(content.split(/\s+/).length * 1.3),
-        sensitivity,
-      });
-    }
-    await upsertChunks(chunksToWrite);
-  }
-
-  // ---- Step 2: LLM synthesis → knowledge_page (draft, generated) ----
+  // ---- LLM synthesis → knowledge_page (draft, generated) ----
   const truncated = safeText.slice(0, 12000); // ~3k tokens context budget
   const systemPrompt = `You are a knowledge extraction assistant. Given a document, produce a JSON object with:
 - "title": concise page title (max 100 chars)

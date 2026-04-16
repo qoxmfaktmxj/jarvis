@@ -188,7 +188,7 @@ export function useAskAI(): UseAskAIReturn {
           if (s.kind === 'case') return `case:${s.caseId}`;
           if (s.kind === 'directory') return `directory:${s.entryId}`;
           if (s.kind === 'wiki-page') return `wiki-page:${s.pageId}`;
-          return `chunk:${s.chunkId}`;
+          return `unknown:${(s as { kind: string }).kind}`;
         });
 
       const res = await fetch('/api/ask/feedback', {
