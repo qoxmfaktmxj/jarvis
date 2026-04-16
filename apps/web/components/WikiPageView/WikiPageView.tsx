@@ -22,11 +22,31 @@ const SENSITIVITY_VARIANT: Record<
 type WikiPageViewProps = {
   page: WikiPage;
   onWikiLinkClick: (slug: string) => void;
+  /**
+   * T6 — 본문에서 `[[...]]` 로 참조되지만 DB 에 실제 페이지가 없는
+   * target slug 집합. 전달되면 해당 링크를 orphan 스타일(빨간색)로 표시한다.
+   * SSoT 는 `wiki_page_link.toPageId IS NULL` — 서버 컴포넌트가 조회해 넘긴다.
+   */
+  orphanSlugs?: readonly string[];
 };
+
+/**
+ * `[[target|alias]]` / `[[target#anchor]]` 에서 target 만 뽑는다.
+ * DB orphan set 과 비교할 키는 target 이므로 alias/anchor 는 잘라낸다.
+ */
+function extractWikilinkTarget(inner: string): string {
+  let rest = inner.trim();
+  const pipeIdx = rest.indexOf('|');
+  if (pipeIdx !== -1) rest = rest.slice(0, pipeIdx).trim();
+  const hashIdx = rest.indexOf('#');
+  if (hashIdx !== -1) rest = rest.slice(0, hashIdx).trim();
+  return rest;
+}
 
 function renderWithWikilinks(
   text: string,
   onWikiLinkClick: (slug: string) => void,
+  orphanSet: ReadonlySet<string>,
 ): ReactNode[] {
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
@@ -40,15 +60,25 @@ function renderWithWikilinks(
         <Fragment key={`t-${key++}`}>{text.slice(lastIndex, match.index)}</Fragment>,
       );
     }
-    const slug = (match[1] ?? '').trim();
+    const inner = (match[1] ?? '').trim();
+    const target = extractWikilinkTarget(inner);
+    const isOrphan = orphanSet.has(target);
+    const label = inner; // 화면에는 alias/anchor 포함한 원본 표기를 그대로 보여준다.
     nodes.push(
       <button
         key={`l-${key++}`}
         type="button"
-        onClick={() => onWikiLinkClick(slug)}
-        className="text-blue-600 underline underline-offset-2 hover:text-blue-700"
+        onClick={() => onWikiLinkClick(target)}
+        data-orphan={isOrphan ? 'true' : undefined}
+        aria-label={isOrphan ? `${target} (orphan)` : target}
+        className={
+          isOrphan
+            ? 'orphan-slug text-rose-600 underline underline-offset-2 decoration-dashed hover:text-rose-700'
+            : 'text-blue-600 underline underline-offset-2 hover:text-blue-700'
+        }
+        title={isOrphan ? target : undefined}
       >
-        {slug}
+        {label}
       </button>,
     );
     lastIndex = match.index + match[0].length;
@@ -62,15 +92,18 @@ function renderWithWikilinks(
 function processChildren(
   children: ReactNode,
   onWikiLinkClick: (slug: string) => void,
+  orphanSet: ReadonlySet<string>,
 ): ReactNode {
   if (typeof children === 'string') {
-    return renderWithWikilinks(children, onWikiLinkClick);
+    return renderWithWikilinks(children, onWikiLinkClick, orphanSet);
   }
   if (Array.isArray(children)) {
     return children.map((child, idx) => {
       if (typeof child === 'string') {
         return (
-          <Fragment key={idx}>{renderWithWikilinks(child, onWikiLinkClick)}</Fragment>
+          <Fragment key={idx}>
+            {renderWithWikilinks(child, onWikiLinkClick, orphanSet)}
+          </Fragment>
         );
       }
       return <Fragment key={idx}>{child}</Fragment>;
@@ -79,7 +112,14 @@ function processChildren(
   return children;
 }
 
-export function WikiPageView({ page, onWikiLinkClick }: WikiPageViewProps) {
+export function WikiPageView({
+  page,
+  onWikiLinkClick,
+  orphanSlugs,
+}: WikiPageViewProps) {
+  const orphanSet: ReadonlySet<string> = orphanSlugs
+    ? new Set(orphanSlugs)
+    : new Set();
   const t = useTranslations('Wiki');
   const showEdit =
     page.slug.startsWith('manual/') && page.sensitivity !== 'confidential';
@@ -117,11 +157,11 @@ export function WikiPageView({ page, onWikiLinkClick }: WikiPageViewProps) {
           components={{
             p: ({ children }) => (
               <p className="leading-7 my-3">
-                {processChildren(children, onWikiLinkClick)}
+                {processChildren(children, onWikiLinkClick, orphanSet)}
               </p>
             ),
             li: ({ children }) => (
-              <li className="my-1">{processChildren(children, onWikiLinkClick)}</li>
+              <li className="my-1">{processChildren(children, onWikiLinkClick, orphanSet)}</li>
             ),
             h1: ({ children }) => (
               <h1 className="text-2xl font-bold mt-6 mb-3">{children}</h1>
@@ -181,7 +221,7 @@ export function WikiPageView({ page, onWikiLinkClick }: WikiPageViewProps) {
             ),
             td: ({ children }) => (
               <td className="border border-gray-300 px-3 py-2">
-                {processChildren(children, onWikiLinkClick)}
+                {processChildren(children, onWikiLinkClick, orphanSet)}
               </td>
             ),
             a: ({ href, children }) => (

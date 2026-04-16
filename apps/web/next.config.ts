@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
     "import-in-the-middle",
     "require-in-the-middle"
   ],
+  // T6: forbidden()/unauthorized() API 활성화 (Next.js 15.1+ experimental).
+  // wiki viewer 403 응답을 200+content 대신 HTTP 403 으로 분기하기 위함.
+  experimental: {
+    authInterrupts: true,
+  },
   webpack(config) {
     config.resolve.extensionAlias = {
       ...(config.resolve.extensionAlias ?? {}),

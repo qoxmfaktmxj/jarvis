@@ -1,9 +1,9 @@
-import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { forbidden, notFound } from 'next/navigation';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { loadWikiPageForView } from '@/lib/server/wiki-page-loader';
+import { loadOrphanOutboundSlugs } from '@/lib/server/wiki-page-orphans';
 import { canViewSensitivity } from '@/lib/server/wiki-sensitivity';
 import { mapDbRowToWikiPage } from '@/components/WikiPageView';
 import { WikiPageWithNav } from './_components/WikiPageWithNav';
@@ -14,36 +14,47 @@ type WikiDetailPageProps = {
   params: Promise<{ workspaceId: string; path: string[] }>;
 };
 
+/**
+ * T6 — wiki viewer 안정화.
+ *
+ * 분기 규약:
+ *   - DB 에 페이지 없음          → `notFound()` (HTTP 404)
+ *   - workspace 불일치           → `forbidden()` (HTTP 403)
+ *   - sensitivity 권한 부족      → `forbidden()` (HTTP 403)
+ *   - `requiredPermission` 부족  → `forbidden()` (HTTP 403)
+ *
+ * 이전 구현은 403 상황에서도 200+content(`<div>accessDenied</div>`) 를 돌려줘
+ * 브라우저/프록시/크롤러가 권한 실패를 "정상 응답" 으로 간주하는 문제가 있었다.
+ * Next.js 15.1+ 의 `forbidden()` API(`experimental.authInterrupts`) 로 전환해
+ * `apps/web/app/forbidden.tsx` 가 실제 HTTP 403 과 함께 렌더되도록 한다.
+ *
+ * 또한 본문에 포함된 `[[...]]` wikilink 중 target 이 아직 없는(orphan) 링크 목록을
+ * `wiki_page_link.toPageId IS NULL` 조회로 얻어 `WikiPageView` 로 넘긴다.
+ * 클라이언트는 `orphanSlugs` prop 으로 해당 링크에 `orphan-slug` 클래스와
+ * 점선 빨간 스타일을 적용해 존재하지 않는 페이지임을 시각적으로 구분한다.
+ */
 export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
   const { workspaceId, path } = await params;
   const slug = path.join('/');
 
-  // Phase-W2: workspace 일치 검증 (다른 워크스페이스 페이지는 접근 불가)
+  // Phase-W2: workspace 일치 검증 (다른 워크스페이스 페이지는 접근 불가).
+  // 세션 워크스페이스가 아니면 명시적 403.
   if (session.workspaceId !== workspaceId) {
-    const t = await getTranslations('Wiki');
-    return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-2">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('accessDenied')}</h1>
-        <p className="text-sm text-gray-500">{slug}</p>
-      </div>
-    );
+    forbidden();
   }
 
   const loaded = await loadWikiPageForView(workspaceId, slug);
   if (!loaded) {
+    // DB 에 페이지가 없거나 publishedStatus != 'published' / 디스크 drift → 404.
     notFound();
   }
 
-  // sensitivity 권한 필터: DB 의 4값(PUBLIC|INTERNAL|RESTRICTED|SECRET_REF_ONLY) 기준
+  // sensitivity 권한 필터: DB 의 4값(PUBLIC|INTERNAL|RESTRICTED|SECRET_REF_ONLY) 기준.
+  // 페이지는 존재하나 열람 권한이 없는 것이므로 403 이 맞다(404 로 숨기지 않는다 —
+  // Jarvis 는 내부 포털이라 enumeration 회피보다 상태코드 정확성이 우선).
   if (!canViewSensitivity(session, loaded.meta.sensitivity)) {
-    const t = await getTranslations('Wiki');
-    return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-2">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('accessDenied')}</h1>
-        <p className="text-sm text-gray-500">{loaded.meta.slug}</p>
-      </div>
-    );
+    forbidden();
   }
 
   // WIKI-AGENTS.md §6: frontmatter `requiredPermission` (최소 요구 권한) 서버 게이트.
@@ -54,16 +65,17 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
     !hasPermission(session, PERMISSIONS.ADMIN_ALL) &&
     !hasPermission(session, loaded.meta.requiredPermission)
   ) {
-    const t = await getTranslations('Wiki');
-    return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-2">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('accessDenied')}</h1>
-        <p className="text-sm text-gray-500">{loaded.meta.slug}</p>
-      </div>
-    );
+    forbidden();
   }
 
   const page = mapDbRowToWikiPage(loaded.meta, loaded.bodyOnly);
+  const orphanSlugs = await loadOrphanOutboundSlugs(workspaceId, loaded.meta.id);
 
-  return <WikiPageWithNav page={page} workspaceId={workspaceId} />;
+  return (
+    <WikiPageWithNav
+      page={page}
+      workspaceId={workspaceId}
+      orphanSlugs={orphanSlugs}
+    />
+  );
 }
