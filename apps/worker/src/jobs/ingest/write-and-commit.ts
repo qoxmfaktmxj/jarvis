@@ -40,7 +40,6 @@ import {
   parseFrontmatter,
   serializeFrontmatter,
   parseWikilinks,
-  defaultBotAuthor,
   createTempWorktree,
   type WikiFrontmatter,
   type WikiSensitivity,
@@ -565,8 +564,14 @@ export async function writeAndCommit(
     }
 
     // Commit inside worktree.
+    // LLM ingest commits use `jarvis-llm@{workspaceId}` as the author email
+    // so boundary.ts and the CI workflow (wiki-boundary-check.yml) can
+    // distinguish them from human-triggered commits (`wiki-bot@jarvis.internal`).
     const contentPageCount = subBlocks.filter((b) => !b.isBookkeeping).length;
-    const author = defaultBotAuthor();
+    const author = {
+      name: "jarvis-llm",
+      email: `jarvis-llm@${input.workspaceId}`,
+    };
     const commitInfo = await wtRepo.writeAndCommit({
       files: filesForCommit,
       message: `[ingest] ${input.sourceTitle} — ${contentPageCount} pages updated`,

@@ -36,13 +36,18 @@ Format: [버전/날짜] — 변경 유형 — 내용
 - X6: `drizzle/__drafts__/drop_document_chunks.sql` DROP 드래프트
 - X7: `docs/plan/2026-04-W3-gate.md` 게이트 검증 완료
 
+### Removed
+- `packages/db/schema/document-chunks.ts` — DB 테이블(`document_chunks`)은 유지, Drizzle 스키마 추적에서만 제외 (`tablesFilter: ["!document_chunks"]`)
+- `packages/db/package.json` exports `./writers/document-chunks` — 삭제된 파일 참조 제거
+- `.env.example` `FEATURE_DOCUMENT_CHUNKS_WRITE`, `FEATURE_RAW_CHUNK_QUERY` — legacy 청크 경로 플래그 제거
+
 ### Gate 검증 결과
 - worker type-check: PASS
 - ai type-check: PASS
 - schema drift: PASS (No drift)
 - auth 테스트: 125/125 PASS
 - ai 테스트: 77/77 PASS
-- web type-check: FAIL (permission.test.ts:112 TS2532 — 빌더 수정 대기)
+- web type-check: PASS (2026-04-16 post-review 수정으로 해결)
 
 ---
 
