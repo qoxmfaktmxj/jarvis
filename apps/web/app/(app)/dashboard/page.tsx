@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getDashboardData } from "@/lib/queries/dashboard";
 import { requirePageSession } from "@/lib/server/page-auth";
-import { PageHeader } from "@/components/layout/PageHeader";
+import { PageHeader } from "@/components/patterns/PageHeader";
 import { AttendanceSummaryWidget } from "./_components/AttendanceSummaryWidget";
 import { MyTasksWidget } from "./_components/MyTasksWidget";
 import { ProjectStatsWidget } from "./_components/ProjectStatsWidget";
