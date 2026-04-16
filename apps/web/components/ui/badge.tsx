@@ -1,58 +1,46 @@
-import type { HTMLAttributes } from "react";
+import * as React from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+
 import { cn } from "@/lib/utils";
 
-/**
- * Badge — ISU Brand Design System
- * Uses brand-tinted OKLCH colors for all variants.
- */
-const badgeInlineStyles: Record<string, React.CSSProperties> = {
-  default: {
-    background: "var(--isu-100)",
-    color: "var(--isu-700)",
-  },
-  secondary: {
-    background: "var(--surface-100)",
-    color: "var(--surface-600)",
-  },
-  success: {
-    background: "var(--success-subtle)",
-    color: "oklch(0.40 0.12 145)",
-  },
-  warning: {
-    background: "var(--warning-subtle)",
-    color: "oklch(0.45 0.12 75)",
-  },
-  destructive: {
-    background: "var(--destructive-subtle)",
-    color: "oklch(0.45 0.15 25)",
-  },
-  outline: {
-    background: "white",
-    border: "1px solid var(--border-strong)",
-    color: "var(--surface-600)",
-  },
-  accent: {
-    background: "var(--lime-100)",
-    color: "var(--lime-700)",
-  },
-};
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default:
+          "border-transparent bg-isu-100 text-isu-700",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground",
+        success:
+          "border-transparent bg-success-subtle text-success",
+        warning:
+          "border-transparent bg-warning-subtle text-warning",
+        destructive:
+          "border-transparent bg-danger-subtle text-destructive",
+        outline:
+          "border-border bg-background text-foreground",
+        accent:
+          "border-transparent bg-lime-100 text-lime-700",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+);
 
-export function Badge({
-  className,
-  variant = "default",
-  style: externalStyle,
-  ...props
-}: HTMLAttributes<HTMLSpanElement> & {
-  variant?: keyof typeof badgeInlineStyles;
-}) {
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof badgeVariants> {}
+
+function Badge({ className, variant, ...props }: BadgeProps) {
   return (
     <span
-      className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-        className
-      )}
-      style={{ ...badgeInlineStyles[variant], ...externalStyle }}
+      className={cn(badgeVariants({ variant }), className)}
       {...props}
     />
   );
 }
+
+export { Badge, badgeVariants };
