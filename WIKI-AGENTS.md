@@ -295,12 +295,12 @@ wiki_lint_report        # 주간 lint 결과
 ```
 FEATURE_WIKI_FS_MODE=true              # 디스크 Git 모드 활성화 (main switch)
 FEATURE_PAGE_FIRST_QUERY=true          # ask.ts를 page-first navigation으로
-FEATURE_RAW_CHUNK_QUERY=false          # 레거시 RAG 경로 비활성화
+FEATURE_RAW_CHUNK_QUERY=false          # (legacy, 사용 중지) 레거시 RAG 경로 비활성화
 FEATURE_TWO_STEP_INGEST=true           # Two-Step CoT ingest
 FEATURE_WIKI_LINT_CRON=true            # 주간 lint 크론
 FEATURE_GRAPHIFY_DERIVED_PAGES=true    # Graphify wiki/auto/derived/code/** 생성
 FEATURE_SAVE_AS_PAGE=true              # Query 답변을 auto/syntheses/로 환원
-FEATURE_WIKI_SINGLE_WRITER=true        # workspace당 pg-boss singleton 큐 강제
+FEATURE_WIKI_SINGLE_WRITER=true        # (미구현 — 계획 중) workspace당 pg-boss singleton 큐 강제
 FEATURE_WIKI_BOUNDARY_CI=true          # auto/manual 경계 CI blocking 활성
 
 LLM_DAILY_BUDGET_USD=100               # workspace당 일일 예산

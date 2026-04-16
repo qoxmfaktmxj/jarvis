@@ -296,7 +296,7 @@ wiki/{workspaceId}/
 | `WIKI_ROOT` | `./wiki` | 디스크 위키 저장 루트 (workspace별 하위 디렉터리) |
 | `FEATURE_WIKI_FS_MODE` | `false` → `true` | 디스크/Git 모드 활성화 (피벗 main switch) |
 | `FEATURE_PAGE_FIRST_QUERY` | `false` → `true` | `ask.ts`를 page-first navigation으로 |
-| `FEATURE_RAW_CHUNK_QUERY` | `true` → `false` | 레거시 RAG 경로 비활성화 |
+| `FEATURE_RAW_CHUNK_QUERY` | `true` → `false` | (legacy, 사용 중지) 레거시 RAG 경로 비활성화 |
 | `FEATURE_TWO_STEP_INGEST` | `false` → `true` | Two-Step CoT ingest (Analysis → Generation) |
 | `FEATURE_WIKI_LINT_CRON` | `false` → `true` | 주간 lint 크론 |
 | `FEATURE_GRAPHIFY_DERIVED_PAGES` | `true` | Graphify `wiki/auto/derived/code/**` 생성 |

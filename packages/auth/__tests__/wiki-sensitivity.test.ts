@@ -40,7 +40,7 @@ function fragmentAllows(fragment: string, sensitivity: Sensitivity): boolean {
   }
   // Fragment shape: `AND <col> IN ('PUBLIC', 'INTERNAL', ...)`
   const match = fragment.match(/IN \(([^)]+)\)/);
-  if (!match) {
+  if (!match?.[1]) {
     return false;
   }
   return match[1].includes(`'${sensitivity}'`);
@@ -87,7 +87,7 @@ describe("buildWikiSensitivitySqlFilter — 4x4 role × sensitivity matrix", () 
       const fragment = buildWikiSensitivitySqlFilter(permissions);
 
       for (const sensitivity of SENSITIVITIES) {
-        const expected = ROLE_EXPECTED[role][sensitivity];
+        const expected = ROLE_EXPECTED[role]![sensitivity];
         it(`${expected ? "allows" : "blocks"} ${sensitivity}`, () => {
           expect(fragmentAllows(fragment, sensitivity)).toBe(expected);
         });
@@ -142,16 +142,16 @@ describe("buildWikiSensitivitySqlFilter — permission level single-cases", () =
     expect(frag).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL')");
   });
 
-  it("KNOWLEDGE_REVIEW alone (no READ): RESTRICTED only", () => {
+  it("KNOWLEDGE_REVIEW alone (no READ): AND 1 = 0 (KNOWLEDGE_READ required as gate)", () => {
     const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_REVIEW]);
-    expect(frag).toBe("AND sensitivity IN ('RESTRICTED')");
+    expect(frag).toBe("AND 1 = 0");
   });
 
-  it("SYSTEM_ACCESS_SECRET alone (no READ): SECRET_REF_ONLY only", () => {
+  it("SYSTEM_ACCESS_SECRET alone (no READ): AND 1 = 0 (KNOWLEDGE_READ required as gate)", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.SYSTEM_ACCESS_SECRET
     ]);
-    expect(frag).toBe("AND sensitivity IN ('SECRET_REF_ONLY')");
+    expect(frag).toBe("AND 1 = 0");
   });
 
   it("READ + REVIEW: PUBLIC, INTERNAL, RESTRICTED", () => {

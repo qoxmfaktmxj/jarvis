@@ -18,6 +18,9 @@ import { resolveWikiPath } from "./repo-root.js";
  * - frontmatter / body 분리는 @jarvis/wiki-fs 의 parseFrontmatter 사용.
  * - publishedStatus='published' 필터 — draft/archived 는 뷰어 페이지에서 숨김.
  * - sensitivity / 권한 체크는 호출자(page.tsx) 에서 수행 — 이 함수는 데이터만 반환.
+ *
+ * routeKey-first lookup: URL segments 를 합친 routeKey 로 먼저 조회하고,
+ * 없으면 slug fallback (하위 호환).
  */
 export interface LoadedWikiPage {
   meta: WikiPageIndex;
@@ -31,19 +34,35 @@ export interface LoadedWikiPage {
 
 export async function loadWikiPageForView(
   workspaceId: string,
-  slug: string,
+  routeKeyOrSlug: string,
 ): Promise<LoadedWikiPage | null> {
-  const rows = await db
+  // 1) Try routeKey first (path-based, unique within workspace).
+  const rowsByRouteKey = await db
     .select()
     .from(wikiPageIndex)
     .where(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
-        eq(wikiPageIndex.slug, slug),
+        eq(wikiPageIndex.routeKey, routeKeyOrSlug),
         eq(wikiPageIndex.publishedStatus, "published"),
       ),
     )
     .limit(1);
+
+  // 2) Fallback to slug (leaf filename, backward compat).
+  const rows = rowsByRouteKey.length > 0
+    ? rowsByRouteKey
+    : await db
+        .select()
+        .from(wikiPageIndex)
+        .where(
+          and(
+            eq(wikiPageIndex.workspaceId, workspaceId),
+            eq(wikiPageIndex.slug, routeKeyOrSlug),
+            eq(wikiPageIndex.publishedStatus, "published"),
+          ),
+        )
+        .limit(1);
 
   const meta = rows[0];
   if (!meta) return null;
@@ -58,7 +77,7 @@ export async function loadWikiPageForView(
       // silent swallow 가 아니라 운영 관찰성을 위해 warn 으로 남긴다.
       console.warn(
         "[wiki-page-loader] projection drift: file missing for",
-        { workspaceId, slug, path: meta.path },
+        { workspaceId, routeKeyOrSlug, path: meta.path },
       );
       return null;
     }

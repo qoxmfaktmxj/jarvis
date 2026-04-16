@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { JarvisSession } from "@jarvis/auth/types";
 import {
-  buildKnowledgeSensitivitySqlFilter,
+  buildLegacyKnowledgeSensitivitySqlFilter,
   canAccessKnowledgeSensitivity,
   canAccessSystemAccessEntry,
   canResolveSystemSecrets
@@ -40,7 +40,7 @@ describe("knowledge sensitivity access", () => {
 
   it("builds a strict SQL filter for knowledge read-only sessions", () => {
     expect(
-      buildKnowledgeSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ])
+      buildLegacyKnowledgeSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ])
     ).toBe("AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')");
   });
 });

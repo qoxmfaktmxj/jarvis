@@ -26,7 +26,7 @@ vi.mock('../case-context.js', () => ({ retrieveRelevantCases: vi.fn(), toCaseSou
 vi.mock('../directory-context.js', () => ({ searchDirectory: vi.fn(), toDirectorySourceRef: vi.fn() }));
 vi.mock('../router.js', () => ({ routeQuestion: vi.fn(), LANE_SOURCE_WEIGHTS: {} }));
 vi.mock('../cache.js', () => ({ makeCacheKey: vi.fn(), getCached: vi.fn(), setCached: vi.fn() }));
-vi.mock('@jarvis/auth/rbac', () => ({ buildKnowledgeSensitivitySqlFilter: () => '' }));
+vi.mock('@jarvis/auth/rbac', () => ({ buildLegacyKnowledgeSensitivitySqlFilter: () => '' }));
 
 import { rrfMerge } from '../ask.js';
 

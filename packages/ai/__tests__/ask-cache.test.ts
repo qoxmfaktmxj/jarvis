@@ -33,7 +33,7 @@ vi.mock('../budget.js', () => ({
 }));
 
 vi.mock('@jarvis/auth/rbac', () => ({
-  buildKnowledgeSensitivitySqlFilter: vi.fn().mockReturnValue(''),
+  buildLegacyKnowledgeSensitivitySqlFilter: vi.fn().mockReturnValue(''),
 }));
 
 // 레거시 경로 테스트용 — 프로덕션 기본값은 true

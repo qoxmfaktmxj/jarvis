@@ -1,4 +1,16 @@
 {
+  "Nav": {
+    "dashboard": "대시보드",
+    "projects": "프로젝트",
+    "systems": "시스템",
+    "knowledge": "지식",
+    "wiki": "위키",
+    "notices": "공지사항",
+    "search": "검색",
+    "askAi": "AI 질문",
+    "attendance": "출퇴근",
+    "admin": "관리자"
+  },
   "Admin": {
     "nav": {
       "title": "관리자",
@@ -546,9 +558,11 @@
       "public": "공개",
       "internal": "내부",
       "confidential": "기밀",
-      "restricted": "제한됨"
+      "restricted": "제한됨",
+      "secret": "시크릿"
     },
-    "noResults": "검색 결과가 없습니다."
+    "noResults": "검색 결과가 없습니다.",
+    "noResultsHint": "권한에 따라 일부 페이지가 표시되지 않을 수 있습니다."
   },
   "WikiEditor": {
     "manualOnlyBanner": "이 페이지는 manual/ 편집 전용입니다. auto/ 영역은 LLM이 관리합니다.",
@@ -575,7 +589,9 @@
       "tags": "태그",
       "public": "공개",
       "internal": "내부",
-      "confidential": "기밀"
+      "confidential": "기밀",
+      "restricted": "제한됨",
+      "secret": "시크릿"
     },
     "wikilink": {
       "placeholder": "페이지 이름 입력...",

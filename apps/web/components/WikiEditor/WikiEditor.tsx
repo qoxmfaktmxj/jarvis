@@ -89,7 +89,7 @@ function splitFrontmatter(input: string): FrontmatterParseResult {
     }
     if (key === "sensitivity") {
       const cleaned = value.replace(/^["']|["']$/g, "");
-      if (cleaned === "public" || cleaned === "internal" || cleaned === "confidential") {
+      if (cleaned === "public" || cleaned === "internal" || cleaned === "restricted" || cleaned === "secret") {
         fm.sensitivity = cleaned;
       }
       continue;

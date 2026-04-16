@@ -53,7 +53,7 @@ vi.mock('../cache.js', () => ({
   setCached: vi.fn(),
 }));
 vi.mock('@jarvis/auth/rbac', () => ({
-  buildKnowledgeSensitivitySqlFilter: () => '',
+  buildLegacyKnowledgeSensitivitySqlFilter: () => '',
 }));
 
 // ---------------------------------------------------------------------------
