@@ -5,6 +5,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { executeSearch } from '@/lib/queries/search';
 import { SearchPage } from '@/components/search/SearchPage';
 import { SearchBar } from '@/components/search/SearchBar';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import type { SearchSortBy } from '@jarvis/search/types';
 
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
   if (!q) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8">
+        <PageHeader eyebrow="Search" title="검색" />
         <div className="mb-6">
           <SearchBar autoFocus />
         </div>

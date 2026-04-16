@@ -37,7 +37,7 @@ export function SnapshotSelector({
     <select
       value={currentId}
       onChange={(e) => router.push(`${pathname}?snapshot=${e.target.value}`)}
-      className="border rounded px-3 py-1.5 text-sm"
+      className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
     >
       {snapshots.map((s) => (
         <option key={s.id} value={s.id}>

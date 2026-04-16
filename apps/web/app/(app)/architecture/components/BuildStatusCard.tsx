@@ -16,9 +16,9 @@ export async function BuildStatusCard({ kind, title, startedAt, error }: Props) 
 
   if (kind === "running") {
     return (
-      <div className="border rounded-lg p-6 bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+      <div className="rounded-lg border border-isu-200 bg-isu-50/50 p-6 dark:border-isu-900 dark:bg-isu-950/20">
         <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          <Loader2 className="h-5 w-5 animate-spin text-isu-600" />
           <div>
             <p className="font-medium">{t("running", { title })}</p>
             <p className="text-xs text-muted-foreground">
@@ -32,9 +32,9 @@ export async function BuildStatusCard({ kind, title, startedAt, error }: Props) 
 
   if (kind === "pending") {
     return (
-      <div className="border rounded-lg p-6 bg-gray-50 dark:bg-gray-900/20">
+      <div className="rounded-lg border border-border bg-muted/40 p-6">
         <div className="flex items-center gap-3">
-          <Clock className="h-5 w-5 text-gray-500" />
+          <Clock className="h-5 w-5 text-muted-foreground" />
           <p className="font-medium">{t("pending", { title })}</p>
         </div>
       </div>
@@ -43,13 +43,13 @@ export async function BuildStatusCard({ kind, title, startedAt, error }: Props) 
 
   // error
   return (
-    <div className="border rounded-lg p-6 bg-red-50/50 dark:bg-red-950/20 border-red-200 dark:border-red-900 space-y-3">
+    <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
       <div className="flex items-center gap-3">
-        <AlertTriangle className="h-5 w-5 text-red-600" />
+        <AlertTriangle className="h-5 w-5 text-destructive" />
         <p className="font-medium">{t("error", { title })}</p>
       </div>
       {error && (
-        <pre className="text-xs bg-red-100/60 dark:bg-red-950/40 p-3 rounded max-h-48 overflow-auto whitespace-pre-wrap">
+        <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded bg-destructive/10 p-3 text-xs">
           {error}
         </pre>
       )}

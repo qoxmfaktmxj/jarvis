@@ -160,10 +160,14 @@ export default async function ConversationPage({ params }: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col gap-5 p-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600">
-          <Sparkles className="h-4 w-4 text-white" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary">
+          <Sparkles className="h-4 w-4 text-primary-foreground" />
         </div>
         <div>
+          <p className="mb-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-isu-600">
+            <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
+            Ask AI
+          </p>
           <h1 className="text-lg font-semibold leading-tight">{t("title")}</h1>
           <p className="text-xs text-muted-foreground">
             {conversation.title}

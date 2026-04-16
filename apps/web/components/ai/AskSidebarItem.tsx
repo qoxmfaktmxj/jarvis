@@ -7,7 +7,12 @@ import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AskConversation } from "@jarvis/db/schema/ask-conversation";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { deleteConversation, renameConversation } from "@/app/(app)/ask/actions";
 
 interface AskSidebarItemProps {
@@ -78,14 +83,14 @@ export function AskSidebarItem({
     return (
       <div
         role="alertdialog"
-        className="mx-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2"
+        className="mx-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2"
       >
-        <p className="text-xs text-red-700">{t("deleteConfirm")}</p>
+        <p className="text-xs text-destructive">{t("deleteConfirm")}</p>
         <div className="mt-1.5 flex gap-2">
           <button
             type="button"
             onClick={() => setMode("idle")}
-            className="rounded px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-100"
+            className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
           >
             {t("cancel")}
           </button>
@@ -93,7 +98,7 @@ export function AskSidebarItem({
             type="button"
             onClick={handleDelete}
             disabled={isPending}
-            className="rounded px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-100"
+            className="rounded px-2 py-0.5 text-xs font-medium text-destructive hover:bg-destructive/20"
           >
             {t("delete")}
           </button>
@@ -120,7 +125,7 @@ export function AskSidebarItem({
           }}
           onBlur={handleRenameSubmit}
           maxLength={200}
-          className="w-full rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+          className="w-full rounded border border-input bg-background px-2 py-1 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
           disabled={isPending}
         />
       </div>
@@ -138,8 +143,8 @@ export function AskSidebarItem({
         className={cn(
           "flex items-start gap-2 rounded-lg px-3 py-2 text-sm transition-colors duration-150 ease-out",
           isActive
-            ? "bg-slate-200/70 font-medium"
-            : "hover:bg-slate-100",
+            ? "bg-muted font-medium"
+            : "hover:bg-muted/60",
         )}
         aria-selected={isActive}
         aria-label={`${t("conversationLabel")}: ${conversation.title}, ${timeLabel}`}
@@ -153,30 +158,33 @@ export function AskSidebarItem({
 
       {/* More menu - fade in on hover */}
       <div className="absolute right-1 top-1.5 opacity-0 transition-opacity duration-100 ease-out group-hover:opacity-100">
-        <DropdownMenu
-          align="end"
-          trigger={
-            <span className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-slate-200">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted"
+            >
               <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
-            </span>
-          }
-        >
-          <DropdownMenuItem
-            onClick={() => {
-              setRenameValue(conversation.title);
-              setMode("rename");
-            }}
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            {t("rename")}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => setMode("confirmDelete")}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t("delete")}
-          </DropdownMenuItem>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onClick={() => {
+                setRenameValue(conversation.title);
+                setMode("rename");
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {t("rename")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setMode("confirmDelete")}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {t("delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </div>

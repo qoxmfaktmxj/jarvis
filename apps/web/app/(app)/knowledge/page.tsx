@@ -5,7 +5,8 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getPagesByType } from '@/lib/queries/knowledge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, BookOpen } from 'lucide-react';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -39,24 +40,24 @@ export default async function KnowledgeHomePage() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <BookOpen className="h-7 w-7" /> Knowledge Base
-          </h1>
-          <p className="text-gray-500 mt-1">Company-wide documentation and guides</p>
-        </div>
-        {canCreate && (
-          <Button asChild>
-            <Link href="/knowledge/new">
-              <Plus className="h-4 w-4 mr-2" /> New Page
-            </Link>
-          </Button>
-        )}
-      </div>
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <PageHeader
+        eyebrow="Knowledge"
+        accent="KB"
+        title="Knowledge Base"
+        description="Company-wide documentation and guides"
+        meta={
+          canCreate ? (
+            <Button asChild>
+              <Link href="/knowledge/new">
+                <Plus className="mr-2 h-4 w-4" /> New Page
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {sectionData.map((section) => (
           <Card key={section.type}>
             <CardHeader className="pb-3">
@@ -69,16 +70,16 @@ export default async function KnowledgeHomePage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {section.pages.length === 0 ? (
-                <p className="text-sm text-gray-400 italic">No pages yet</p>
+                <p className="text-sm italic text-muted-foreground">No pages yet</p>
               ) : (
                 section.pages.map((page) => (
                   <Link
                     key={page.id}
                     href={`/knowledge/${page.id}`}
-                    className="flex items-center justify-between rounded-md px-2 py-1.5 hover:bg-gray-50 transition-colors text-sm"
+                    className="flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted"
                   >
                     <span className="truncate font-medium">{page.title}</span>
-                    <span className="flex-none text-xs text-gray-400 ml-2">
+                    <span className="ml-2 flex-none text-xs text-muted-foreground">
                       {page.updatedAt
                         ? formatDistanceToNow(new Date(page.updatedAt), { addSuffix: true })
                         : ''}

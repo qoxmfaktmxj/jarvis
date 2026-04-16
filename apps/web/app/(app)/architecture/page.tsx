@@ -6,6 +6,9 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, desc, notInArray, and } from 'drizzle-orm';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { Network } from 'lucide-react';
 import { GraphViewer } from './components/GraphViewer';
 import { SnapshotSelector } from './components/SnapshotSelector';
 import { GodNodesCard } from './components/GodNodesCard';
@@ -56,91 +59,98 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   }));
 
   return (
-    <main className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        {serializedSnapshots.length > 0 && (
-          <SnapshotSelector
-            snapshots={serializedSnapshots}
-            currentId={current?.id ?? serializedSnapshots[0]!.id}
+    <main className="p-6">
+      <PageHeader
+        eyebrow="Architecture"
+        title={t('title')}
+        meta={
+          serializedSnapshots.length > 0 ? (
+            <SnapshotSelector
+              snapshots={serializedSnapshots}
+              currentId={current?.id ?? serializedSnapshots[0]!.id}
+            />
+          ) : null
+        }
+      />
+
+      <div className="space-y-6">
+        {/* Build lifecycle overview — always visible if workspace has any snapshots */}
+        <BuildLifecycleSection workspaceId={workspaceId} permissions={session.permissions} />
+
+        {/* No snapshots at all */}
+        {authorizedSnapshots.length === 0 && (
+          <EmptyState
+            icon={Network}
+            title="No snapshots"
+            description="아직 Graphify 분석 결과가 없습니다. ZIP 파일을 업로드하거나 수동으로 빌드를 트리거하세요."
           />
         )}
+
+        {/* Current snapshot is building or errored — show status card */}
+        {current && current.buildStatus !== 'done' && (
+          <BuildStatusCard
+            kind={current.buildStatus as 'running' | 'pending' | 'error'}
+            title={current.title}
+            startedAt={current.createdAt}
+            error={current.buildError ?? null}
+          />
+        )}
+
+        {/* Current snapshot is done — show full graph UI */}
+        {current && current.buildStatus === 'done' && (() => {
+          const metadata = (current.analysisMetadata ?? {}) as {
+            godNodes?: string[];
+            suggestedQuestions?: string[];
+          };
+          return (
+            <>
+              {current.graphHtmlPath ? (
+                <GraphViewer snapshotId={current.id} />
+              ) : (
+                <div className="rounded-lg border border-border p-8 text-center text-muted-foreground">
+                  시각화 파일이 없습니다 (--no-viz 모드로 빌드됨)
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <GodNodesCard
+                  godNodes={metadata.godNodes ?? []}
+                  nodeCount={current.nodeCount ?? 0}
+                  edgeCount={current.edgeCount ?? 0}
+                  communityCount={current.communityCount ?? 0}
+                />
+
+                <div className="rounded-lg border border-border p-4">
+                  <h3 className="mb-2 font-semibold">{t('buildInfo')}</h3>
+                  <dl className="space-y-1 text-sm">
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">{t('mode')}</dt>
+                      <dd>{current.buildMode}</dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">{t('duration')}</dt>
+                      <dd>
+                        {current.buildDurationMs
+                          ? `${(current.buildDurationMs / 1000).toFixed(1)}s`
+                          : '-'}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">{t('files')}</dt>
+                      <dd>{current.fileCount ?? '-'}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <SuggestedQuestions
+                  questions={metadata.suggestedQuestions ?? []}
+                  snapshotId={current.id}
+                />
+              </div>
+            </>
+          );
+        })()}
       </div>
-
-      {/* Build lifecycle overview — always visible if workspace has any snapshots */}
-      <BuildLifecycleSection workspaceId={workspaceId} permissions={session.permissions} />
-
-      {/* No snapshots at all */}
-      {authorizedSnapshots.length === 0 && (
-        <p className="text-gray-500">
-          아직 Graphify 분석 결과가 없습니다. ZIP 파일을 업로드하거나 수동으로 빌드를 트리거하세요.
-        </p>
-      )}
-
-      {/* Current snapshot is building or errored — show status card */}
-      {current && current.buildStatus !== 'done' && (
-        <BuildStatusCard
-          kind={current.buildStatus as 'running' | 'pending' | 'error'}
-          title={current.title}
-          startedAt={current.createdAt}
-          error={current.buildError ?? null}
-        />
-      )}
-
-      {/* Current snapshot is done — show full graph UI */}
-      {current && current.buildStatus === 'done' && (() => {
-        const metadata = (current.analysisMetadata ?? {}) as {
-          godNodes?: string[];
-          suggestedQuestions?: string[];
-        };
-        return (
-          <>
-            {current.graphHtmlPath ? (
-              <GraphViewer snapshotId={current.id} />
-            ) : (
-              <div className="border rounded-lg p-8 text-center text-gray-500">
-                시각화 파일이 없습니다 (--no-viz 모드로 빌드됨)
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <GodNodesCard
-                godNodes={metadata.godNodes ?? []}
-                nodeCount={current.nodeCount ?? 0}
-                edgeCount={current.edgeCount ?? 0}
-                communityCount={current.communityCount ?? 0}
-              />
-
-              <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-2">{t('buildInfo')}</h3>
-                <dl className="text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">{t('mode')}</dt>
-                    <dd>{current.buildMode}</dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">{t('duration')}</dt>
-                    <dd>
-                      {current.buildDurationMs
-                        ? `${(current.buildDurationMs / 1000).toFixed(1)}s`
-                        : '-'}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between">
-                    <dt className="text-gray-500">{t('files')}</dt>
-                    <dd>{current.fileCount ?? '-'}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <SuggestedQuestions
-                questions={metadata.suggestedQuestions ?? []}
-                snapshotId={current.id}
-              />
-            </div>
-          </>
-        );
-      })()}
     </main>
   );
 }

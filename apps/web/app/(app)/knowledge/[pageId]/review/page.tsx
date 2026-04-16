@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -30,20 +31,21 @@ export default async function ReviewPage({ params }: Props) {
   const publishStatus = (page.publishStatus ?? 'draft') as 'draft' | 'review' | 'published' | 'archived';
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href={`/knowledge/${pageId}`}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to page
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Review: {page.title}</h1>
-          <p className="text-sm text-gray-500 mt-0.5 capitalize">{page.pageType}</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <PageHeader
+        eyebrow="Knowledge · Review"
+        title={page.title}
+        description={page.pageType}
+        meta={
+          <Button variant="ghost" size="sm" asChild>
+            <Link href={`/knowledge/${pageId}`}>
+              <ArrowLeft className="mr-1 h-4 w-4" /> Back to page
+            </Link>
+          </Button>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0">
           <PageViewer mdxContent={mdxContent} />
         </div>
