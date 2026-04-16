@@ -37,5 +37,47 @@
       "placeholder": "Search page name...",
       "noResults": "No results"
     }
+  },
+  "Admin": {
+    "WikiReviewQueue": {
+      "title": "Wiki Review Queue",
+      "description": "Pending wiki auto/manual review items — {count} item(s).",
+      "empty": "No review items to show.",
+      "approve": "Approve",
+      "reject": "Reject",
+      "cancel": "Cancel",
+      "processing": "Processing...",
+      "errorOccurred": "An error occurred.",
+      "reasonRequired": "Please enter a rejection reason.",
+      "approveConfirm": "Approve this item?",
+      "rejectConfirm": "Reject this item?",
+      "notesLabel": "Approval notes (optional)",
+      "notesPlaceholder": "Leave a note for this approval.",
+      "reasonLabel": "Rejection reason (required)",
+      "reasonPlaceholder": "Enter a rejection reason.",
+      "kindFilterLabel": "Kind",
+      "affectedPages": "{count} affected page(s)",
+      "kind": {
+        "all": "All",
+        "contradiction": "Contradiction",
+        "lint": "Lint",
+        "heal": "Heal",
+        "sensitivity_promotion": "Sensitivity Promotion",
+        "ingest_fail": "Ingest Fail",
+        "boundary_violation": "Boundary Violation",
+        "pii": "PII"
+      },
+      "statusFilter": {
+        "all": "All",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageInfo": "{page} / {total}"
+      }
+    }
   }
 }

@@ -11,7 +11,9 @@
       "auditLog": "감사 로그",
       "searchAnalytics": "검색 분석",
       "settings": "설정",
-      "llmCost": "LLM 비용"
+      "llmCost": "LLM 비용",
+      "wikiObservability": "위키 운영",
+      "wikiViolations": "경계 위반"
     },
     "Users": {
       "title": "사용자",
@@ -139,6 +141,46 @@
       "processing": "처리 중...",
       "errorOccurred": "오류가 발생했습니다.",
       "cancel": "취소",
+      "pagination": {
+        "previous": "이전",
+        "next": "다음",
+        "pageInfo": "{page} / {total}"
+      }
+    },
+    "WikiReviewQueue": {
+      "title": "위키 리뷰 큐",
+      "description": "위키 자동·수동 이벤트 검토 대기열 — {count}건.",
+      "empty": "표시할 리뷰 항목이 없습니다.",
+      "approve": "승인",
+      "reject": "거절",
+      "cancel": "취소",
+      "processing": "처리 중...",
+      "errorOccurred": "오류가 발생했습니다.",
+      "reasonRequired": "거절 사유를 입력해 주세요.",
+      "approveConfirm": "이 항목을 승인하시겠습니까?",
+      "rejectConfirm": "이 항목을 거절하시겠습니까?",
+      "notesLabel": "승인 메모 (선택)",
+      "notesPlaceholder": "승인 시 남길 메모를 작성하세요.",
+      "reasonLabel": "거절 사유 (필수)",
+      "reasonPlaceholder": "거절 사유를 작성하세요.",
+      "kindFilterLabel": "종류",
+      "affectedPages": "영향 페이지 {count}건",
+      "kind": {
+        "all": "전체",
+        "contradiction": "모순",
+        "lint": "린트",
+        "heal": "자가수정",
+        "sensitivity_promotion": "민감도 승급",
+        "ingest_fail": "수집 실패",
+        "boundary_violation": "경계 위반",
+        "pii": "PII"
+      },
+      "statusFilter": {
+        "all": "전체",
+        "pending": "대기",
+        "approved": "승인됨",
+        "rejected": "거절됨"
+      },
       "pagination": {
         "previous": "이전",
         "next": "다음",

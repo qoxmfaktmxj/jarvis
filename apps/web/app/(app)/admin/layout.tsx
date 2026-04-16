@@ -6,16 +6,18 @@ import { getSession } from '@jarvis/auth/session';
 import { isAdmin } from '@jarvis/auth/rbac';
 
 const NAV_ROUTES = [
-  { href: '/admin/users',            key: 'users' },
-  { href: '/admin/organizations',    key: 'organizations' },
-  { href: '/admin/menus',            key: 'menus' },
-  { href: '/admin/codes',            key: 'codes' },
-  { href: '/admin/companies',        key: 'companies' },
-  { href: '/admin/review-queue',     key: 'reviewQueue' },
-  { href: '/admin/audit',            key: 'auditLog' },
-  { href: '/admin/search-analytics', key: 'searchAnalytics' },
-  { href: '/admin/settings',         key: 'settings' },
-  { href: '/admin/llm-cost',         key: 'llmCost' },
+  { href: '/admin/users',                    key: 'users' },
+  { href: '/admin/organizations',            key: 'organizations' },
+  { href: '/admin/menus',                    key: 'menus' },
+  { href: '/admin/codes',                    key: 'codes' },
+  { href: '/admin/companies',                key: 'companies' },
+  { href: '/admin/review-queue',             key: 'reviewQueue' },
+  { href: '/admin/audit',                    key: 'auditLog' },
+  { href: '/admin/search-analytics',         key: 'searchAnalytics' },
+  { href: '/admin/settings',                 key: 'settings' },
+  { href: '/admin/llm-cost',                 key: 'llmCost' },
+  { href: '/admin/observability/wiki',       key: 'wikiObservability' },
+  { href: '/admin/wiki/boundary-violations', key: 'wikiViolations' },
 ];
 
 export default async function AdminLayout({
@@ -34,7 +36,7 @@ export default async function AdminLayout({
 
   const NAV_ITEMS = NAV_ROUTES.map((route) => ({
     href: route.href,
-    label: t(route.key as 'users' | 'organizations' | 'menus' | 'codes' | 'companies' | 'reviewQueue' | 'auditLog' | 'searchAnalytics' | 'settings' | 'llmCost'),
+    label: t(route.key as 'users' | 'organizations' | 'menus' | 'codes' | 'companies' | 'reviewQueue' | 'auditLog' | 'searchAnalytics' | 'settings' | 'llmCost' | 'wikiObservability' | 'wikiViolations'),
   }));
 
   return (
