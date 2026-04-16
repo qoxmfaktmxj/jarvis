@@ -43,7 +43,7 @@ function fragmentAllows(fragment: string, sensitivity: Sensitivity): boolean {
   if (!match) {
     return false;
   }
-  return match[1].includes(`'${sensitivity}'`);
+  return (match[1] ?? "").includes(`'${sensitivity}'`);
 }
 
 const SENSITIVITIES: Sensitivity[] = [
@@ -87,7 +87,7 @@ describe("buildWikiSensitivitySqlFilter — 4x4 role × sensitivity matrix", () 
       const fragment = buildWikiSensitivitySqlFilter(permissions);
 
       for (const sensitivity of SENSITIVITIES) {
-        const expected = ROLE_EXPECTED[role][sensitivity];
+        const expected = ROLE_EXPECTED[role]![sensitivity];
         it(`${expected ? "allows" : "blocks"} ${sensitivity}`, () => {
           expect(fragmentAllows(fragment, sensitivity)).toBe(expected);
         });

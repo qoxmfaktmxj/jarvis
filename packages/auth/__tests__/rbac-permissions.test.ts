@@ -30,7 +30,7 @@ function includesSensitivity(
   if (!match) {
     return false;
   }
-  return match[1].includes(`'${sensitivity}'`);
+  return (match[1] ?? "").includes(`'${sensitivity}'`);
 }
 
 describe("RBAC WIKI_* permission rules", () => {

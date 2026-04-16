@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, Plus } from "lucide-react";
+import { MessageSquare, Plus, Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AskConversation } from "@jarvis/db/schema/ask-conversation";
 import { MAX_CONVERSATIONS_PER_USER } from "@jarvis/shared/constants/ask";
@@ -114,6 +114,40 @@ export function AskSidebar({
     [conversations, dateLabels],
   );
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  // debounce 150ms
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 150);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const clearSearch = useCallback(() => {
+    setSearchQuery("");
+    setDebouncedQuery("");
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") clearSearch();
+    },
+    [clearSearch],
+  );
+
+  const filteredGroups = useMemo(() => {
+    if (!debouncedQuery.trim()) return groups;
+    const q = debouncedQuery.trim().toLowerCase();
+    return groups
+      .map((g) => ({
+        ...g,
+        conversations: g.conversations.filter((c) =>
+          (c.title ?? "").toLowerCase().includes(q),
+        ),
+      }))
+      .filter((g) => g.conversations.length > 0);
+  }, [groups, debouncedQuery]);
+
   const isAtLimit = conversationCount >= MAX_CONVERSATIONS_PER_USER;
   const isWarning = conversationCount >= 16;
 
@@ -133,16 +167,48 @@ export function AskSidebar({
         </Link>
       </div>
 
+      {/* Search */}
+      <div className="px-3 pb-2">
+        <div className="relative flex items-center">
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={t("search")}
+            aria-label={t("search")}
+            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-7 text-xs text-gray-800 placeholder:text-muted-foreground focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              aria-label={t("clearSearch")}
+              className="absolute right-2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Conversation list */}
       <div className="flex-1 overflow-y-auto scrollbar-thin" role="listbox">
-        {groups.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-            <p className="text-sm font-semibold text-foreground">{t("emptyTitle")}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{t("emptyDescription")}</p>
-          </div>
+        {filteredGroups.length === 0 ? (
+          debouncedQuery.trim() ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm text-muted-foreground">{t("noSearchResults")}</p>
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center">
+              <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm font-semibold text-foreground">{t("emptyTitle")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("emptyDescription")}</p>
+            </div>
+          )
         ) : (
-          groups.map((group) => (
+          filteredGroups.map((group) => (
             <AskSidebarDateGroup key={group.label} label={group.label}>
               {group.conversations.map((conv) => (
                 <AskSidebarItem

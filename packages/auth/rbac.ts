@@ -12,6 +12,13 @@ const KNOWLEDGE_RESTRICTED_SENSITIVITIES = [
   "SECRET_REF_ONLY"
 ] as const;
 
+const WIKI_SENSITIVITIES = [
+  "PUBLIC",
+  "INTERNAL",
+  "RESTRICTED",
+  "SECRET_REF_ONLY"
+] as const;
+
 const SYSTEM_ROLE_ORDER = {
   VIEWER: 0,
   DEVELOPER: 1,
@@ -83,6 +90,27 @@ export function buildKnowledgeSensitivitySqlFilter(
   }
 
   return "AND 1 = 0";
+}
+
+export function getAllowedWikiSensitivityValues(
+  permissions: string[]
+): Array<(typeof WIKI_SENSITIVITIES)[number]> {
+  if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
+    return [...WIKI_SENSITIVITIES];
+  }
+
+  const allowed: Array<(typeof WIKI_SENSITIVITIES)[number]> = [];
+  if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
+    allowed.push("PUBLIC", "INTERNAL");
+  }
+  if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
+    allowed.push("RESTRICTED");
+  }
+  if (permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)) {
+    allowed.push("SECRET_REF_ONLY");
+  }
+
+  return allowed;
 }
 
 export function canResolveSystemSecrets(
@@ -209,16 +237,7 @@ export function buildWikiSensitivitySqlFilter(
     return "";
   }
 
-  const allowed: string[] = [];
-  if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
-    allowed.push("PUBLIC", "INTERNAL");
-  }
-  if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
-    allowed.push("RESTRICTED");
-  }
-  if (permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)) {
-    allowed.push("SECRET_REF_ONLY");
-  }
+  const allowed = getAllowedWikiSensitivityValues(permissions);
 
   if (allowed.length === 0) {
     return "AND 1 = 0";

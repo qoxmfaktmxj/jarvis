@@ -169,6 +169,7 @@ const KNOWN_FIELDS: readonly (keyof WikiFrontmatter)[] = [
   "updated",
   "authority",
   "linkedPages",
+  "freshnessSlaDays",
 ];
 
 function orderFields(
@@ -233,6 +234,7 @@ function coerceFrontmatter(raw: Record<string, unknown>): WikiFrontmatter {
     updated: stringOr(raw.updated, defaults.updated),
     authority: authorityValue,
     linkedPages: stringArrayOr(raw.linkedPages, defaults.linkedPages),
+    freshnessSlaDays: numberOrUndefined(raw.freshnessSlaDays),
   };
 
   // Pass through unknown fields intact for round-trip safety.
@@ -259,4 +261,10 @@ function isEnumMember<T extends string>(
   members: readonly T[],
 ): value is T {
   return typeof value === "string" && (members as readonly string[]).includes(value);
+}
+
+function numberOrUndefined(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.floor(value)
+    : undefined;
 }

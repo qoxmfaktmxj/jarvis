@@ -54,6 +54,7 @@ export interface WikiFrontmatter {
   updated: string;
   authority: WikiAuthority;
   linkedPages: string[];
+  freshnessSlaDays?: number;
   /**
    * Unknown passthrough fields — the parser keeps extra keys intact so
    * future schema extensions don't require a parser release.

@@ -351,6 +351,7 @@ async function projectPages(opts: {
       gitSha: opts.commitSha,
       stale: false,
       publishedStatus: "draft" as const,
+      freshnessSlaDays: typeof fm.freshnessSlaDays === "number" ? fm.freshnessSlaDays : null,
     };
   });
 
@@ -371,6 +372,7 @@ async function projectPages(opts: {
         frontmatter: sql`excluded.frontmatter`,
         gitSha: sql`excluded.git_sha`,
         stale: sql`excluded.stale`,
+        freshnessSlaDays: sql`excluded.freshness_sla_days`,
         updatedAt: now,
       },
     })

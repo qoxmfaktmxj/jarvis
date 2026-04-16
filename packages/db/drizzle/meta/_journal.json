@@ -162,6 +162,13 @@
       "when": 1776314892482,
       "tag": "0022_needy_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1776320446148,
+      "tag": "0023_thankful_excalibur",
+      "breakpoints": true
     }
   ]
 }

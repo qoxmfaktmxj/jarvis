@@ -9,8 +9,10 @@ import { createChatWithTokenFallback } from './openai-compat.js';
 // Module-level singleton — shared across all tutor invocations
 const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
-// NOTE: tutor는 레거시 claims 경로를 직접 사용 (page-first 미적용)
-import { retrieveRelevantClaims } from './ask.js';
+// page-first retrieval: shortlist → 1-hop expand → disk read
+import { lexicalShortlist } from './page-first/shortlist.js';
+import { expandOneHop } from './page-first/expand.js';
+import { readTopPages, type LoadedPage } from './page-first/read-pages.js';
 import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
 import { searchDirectory, toDirectorySourceRef } from './directory-context.js';
 
@@ -102,9 +104,22 @@ export async function* tutorAI(
   const { question, workspaceId, userPermissions } = query;
   const mode = session.mode;
 
-  // 1. 컨텍스트 수집 (튜터는 항상 text + directory + case 전부 가져옴)
-  const [claims, caseResult, dirResult] = await Promise.all([
-    retrieveRelevantClaims(question, workspaceId, userPermissions),
+  // 1. 컨텍스트 수집 (page-first retrieval + directory + case)
+  const [pages, caseResult, dirResult] = await Promise.all([
+    // page-first retrieval: shortlist -> expand -> read
+    (async (): Promise<LoadedPage[]> => {
+      const shortlist = await lexicalShortlist({
+        workspaceId, userPermissions, question, topK: 20,
+      });
+      const candidates = await expandOneHop({
+        workspaceId, userPermissions, shortlist, fanOut: 30,
+      }).catch(() => shortlist.map(s => ({
+        ...s,
+        origin: 'shortlist' as const,
+        inboundCount: 0,
+      })));
+      return readTopPages({ workspaceId, candidates, topN: 7 });
+    })(),
     retrieveRelevantCases(question, workspaceId, { topK: 3, userPermissions }),
     searchDirectory(question, workspaceId, { topK: 5 }),
   ]);
@@ -112,11 +127,11 @@ export async function* tutorAI(
   // 2. 컨텍스트 조립
   const contextParts: string[] = [];
 
-  if (claims.length > 0) {
-    const claimXml = claims
-      .map((c, i) => `  <source idx="${i + 1}" kind="text" title="${c.pageTitle}">\n    ${c.claimText.slice(0, 400)}\n  </source>`)
+  if (pages.length > 0) {
+    const pageXml = pages
+      .map((p, i) => `  <source idx="${i + 1}" kind="wiki-page" slug="${p.slug}" title="${p.title}">\n    ${p.content.slice(0, 400)}\n  </source>`)
       .join('\n');
-    contextParts.push(claimXml);
+    contextParts.push(pageXml);
   }
 
   if (caseResult && caseResult.cases.length > 0) {
@@ -143,13 +158,16 @@ export async function* tutorAI(
   ];
 
   // 4. 소스 수집
-  const textSources: SourceRef[] = claims.map((c) => ({
-    kind: 'text' as const,
-    pageId: c.pageId,
-    title: c.pageTitle,
-    url: c.pageUrl,
-    excerpt: c.claimText.slice(0, 200),
-    confidence: c.hybridScore,
+  const pageSources: SourceRef[] = pages.map((p) => ({
+    kind: 'wiki-page' as const,
+    pageId: p.id,
+    path: p.path,
+    slug: p.slug,
+    title: p.title,
+    sensitivity: p.sensitivity,
+    citation: `[[${p.slug}]]`,
+    origin: p.origin,
+    confidence: 0.8,
   }));
 
   const caseSources: SourceRef[] = caseResult
@@ -160,7 +178,7 @@ export async function* tutorAI(
     ? dirResult.entries.map(toDirectorySourceRef)
     : [];
 
-  const allSources = [...textSources, ...caseSources, ...dirSources];
+  const allSources = [...pageSources, ...caseSources, ...dirSources];
 
   yield { type: 'sources', sources: allSources };
 

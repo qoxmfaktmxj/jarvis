@@ -98,7 +98,7 @@ export function rrfMerge(
 // ---------------------------------------------------------------------------
 /**
  * @deprecated use page-first path (featurePageFirstQuery=true).
- * Retained as fallback and for tutor.ts.
+ * Only used by legacy askAI fallback (FEATURE_PAGE_FIRST_QUERY=false).
  */
 export async function retrieveRelevantClaims(
   question: string,

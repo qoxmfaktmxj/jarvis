@@ -271,6 +271,7 @@ async function upsertPageIndex(
       gitSha,
       stale: false,
       publishedStatus: "draft",
+      freshnessSlaDays: typeof fm.freshnessSlaDays === "number" ? fm.freshnessSlaDays : null,
     })
     .onConflictDoUpdate({
       target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
@@ -280,6 +281,7 @@ async function upsertPageIndex(
         frontmatter: fm as Record<string, unknown>,
         gitSha,
         stale: false,
+        freshnessSlaDays: typeof fm.freshnessSlaDays === "number" ? fm.freshnessSlaDays : null,
         updatedAt: new Date(),
       },
     });

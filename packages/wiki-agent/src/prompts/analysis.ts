@@ -22,6 +22,7 @@ const SYSTEM_RULES = [
   "- Source 언어가 한국어면 요약·리스트도 한국어로 작성한다.",
   "- Source가 영문이면 영문으로 작성한다.",
   "- Source가 혼용이면 원문의 주 언어를 따르되, 고유명사는 원문 그대로 유지한다.",
+  "- entity 및 concept의 name 필드에서 한국어 표기를 우선한다. 영문 고유명사는 괄호 병기: \"마인드볼트(MindVault)\".",
   "",
   "## JSON Schema (strict)",
   "```json",

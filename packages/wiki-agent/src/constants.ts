@@ -5,7 +5,7 @@
  *
  * Format: "YYYY-MM-DD-vN".
  */
-export const PROMPT_VERSION = "2026-04-15-v1" as const;
+export const PROMPT_VERSION = "2026-04-16-v1" as const;
 
 /**
  * Minimum number of aliases that every generated wiki page's

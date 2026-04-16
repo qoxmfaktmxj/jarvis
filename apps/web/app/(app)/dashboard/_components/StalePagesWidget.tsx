@@ -6,7 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { StalePage } from "@/lib/queries/dashboard";
 
-export function StalePagesWidget({ pages }: { pages: StalePage[] }) {
+function wikiPageHref(workspaceId: string, page: StalePage): string {
+  const encodedSlug = page.slug.split("/").map(encodeURIComponent).join("/");
+  return `/wiki/${workspaceId}/${encodedSlug}`;
+}
+
+export function StalePagesWidget({
+  pages,
+  workspaceId,
+}: {
+  pages: StalePage[];
+  workspaceId: string;
+}) {
   const t = useTranslations("Dashboard.StalePages");
 
   return (
@@ -23,7 +34,7 @@ export function StalePagesWidget({ pages }: { pages: StalePage[] }) {
             {pages.map((page) => (
               <li key={page.id} className="space-y-1">
                 <Link
-                  href={`/knowledge/${page.id}`}
+                  href={wikiPageHref(workspaceId, page)}
                   className="line-clamp-2 text-sm font-medium text-gray-900 hover:text-blue-600"
                 >
                   {page.title}

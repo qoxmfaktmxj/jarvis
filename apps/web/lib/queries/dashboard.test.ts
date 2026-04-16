@@ -49,8 +49,13 @@ vi.mock("@jarvis/db/schema", () => ({
   },
   wikiPageIndex: {
     id: "wiki.id",
+    path: "wiki.path",
+    slug: "wiki.slug",
     title: "wiki.title",
     updatedAt: "wiki.updatedAt",
+    freshnessSlaDays: "wiki.freshnessSlaDays",
+    sensitivity: "wiki.sensitivity",
+    requiredPermission: "wiki.requiredPermission",
     stale: "wiki.stale",
     publishedStatus: "wiki.publishedStatus",
     workspaceId: "wiki.workspaceId"
@@ -74,11 +79,19 @@ vi.mock("drizzle-orm", () => ({
   asc: vi.fn((value: unknown) => value),
   desc: vi.fn((value: unknown) => value),
   eq: vi.fn((column: unknown, value: unknown) => ({ column, value })),
+  inArray: vi.fn((column: unknown, values: unknown[]) => ({ column, op: "inArray", values })),
+  isNotNull: vi.fn((value: unknown) => ({ value, op: "isNotNull" })),
   isNull: vi.fn((value: unknown) => ({ value, op: "isNull" })),
+  lt: vi.fn((column: unknown, value: unknown) => ({ column, op: "lt", value })),
   ne: vi.fn((column: unknown, value: unknown) => ({ column, value })),
+  or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
   count: vi.fn(() => "count(*)"),
   gte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
-  lte: vi.fn((column: unknown, value: unknown) => ({ column, value }))
+  lte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
+  sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+    strings: Array.from(strings),
+    values
+  }))
 }));
 
 import { db } from "@jarvis/db/client";
@@ -220,31 +233,66 @@ describe("dashboard queries", () => {
     ).toBe(true);
   });
 
-  it("returns only stale pages from raw rows", async () => {
-    // B4 Phase 1: getStalePages는 wikiPageIndex.stale=true 행만 DB에서 받아 매핑한다.
-    // 필터링은 DB 쿼리(WHERE stale=true)에서 이미 완료되므로 mock은 stale 행만 반환.
+  it("queries pages whose freshness SLA deadline has passed", async () => {
+    const selectMock = db.select as unknown as Mock;
+    const chain = createChain([]);
+    selectMock.mockReturnValue(chain);
+
+    await getStalePages("ws-1", ["knowledge:read"], new Date("2026-04-16T00:00:00.000Z"));
+
+    const whereCalls = chain.where.mock.calls as unknown as Array<[unknown]>;
+    const firstWhereCall = whereCalls[0];
+    expect(firstWhereCall).toBeDefined();
+    const whereArg = firstWhereCall![0] as unknown[];
+    expect(whereArg).toEqual(
+      expect.arrayContaining([
+        { column: "wiki.workspaceId", value: "ws-1" },
+        { column: "wiki.publishedStatus", value: "published" },
+        { value: "wiki.freshnessSlaDays", op: "isNotNull" },
+        expect.objectContaining({ column: "wiki.updatedAt", op: "lt" }),
+        { column: "wiki.sensitivity", op: "inArray", values: ["PUBLIC", "INTERNAL"] },
+        {
+          op: "or",
+          args: [
+            { value: "wiki.requiredPermission", op: "isNull" },
+            { column: "wiki.requiredPermission", op: "inArray", values: ["knowledge:read"] }
+          ]
+        }
+      ])
+    );
+    expect(whereArg).not.toContainEqual({ column: "wiki.stale", value: true });
+  });
+
+  it("maps stale pages from raw rows", async () => {
     const selectMock = db.select as unknown as Mock;
     const updatedAt = new Date("2026-01-01T00:00:00.000Z");
     selectMock.mockReturnValue(
       createChain([
         {
           id: "page-1",
+          path: "wiki/ws-1/auto/policy/old.md",
+          slug: "old",
           title: "Old",
-          updatedAt
+          updatedAt,
+          freshnessSlaDays: 30
         }
       ])
     );
 
     const now = new Date("2026-04-15T00:00:00.000Z");
-    const result = await getStalePages("ws-1", now);
+    const result = await getStalePages("ws-1", ["knowledge:read"], now);
 
     const expectedOverdueDays = Math.floor(
-      (now.getTime() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+      (now.getTime() -
+        (updatedAt.getTime() + 30 * 24 * 60 * 60 * 1000)) /
+        (1000 * 60 * 60 * 24)
     );
 
     expect(result).toEqual([
       {
         id: "page-1",
+        path: "wiki/ws-1/auto/policy/old.md",
+        slug: "old",
         title: "Old",
         lastReviewedAt: updatedAt,
         overdueDays: expectedOverdueDays
@@ -252,13 +300,35 @@ describe("dashboard queries", () => {
     ]);
   });
 
+  it("calculates overdueDays from freshnessSlaDays when present", async () => {
+    const selectMock = db.select as unknown as Mock;
+    const updatedAt = new Date("2026-03-01T00:00:00.000Z"); // 46일 전
+    selectMock.mockReturnValue(
+      createChain([
+        {
+          id: "page-2",
+          path: "wiki/ws-1/auto/policy/policy.md",
+          slug: "policy",
+          title: "Policy",
+          updatedAt,
+          freshnessSlaDays: 30
+        }
+      ])
+    );
+    const now = new Date("2026-04-16T00:00:00.000Z");
+    const result = await getStalePages("ws-1", ["knowledge:read"], now);
+    // deadline = 2026-03-31, now = 2026-04-16, overdueDays = 16
+    expect(result[0]!.overdueDays).toBe(16);
+  });
+
   it("aggregates dashboard data in parallel", async () => {
-    const result = await getDashboardData("ws-1", "user-1", ["employee"], {
+    const stalePagesLoader = vi.fn().mockResolvedValue([]);
+    const result = await getDashboardData("ws-1", "user-1", ["employee"], ["knowledge:read"], {
       getQuickLinks: vi.fn().mockResolvedValue([]),
       getRecentActivity: vi.fn().mockResolvedValue([]),
       getMyTasks: vi.fn().mockResolvedValue([]),
       getProjectStats: vi.fn().mockResolvedValue({ total: 0, byStatus: {} }),
-      getStalePages: vi.fn().mockResolvedValue([]),
+      getStalePages: stalePagesLoader,
       getSearchTrends: vi.fn().mockResolvedValue([]),
       getAttendanceSummary: vi.fn().mockResolvedValue({
         totalDays: 0,
@@ -282,5 +352,6 @@ describe("dashboard queries", () => {
         absentDays: 0
       }
     });
+    expect(stalePagesLoader).toHaveBeenCalledWith("ws-1", ["knowledge:read"]);
   });
 });

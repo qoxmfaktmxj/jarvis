@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   timestamp,
@@ -56,6 +57,7 @@ export const wikiPageIndex = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    freshnessSlaDays: integer("freshness_sla_days"),
   },
   (t) => ({
     // 동일 workspace 내 동일 path 금지 (디스크 경로 == projection key)

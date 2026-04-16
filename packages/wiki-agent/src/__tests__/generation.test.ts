@@ -83,6 +83,33 @@ describe("buildGenerationPrompt — analysis is serialized as JSON", () => {
   });
 });
 
+describe("buildGenerationPrompt — Title Language Rule", () => {
+  it("includes the Title Language Rule section in system prompt", () => {
+    const msgs = buildGenerationPrompt({ analysis: ANALYSIS, source: SOURCE, existingPages: [] });
+    const system = msgs[0]?.content ?? "";
+    expect(system).toContain("Title Language Rule");
+    expect(system).toContain("반드시 한국어");
+  });
+
+  it("instructs to include English original in aliases for searchability", () => {
+    const msgs = buildGenerationPrompt({ analysis: ANALYSIS, source: SOURCE, existingPages: [] });
+    const system = msgs[0]?.content ?? "";
+    expect(system).toContain("aliases에는 영어 원문 title을 포함");
+  });
+
+  it("instructs Korean translation even for English sources", () => {
+    const msgs = buildGenerationPrompt({ analysis: ANALYSIS, source: SOURCE, existingPages: [] });
+    const system = msgs[0]?.content ?? "";
+    expect(system).toContain("소스가 영어여도 title은 한국어로 번역한다");
+  });
+
+  it("overrides English titles from existing wiki index", () => {
+    const msgs = buildGenerationPrompt({ analysis: ANALYSIS, source: SOURCE, existingPages: [] });
+    const system = msgs[0]?.content ?? "";
+    expect(system).toContain("Current Wiki Index에 영어 title이 있더라도");
+  });
+});
+
 describe("buildGenerationPrompt — existingPages rendering", () => {
   it("renders 'preserve all, add only' directive when pages exist", () => {
     const pages: ExistingPage[] = [

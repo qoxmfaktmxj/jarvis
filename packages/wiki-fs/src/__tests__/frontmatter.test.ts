@@ -331,6 +331,39 @@ describe("frontmatter — korean YAML escape safety", () => {
   });
 });
 
+describe("frontmatter — freshness SLA", () => {
+  it("round-trips positive integer freshnessSlaDays", () => {
+    const data: Partial<WikiFrontmatter> = {
+      title: "보안 정책",
+      type: "source",
+      workspaceId: "ws-1",
+      sensitivity: "INTERNAL",
+      freshnessSlaDays: 30,
+    };
+
+    const serialized = serializeFrontmatter(data, "body\n");
+    const parsed = parseFrontmatter(serialized).data;
+
+    expect(serialized).toContain("freshnessSlaDays: 30");
+    expect(parsed.freshnessSlaDays).toBe(30);
+  });
+
+  it("ignores invalid freshnessSlaDays values", () => {
+    const source = [
+      "---",
+      "title: 보안 정책",
+      "type: source",
+      "workspaceId: ws-1",
+      "sensitivity: INTERNAL",
+      "freshnessSlaDays: 0",
+      "---",
+      "body",
+    ].join("\n");
+
+    expect(parseFrontmatter(source).data.freshnessSlaDays).toBeUndefined();
+  });
+});
+
 describe("frontmatter — validation", () => {
   it("throws on invalid `type`", () => {
     const source = [

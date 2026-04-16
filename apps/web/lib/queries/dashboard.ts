@@ -15,10 +15,17 @@ import {
   desc,
   eq,
   gte,
+  inArray,
+  isNotNull,
   isNull,
+  lt,
   lte,
-  ne
+  ne,
+  or,
+  sql
 } from "drizzle-orm";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
 
 export interface MenuItem {
   id: string;
@@ -61,6 +68,8 @@ type StaleKnowledgePageRow = {
 
 export interface StalePage {
   id: string;
+  path: string;
+  slug: string;
   title: string;
   lastReviewedAt: Date;
   overdueDays: number;
@@ -266,39 +275,65 @@ export async function getProjectStats(
 
 export async function getStalePages(
   workspaceId: string,
+  userPermissions: string[],
   now: Date = new Date(),
   database: DashboardDb = db
 ): Promise<StalePage[]> {
-  // B4 Phase 1: wikiPageIndex.stale 기반으로 전환.
-  // wiki_page_index.stale은 ingest 파이프라인이 freshness SLA에 따라 설정하는 boolean.
-  // overdueDays는 wikiPageIndex에 없으므로 updatedAt 기준 근사값을 사용한다.
+  const allowedSensitivities = getAllowedWikiSensitivityValues(userPermissions);
+  const requiredPermissionGate = userPermissions.includes(PERMISSIONS.ADMIN_ALL)
+    ? sql`TRUE`
+    : userPermissions.length > 0
+      ? or(
+          isNull(wikiPageIndex.requiredPermission),
+          inArray(wikiPageIndex.requiredPermission, userPermissions)
+        )
+      : isNull(wikiPageIndex.requiredPermission);
+
   const rows = await database
     .select({
       id: wikiPageIndex.id,
+      path: wikiPageIndex.path,
+      slug: wikiPageIndex.slug,
       title: wikiPageIndex.title,
       updatedAt: wikiPageIndex.updatedAt,
+      freshnessSlaDays: wikiPageIndex.freshnessSlaDays,
     })
     .from(wikiPageIndex)
     .where(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
-        eq(wikiPageIndex.stale, true),
-        eq(wikiPageIndex.publishedStatus, "published")
+        isNotNull(wikiPageIndex.freshnessSlaDays),
+        lt(
+          wikiPageIndex.updatedAt,
+          sql<Date>`(${now}::timestamptz - (${wikiPageIndex.freshnessSlaDays} * interval '1 day'))`
+        ),
+        eq(wikiPageIndex.publishedStatus, "published"),
+        allowedSensitivities.length > 0
+          ? inArray(wikiPageIndex.sensitivity, allowedSensitivities)
+          : sql`FALSE`,
+        requiredPermissionGate
       )
     )
     .orderBy(asc(wikiPageIndex.updatedAt))
     .limit(20);
 
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    lastReviewedAt: row.updatedAt,
-    // TODO: B4 Phase 2 — wikiPageIndex에 freshnessSlaDays/lastVerifiedAt 추가 시 정확한 overdueDays 계산
-    // updatedAt은 ingest 시점이라 음수가 될 수 있으므로 Math.max(0, ...) 적용
-    overdueDays: Math.max(0, Math.floor(
-      (now.getTime() - row.updatedAt.getTime()) / (1000 * 60 * 60 * 24)
-    )),
-  }));
+  return rows.map((row) => {
+    const freshnessSlaDays = row.freshnessSlaDays ?? 0;
+    const deadlineMs =
+      row.updatedAt.getTime() + freshnessSlaDays * 24 * 60 * 60 * 1000;
+    const overdueDays = Math.max(
+      0,
+      Math.floor((now.getTime() - deadlineMs) / (24 * 60 * 60 * 1000))
+    );
+    return {
+      id: row.id,
+      path: row.path,
+      slug: row.slug,
+      title: row.title,
+      lastReviewedAt: row.updatedAt,
+      overdueDays,
+    };
+  });
 }
 
 export async function getSearchTrends(
@@ -380,6 +415,7 @@ export async function getDashboardData(
   workspaceId: string,
   userId: string,
   userRoles: string[],
+  userPermissions: string[],
   loaders: Partial<DashboardLoaders> = {}
 ): Promise<DashboardData> {
   const api = { ...dashboardLoaders, ...loaders };
@@ -397,7 +433,7 @@ export async function getDashboardData(
     api.getRecentActivity(workspaceId),
     api.getMyTasks(workspaceId, userId),
     api.getProjectStats(workspaceId),
-    api.getStalePages(workspaceId),
+    api.getStalePages(workspaceId, userPermissions),
     api.getSearchTrends(workspaceId),
     api.getAttendanceSummary(workspaceId, userId)
   ]);

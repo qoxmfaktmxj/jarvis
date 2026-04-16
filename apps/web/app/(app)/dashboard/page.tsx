@@ -18,7 +18,8 @@ export default async function DashboardPage() {
   const data = await getDashboardData(
     session.workspaceId,
     session.userId,
-    session.roles
+    session.roles,
+    session.permissions
   );
 
   return (
@@ -40,7 +41,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ProjectStatsWidget stats={data.projectStats} />
-        <StalePagesWidget pages={data.stalePages} />
+        <StalePagesWidget pages={data.stalePages} workspaceId={session.workspaceId} />
         <SearchTrendsWidget trends={data.searchTrends} />
         <AttendanceSummaryWidget summary={data.attendanceSummary} />
       </div>

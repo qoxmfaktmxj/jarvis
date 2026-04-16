@@ -179,6 +179,7 @@ export async function saveWikiPage(
         gitSha: sha,
         stale: false,
         publishedStatus: "published",
+        freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
       })
       .onConflictDoUpdate({
         target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
@@ -190,6 +191,7 @@ export async function saveWikiPage(
           frontmatter: fmData as Record<string, unknown>,
           gitSha: sha,
           stale: false,
+          freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
           updatedAt: new Date(),
         },
       });

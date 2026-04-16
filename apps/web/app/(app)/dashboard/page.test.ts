@@ -45,7 +45,8 @@ describe("DashboardPage", () => {
       userId: "user-1",
       workspaceId: "ws-1",
       name: "Kim",
-      roles: ["employee"]
+      roles: ["employee"],
+      permissions: ["knowledge:read"]
     });
     getDashboardDataMock.mockResolvedValue({
       quickLinks: [],
@@ -72,6 +73,12 @@ describe("DashboardPage", () => {
     expect(html).toContain("만료된 페이지");
     expect(html).toContain("검색 트렌드");
     expect(html).toContain("이번 달 출퇴근");
+    expect(getDashboardDataMock).toHaveBeenCalledWith(
+      "ws-1",
+      "user-1",
+      ["employee"],
+      ["knowledge:read"]
+    );
   });
 
   it("redirects to login when the session header is missing", async () => {
