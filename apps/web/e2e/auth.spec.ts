@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTestUser } from './helpers/auth';
+import { expectNoA11yViolations } from './helpers/axe';
 
 test.describe('Authentication', () => {
   test('unauthenticated / redirects to /login', async ({ page }) => {
@@ -18,5 +19,11 @@ test.describe('Authentication', () => {
     await loginAsTestUser(page);
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/dashboard/);
+  });
+
+  test('login page has no a11y violations', async ({ page }) => {
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await expectNoA11yViolations(page, 'login page');
   });
 });
