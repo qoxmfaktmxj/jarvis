@@ -328,6 +328,7 @@ export function WikiEditor({
             >
               <div className="p-2 border-b border-gray-100">
                 <Input
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
                   autoFocus
                   value={suggest.query}
                   placeholder={tWikilink("placeholder")}

@@ -104,6 +104,7 @@ export function InquiryTable({ projectId, items }: Props) {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-medium text-gray-700">Title</span>
             <Input
@@ -131,6 +132,7 @@ export function InquiryTable({ projectId, items }: Props) {
             </select>
           </label>
 
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Textarea component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2 md:col-span-2">
             <span className="text-sm font-medium text-gray-700">Details</span>
             <Textarea

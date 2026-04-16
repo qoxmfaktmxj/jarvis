@@ -103,6 +103,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
           </select>
         </label>
 
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">Label</span>
           <Input placeholder="Primary DB" {...register("label")} />
@@ -113,6 +114,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2 md:col-span-2">
           <span className="text-sm font-medium text-gray-700">Host</span>
           <Input placeholder="db.internal.example.com" {...register("host")} />
@@ -134,6 +136,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">Username Ref</span>
           <Input
@@ -141,6 +144,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
             {...register("usernameRef")}
           />
         </label>
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">Password Ref</span>
           <Input
@@ -148,6 +152,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
             {...register("passwordRef")}
           />
         </label>
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">
             Connection String Ref
@@ -157,6 +162,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
             {...register("connectionStringRef")}
           />
         </label>
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">VPN File Ref</span>
           <Input
@@ -180,6 +186,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
           </select>
         </label>
 
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Textarea component; rule cannot detect control association through custom wrappers */}
         <label className="space-y-2">
           <span className="text-sm font-medium text-gray-700">Notes</span>
           <Textarea

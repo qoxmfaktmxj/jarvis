@@ -125,6 +125,7 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           placeholder="검색어를 입력하세요..."
           className="pl-9 pr-9"
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
           autoFocus={autoFocus}
           aria-label="검색"
         />

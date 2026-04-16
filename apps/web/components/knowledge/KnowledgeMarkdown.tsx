@@ -19,6 +19,7 @@ const components: Components = {
     const isExternal = href?.startsWith('http');
 
     return (
+      // eslint-disable-next-line jsx-a11y/anchor-has-content -- children are passed through props from react-markdown renderer
       <a
         href={href}
         {...(isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}

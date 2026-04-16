@@ -54,6 +54,7 @@ function OrgNodeRow({ node, onSave, onDelete, onAddChild, depth = 0 }: NodeProps
                 if (e.key === 'Enter') handleSave();
                 if (e.key === 'Escape') setEditing(false);
               }}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
               autoFocus
             />
             <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={handleSave}>{t('save')}</Button>
