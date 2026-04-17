@@ -39,7 +39,10 @@ export default async function KnowledgeHomePage() {
     })),
   );
 
-  const [hero, compact] = [sectionData.slice(0, 2), sectionData.slice(2)];
+  const hero = sectionData.slice(0, 2);
+  const compact = sectionData.slice(2);
+  const reference = compact.slice(0, 3);
+  const operations = compact.slice(3);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -101,23 +104,56 @@ export default async function KnowledgeHomePage() {
           </div>
         </section>
 
-        {/* ── COMPACT 섹션: Tool Guides ~ Incidents ── */}
         <section>
           <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-surface-500">
             Reference
           </p>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {compact.map((section) => (
+          <div className="space-y-3">
+            {reference.map((section) => (
+              <article
+                key={section.type}
+                className="grid grid-cols-1 gap-4 rounded-lg border border-surface-200 bg-card p-4 md:grid-cols-[200px_1fr_auto] md:items-center md:gap-6"
+              >
+                <h3 className="text-base font-semibold text-foreground">{section.label}</h3>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  {section.pages.length === 0 ? (
+                    <span className="italic text-muted-foreground">No pages yet</span>
+                  ) : (
+                    section.pages.map((page) => (
+                      <Link
+                        key={page.id}
+                        href={`/knowledge/${page.id}`}
+                        className="truncate text-surface-700 underline-offset-4 hover:text-isu-700 hover:underline"
+                      >
+                        {page.title}
+                      </Link>
+                    ))
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" asChild className="md:justify-self-end">
+                  <Link href={section.href}>View all →</Link>
+                </Button>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-surface-500">
+            Operations
+          </p>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {operations.map((section) => (
               <div
                 key={section.type}
-                className="rounded-lg border border-surface-200 bg-card p-4"
+                className="flex flex-col gap-3 rounded-lg border border-surface-200 bg-card p-4"
               >
-                <div className="mb-3 flex items-center justify-between">
+                <header className="flex items-baseline justify-between gap-2">
                   <h3 className="text-base font-semibold text-foreground">{section.label}</h3>
-                  <Button variant="ghost" size="sm" asChild className="-mr-2">
-                    <Link href={section.href}>View all</Link>
-                  </Button>
-                </div>
+                  <span className="text-xs font-semibold tabular-nums text-surface-400">
+                    {section.pages.length}
+                  </span>
+                </header>
                 <div className="space-y-1">
                   {section.pages.length === 0 ? (
                     <p className="text-sm italic text-muted-foreground">No pages yet</p>
@@ -138,6 +174,12 @@ export default async function KnowledgeHomePage() {
                     ))
                   )}
                 </div>
+                <Link
+                  href={section.href}
+                  className="mt-auto self-start text-xs font-semibold text-isu-700 hover:underline"
+                >
+                  View all →
+                </Link>
               </div>
             ))}
           </div>

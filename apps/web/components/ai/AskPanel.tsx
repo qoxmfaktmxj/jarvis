@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
+import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
 import type { AskMode, SourceRef } from "@jarvis/ai/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -340,52 +340,45 @@ export function AskPanel({
           <div className="pt-4">{composer}</div>
         </>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col justify-end gap-6 pb-4">
-          <div className="rounded-2xl border border-surface-200 bg-surface-50 px-6 py-7">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-isu-600 text-white">
-                <BotMessageSquare className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-surface-900">문서 기반 AI 어시스턴트</p>
-                <p className="text-sm text-surface-600">
-                  사내 문서와 운영 기록을 바탕으로 답변하고, 근거 문서를 바로 보여줍니다.
-                </p>
-              </div>
+        <section className="flex min-h-0 flex-1 flex-col justify-end gap-6 pb-4">
+          <header className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-isu-600 text-white">
+              <BotMessageSquare className="h-5 w-5" aria-hidden />
             </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-surface-200 bg-card p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-lime-600" />
-                  <p className="text-sm font-semibold text-surface-900">빠른 요약</p>
-                </div>
-                <p className="text-sm text-surface-600">
-                  운영 정책, 프로젝트 문서, 런북 내용을 한 번에 요약합니다.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-surface-200 bg-card p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-isu-600" />
-                  <p className="text-sm font-semibold text-surface-900">출처 인용</p>
-                </div>
-                <p className="text-sm text-surface-600">
-                  답변마다 참고 문서를 붙여서 근거를 바로 확인할 수 있습니다.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-surface-200 bg-card p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-isu-600" />
-                  <p className="text-sm font-semibold text-surface-900">실시간 응답</p>
-                </div>
-                <p className="text-sm text-surface-600">
-                  스트리밍으로 답변을 받아서 길게 기다리지 않고 바로 읽기 시작합니다.
-                </p>
-              </div>
+            <div className="space-y-1">
+              <p className="text-display text-lg font-semibold tracking-tight text-surface-900">
+                문서 기반 AI 어시스턴트
+              </p>
+              <p className="max-w-xl text-sm leading-relaxed text-surface-600">
+                사내 문서와 운영 기록을 바탕으로 답변하고, 근거 문서를 바로 보여줍니다.
+              </p>
             </div>
-          </div>
+          </header>
+
+          <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-y-2">
+            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+              요약
+            </dt>
+            <dd className="text-surface-700">
+              운영 정책, 프로젝트 문서, 런북을 한 번에 요약합니다.
+            </dd>
+
+            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+              인용
+            </dt>
+            <dd className="text-surface-700">
+              답변마다 참고 문서를 붙여 근거를 바로 확인할 수 있습니다.
+            </dd>
+
+            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+              스트리밍
+            </dt>
+            <dd className="text-surface-700">
+              길게 기다리지 않고 답변을 받으면서 바로 읽기 시작합니다.
+            </dd>
+          </dl>
+
+          <hr className="border-surface-200" aria-hidden />
 
           {featuredPrompts.length > 0 && (
             <div className="space-y-3">
@@ -412,7 +405,7 @@ export function AskPanel({
           )}
 
           {composer}
-        </div>
+        </section>
       )}
     </div>
   );
