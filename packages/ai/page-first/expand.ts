@@ -20,6 +20,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { pgArray } from "../sql-utils.js";
 
 import type { ShortlistHit } from "./shortlist.js";
 
@@ -80,14 +81,14 @@ export async function expandOneHop(
       SELECT wpl.to_page_id AS neighbor_id
       FROM wiki_page_link wpl
       WHERE wpl.workspace_id = ${workspaceId}::uuid
-        AND wpl.from_page_id = ANY(${shortlistIds}::uuid[])
+        AND wpl.from_page_id = ANY(${pgArray(shortlistIds, 'uuid')})
         AND wpl.to_page_id IS NOT NULL
       UNION
       -- inbound: neighbor → shortlist
       SELECT wpl.from_page_id AS neighbor_id
       FROM wiki_page_link wpl
       WHERE wpl.workspace_id = ${workspaceId}::uuid
-        AND wpl.to_page_id = ANY(${shortlistIds}::uuid[])
+        AND wpl.to_page_id = ANY(${pgArray(shortlistIds, 'uuid')})
     ),
     -- Pre-aggregate inbound counts ONCE per workspace to avoid N+1 from
     -- LEFT JOIN LATERAL (which would re-execute COUNT(*) per row).

@@ -4,6 +4,7 @@ import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, and, notInArray, sql } from 'drizzle-orm';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
+import { pgArray } from './sql-utils.js';
 
 export interface RetrieveGraphContextOptions {
   explicitSnapshotId?: string;
@@ -138,8 +139,8 @@ export async function retrieveRelevantGraphContext(
         SELECT gn.snapshot_id,
                COUNT(DISTINCT gn.node_id) AS match_count
         FROM graph_node gn
-        WHERE gn.snapshot_id = ANY(${eligibleIds}::uuid[])
-          AND gn.label ILIKE ANY(${likePatterns}::text[])
+        WHERE gn.snapshot_id = ANY(${pgArray(eligibleIds, 'uuid')})
+          AND gn.label ILIKE ANY(${pgArray(likePatterns, 'text')})
         GROUP BY gn.snapshot_id
       )
       SELECT km.snapshot_id, gs.title, km.match_count
@@ -175,7 +176,7 @@ export async function retrieveRelevantGraphContext(
     LEFT JOIN graph_community gc
       ON gc.snapshot_id = gn.snapshot_id AND gc.community_id = gn.community_id
     WHERE gn.snapshot_id = ${snapshot.id}::uuid
-      AND gn.label ILIKE ANY(${likePatterns}::text[])
+      AND gn.label ILIKE ANY(${pgArray(likePatterns, 'text')})
     LIMIT 10
   `);
 
@@ -214,7 +215,7 @@ export async function retrieveRelevantGraphContext(
     JOIN graph_node gn_tgt
       ON gn_tgt.snapshot_id = ge.snapshot_id AND gn_tgt.node_id = ge.target_node_id
     WHERE ge.snapshot_id = ${snapshot.id}::uuid
-      AND (ge.source_node_id = ANY(${nodeIds}::text[]) OR ge.target_node_id = ANY(${nodeIds}::text[]))
+      AND (ge.source_node_id = ANY(${pgArray(nodeIds, 'text')}) OR ge.target_node_id = ANY(${pgArray(nodeIds, 'text')}))
     LIMIT 50
   `);
 
@@ -285,7 +286,7 @@ export async function retrieveRelevantGraphContext(
       const labelRows = await db.execute<{ node_id: string; label: string }>(sql`
         SELECT node_id, label FROM graph_node
         WHERE snapshot_id = ${snapshot.id}::uuid
-          AND node_id = ANY(${pathNodeIds}::text[])
+          AND node_id = ANY(${pgArray(pathNodeIds, 'text')})
       `);
       const labelMap = new Map(labelRows.rows.map((r) => [r.node_id, r.label]));
 

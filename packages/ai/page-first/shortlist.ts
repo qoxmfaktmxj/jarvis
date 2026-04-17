@@ -30,6 +30,7 @@
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { pgTextArray } from "../sql-utils.js";
 
 export interface ShortlistHit {
   id: string;
@@ -99,6 +100,8 @@ export async function lexicalShortlist(
     ? sql.raw(` ${sensitivityFilter}`)
     : sql.empty();
 
+  const permArray = pgTextArray(userPermissions);
+
   // Guard: no tokens → skip scoring SQL entirely, return recency-only results.
   if (!hasTokens) {
     const recentRows = await db.execute<{
@@ -119,8 +122,8 @@ export async function lexicalShortlist(
         AND wpi.stale = FALSE
         AND (
           wpi.required_permission IS NULL
-          OR wpi.required_permission = ANY(${userPermissions}::text[])
-          OR 'admin:all' = ANY(${userPermissions}::text[])
+          OR wpi.required_permission = ANY(${permArray})
+          OR 'admin:all' = ANY(${permArray})
         )
         ${sensitivityClause}
       ORDER BY wpi.updated_at DESC
@@ -138,7 +141,7 @@ export async function lexicalShortlist(
     }));
   }
 
-  const tokenArray = tokens; // drizzle serializes string[] → text[] for us.
+  const tokenArray = pgTextArray(tokens);
 
   // Scoring weights: title=3, alias=2, slug=1, path=1, tags=1, +freshness.
   // extract(epoch) / 86400000 gives a monotonic updatedAt tiebreaker.
@@ -163,18 +166,18 @@ export async function lexicalShortlist(
       wpi.required_permission,
       wpi.updated_at,
       (
-        (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
              WHERE wpi.title ILIKE '%' || t || '%') * 3
-        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
              WHERE EXISTS (
                SELECT 1 FROM jsonb_array_elements_text(wpi.frontmatter -> 'aliases') AS alias
                WHERE lower(alias) = lower(t)
              )) * 2
-        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
              WHERE wpi.slug ILIKE '%' || t || '%') * 1
-        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
              WHERE wpi.path ILIKE '%' || t || '%') * 1
-        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
              WHERE (wpi.frontmatter->>'tags') ILIKE '%' || t || '%') * 1
         + (EXTRACT(EPOCH FROM wpi.updated_at) / 86400000.0)
       )::float8 AS score
@@ -184,8 +187,8 @@ export async function lexicalShortlist(
       AND wpi.stale = FALSE
       AND (
         wpi.required_permission IS NULL
-        OR wpi.required_permission = ANY(${userPermissions}::text[])
-        OR 'admin:all' = ANY(${userPermissions}::text[])
+        OR wpi.required_permission = ANY(${permArray})
+        OR 'admin:all' = ANY(${permArray})
       )
       ${sensitivityClause}
     ORDER BY score DESC, wpi.updated_at DESC

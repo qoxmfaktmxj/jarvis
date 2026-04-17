@@ -399,12 +399,18 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
     const serialized = stringifyQuery(
       vi.mocked(db.execute).mock.calls[0]?.[0],
     );
-    // Tokens are passed as array elements; stopwords and short fragments excluded.
+    // Tokens are passed via pgArray() -> ARRAY[$1, ...]::text[]; stopwords
+    // and <2-char fragments are dropped before reaching SQL.
     expect(serialized).toContain('"vacation"');
     expect(serialized).not.toContain('"뭐야"');
-    // "a" is 1 char and dropped; but we can't just check for not containing "a"
-    // since it appears in many places. Check token array doesn't include it.
-    // The token array in the serialized output should be ["vacation"] only.
-    expect(serialized).toMatch(/\["vacation"\]/);
+    // drizzle serializes a templated value `${tok}` as
+    // {"queryChunks":[{"value":[""]},"<tok>",{"value":[""]}]}.
+    // Stopwords and 1-char fragments must not appear in that exact slot.
+    expect(serialized).not.toMatch(
+      /"queryChunks":\[\{"value":\[""\]\},"a",\{"value":\[""\]\}\]/,
+    );
+    expect(serialized).not.toMatch(
+      /"queryChunks":\[\{"value":\[""\]\},"뭐야",\{"value":\[""\]\}\]/,
+    );
   });
 });
