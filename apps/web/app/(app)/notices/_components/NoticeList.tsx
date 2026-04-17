@@ -16,7 +16,7 @@ export function NoticeList({
 }: NoticeListProps) {
   if (notices.length === 0) {
     return (
-      <p className="text-sm text-gray-500" data-testid="notice-list-empty">
+      <p className="text-sm text-muted-foreground" data-testid="notice-list-empty">
         {emptyLabel}
       </p>
     );

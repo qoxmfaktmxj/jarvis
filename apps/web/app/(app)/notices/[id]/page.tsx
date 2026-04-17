@@ -5,6 +5,8 @@ import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getNoticeById } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import { NoticeView } from '../_components/NoticeView';
 import { DeleteNoticeButton } from '../_components/DeleteNoticeButton';
 
@@ -45,40 +47,47 @@ export default async function NoticeDetailPage({ params }: Props) {
     (isAdmin || isAuthor);
   const canDelete = session.permissions.includes(PERMISSIONS.NOTICE_DELETE);
 
+  const metaParts = (
+    <p className="text-xs text-muted-foreground">
+      {t('publishedAt')}: {formatDate(notice.publishedAt)}
+      {notice.expiresAt && (
+        <>
+          {' · '}
+          {t('expiresAt')}: {formatDate(notice.expiresAt)}
+        </>
+      )}
+    </p>
+  );
+
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            {notice.pinned && (
-              <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
-                {t('pinned')}
-              </span>
-            )}
-            <span className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] uppercase text-gray-500">
-              {notice.sensitivity}
-            </span>
-          </div>
-          <h1 className="text-3xl font-bold">{notice.title}</h1>
-          <p className="text-xs text-gray-500">
-            {t('publishedAt')}: {formatDate(notice.publishedAt)}
-            {notice.expiresAt && (
-              <>
-                {' · '}
-                {t('expiresAt')}: {formatDate(notice.expiresAt)}
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {canEdit && (
-            <Button asChild variant="outline">
-              <Link href={`/notices/${notice.id}/edit`}>{t('edit')}</Link>
-            </Button>
-          )}
-          {canDelete && <DeleteNoticeButton noticeId={notice.id} />}
-        </div>
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-4 flex items-center gap-2">
+        {notice.pinned && (
+          <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+            {t('pinned')}
+          </Badge>
+        )}
+        <Badge variant="outline" className="text-[10px] uppercase">
+          {notice.sensitivity}
+        </Badge>
       </div>
+
+      <PageHeader
+        eyebrow="Notice"
+        title={notice.title}
+        description={undefined}
+        meta={
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <Button asChild variant="outline">
+                <Link href={`/notices/${notice.id}/edit`}>{t('edit')}</Link>
+              </Button>
+            )}
+            {canDelete && <DeleteNoticeButton noticeId={notice.id} />}
+          </div>
+        }
+      />
+      <div className="-mt-6 mb-6">{metaParts}</div>
 
       <NoticeView bodyMd={notice.bodyMd} />
     </div>

@@ -89,7 +89,7 @@ function splitFrontmatter(input: string): FrontmatterParseResult {
     }
     if (key === "sensitivity") {
       const cleaned = value.replace(/^["']|["']$/g, "");
-      if (cleaned === "public" || cleaned === "internal" || cleaned === "confidential") {
+      if (cleaned === "public" || cleaned === "internal" || cleaned === "restricted" || cleaned === "secret") {
         fm.sensitivity = cleaned;
       }
       continue;
@@ -328,6 +328,7 @@ export function WikiEditor({
             >
               <div className="p-2 border-b border-gray-100">
                 <Input
+                  // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
                   autoFocus
                   value={suggest.query}
                   placeholder={tWikilink("placeholder")}

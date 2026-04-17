@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { getSession } from '@jarvis/auth/session';
 import { getAuditLogs } from '@/lib/queries/admin';
 import { AuditTable } from '@/components/admin/AuditTable';
+import { PageHeader } from '@/components/patterns/PageHeader';
 
 export default async function AdminAuditPage({
   searchParams,
@@ -26,12 +27,12 @@ export default async function AdminAuditPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {t('description')}
-        </p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Audit"
+        title={t('title')}
+        description={t('description')}
+      />
       <AuditTable initialData={data} meta={{ ...meta, limit: meta.limit ?? 50 }} />
     </div>
   );

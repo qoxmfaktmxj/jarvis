@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTestUser, loginAsAdmin } from './helpers/auth';
+import { expectNoA11yViolations } from './helpers/axe';
 
 test.describe('Admin', () => {
   test('non-admin /admin redirects away', async ({ page }) => {
@@ -23,5 +24,12 @@ test.describe('Admin', () => {
     await loginAsAdmin(page);
     await page.goto('/admin/audit');
     await expect(page.locator('main').last()).toBeVisible();
+  });
+
+  test('/admin/users has no a11y violations', async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto('/admin/users');
+    await page.waitForLoadState('networkidle');
+    await expectNoA11yViolations(page, 'admin users');
   });
 });

@@ -10,6 +10,8 @@ import { AttendanceCalendar } from '@/components/attendance/AttendanceCalendar';
 import { AttendanceTable } from '@/components/attendance/AttendanceTable';
 import { CheckInButton } from '@/components/attendance/CheckInButton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { isoWeekNumber } from '@/lib/date-utils';
 import type { PageProps } from '@jarvis/shared/types/page';
 import { format } from 'date-fns';
 
@@ -30,9 +32,9 @@ async function AttendanceContent({ month, userId, workspaceId }: {
       {/* Check-in/out action */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-gray-500">{t("todayFormat", { date: format(new Date(), 'MMMM d, yyyy') })}</p>
+          <p className="text-sm text-muted-foreground">{t("todayFormat", { date: format(new Date(), 'MMMM d, yyyy') })}</p>
           {todayRecord?.checkIn && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-surface-400 mt-0.5">
               {t("checkedIn", { time: format(new Date(todayRecord.checkIn), 'HH:mm') })}
             </p>
           )}
@@ -42,7 +44,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
 
       {/* Calendar */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           {t("monthlyOverview")}
         </h2>
         <AttendanceCalendar records={records} month={month} />
@@ -50,7 +52,7 @@ async function AttendanceContent({ month, userId, workspaceId }: {
 
       {/* Table */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
           {t("dailyRecords")}
         </h2>
         <AttendanceTable records={records} month={month} />
@@ -76,13 +78,13 @@ export default async function AttendancePage({ searchParams }: PageProps) {
       : defaultMonth;
 
   return (
-    <div className="container mx-auto max-w-5xl py-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-          <p className="text-sm text-gray-500">{t("description")}</p>
-        </div>
-      </div>
+    <div className="container mx-auto max-w-5xl py-6 space-y-8">
+      <PageHeader
+        accent={`W${isoWeekNumber(new Date())}`}
+        eyebrow="Attendance"
+        title={t("title")}
+        description={t("description")}
+      />
 
       <Suspense
         fallback={

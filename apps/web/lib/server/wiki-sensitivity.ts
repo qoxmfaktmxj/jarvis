@@ -1,11 +1,10 @@
-import { hasPermission } from "@jarvis/auth/rbac";
+import { resolveAllowedWikiSensitivities } from "@jarvis/auth/rbac";
 import type { JarvisSession } from "@jarvis/auth/types";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 /**
  * apps/web/lib/server/wiki-sensitivity.ts
  *
- * Phase-W2 C2 — wiki_page_index.sensitivity 권한 매트릭스.
+ * Phase-W2 C2 / Phase-W3 PR3 — wiki_page_index.sensitivity 권한 매트릭스.
  *
  * DB sensitivity 규약: PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY.
  * - PUBLIC, INTERNAL: KNOWLEDGE_READ
@@ -15,6 +14,9 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
  *    canViewSensitivity 가 false 를 반환해 페이지 자체가 차단됨.
  *    "본문 대신 메타만" 식의 partial-view 는 현재 구현되어 있지 않음 —
  *    W2 시점 기준 SECRET_REF_ONLY 는 '시스템 시크릿 소유자 전용' 의미.)
+ *
+ * Phase-W3 PR3: `resolveAllowedWikiSensitivities` 기반으로 재구성.
+ * 규칙 중복 제거 — rbac.ts 의 단일 진입점에서 규칙을 관리한다.
  */
 export type DbSensitivity =
   | "PUBLIC"
@@ -38,28 +40,16 @@ export function isDbSensitivity(value: unknown): value is DbSensitivity {
 
 /**
  * 본문(body) 열람 가능 여부.
- * SECRET_REF_ONLY 는 SYSTEM_ACCESS_SECRET 권한 필요.
- * RESTRICTED 는 KNOWLEDGE_REVIEW(승급) 권한 필요.
- * INTERNAL/PUBLIC 은 KNOWLEDGE_READ.
+ *
+ * `resolveAllowedWikiSensitivities` 기반으로 동작한다:
+ *   - ADMIN_ALL → 전체 4값
+ *   - KNOWLEDGE_READ → PUBLIC, INTERNAL
+ *   - KNOWLEDGE_REVIEW → +RESTRICTED
+ *   - SYSTEM_ACCESS_SECRET → +SECRET_REF_ONLY
  */
 export function canViewSensitivity(
   session: JarvisSession,
   dbSensitivity: string,
 ): boolean {
-  // 우선 KNOWLEDGE_READ 가 없으면 어떤 페이지도 못 본다 (기본 접근권한).
-  if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_READ)) {
-    return false;
-  }
-  switch (dbSensitivity) {
-    case "PUBLIC":
-    case "INTERNAL":
-      return true;
-    case "RESTRICTED":
-      return hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW);
-    case "SECRET_REF_ONLY":
-      return hasPermission(session, PERMISSIONS.SYSTEM_ACCESS_SECRET);
-    default:
-      // 알 수 없는 값은 보수적으로 차단
-      return false;
-  }
+  return resolveAllowedWikiSensitivities(session.permissions).includes(dbSensitivity);
 }

@@ -6,6 +6,7 @@ import { readUtf8, exists } from "@jarvis/wiki-fs";
 import * as path from "node:path";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
+import { PageHeader } from "@/components/patterns/PageHeader";
 import EditPageClientShell from "./_client-shell";
 
 interface EditPageProps {
@@ -34,7 +35,7 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   // workspace 일치 검증 — 다른 워크스페이스 편집 차단
   if (session.workspaceId !== workspaceId) {
     return (
-      <div className="max-w-5xl mx-auto py-16 px-4 text-center text-sm text-red-600">
+      <div className="mx-auto max-w-5xl px-4 py-16 text-center text-sm text-destructive">
         forbidden
       </div>
     );
@@ -53,22 +54,19 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
-      <Alert variant="default" className="border-amber-200 bg-amber-50 text-amber-900">
+    <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+      <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 mt-0.5 flex-none" />
+          <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
           <AlertDescription>{t("manualOnlyBanner")}</AlertDescription>
         </div>
       </Alert>
 
-      <div className="flex items-baseline justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">
-            wiki/manual/{slug}
-          </h1>
-          <p className="text-xs text-gray-500 mt-1">workspace: {workspaceId}</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Wiki · Manual"
+        title={`wiki/manual/${slug}`}
+        description={`workspace: ${workspaceId}`}
+      />
 
       <EditPageClientShell
         initialContent={initialContent}

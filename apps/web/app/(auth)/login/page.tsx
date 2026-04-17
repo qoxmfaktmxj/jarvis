@@ -4,6 +4,18 @@ import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { TEMP_DEV_ACCOUNTS } from '@/lib/auth/dev-accounts';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const ERROR_MESSAGES: Record<string, string> = {
   user_not_found: '등록되지 않은 계정입니다. 관리자에게 문의하세요.',
@@ -51,53 +63,51 @@ function LoginContent() {
   }
 
   return (
-    <div className="relative rounded-lg bg-white p-8 shadow-md">
+    <Card className="relative">
       {isLoading && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-white/80 backdrop-blur-[2px]">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="text-sm font-medium text-gray-600">로그인 중...</p>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-xl bg-background/80 backdrop-blur-[2px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-medium text-muted-foreground">로그인 중...</p>
         </div>
       )}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Jarvis</h1>
-        <p className="mt-1 text-gray-500">사내 포털에 로그인하세요</p>
-      </div>
-
-      {error && (
-        <div className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
-          {ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`}
-        </div>
-      )}
-
-      <div className="space-y-5">
-        {isDev && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            <p className="font-semibold">임시 개발 계정, 배포 전에 삭제하세요.</p>
-          </div>
+      <CardHeader className="text-center">
+        <CardTitle>Jarvis</CardTitle>
+        <CardDescription>사내 포털에 로그인하세요</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`}
+            </AlertDescription>
+          </Alert>
         )}
 
-        <form className="space-y-3" onSubmit={handleLogin}>
-          <div className="space-y-1">
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-              아이디
-            </label>
-            <input
+        {isDev && (
+          <Alert variant="warning">
+            <AlertDescription className="font-semibold">
+              임시 개발 계정, 배포 전에 삭제하세요.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <form className="space-y-4" onSubmit={handleLogin}>
+          <div className="space-y-1.5">
+            <Label htmlFor="username">아이디</Label>
+            <Input
               id="username"
               name="username"
               autoComplete="username"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
               disabled={isLoading}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
               placeholder="admin"
             />
           </div>
 
-          <div className="space-y-1">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="password">비밀번호</Label>
+            <Input
               id="password"
               name="password"
               type="password"
@@ -105,22 +115,19 @@ function LoginContent() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               disabled={isLoading}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-50 disabled:text-gray-400"
               placeholder="admin123!"
             />
           </div>
 
           {loginError && (
-            <div className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{loginError}</div>
+            <Alert variant="destructive">
+              <AlertDescription>{loginError}</AlertDescription>
+            </Alert>
           )}
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="block w-full rounded-lg bg-gray-900 px-4 py-3 text-center font-medium text-white transition-colors hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-400"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full">
             로그인
-          </button>
+          </Button>
         </form>
 
         {isDev && (
@@ -128,34 +135,32 @@ function LoginContent() {
             {TEMP_DEV_ACCOUNTS.map((account) => (
               <div
                 key={account.username}
-                className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                className="rounded-lg border bg-surface-50 px-4 py-3 text-sm text-surface-700"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <div className="font-medium text-gray-900">{account.label}</div>
-                  <div className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-semibold text-gray-700">
-                    {account.role}
-                  </div>
+                  <div className="font-medium text-surface-900">{account.label}</div>
+                  <Badge variant="secondary">{account.role}</Badge>
                 </div>
                 <dl className="mt-3 space-y-1">
                   <div className="flex items-center justify-between gap-4">
-                    <dt className="text-gray-500">아이디</dt>
-                    <dd className="font-mono text-gray-900">{account.username}</dd>
+                    <dt className="text-surface-500">아이디</dt>
+                    <dd className="font-mono text-surface-900">{account.username}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <dt className="text-gray-500">비밀번호</dt>
-                    <dd className="font-mono text-gray-900">{account.password}</dd>
+                    <dt className="text-surface-500">비밀번호</dt>
+                    <dd className="font-mono text-surface-900">{account.password}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
-                    <dt className="text-gray-500">매핑 이메일</dt>
-                    <dd className="font-mono text-xs text-gray-600">{account.email}</dd>
+                    <dt className="text-surface-500">매핑 이메일</dt>
+                    <dd className="font-mono text-xs text-surface-600">{account.email}</dd>
                   </div>
                 </dl>
               </div>
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 

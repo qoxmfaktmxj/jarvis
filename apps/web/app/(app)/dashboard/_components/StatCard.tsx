@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+/**
+ * StatCard — compact stat card (flow-friendly).
+ * No CardHeader/CardContent wrapper — uses semantic section with Tailwind-only styling.
+ * Kept for backward compatibility; the dashboard page now uses bespoke widgets.
+ */
 export function StatCard({
   title,
   value,
@@ -13,19 +17,19 @@ export function StatCard({
   accent?: ReactNode;
 }) {
   return (
-    <Card className="h-full">
-      <CardHeader className="items-center border-b-0 pb-0">
-        <CardTitle>{title}</CardTitle>
+    <section className="flex h-full flex-col gap-3 rounded-xl border border-surface-200 bg-white p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
+          {title}
+        </h2>
         {accent}
-      </CardHeader>
-      <CardContent className="space-y-1 pt-2">
-        <p className="text-3xl font-semibold tracking-tight text-gray-900">
-          {value}
-        </p>
-        {description ? (
-          <p className="text-sm text-gray-500">{description}</p>
-        ) : null}
-      </CardContent>
-    </Card>
+      </div>
+      <p className="text-display text-4xl font-bold leading-none tracking-tight text-surface-900">
+        {value}
+      </p>
+      {description ? (
+        <p className="text-sm text-surface-500">{description}</p>
+      ) : null}
+    </section>
   );
 }

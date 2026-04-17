@@ -4,20 +4,16 @@
  * apps/web/app/(app)/admin/observability/wiki/WikiObservabilityClient.tsx
  *
  * Phase-W3 v4-W3-T5 — client wrapper that auto-refreshes the RSC dashboard
- * every 30 seconds by calling `router.refresh()`. Keeps all data fetching
- * in the server component; this file is purely the refresh ticker.
- *
- * Admin-only page — Korean strings are hardcoded by design (see task spec).
+ * every 30 seconds by calling `router.refresh()`.
  */
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 interface WikiObservabilityClientProps {
   children: React.ReactNode;
-  /** Server-side render timestamp (ISO) — displayed + used to detect refresh. */
   renderedAt: string;
-  /** Refresh interval in ms. Defaults to 30_000. */
   intervalMs?: number;
 }
 
@@ -41,7 +37,7 @@ export function WikiObservabilityClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between border rounded-md bg-muted/30 px-4 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between rounded-xl border border-surface-200 bg-surface-50 px-4 py-2 text-xs text-surface-600">
         <span>
           렌더 시각: <code>{renderedAt}</code>
           {lastTickAt !== renderedAt ? (
@@ -50,7 +46,7 @@ export function WikiObservabilityClient({
             </>
           ) : null}
         </span>
-        <label className="flex items-center gap-2 cursor-pointer">
+        <label className="flex cursor-pointer items-center gap-2">
           <input
             type="checkbox"
             checked={autoRefresh}
@@ -60,16 +56,18 @@ export function WikiObservabilityClient({
           <span>
             자동 새로고침 ({Math.round(intervalMs / 1000)}s)
           </span>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
+            className="ml-2 h-7"
             onClick={() => {
               setLastTickAt(new Date().toISOString());
               router.refresh();
             }}
-            className="ml-2 rounded border px-2 py-0.5 hover:bg-accent"
           >
             수동 새로고침
-          </button>
+          </Button>
         </label>
       </div>
       {children}

@@ -122,6 +122,7 @@ export function StaffTable({ projectId, items, userOptions }: Props) {
             </select>
           </label>
 
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2">
             <span className="text-sm font-medium text-gray-700">Role</span>
             <Input
@@ -131,6 +132,7 @@ export function StaffTable({ projectId, items, userOptions }: Props) {
             />
           </label>
 
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2">
             <span className="text-sm font-medium text-gray-700">Start Date</span>
             <Input
@@ -140,6 +142,7 @@ export function StaffTable({ projectId, items, userOptions }: Props) {
             />
           </label>
 
+          {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2">
             <span className="text-sm font-medium text-gray-700">End Date</span>
             <Input

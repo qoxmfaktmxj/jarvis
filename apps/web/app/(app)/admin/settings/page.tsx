@@ -5,6 +5,7 @@ import { workspace } from '@jarvis/db/schema';
 import { getSession } from '@jarvis/auth/session';
 import { eq } from 'drizzle-orm';
 import { SettingsForm } from '@/components/admin/SettingsForm';
+import { PageHeader } from '@/components/patterns/PageHeader';
 
 export default async function AdminSettingsPage() {
   const t = await getTranslations('Admin.Settings');
@@ -19,10 +20,12 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Settings"
+        title={t('title')}
+        description={t('description')}
+      />
       {ws && <SettingsForm workspace={ws} />}
     </div>
   );

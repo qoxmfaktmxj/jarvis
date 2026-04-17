@@ -3,6 +3,7 @@ import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AccessEntryForm } from "@/components/system/AccessEntryForm";
 import { AccessPanel } from "@/components/system/AccessPanel";
+import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { getSystem, listSystemAccessEntries } from "@/lib/queries/systems";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -37,9 +38,9 @@ export default async function SystemAccessPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">Access Registry</h2>
-        <p className="text-sm text-gray-500">
+      <div>
+        <SectionHeader title="Access Registry" />
+        <p className="text-sm text-surface-500">
           Secret-backed entries are resolved server-side and filtered by session role.
         </p>
       </div>

@@ -9,8 +9,11 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Button }  from '@/components/ui/button';
-import { Input }   from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Input }  from '@/components/ui/input';
+import { PageHeader }      from '@/components/patterns/PageHeader';
+import { DataTableShell }  from '@/components/patterns/DataTableShell';
+import { EmptyState }      from '@/components/patterns/EmptyState';
 
 type Company = {
   id:             string;
@@ -33,8 +36,8 @@ export default function AdminCompaniesPage() {
   const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 20 });
 
   useEffect(() => {
-    const t = setTimeout(() => setQ(search), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setQ(search), 400);
+    return () => clearTimeout(timer);
   }, [search]);
 
   const fetchData = useCallback(async () => {
@@ -71,21 +74,41 @@ export default function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Companies"
+        title={t('title')}
+        description={t('description')}
+      />
 
-      <div className="flex items-center gap-3">
-        <Input
-          placeholder={t('searchPlaceholder')}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
-      <div className="rounded-md border">
+      <DataTableShell
+        isLoading={loading}
+        rowCount={data.length}
+        filters={
+          <Input
+            placeholder={t('searchPlaceholder')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="max-w-sm"
+          />
+        }
+        empty={
+          <EmptyState
+            title={t('searchPlaceholder')}
+            description={t('total', { count: 0 })}
+          />
+        }
+        pagination={
+          <>
+            <span>{t('total', { count: total })}</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>{t('pagination.previous')}</Button>
+              <span className="self-center">Page {pagination.pageIndex + 1} / {table.getPageCount()}</span>
+              <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>{t('pagination.next')}</Button>
+            </div>
+          </>
+        }
+      >
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((hg) => (
@@ -97,9 +120,7 @@ export default function AdminCompaniesPage() {
             ))}
           </TableHeader>
           <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={columns.length} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
-            ) : table.getRowModel().rows.map((row) => (
+            {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
@@ -108,16 +129,7 @@ export default function AdminCompaniesPage() {
             ))}
           </TableBody>
         </Table>
-      </div>
-
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{t('total', { count: total })}</span>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}>{t('pagination.previous')}</Button>
-          <span className="self-center">Page {pagination.pageIndex + 1} / {table.getPageCount()}</span>
-          <Button variant="outline" size="sm" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}>{t('pagination.next')}</Button>
-        </div>
-      </div>
+      </DataTableShell>
     </div>
   );
 }

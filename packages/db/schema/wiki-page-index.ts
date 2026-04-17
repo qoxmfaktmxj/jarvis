@@ -36,6 +36,8 @@ export const wikiPageIndex = pgTable(
     path: varchar("path", { length: 500 }).notNull(),
     title: varchar("title", { length: 200 }).notNull(),
     slug: varchar("slug", { length: 200 }).notNull(),
+    /** Full path-based key for routing (e.g. "hr/leave-policy"). Nullable for backcompat. */
+    routeKey: varchar("route_key", { length: 500 }),
     type: varchar("type", { length: 20 }).notNull(),
     authority: varchar("authority", { length: 10 }).notNull(),
     sensitivity: varchar("sensitivity", { length: 30 })
@@ -70,6 +72,11 @@ export const wikiPageIndex = pgTable(
       t.workspaceId,
       t.type,
       t.publishedStatus,
+    ),
+    // workspace + routeKey unique (null은 Postgres unique에서 제외되므로 안전)
+    wsRouteKeyUniq: uniqueIndex("wiki_page_index_ws_route_key_uniq").on(
+      t.workspaceId,
+      t.routeKey,
     ),
     // frontmatter->aliases 검색용 GIN 인덱스 (한국어 동의어 매칭 — MindVault 실패 재발 방지)
     aliasesGinIdx: index("wiki_page_index_aliases_gin")

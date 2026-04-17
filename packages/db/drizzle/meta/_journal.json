@@ -166,8 +166,15 @@
     {
       "idx": 23,
       "version": "7",
+      "when": 1776401292000,
+      "tag": "0023_add_wiki_page_index_route_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
       "when": 1776320446148,
-      "tag": "0023_thankful_excalibur",
+      "tag": "0024_thankful_excalibur",
       "breakpoints": true
     }
   ]

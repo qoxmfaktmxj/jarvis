@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { loadWikiGraphData } from '@/lib/server/wiki-graph-loader';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import { GraphViewerPage } from './_components/GraphViewerPage';
 
 export const dynamic = 'force-dynamic';
@@ -25,18 +26,18 @@ export default async function WikiGraphPage() {
   } catch (err) {
     console.error('[wiki/graph] loadWikiGraphData failed:', err);
     return (
-      <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
-        <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-sm text-red-600">{t('loadFailed')}</p>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <PageHeader eyebrow="Wiki · Graph" title={t('title')} />
+        <p className="text-sm text-destructive">{t('loadFailed')}</p>
       </div>
     );
   }
 
   if (loaded.nodes.length === 0) {
     return (
-      <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
-        <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-sm text-gray-500">
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <PageHeader eyebrow="Wiki · Graph" title={t('title')} />
+        <p className="text-sm text-muted-foreground">
           {loaded.totalPublishedCount === 0
             ? t('emptyNoPages')
             : t('emptyAllFiltered')}
@@ -46,16 +47,17 @@ export default async function WikiGraphPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-sm text-gray-500 mt-2">{t('clickToNavigate')}</p>
-        {loaded.filteredOutCount > 0 ? (
-          <p className="text-xs text-muted-foreground mt-1">
-            {t('filteredHint', { count: loaded.filteredOutCount })}
-          </p>
-        ) : null}
-      </div>
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <PageHeader
+        eyebrow="Wiki · Graph"
+        title={t('title')}
+        description={t('clickToNavigate')}
+      />
+      {loaded.filteredOutCount > 0 ? (
+        <p className="-mt-4 mb-4 text-xs text-muted-foreground">
+          {t('filteredHint', { count: loaded.filteredOutCount })}
+        </p>
+      ) : null}
 
       <GraphViewerPage data={{ nodes: loaded.nodes, edges: loaded.edges }} />
     </div>

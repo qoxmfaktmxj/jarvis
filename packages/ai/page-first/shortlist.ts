@@ -10,9 +10,11 @@
  * (`retrieveRelevantClaims`) and is bypassed here on purpose.
  *
  * Scoring:
- *   - title ILIKE hit      — highest weight
- *   - aliases JSON match   — mid weight (matches the array via `?|`)
- *   - slug ILIKE hit       — low weight (slug is usually a normalized title)
+ *   - title ILIKE hit      — highest weight (x3)
+ *   - aliases JSON match   — mid weight (x2, matches the array via `?|`)
+ *   - slug ILIKE hit       — low weight (x1, slug is usually a normalized title)
+ *   - path ILIKE hit       — low weight (x1, directory structure signal)
+ *   - tags ILIKE hit       — low weight (x1, frontmatter tags signal)
  *   - freshness bonus      — `updatedAt` recency tiebreaker
  *
  * Permission filter:
@@ -97,23 +99,51 @@ export async function lexicalShortlist(
     ? sql.raw(` ${sensitivityFilter}`)
     : sql.empty();
 
-  // ILIKE pattern pieces — we build an OR over every token for title/slug,
-  // and pass the token array to jsonb `?|` for aliases matching.
-  // `%tok%` is safe because tokens are already tokenize()-filtered (no %/_).
-  const ilikeAny = hasTokens
-    ? sql.join(
-        tokens.map(
-          (tok) =>
-            sql`(wpi.title ILIKE ${`%${tok}%`} OR wpi.slug ILIKE ${`%${tok}%`})`,
-        ),
-        sql` OR `,
-      )
-    : sql`TRUE`;
+  // Guard: no tokens → skip scoring SQL entirely, return recency-only results.
+  if (!hasTokens) {
+    const recentRows = await db.execute<{
+      id: string;
+      path: string;
+      title: string;
+      slug: string;
+      sensitivity: string;
+      required_permission: string | null;
+      updated_at: Date;
+    }>(sql`
+      SELECT
+        wpi.id, wpi.path, wpi.title, wpi.slug,
+        wpi.sensitivity, wpi.required_permission, wpi.updated_at
+      FROM wiki_page_index wpi
+      WHERE wpi.workspace_id = ${workspaceId}::uuid
+        AND wpi.published_status = 'published'
+        AND wpi.stale = FALSE
+        AND (
+          wpi.required_permission IS NULL
+          OR wpi.required_permission = ANY(${userPermissions}::text[])
+          OR 'admin:all' = ANY(${userPermissions}::text[])
+        )
+        ${sensitivityClause}
+      ORDER BY wpi.updated_at DESC
+      LIMIT ${topK}
+    `);
+    return recentRows.rows.map((r) => ({
+      id: r.id,
+      path: r.path,
+      title: r.title,
+      slug: r.slug,
+      sensitivity: r.sensitivity,
+      requiredPermission: r.required_permission,
+      updatedAt: r.updated_at,
+      score: 0,
+    }));
+  }
 
   const tokenArray = tokens; // drizzle serializes string[] → text[] for us.
 
-  // Scoring weights kept inline: title=3, alias=2, slug=1, +freshness.
-  // extract(epoch) / 86400 gives a monotonic updatedAt tiebreaker.
+  // Scoring weights: title=3, alias=2, slug=1, path=1, tags=1, +freshness.
+  // extract(epoch) / 86400000 gives a monotonic updatedAt tiebreaker.
+  // Overfetch topK*3 to compensate for requiredPermission filtering in SQL.
+  const fetchLimit = topK * 3;
   const rows = await db.execute<{
     id: string;
     path: string;
@@ -133,34 +163,38 @@ export async function lexicalShortlist(
       wpi.required_permission,
       wpi.updated_at,
       (
-        (CASE WHEN ${hasTokens ? sql`(${ilikeAny})` : sql`FALSE`} THEN 0 ELSE 0 END)
-        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+        (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
              WHERE wpi.title ILIKE '%' || t || '%') * 3
-        + (CASE WHEN ${tokenArray}::text[] <> '{}'::text[]
-             AND (wpi.frontmatter -> 'aliases') ?| ${tokenArray}::text[] THEN 2 ELSE 0 END)
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+             WHERE EXISTS (
+               SELECT 1 FROM jsonb_array_elements_text(wpi.frontmatter -> 'aliases') AS alias
+               WHERE lower(alias) = lower(t)
+             )) * 2
         + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
              WHERE wpi.slug ILIKE '%' || t || '%') * 1
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+             WHERE wpi.path ILIKE '%' || t || '%') * 1
+        + (SELECT COUNT(*) FROM unnest(${tokenArray}::text[]) AS t
+             WHERE (wpi.frontmatter->>'tags') ILIKE '%' || t || '%') * 1
         + (EXTRACT(EPOCH FROM wpi.updated_at) / 86400000.0)
       )::float8 AS score
     FROM wiki_page_index wpi
     WHERE wpi.workspace_id = ${workspaceId}::uuid
       AND wpi.published_status = 'published'
       AND wpi.stale = FALSE
+      AND (
+        wpi.required_permission IS NULL
+        OR wpi.required_permission = ANY(${userPermissions}::text[])
+        OR 'admin:all' = ANY(${userPermissions}::text[])
+      )
       ${sensitivityClause}
     ORDER BY score DESC, wpi.updated_at DESC
-    LIMIT ${topK}
+    LIMIT ${fetchLimit}
   `);
 
-  // requiredPermission는 DB 필터로 표현하기 번거롭다 (NULL-친화 + 권한 배열).
-  // 앱 레이어에서 한 번 더 걸러낸다.
-  const permSet = new Set(userPermissions);
+  // requiredPermission is now enforced in SQL WHERE. Map and trim to topK.
   return rows.rows
-    .filter(
-      (r) =>
-        !r.required_permission ||
-        permSet.has(r.required_permission) ||
-        permSet.has("admin:all"),
-    )
+    .slice(0, topK)
     .map((r) => ({
       id: r.id,
       path: r.path,

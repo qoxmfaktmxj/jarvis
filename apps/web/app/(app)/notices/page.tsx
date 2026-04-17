@@ -4,6 +4,7 @@ import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { listNotices } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import { NoticeList } from './_components/NoticeList';
 
 export const dynamic = 'force-dynamic';
@@ -29,15 +30,18 @@ export default async function NoticesPage() {
   const canCreate = session.permissions.includes(PERMISSIONS.NOTICE_CREATE);
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{t('title')}</h1>
-        {canCreate && (
-          <Button asChild>
-            <Link href="/notices/new">{t('new')}</Link>
-          </Button>
-        )}
-      </div>
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <PageHeader
+        eyebrow="Notices"
+        title={t('title')}
+        meta={
+          canCreate ? (
+            <Button asChild>
+              <Link href="/notices/new">{t('new')}</Link>
+            </Button>
+          ) : null
+        }
+      />
 
       <NoticeList
         notices={data}

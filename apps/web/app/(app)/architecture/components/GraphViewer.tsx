@@ -38,25 +38,25 @@ export function GraphViewer({ snapshotId }: GraphViewerProps) {
 
   if (loading) {
     return (
-      <div className="border rounded-lg h-[600px] flex items-center justify-center bg-gray-50">
-        <span className="text-gray-400">{t('loading')}</span>
+      <div className="flex h-[600px] items-center justify-center rounded-lg border border-border bg-muted/40">
+        <span className="text-muted-foreground">{t('loading')}</span>
       </div>
     );
   }
 
   if (error || !iframeSrc) {
     return (
-      <div className="border rounded-lg h-[600px] flex items-center justify-center bg-gray-50">
-        <span className="text-gray-500">{error ?? 'Graph not available'}</span>
+      <div className="flex h-[600px] items-center justify-center rounded-lg border border-border bg-muted/40">
+        <span className="text-muted-foreground">{error ?? 'Graph not available'}</span>
       </div>
     );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="overflow-hidden rounded-lg border border-border">
       <iframe
         src={iframeSrc}
-        className="w-full h-[600px]"
+        className="h-[600px] w-full"
         sandbox="allow-scripts allow-same-origin"
         title="Architecture Graph"
       />

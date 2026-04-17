@@ -52,7 +52,7 @@ export async function BuildLifecycleSection({ workspaceId, permissions }: Props)
     .slice(0, 10);
 
   return (
-    <section className="border rounded-lg p-4 space-y-3">
+    <section className="space-y-3 rounded-lg border border-border p-4">
       <header className="flex items-center justify-between">
         <h2 className="font-semibold">{t("title")}</h2>
         <div className="flex gap-3 text-sm">
@@ -64,17 +64,17 @@ export async function BuildLifecycleSection({ workspaceId, permissions }: Props)
       </header>
 
       {recentActive.length > 0 && (
-        <ul className="text-sm divide-y">
+        <ul className="divide-y divide-border text-sm">
           {recentActive.map((s) => (
-            <li key={s.id} className="py-2 flex items-center justify-between gap-2">
+            <li key={s.id} className="flex items-center justify-between gap-2 py-2">
               <Link
                 href={`/architecture?snapshot=${s.id}`}
-                className="flex items-center gap-2 min-w-0 hover:underline"
+                className="flex min-w-0 items-center gap-2 hover:underline"
               >
                 <StatusIcon kind={s.status as BuildStatus} className="h-3 w-3 shrink-0" />
                 <span className="truncate">{s.title}</span>
               </Link>
-              <span className="text-xs text-muted-foreground shrink-0">
+              <span className="shrink-0 text-xs text-muted-foreground">
                 {s.createdAt.toLocaleString()}
               </span>
             </li>
@@ -91,10 +91,10 @@ function StatusChip({
   label,
 }: { kind: BuildStatus; count: number; label: string }) {
   const color = {
-    running: "text-blue-600",
-    pending: "text-gray-500",
-    error:   "text-red-600",
-    done:    "text-green-600",
+    running: "text-isu-600",
+    pending: "text-muted-foreground",
+    error:   "text-destructive",
+    done:    "text-emerald-600 dark:text-emerald-400",
   }[kind];
   return (
     <span className={`inline-flex items-center gap-1 ${color}`}>
@@ -106,8 +106,8 @@ function StatusChip({
 }
 
 function StatusIcon({ kind, className }: { kind: BuildStatus; className?: string }) {
-  if (kind === "running") return <Loader2 className={`${className} animate-spin text-blue-600`} />;
-  if (kind === "pending") return <Circle className={`${className} text-gray-500`} />;
-  if (kind === "error")   return <AlertTriangle className={`${className} text-red-600`} />;
-  return <CheckCircle2 className={`${className} text-green-600`} />;
+  if (kind === "running") return <Loader2 className={`${className} animate-spin text-isu-600`} />;
+  if (kind === "pending") return <Circle className={`${className} text-muted-foreground`} />;
+  if (kind === "error")   return <AlertTriangle className={`${className} text-destructive`} />;
+  return <CheckCircle2 className={`${className} text-emerald-600 dark:text-emerald-400`} />;
 }

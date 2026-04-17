@@ -1,208 +1,79 @@
 "use client";
 
 import * as React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DayPicker } from "react-day-picker";
+
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-interface CalendarClassNames {
-  months?: string;
-  month?: string;
-  table?: string;
-  head_row?: string;
-  head_cell?: string;
-  row?: string;
-  cell?: string;
-  day?: string;
-  day_outside?: string;
-  day_disabled?: string;
-}
+export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-interface DayComponentProps {
-  date: Date;
-  displayMonth: Date;
-}
-
-interface CalendarProps {
-  mode?: "single" | "multiple" | "range";
-  month?: Date;
-  selected?: Date;
-  onSelect?: (date: Date | undefined) => void;
-  onMonthChange?: (month: Date) => void;
-  disabled?: (date: Date) => boolean;
-  classNames?: CalendarClassNames;
-  className?: string;
-  components?: {
-    Day?: React.ComponentType<DayComponentProps>;
-  };
-}
-
-const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
-
-function getDaysInMonth(year: number, month: number): Date[] {
-  const days: Date[] = [];
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-
-  // Pad leading days from previous month
-  for (let i = 0; i < firstDay.getDay(); i++) {
-    const d = new Date(year, month, -firstDay.getDay() + i + 1);
-    days.push(d);
-  }
-
-  // Current month days
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month, d));
-  }
-
-  // Pad trailing days from next month
-  const remaining = 7 - (days.length % 7);
-  if (remaining < 7) {
-    for (let i = 1; i <= remaining; i++) {
-      days.push(new Date(year, month + 1, i));
-    }
-  }
-
-  return days;
-}
-
-export function Calendar({
-  month,
-  selected,
-  onSelect,
-  onMonthChange: _onMonthChange,
-  disabled,
-  classNames = {},
+function Calendar({
   className,
-  components = {},
+  classNames,
+  showOutsideDays = true,
+  ...props
 }: CalendarProps) {
-  const [displayMonth, setDisplayMonth] = React.useState<Date>(
-    month ?? new Date()
-  );
-
-  React.useEffect(() => {
-    if (month) setDisplayMonth(month);
-  }, [month]);
-
-  const DayComponent = components.Day;
-
-  const year = displayMonth.getFullYear();
-  const monthIndex = displayMonth.getMonth();
-  const days = getDaysInMonth(year, monthIndex);
-
-  const weeks: Date[][] = [];
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
-  }
-
   return (
-    <div className={cn("p-3", className)}>
-      <div className={cn("flex flex-col gap-4", classNames.months)}>
-        <div className={cn("space-y-4", classNames.month)}>
-          {/* Month header */}
-          <div className="flex items-center justify-between px-1">
-            <p className="text-sm font-medium">
-              {displayMonth.toLocaleString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label="Previous month"
-                onClick={() => {
-                  const prev = new Date(year, monthIndex - 1, 1);
-                  setDisplayMonth(prev);
-                  _onMonthChange?.(prev);
-                }}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                aria-label="Next month"
-                onClick={() => {
-                  const next = new Date(year, monthIndex + 1, 1);
-                  setDisplayMonth(next);
-                  _onMonthChange?.(next);
-                }}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Calendar table */}
-          <table className={cn("w-full border-collapse", classNames.table)}>
-            <thead>
-              <tr className={cn("flex", classNames.head_row)}>
-                {WEEKDAY_LABELS.map((label) => (
-                  <th
-                    key={label}
-                    className={cn(
-                      "text-muted-foreground rounded-md w-full font-normal text-xs text-center",
-                      classNames.head_cell
-                    )}
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.map((week, wi) => (
-                <tr key={wi} className={cn("flex w-full mt-2", classNames.row)}>
-                  {week.map((date, di) => {
-                    const isOutside = date.getMonth() !== monthIndex;
-                    const isDisabled = disabled?.(date) ?? false;
-                    const isSelected =
-                      selected &&
-                      date.toDateString() === selected.toDateString();
-
-                    return (
-                      <td
-                        key={di}
-                        className={cn(
-                          "relative h-16 w-full p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                          isSelected && "[&:has([data-selected='true'])]:bg-accent",
-                          classNames.cell
-                        )}
-                      >
-                        {DayComponent ? (
-                          <DayComponent
-                            date={date}
-                            displayMonth={displayMonth}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            data-selected={isSelected}
-                            disabled={isDisabled}
-                            onClick={() => !isDisabled && onSelect?.(date)}
-                            className={cn(
-                              "h-full w-full p-0 font-normal",
-                              classNames.day,
-                              isOutside && classNames.day_outside,
-                              isDisabled && classNames.day_disabled
-                            )}
-                          >
-                            {date.getDate()}
-                          </button>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <DayPicker
+      showOutsideDays={showOutsideDays}
+      className={cn("p-3", className)}
+      classNames={{
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        month: "space-y-4",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label:
+          "text-display text-sm font-semibold text-surface-800",
+        nav: "space-x-1 flex items-center",
+        nav_button: cn(
+          buttonVariants({ variant: "outline", size: "icon" }),
+          "h-7 w-7 bg-transparent p-0 opacity-60 hover:opacity-100",
+        ),
+        nav_button_previous: "absolute left-1",
+        nav_button_next: "absolute right-1",
+        table: "w-full border-collapse space-y-1",
+        head_row: "flex",
+        head_cell:
+          "text-surface-500 text-xs font-medium uppercase tracking-wide rounded-md w-9 font-normal",
+        row: "flex w-full mt-2",
+        cell: cn(
+          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+          "[&:has([aria-selected].day-range-end)]:rounded-r-md",
+          "[&:has([aria-selected].day-outside)]:bg-isu-50",
+          "[&:has([aria-selected])]:bg-isu-50",
+          "first:[&:has([aria-selected])]:rounded-l-md",
+          "last:[&:has([aria-selected])]:rounded-r-md",
+        ),
+        day: cn(
+          buttonVariants({ variant: "ghost" }),
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
+        ),
+        day_range_start: "day-range-start",
+        day_range_end: "day-range-end",
+        day_selected:
+          "bg-isu-600 text-surface-50 hover:bg-isu-700 hover:text-surface-50 focus:bg-isu-600 focus:text-surface-50",
+        day_today:
+          "bg-lime-100 text-lime-700 font-semibold",
+        day_outside:
+          "day-outside text-surface-400 opacity-50 aria-selected:bg-isu-50 aria-selected:text-surface-500 aria-selected:opacity-30",
+        day_disabled: "text-surface-400 opacity-50",
+        day_range_middle:
+          "aria-selected:bg-isu-100 aria-selected:text-isu-900",
+        day_hidden: "invisible",
+        ...classNames,
+      }}
+      components={{
+        Chevron: ({ orientation, ...rest }) => {
+          if (orientation === "left") return <ChevronLeft className="h-4 w-4" {...rest} />;
+          if (orientation === "right") return <ChevronRight className="h-4 w-4" {...rest} />;
+          return <ChevronRight className={`h-4 w-4 ${orientation === "up" ? "-rotate-90" : "rotate-90"}`} {...rest} />;
+        },
+      }}
+      {...props}
+    />
   );
 }
+Calendar.displayName = "Calendar";
+
+export { Calendar };

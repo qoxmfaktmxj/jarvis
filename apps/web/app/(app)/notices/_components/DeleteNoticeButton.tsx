@@ -40,7 +40,7 @@ export function DeleteNoticeButton({ noticeId }: DeleteNoticeButtonProps) {
       variant="outline"
       onClick={handleDelete}
       disabled={loading}
-      className="border-red-300 text-red-700 hover:bg-red-50"
+      className="border-destructive/40 text-destructive hover:bg-destructive/10"
       data-testid="notice-delete-button"
     >
       {t('delete')}

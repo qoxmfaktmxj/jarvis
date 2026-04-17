@@ -40,6 +40,7 @@ export function SearchPage({
     <div className="mx-auto max-w-4xl px-4 py-8">
       {/* Search bar */}
       <div className="mb-6">
+        {/* eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount */}
         <SearchBar defaultValue={currentQuery} autoFocus={!currentQuery} />
       </div>
 

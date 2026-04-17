@@ -90,6 +90,7 @@ export function CodeTable({ initialGroups, onRefresh }: Props) {
                           if (e.key === 'Enter') handleSaveItem(item.id);
                           if (e.key === 'Escape') setEditingItem(null);
                         }}
+                        // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
                         autoFocus
                       />
                       <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => handleSaveItem(item.id)}>Save</Button>

@@ -1,5 +1,5 @@
 {
-  "id": "b3fe7619-b343-45e3-aa39-6d66212a0906",
+  "id": "fbfb84bd-a29d-42c1-b516-f5aadb10a72b",
   "prevId": "76bffb2f-3781-44b8-8769-d2b4b46876e0",
   "version": "7",
   "dialect": "postgresql",
@@ -5284,6 +5284,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "route_key": {
+          "name": "route_key",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "type": {
           "name": "type",
           "type": "varchar(20)",
@@ -5349,12 +5355,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "freshness_sla_days": {
-          "name": "freshness_sla_days",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -5402,6 +5402,27 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "wiki_page_index_ws_route_key_uniq": {
+          "name": "wiki_page_index_ws_route_key_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "route_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

@@ -40,14 +40,19 @@ export interface ReadPagesOptions {
 const DEFAULT_TOP_N = 7;
 const DEFAULT_MAX_CHARS = 4000;
 
+export type ReadPagesResult =
+  | { ok: true; pages: LoadedPage[] }
+  | { ok: false; reason: "high_drift"; missCount: number; totalPicked: number };
+
 export async function readTopPages(
   opts: ReadPagesOptions,
-): Promise<LoadedPage[]> {
+): Promise<ReadPagesResult> {
   const { workspaceId, candidates } = opts;
   const topN = opts.topN ?? DEFAULT_TOP_N;
   const maxChars = opts.maxCharsPerPage ?? DEFAULT_MAX_CHARS;
 
   const picked = candidates.slice(0, topN);
+  const totalPicked = picked.length;
   const loaded: LoadedPage[] = [];
 
   // Parallelized reads — wiki pages are <10KB each so `Promise.all` stays
@@ -70,8 +75,12 @@ export async function readTopPages(
     }),
   );
 
+  let missCount = 0;
   for (const r of results) {
-    if (!r.ok) continue;
+    if (!r.ok) {
+      missCount++;
+      continue;
+    }
     loaded.push({
       id: r.page.id,
       path: r.page.path,
@@ -83,5 +92,22 @@ export async function readTopPages(
     });
   }
 
-  return loaded;
+  // Drift detection — high miss ratio indicates wiki_page_index is out of
+  // sync with the working tree (files deleted/moved but index not updated).
+  if (totalPicked > 0 && missCount / totalPicked > 0.8) {
+    console.warn(
+      "[page-first] read.degraded — miss ratio above 80%, aborting synthesis",
+      { missCount, totalPicked, missRatio: missCount / totalPicked },
+    );
+    return { ok: false, reason: "high_drift", missCount, totalPicked };
+  }
+
+  if (totalPicked > 0 && missCount / totalPicked > 0.5) {
+    console.warn(
+      "[page-first] read.degraded — elevated miss ratio",
+      { missCount, totalPicked, missRatio: missCount / totalPicked },
+    );
+  }
+
+  return { ok: true, pages: loaded };
 }

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations } from 'next-intl';
+import type { DayProps } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
@@ -59,8 +60,10 @@ export function AttendanceCalendar({ records, month }: AttendanceCalendarProps) 
     return map;
   }, [records]);
 
-  function DayContent({ date, displayMonth: dm }: { date: Date; displayMonth: Date }) {
-    if (date.getMonth() !== dm.getMonth()) return <div />;
+  function DayContent({ day, modifiers }: DayProps) {
+    // react-day-picker v9: day.date is the actual date; modifiers.outside = not in displayed month
+    if (modifiers.outside) return <div />;
+    const date = day.date;
 
     const dateStr = format(date, 'yyyy-MM-dd');
     const record = recordMap[dateStr];

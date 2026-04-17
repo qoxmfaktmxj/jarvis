@@ -26,23 +26,23 @@ export function NoticeListItem({
   return (
     <li
       data-testid="notice-list-item"
-      className="rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-400 hover:bg-blue-50/40 transition-colors"
+      className="rounded-lg border border-border bg-card px-4 py-3 transition-colors hover:border-isu-400 hover:bg-isu-50/40"
     >
       <Link href={`/notices/${notice.id}`} className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           {notice.pinned && (
-            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
               {pinnedLabel}
             </span>
           )}
-          <span className="rounded border border-gray-200 px-1.5 py-0.5 text-[10px] uppercase text-gray-500">
+          <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
             {notice.sensitivity}
           </span>
-          <h2 className="text-base font-semibold text-gray-900 truncate">
+          <h2 className="truncate text-base font-semibold text-foreground">
             {notice.title}
           </h2>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-muted-foreground">
           {publishedAtLabel}: {formatDate(notice.publishedAt)}
         </div>
       </Link>

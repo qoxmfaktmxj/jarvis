@@ -4,14 +4,14 @@ import type { WikiPage, WikiSensitivityUi } from "./types";
 /**
  * apps/web/components/WikiPageView/mappers.ts
  *
- * Phase-W2 — DB row(WikiPageIndex) → UI(WikiPage) 매핑 단일 진입점.
+ * Phase-W2 / Phase-W3 PR3 — DB row(WikiPageIndex) → UI(WikiPage) 매핑 단일 진입점.
  *
- * sensitivity 변환 규약:
+ * sensitivity 변환 규약 (4값 1:1 대응):
  *   PUBLIC          → public
  *   INTERNAL        → internal
- *   RESTRICTED      → confidential  (UI 단계에서는 두 값을 묶어 처리, Phase-W2 한정)
- *   SECRET_REF_ONLY → confidential  (본문 접근은 호출자에서 별도 차단)
- *   알 수 없는 값   → confidential  (보수적 처리)
+ *   RESTRICTED      → restricted
+ *   SECRET_REF_ONLY → secret
+ *   알 수 없는 값   → restricted  (보수적 처리)
  */
 export function mapDbSensitivity(db: string): WikiSensitivityUi {
   switch (db) {
@@ -20,10 +20,11 @@ export function mapDbSensitivity(db: string): WikiSensitivityUi {
     case "INTERNAL":
       return "internal";
     case "RESTRICTED":
+      return "restricted";
     case "SECRET_REF_ONLY":
-      return "confidential";
+      return "secret";
     default:
-      return "confidential";
+      return "restricted";
   }
 }
 

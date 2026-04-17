@@ -27,19 +27,19 @@ function includesSensitivity(
     return false;
   }
   const match = fragment.match(/IN \(([^)]+)\)/);
-  if (!match) {
+  if (!match?.[1]) {
     return false;
   }
   return (match[1] ?? "").includes(`'${sensitivity}'`);
 }
 
 describe("RBAC WIKI_* permission rules", () => {
-  describe("KNOWLEDGE_REVIEW alone (no KNOWLEDGE_READ)", () => {
-    // READ 없이 REVIEW 만 있을 때는 RESTRICTED 만 허용해야 한다.
+  describe("KNOWLEDGE_REVIEW alone (no KNOWLEDGE_READ) > returns empty (KNOWLEDGE_READ required)", () => {
+    // KNOWLEDGE_READ 가 기본 게이트. READ 없이 REVIEW 만 있을 때는 접근 불가.
     const frag = buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_REVIEW]);
 
-    it("allows RESTRICTED", () => {
-      expect(includesSensitivity(frag, "RESTRICTED")).toBe(true);
+    it("does NOT allow RESTRICTED (KNOWLEDGE_READ required as gate)", () => {
+      expect(includesSensitivity(frag, "RESTRICTED")).toBe(false);
     });
 
     it("does NOT allow PUBLIC (no READ)", () => {
@@ -54,8 +54,8 @@ describe("RBAC WIKI_* permission rules", () => {
       expect(includesSensitivity(frag, "SECRET_REF_ONLY")).toBe(false);
     });
 
-    it("fragment is exactly AND sensitivity IN ('RESTRICTED')", () => {
-      expect(frag).toBe("AND sensitivity IN ('RESTRICTED')");
+    it("fragment is AND 1 = 0 (no access without KNOWLEDGE_READ)", () => {
+      expect(frag).toBe("AND 1 = 0");
     });
   });
 
@@ -186,15 +186,22 @@ describe("wiki vs graph sensitivity filters — separation of concerns", () => {
     expect(graph).toContain("SECRET_REF_ONLY");
   });
 
-  it("wiki is 4-tier (RESTRICTED and SECRET_REF_ONLY are separately gated)", () => {
-    // REVIEW 단독 → RESTRICTED 만 허용
+  it("wiki is 4-tier (RESTRICTED and SECRET_REF_ONLY are separately gated, KNOWLEDGE_READ required as gate)", () => {
+    // REVIEW/SECRET 단독 (READ 없이) → 접근 불가 (KNOWLEDGE_READ 가 기본 게이트)
     expect(
       buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_REVIEW])
-    ).toBe("AND sensitivity IN ('RESTRICTED')");
-    // SYSTEM_ACCESS_SECRET 단독 → SECRET_REF_ONLY 만 허용
+    ).toBe("AND 1 = 0");
     expect(
       buildWikiSensitivitySqlFilter([PERMISSIONS.SYSTEM_ACCESS_SECRET])
-    ).toBe("AND sensitivity IN ('SECRET_REF_ONLY')");
+    ).toBe("AND 1 = 0");
+    // READ + REVIEW → PUBLIC, INTERNAL, RESTRICTED
+    expect(
+      buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.KNOWLEDGE_REVIEW])
+    ).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED')");
+    // READ + SECRET → PUBLIC, INTERNAL, SECRET_REF_ONLY
+    expect(
+      buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.SYSTEM_ACCESS_SECRET])
+    ).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL', 'SECRET_REF_ONLY')");
   });
 
   it("graph is 2-tier (RESTRICTED/SECRET_REF_ONLY both admin-only in P0)", () => {

@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { OrgTree } from '@/components/admin/OrgTree';
-import { Button }  from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/patterns/PageHeader';
 import type { OrgNode } from '@/lib/queries/admin';
 
 export default function AdminOrgsPage() {
@@ -35,15 +36,15 @@ export default function AdminOrgsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{t('description')}</p>
-        </div>
-        <Button onClick={handleAddRoot}>{t('addRoot')}</Button>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Organizations"
+        title={t('title')}
+        description={t('description')}
+        meta={<Button onClick={handleAddRoot}>{t('addRoot')}</Button>}
+      />
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-surface-500">Loading...</p>
       ) : (
         <OrgTree initialTree={tree} onRefresh={fetchTree} />
       )}

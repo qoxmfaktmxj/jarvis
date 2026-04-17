@@ -26,8 +26,8 @@ export function Pagination({ page, totalPages }: PaginationProps) {
   const hasNext = page < totalPages;
 
   return (
-    <div className="flex items-center justify-between pt-3">
-      <span className="text-sm text-muted-foreground">
+    <>
+      <span className="text-sm text-surface-500">
         {t("pageInfo", { page, total: Math.max(totalPages, 1) })}
       </span>
       <div className="flex gap-2">
@@ -35,7 +35,7 @@ export function Pagination({ page, totalPages }: PaginationProps) {
           {hasPrev ? (
             <Link href={hrefForPage(page - 1)}>{t("previous")}</Link>
           ) : (
-            <span aria-disabled className="opacity-50 pointer-events-none">
+            <span aria-disabled className="pointer-events-none opacity-50">
               {t("previous")}
             </span>
           )}
@@ -44,12 +44,12 @@ export function Pagination({ page, totalPages }: PaginationProps) {
           {hasNext ? (
             <Link href={hrefForPage(page + 1)}>{t("next")}</Link>
           ) : (
-            <span aria-disabled className="opacity-50 pointer-events-none">
+            <span aria-disabled className="pointer-events-none opacity-50">
               {t("next")}
             </span>
           )}
         </Button>
       </div>
-    </div>
+    </>
   );
 }

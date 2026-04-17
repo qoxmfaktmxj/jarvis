@@ -1,8 +1,6 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuditLogEntry } from "@/lib/queries/dashboard";
 
 function formatTime(value: Date) {
@@ -14,6 +12,10 @@ function formatTime(value: Date) {
   }).format(value);
 }
 
+/**
+ * RecentActivityWidget — timeline flow (no card).
+ * Left: time column. Right: action + resource. Separator = hairline + dot marker.
+ */
 export function RecentActivityWidget({
   entries
 }: {
@@ -22,32 +24,50 @@ export function RecentActivityWidget({
   const t = useTranslations("Dashboard.RecentActivity");
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>{t("title")}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {entries.length === 0 ? (
-          <p className="text-sm text-gray-500">{t("empty")}</p>
-        ) : (
-          <ul className="space-y-3">
-            {entries.map((entry) => (
-              <li key={entry.id} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{entry.action}</Badge>
-                  <span className="text-xs text-gray-400">
-                    {formatTime(entry.createdAt)}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-800">
-                  {entry.resourceType}
-                  {entry.resourceId ? ` • ${entry.resourceId}` : ""}
+    <section aria-label={t("title")} className="flex h-full flex-col">
+      <div className="mb-4 flex items-baseline gap-3">
+        <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
+          {t("title")}
+        </h2>
+        <span className="h-px flex-1 bg-surface-200" aria-hidden />
+      </div>
+
+      {entries.length === 0 ? (
+        <p className="text-sm text-surface-500">{t("empty")}</p>
+      ) : (
+        <ol className="relative flex-1 space-y-4">
+          {/* Continuous rail */}
+          <span
+            className="absolute bottom-1 left-[4.25rem] top-1 w-px bg-surface-200"
+            aria-hidden
+          />
+          {entries.map((entry) => (
+            <li
+              key={entry.id}
+              className="relative grid grid-cols-[4.25rem_1fr] gap-4"
+            >
+              <time className="text-display pt-0.5 text-right text-xs tabular-nums text-surface-400">
+                {formatTime(entry.createdAt)}
+              </time>
+              <div className="relative">
+                <span
+                  className="absolute -left-[1.0625rem] top-1.5 h-1.5 w-1.5 rounded-full bg-isu-500 ring-4 ring-white"
+                  aria-hidden
+                />
+                <p className="text-display text-sm font-semibold uppercase tracking-wide text-surface-700">
+                  {entry.action}
                 </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-    </Card>
+                <p className="text-sm text-surface-500">
+                  {entry.resourceType}
+                  {entry.resourceId ? (
+                    <span className="text-surface-400"> · {entry.resourceId}</span>
+                  ) : null}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
   );
 }

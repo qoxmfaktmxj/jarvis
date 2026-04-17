@@ -41,6 +41,15 @@ export interface CacheKeyParams {
    * (ask/embed 기존 경로). wiki.* 호출은 반드시 op를 명시하도록 권고한다.
    */
   op?: OpType;
+  /**
+   * Sorted, comma-joined user permission strings. Ensures that two users
+   * with different ACLs never share a cached response, even when
+   * workspaceId + sensitivityScope happen to match.
+   *
+   * Callers should pass `[...userPermissions].sort().join(',')`.
+   * Undefined by default for back-compat with non-ACL callers.
+   */
+  permissionFingerprint?: string;
 }
 
 /**
@@ -53,6 +62,7 @@ export function makeCacheKey(params: CacheKeyParams): string {
     promptVersion: params.promptVersion,
     workspaceId: params.workspaceId,
     sensitivityScope: params.sensitivityScope,
+    permissionFingerprint: params.permissionFingerprint ?? null,
     input: params.input,
     model: params.model,
     op: params.op ?? null,

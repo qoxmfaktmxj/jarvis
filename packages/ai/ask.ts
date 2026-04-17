@@ -4,7 +4,7 @@
 // 2026-04-15 (Phase-7A merged): assertBudget + logLlmCall integrated.
 
 import OpenAI from 'openai';
-import { buildKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
@@ -108,7 +108,7 @@ export async function retrieveRelevantClaims(
   const embedding = await generateEmbedding(question);
   const embeddingLiteral = `[${embedding.join(',')}]`;
 
-  const sensitivityFilter = buildKnowledgeSensitivitySqlFilter(userPermissions)
+  const sensitivityFilter = buildLegacyKnowledgeSensitivitySqlFilter(userPermissions)
     .replace(/\bsensitivity\b/g, 'kp.sensitivity')
     .trim();
   const sensitivityClause = sensitivityFilter

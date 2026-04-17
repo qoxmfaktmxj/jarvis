@@ -88,9 +88,9 @@ export function ApprovalDialog({ item, action, children }: ApprovalDialogProps) 
         ? t("rejectConfirm")
         : t("deferConfirm");
 
-  const submitVariant: "default" | "secondary" =
-    action === "approve" ? "default" : "secondary";
-  const submitClassName = action === "reject" ? "bg-red-600 text-white hover:bg-red-700" : undefined;
+  const submitVariant: "default" | "secondary" | "destructive" =
+    action === "approve" ? "default" : action === "reject" ? "destructive" : "secondary";
+  const submitClassName: string | undefined = undefined;
 
   const submitLabel = action === "approve" ? t("approve") : action === "reject" ? t("reject") : t("defer");
 
@@ -140,7 +140,7 @@ export function ApprovalDialog({ item, action, children }: ApprovalDialogProps) 
             )}
 
             {error && (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-destructive" role="alert">
                 {error}
               </p>
             )}

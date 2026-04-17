@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { getSession } from '@jarvis/auth/session';
 import { getUsers, getOrgTree } from '@/lib/queries/admin';
 import { UserTable } from '@/components/admin/UserTable';
+import { PageHeader } from '@/components/patterns/PageHeader';
 
 function flattenTree(nodes: Array<{ id: string; name: string; children: typeof nodes }>, acc: Array<{ id: string; name: string }> = []) {
   for (const n of nodes) {
@@ -23,17 +24,17 @@ export default async function AdminUsersPage() {
     getOrgTree(workspaceId),
   ]);
 
-  void users; // data is fetched client-side; orgTree is passed as static options
+  void users;
   const orgOptions = flattenTree(orgTree);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {t('description')}
-        </p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Users"
+        title={t('title')}
+        description={t('description')}
+      />
       <UserTable orgOptions={orgOptions} />
     </div>
   );

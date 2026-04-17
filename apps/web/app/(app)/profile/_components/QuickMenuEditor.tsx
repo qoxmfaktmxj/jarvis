@@ -51,7 +51,7 @@ export function QuickMenuEditor({
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {t("empty")}
           </p>
         ) : (
@@ -59,11 +59,11 @@ export function QuickMenuEditor({
             {items.map((item, index) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-3"
+                className="flex items-center justify-between rounded-xl border border-surface-200 px-3 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                  <p className="text-xs text-gray-500">{item.path}</p>
+                  <p className="text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.path}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -92,7 +92,7 @@ export function QuickMenuEditor({
         {message ? (
           <p
             className={`text-sm ${
-              message === t("saved") ? "text-emerald-600" : "text-rose-600"
+              message === t("saved") ? "text-lime-600" : "text-destructive"
             }`}
           >
             {message}

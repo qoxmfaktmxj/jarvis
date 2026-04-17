@@ -8,6 +8,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { EmptyState } from '@/components/patterns/EmptyState';
 import { HelpCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -22,27 +24,36 @@ export default async function FAQHubPage() {
   });
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
-      <div className="flex items-center gap-3">
-        <HelpCircle className="h-7 w-7 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-bold">FAQ</h1>
-          <p className="text-sm text-gray-500">Frequently asked questions</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <PageHeader
+        eyebrow="Knowledge · FAQ"
+        title="FAQ"
+        description="Frequently asked questions"
+      />
 
       {pages.length === 0 ? (
-        <p className="text-gray-400 italic">No FAQ entries published yet.</p>
+        <EmptyState
+          icon={HelpCircle}
+          title="No FAQ entries"
+          description="No FAQ entries published yet."
+        />
       ) : (
         <Accordion type="multiple" className="space-y-2">
           {pages.map((page) => (
-            <AccordionItem key={page.id} value={page.id} className="border rounded-lg px-4">
-              <AccordionTrigger className="font-medium text-left">
+            <AccordionItem
+              key={page.id}
+              value={page.id}
+              className="rounded-lg border border-border px-4"
+            >
+              <AccordionTrigger className="text-left font-medium">
                 {page.title}
               </AccordionTrigger>
-              <AccordionContent className="text-sm text-gray-500 pb-4">
+              <AccordionContent className="pb-4 text-sm text-muted-foreground">
                 {page.summary ?? (
-                  <Link href={`/knowledge/${page.id}`} className="underline text-blue-600">
+                  <Link
+                    href={`/knowledge/${page.id}`}
+                    className="text-isu-600 underline hover:text-isu-700"
+                  >
                     Read full answer
                   </Link>
                 )}

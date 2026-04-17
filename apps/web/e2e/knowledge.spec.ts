@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAsTestUser } from './helpers/auth';
+import { expectNoA11yViolations } from './helpers/axe';
 
 test.describe('Knowledge', () => {
   test.beforeEach(async ({ page }) => {
@@ -15,5 +16,11 @@ test.describe('Knowledge', () => {
   test('/knowledge/new page renders', async ({ page }) => {
     await page.goto('/knowledge/new');
     await expect(page.locator('main')).toBeVisible();
+  });
+
+  test('knowledge index has no a11y violations', async ({ page }) => {
+    await page.goto('/knowledge');
+    await page.waitForLoadState('networkidle');
+    await expectNoA11yViolations(page, 'knowledge index');
   });
 });

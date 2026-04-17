@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePages } from '@/lib/queries/knowledge';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { EmptyState } from '@/components/patterns/EmptyState';
 import { BookMarked } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -26,23 +28,21 @@ export default async function GlossaryPage() {
   const letters = Object.keys(grouped).sort();
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <div className="flex items-center gap-3">
-        <BookMarked className="h-7 w-7 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-bold">Glossary</h1>
-          <p className="text-sm text-gray-500">Company-wide terminology reference</p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <PageHeader
+        eyebrow="Knowledge · Glossary"
+        title="Glossary"
+        description="Company-wide terminology reference"
+      />
 
       {/* Alphabet quick-nav */}
       {letters.length > 0 && (
-        <div className="flex flex-wrap gap-1">
+        <div className="mb-6 flex flex-wrap gap-1">
           {letters.map((letter) => (
             <a
               key={letter}
               href={`#letter-${letter}`}
-              className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-300 text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-md border border-input text-sm font-medium transition-colors hover:bg-muted"
             >
               {letter}
             </a>
@@ -51,25 +51,31 @@ export default async function GlossaryPage() {
       )}
 
       {letters.length === 0 ? (
-        <p className="text-gray-400 italic">No glossary entries published yet.</p>
+        <EmptyState
+          icon={BookMarked}
+          title="No entries"
+          description="No glossary entries published yet."
+        />
       ) : (
         <div className="space-y-8">
           {letters.map((letter) => (
             <section key={letter} id={`letter-${letter}`}>
-              <h2 className="text-xl font-bold border-b pb-2 mb-4">{letter}</h2>
+              <h2 className="mb-4 border-b border-border pb-2 text-xl font-bold">
+                {letter}
+              </h2>
               <dl className="space-y-4">
                 {(grouped[letter] ?? []).map((page) => (
                   <div key={page.id}>
                     <dt>
                       <Link
                         href={`/knowledge/${page.id}`}
-                        className="font-semibold text-blue-600 hover:underline"
+                        className="font-semibold text-isu-600 hover:underline"
                       >
                         {page.title}
                       </Link>
                     </dt>
                     {page.summary && (
-                      <dd className="text-sm text-gray-500 mt-0.5 pl-4">
+                      <dd className="mt-0.5 pl-4 text-sm text-muted-foreground">
                         {page.summary}
                       </dd>
                     )}

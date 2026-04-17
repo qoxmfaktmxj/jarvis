@@ -1,4 +1,8 @@
+import Link from 'next/link';
+import { Lock } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
+import { EmptyState } from '@/components/patterns/EmptyState';
+import { Button } from '@/components/ui/button';
 
 /**
  * apps/web/app/forbidden.tsx
@@ -14,9 +18,17 @@ import { getTranslations } from 'next-intl/server';
 export default async function Forbidden() {
   const t = await getTranslations('Wiki');
   return (
-    <div className="max-w-2xl mx-auto py-16 px-4 text-center space-y-2">
-      <h1 className="text-2xl font-semibold text-gray-900">{t('accessDenied')}</h1>
-      <p className="text-sm text-gray-500">403 Forbidden</p>
+    <div className="mx-auto max-w-2xl px-4 py-16">
+      <EmptyState
+        icon={Lock}
+        title={t('accessDenied')}
+        description="403 Forbidden"
+        action={
+          <Button asChild>
+            <Link href="/dashboard">대시보드로 이동</Link>
+          </Button>
+        }
+      />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePage } from '@/lib/queries/knowledge';
 import { PageViewer } from '@/components/knowledge/PageViewer';
 import { PageMetaSidebar } from '@/components/knowledge/PageMetaSidebar';
+import { PageHeader } from '@/components/patterns/PageHeader';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,25 +29,25 @@ export default async function KnowledgePageView({ params }: Props) {
   const mdxContent = page.currentVersion?.mdxContent ?? '';
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       {/* B4 Phase 1: Legacy route deprecation banner */}
-      <div className="mb-4 rounded-md border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+      <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200">
         <p>
           {t('deprecationBanner')}{' '}
-          <Link href="/wiki" className="font-medium underline hover:text-yellow-900">
+          <Link href="/wiki" className="font-medium underline hover:text-amber-900 dark:hover:text-amber-100">
             {t('deprecationLink')}
           </Link>
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-8">
+      <PageHeader
+        eyebrow="Knowledge"
+        title={page.title}
+        description={page.summary ?? undefined}
+      />
+
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
         <article className="min-w-0">
-          <header className="mb-6">
-            <h1 className="text-3xl font-bold">{page.title}</h1>
-            {page.summary && (
-              <p className="mt-2 text-gray-500">{page.summary}</p>
-            )}
-          </header>
           <PageViewer mdxContent={mdxContent} />
         </article>
 

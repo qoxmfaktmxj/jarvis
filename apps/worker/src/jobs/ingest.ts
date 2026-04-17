@@ -32,6 +32,19 @@ export interface IngestJobData {
   rawSourceId: string;
 }
 
+/**
+ * Shared result type for both wiki and legacy ingest pipelines.
+ * `processIngest()` inspects `ok` to decide `finalStatus`.
+ */
+export interface IngestExecutionResult {
+  ok: boolean;
+  mode: 'wiki' | 'legacy';
+  pageCount: number;
+  commitSha?: string;
+  failures: Array<{ path: string; rule: string; detail: string }>;
+  errorMessage?: string;
+}
+
 const INGEST_MODEL = process.env['INGEST_AI_MODEL'] ?? 'gpt-5.4-mini';
 const ingestOpenAI = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
 
@@ -99,7 +112,7 @@ export async function legacyTwoStepIngest(
   workspaceId: string,
   safeText: string,
   sensitivity: string,
-): Promise<void> {
+): Promise<IngestExecutionResult> {
   // ---- LLM synthesis → knowledge_page (draft, generated) ----
   const truncated = safeText.slice(0, 12000); // ~3k tokens context budget
   const systemPrompt = `You are a knowledge extraction assistant. Given a document, produce a JSON object with:
@@ -125,10 +138,12 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
     synthesis = JSON.parse(resp.choices[0]?.message?.content ?? '{}');
   } catch (err) {
     console.warn(`[ingest] LLM synthesis failed for rawSourceId=${rawSourceId}: ${String(err)}`);
-    return; // non-fatal: chunks are already written
+    return { ok: false, mode: 'legacy', pageCount: 0, failures: [], errorMessage: `LLM synthesis failed: ${String(err)}` };
   }
 
-  if (!synthesis.title || !synthesis.summary) return;
+  if (!synthesis.title || !synthesis.summary) {
+    return { ok: false, mode: 'legacy', pageCount: 0, failures: [], errorMessage: 'LLM returned empty title or summary' };
+  }
 
   const slug = `generated-${rawSourceId}`;
 
@@ -158,7 +173,13 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
     })
     .returning({ id: knowledgePage.id });
 
-  if (!page) return;
+  if (!page) return {
+    ok: false,
+    mode: 'legacy' as const,
+    pageCount: 0,
+    failures: [],
+    errorMessage: 'knowledge_page upsert returned empty',
+  };
 
   // Delete old generated claims (idempotent re-run)
   await db.delete(knowledgeClaim).where(
@@ -183,6 +204,8 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
       console.warn(`[ingest] claim embed/insert failed idx=${idx} rawSourceId=${rawSourceId}: ${String(claimErr)}`);
     }
   }
+
+  return { ok: true, mode: 'legacy', pageCount: 1, failures: [] };
 }
 
 /**
@@ -436,6 +459,7 @@ async function processIngest(
     // when we silently swallowed an exception — that was previously hiding
     // real failures (e.g. OpenAI 5xx, git repo corruption) from operators.
     let twoStepError: Error | null = null;
+    let ingestResult: IngestExecutionResult | null = null;
     if (featureTwoStepIngest()) {
       try {
         if (featureWikiFsMode()) {
@@ -443,7 +467,7 @@ async function processIngest(
           const fileNameOpt: { sourceFileName?: string } = source.storagePath
             ? { sourceFileName: source.storagePath.split('/').pop() ?? source.storagePath }
             : {};
-          await wikiTwoStepIngest(
+          const wikiResult = await wikiTwoStepIngest(
             rawSourceId,
             source.workspaceId,
             safeText,
@@ -456,9 +480,16 @@ async function processIngest(
               piiHits: piiHits.map((h) => h.kind),
             },
           );
+          ingestResult = {
+            ok: wikiResult.ok,
+            mode: 'wiki',
+            pageCount: wikiResult.pageCount,
+            commitSha: wikiResult.commitSha,
+            failures: wikiResult.failures,
+          };
         } else {
           // Legacy single-page knowledge_page path.
-          await legacyTwoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
+          ingestResult = await legacyTwoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
         }
       } catch (err) {
         // Log and capture. We intentionally do NOT re-throw so PII-redacted
@@ -474,18 +505,37 @@ async function processIngest(
     // ---- End two-step ingest ----
 
     // Update raw_source with parsed content (redacted).
-    // If two-step ingest threw an infra/LLM error, mark status=error and
-    // record the failure in metadata so the op console can surface it.
-    const finalStatus = twoStepError ? 'error' : 'done';
-    const finalMetadata = twoStepError
-      ? { wikiIngestError: twoStepError.message.slice(0, 2000) }
-      : undefined;
+    // Mark status=error when: (a) infra exception was caught, or (b) ingest
+    // returned ok=false (e.g. validate failure, LLM empty response).
+    const finalStatus = twoStepError || (ingestResult && !ingestResult.ok) ? 'error' : 'done';
+
+    // Spread-merge metadata so existing keys (e.g. PII hits) are preserved.
+    const existingMetadata = (source.metadata ?? {}) as Record<string, unknown>;
+    const wikiIngest = ingestResult
+      ? {
+          ok: ingestResult.ok,
+          mode: ingestResult.mode,
+          pageCount: ingestResult.pageCount,
+          commitSha: ingestResult.commitSha ?? null,
+          failures: ingestResult.ok ? [] : ingestResult.failures,
+          error: ingestResult.ok
+            ? null
+            : (ingestResult.errorMessage ?? twoStepError?.message ?? null),
+        }
+      : twoStepError
+        ? { ok: false, mode: 'unknown' as const, pageCount: 0, commitSha: null, failures: [], error: twoStepError.message.slice(0, 2000) }
+        : undefined;
+
+    const finalMetadata = wikiIngest
+      ? { ...existingMetadata, wikiIngest }
+      : existingMetadata;
+
     await db
       .update(rawSource)
       .set({
         parsedContent: safeText,
         ingestStatus: finalStatus,
-        ...(finalMetadata !== undefined ? { metadata: finalMetadata } : {}),
+        metadata: finalMetadata,
         updatedAt: new Date(),
       })
       .where(eq(rawSource.id, rawSourceId));

@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { FilterBar } from './_components/FilterBar';
 import { ApprovalDialog } from './_components/ApprovalDialog';
 import { Pagination } from './_components/Pagination';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { DataTableShell } from '@/components/patterns/DataTableShell';
+import { EmptyState } from '@/components/patterns/EmptyState';
 
 const STATUS_VALUES = ['pending', 'approved', 'rejected', 'deferred', 'all'] as const;
 type StatusValue = (typeof STATUS_VALUES)[number];
@@ -87,31 +90,30 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {t('descriptionPending', { count: total })}
-        </p>
-      </div>
+      <PageHeader
+        accent="AD"
+        eyebrow="Admin · Review Queue"
+        title={t('title')}
+        description={t('descriptionPending', { count: total })}
+      />
 
-      <FilterBar status={status} kind={kind} />
-
-      {items.length === 0 ? (
-        <div className="border rounded-md p-8 text-center text-muted-foreground">
-          {t('empty')}
-        </div>
-      ) : (
-        <div className="border rounded-md divide-y">
+      <DataTableShell
+        rowCount={items.length}
+        filters={<FilterBar status={status} kind={kind} />}
+        empty={<EmptyState title={t('empty')} />}
+        pagination={totalPages > 1 ? <Pagination page={page} totalPages={totalPages} /> : undefined}
+      >
+        <ul className="divide-y divide-surface-200">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 px-4 py-3">
-              <div className="flex-1 min-w-0">
+            <li key={item.id} className="flex items-center gap-4 px-4 py-3">
+              <div className="min-w-0 flex-1">
                 <Link
                   href={`/knowledge/${item.pageId}`}
-                  className="text-sm font-medium hover:underline truncate block"
+                  className="block truncate text-sm font-medium text-surface-900 hover:underline"
                 >
                   {item.pageTitle ?? t('untitled')}
                 </Link>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-xs text-surface-500">
                   {t('requestedBy')} {item.requesterName ?? 'Unknown'}
                 </p>
               </div>
@@ -124,7 +126,7 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
                 {t(`statusFilter.${item.status as StatusValue}` as never)}
               </Badge>
               {item.status === 'pending' ? (
-                <div className="flex gap-2 shrink-0">
+                <div className="flex shrink-0 gap-2">
                   <ApprovalDialog
                     item={{
                       id: item.id,
@@ -169,12 +171,10 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
                   </ApprovalDialog>
                 </div>
               ) : null}
-            </div>
+            </li>
           ))}
-        </div>
-      )}
-
-      {totalPages > 1 ? <Pagination page={page} totalPages={totalPages} /> : null}
+        </ul>
+      </DataTableShell>
     </div>
   );
 }

@@ -172,9 +172,8 @@ async function runWikiLintForWorkspace(
   const missingXrefs = await suggestMissingCrossRefs(workspaceId);
 
   // 6. boundary violations — git log walk on workspace sub-repo.
-  // NOTE(W4): boundary.ts predicates match `wiki/auto/` / `wiki/manual/` paths.
-  // If workspace sub-repos use a flat `auto/` / `manual/` layout the count
-  // will be 0 until the predicates are updated to strip the workspace prefix.
+  // boundary.ts normalizes paths (strips `wiki/{workspaceId}/` prefix) before
+  // evaluating `auto/` / `manual/` predicates.
   const wsRepoPath = path.join(REPO_ROOT, "wiki", workspaceId);
   const boundaryViolations = await detectBoundaryViolations(wsRepoPath, {
     sinceDays: 7,

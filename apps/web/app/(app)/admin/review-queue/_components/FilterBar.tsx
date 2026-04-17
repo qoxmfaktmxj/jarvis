@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 
 const STATUS_VALUES = ["pending", "approved", "rejected", "deferred", "all"] as const;
 const KIND_VALUES = [
@@ -33,7 +34,6 @@ export function FilterBar({ status, kind }: FilterBarProps) {
       if (v === null) next.delete(k);
       else next.set(k, v);
     }
-    // Reset pagination when filters change
     next.delete("page");
     const qs = next.toString();
     return qs ? `?${qs}` : "?";
@@ -54,36 +54,33 @@ export function FilterBar({ status, kind }: FilterBarProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b pb-3">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="flex gap-1">
         {STATUS_VALUES.map((s) => {
           const active = s === status;
           return (
-            <button
+            <Button
               key={s}
               type="button"
+              size="sm"
+              variant={active ? "default" : "ghost"}
               onClick={() => navigate({ status: s === "pending" ? null : s })}
-              className={
-                active
-                  ? "px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground font-medium"
-                  : "px-3 py-1.5 text-sm rounded-md hover:bg-muted text-muted-foreground"
-              }
             >
               {t(`statusFilter.${s}` as const)}
-            </button>
+            </Button>
           );
         })}
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <label className="text-sm text-muted-foreground" htmlFor="kind-filter">
+        <label className="text-sm text-surface-600" htmlFor="kind-filter">
           {t("kindFilterLabel")}:
         </label>
         <select
           id="kind-filter"
           value={kind}
           onChange={(e) => navigate({ kind: e.target.value === "all" ? null : e.target.value })}
-          className="text-sm border rounded-md px-2 py-1.5 bg-background"
+          className="rounded-md border border-surface-200 bg-white px-2 py-1.5 text-sm text-surface-900 focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {KIND_VALUES.map((k) => (
             <option key={k} value={k}>
