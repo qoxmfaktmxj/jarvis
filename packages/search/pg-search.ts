@@ -21,10 +21,10 @@ const MAX_LIMIT = 100;
  * Reciprocal Rank Fusion: combine two ranked hit lists into one.
  *   score(doc) = Σ over lists of 1 / (k + rank_in_list).
  * k=60 is the classic RRF constant. The merged list is sorted by combined
- * score and truncated to `limit`.
+ * score and truncated to `limit`. Exported for unit testing.
  */
-const RRF_K = 60;
-function mergeByRRF(a: SearchHit[], b: SearchHit[], limit: number): SearchHit[] {
+export const RRF_K = 60;
+export function mergeByRRF(a: SearchHit[], b: SearchHit[], limit: number): SearchHit[] {
   const scores = new Map<string, { hit: SearchHit; score: number }>();
   const visit = (list: SearchHit[]) => {
     list.forEach((hit, idx) => {
@@ -45,6 +45,22 @@ function mergeByRRF(a: SearchHit[], b: SearchHit[], limit: number): SearchHit[] 
     .sort((x, y) => y.score - x.score)
     .slice(0, limit)
     .map(({ hit, score }) => ({ ...hit, hybridScore: score }));
+}
+
+/**
+ * Phase-W5: reject non-finite values or wrong dimensionality before passing
+ * the vector into SQL. Prevents silent Postgres parse errors and cheap DoS via
+ * malformed embeddings.
+ */
+export function assertValidEmbedding(v: number[], expectedDim = 1536): void {
+  if (!Array.isArray(v) || v.length !== expectedDim) {
+    throw new Error(`[search] embedding must be length ${expectedDim}, got ${v?.length ?? 'n/a'}`);
+  }
+  for (const x of v) {
+    if (!Number.isFinite(x)) {
+      throw new Error('[search] embedding contains non-finite value (NaN/Infinity)');
+    }
+  }
 }
 
 export interface PgSearchAdapterOptions {
@@ -108,9 +124,13 @@ export class PgSearchAdapter implements SearchAdapter {
     let result: SearchResult;
     if (vectorResult && (ftsResult.hits.length > 0 || vectorResult.hits.length > 0)) {
       const merged = mergeByRRF(ftsResult.hits, vectorResult.hits, limit);
+      // Total: use the larger of the two underlying totals so pagination
+      // does not under-report the population. Union cardinality is unknowable
+      // without a cross-lane COUNT DISTINCT, so the larger is a safe lower
+      // bound on "how many results could the user browse to."
       result = {
         hits: merged,
-        total: merged.length,
+        total: Math.max(ftsResult.total, vectorResult.total),
         facets: { byPageType: {}, bySensitivity: {} },
         suggestions: [],
         query: enrichedQuery.q,
@@ -385,6 +405,8 @@ export class PgSearchAdapter implements SearchAdapter {
     const startMs = Date.now();
     const limit = opts?.limit ?? DEFAULT_LIMIT;
     const offset = opts?.offset ?? 0;
+
+    assertValidEmbedding(queryVector);
 
     const secretFilter = this.buildSecretFilter(query.userPermissions);
     const extraFilters = this.buildExtraFilters(query);

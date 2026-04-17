@@ -35,11 +35,12 @@ export async function ResourceTabs({
         : 'border-transparent text-muted-foreground hover:text-foreground',
     ].join(' ');
 
+  // Use nav semantics instead of role="tab" — ARIA tabs require a matching
+  // role="tabpanel", but this component drives full-page navigation via URL.
   return (
-    <div role="tablist" aria-label={t('tabKnowledge') + ' / ' + t('tabCase')} className="mb-4 flex gap-2 border-b">
+    <nav aria-label={t('tabKnowledge') + ' / ' + t('tabCase')} className="mb-4 flex gap-2 border-b">
       <Link
-        role="tab"
-        aria-selected={value === 'knowledge'}
+        aria-current={value === 'knowledge' ? 'page' : undefined}
         href={hrefFor('knowledge')}
         className={tabClass(value === 'knowledge')}
         title={t('tabKnowledgeDesc')}
@@ -47,14 +48,13 @@ export async function ResourceTabs({
         {t('tabKnowledge')}
       </Link>
       <Link
-        role="tab"
-        aria-selected={value === 'case'}
+        aria-current={value === 'case' ? 'page' : undefined}
         href={hrefFor('case')}
         className={tabClass(value === 'case')}
         title={t('tabCaseDesc')}
       >
         {t('tabCase')}
       </Link>
-    </div>
+    </nav>
   );
 }

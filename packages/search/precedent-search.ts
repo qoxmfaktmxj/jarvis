@@ -11,10 +11,12 @@
 // The API route dispatches on `resourceType`: 'case' → this adapter,
 // everything else → PgSearchAdapter.
 
+import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
 import type { SearchQuery, SearchResult, SearchHit } from './types.js';
+import { assertValidEmbedding } from './pg-search.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -36,7 +38,13 @@ export class PrecedentSearchAdapter implements SearchAdapter {
     const offset = ((query.page ?? 1) - 1) * limit;
 
     const qvec = await this.embedQuery(query.q);
+    assertValidEmbedding(qvec);
     const literal = `[${qvec.join(',')}]`;
+
+    // Apply the same sensitivity-based RBAC as Lane A — precedent_case rows
+    // are tagged with `sensitivity` (default 'INTERNAL') and the filter must
+    // exclude RESTRICTED / SECRET_REF_ONLY from users without clearance.
+    const secretFilter = buildLegacyKnowledgeSensitivitySqlFilter(query.userPermissions);
 
     const rows = await db.execute<{
       id: string;
@@ -58,6 +66,7 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       FROM precedent_case
       WHERE workspace_id = ${query.workspaceId}::uuid
         AND embedding IS NOT NULL
+        ${sql.raw(secretFilter)}
       ORDER BY embedding <=> ${literal}::vector
       LIMIT ${limit} OFFSET ${offset}
     `);

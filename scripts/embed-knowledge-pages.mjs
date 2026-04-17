@@ -32,7 +32,11 @@ export async function embedPages({ db, openai, sql }) {
       model: 'text-embedding-3-small',
       input,
     });
-    const vec = res.data[0].embedding;
+    const first = res.data?.[0];
+    if (!first || !Array.isArray(first.embedding)) {
+      throw new Error(`[embed-knowledge-pages] OpenAI returned empty embedding for page ${row.id}`);
+    }
+    const vec = first.embedding;
     const literal = `[${vec.join(',')}]`;
     await db.execute(sql`
       UPDATE knowledge_page
