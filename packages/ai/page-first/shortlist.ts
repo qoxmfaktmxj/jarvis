@@ -50,6 +50,17 @@ export interface ShortlistOptions {
   question: string;
   /** Defaults to 20 per the spec. */
   topK?: number;
+  /**
+   * Optional frontmatter `domain` filter. When set, only pages whose
+   * `frontmatter.domain` equals this value are returned. Used by:
+   *  - Ask AI routing that decides to scope answers to a single domain
+   *    (e.g. "인프라 운영" 질문 → domain=infra)
+   *  - Company Infra Dashboard listing only `domain=infra` pages
+   *  - Any caller that already knows the target domain from context
+   *
+   * Undefined = no domain restriction (default, current behavior).
+   */
+  domain?: string;
 }
 
 /**
@@ -102,6 +113,12 @@ export async function lexicalShortlist(
 
   const permArray = pgTextArray(userPermissions);
 
+  // Optional domain filter. Bound via parameter (not sql.raw) to avoid SQL
+  // injection even though callers today only pass trusted constants.
+  const domainClause = opts.domain
+    ? sql` AND wpi.frontmatter ->> 'domain' = ${opts.domain}`
+    : sql.empty();
+
   // Guard: no tokens → skip scoring SQL entirely, return recency-only results.
   if (!hasTokens) {
     const recentRows = await db.execute<{
@@ -126,6 +143,7 @@ export async function lexicalShortlist(
           OR 'admin:all' = ANY(${permArray})
         )
         ${sensitivityClause}
+        ${domainClause}
       ORDER BY wpi.updated_at DESC
       LIMIT ${topK}
     `);
@@ -191,6 +209,7 @@ export async function lexicalShortlist(
         OR 'admin:all' = ANY(${permArray})
       )
       ${sensitivityClause}
+      ${domainClause}
     ORDER BY score DESC, wpi.updated_at DESC
     LIMIT ${fetchLimit}
   `);

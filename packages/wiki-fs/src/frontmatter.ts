@@ -29,6 +29,7 @@ const VALID_TYPES: readonly WikiPageType[] = [
   "concept",
   "synthesis",
   "derived",
+  "infra-runbook",
 ];
 const VALID_SENSITIVITIES: readonly WikiSensitivity[] = [
   "PUBLIC",

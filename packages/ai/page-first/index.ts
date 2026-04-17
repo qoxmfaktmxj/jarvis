@@ -28,6 +28,7 @@ import { makeCacheKey, getCached, setCached } from "../cache.js";
 import { lexicalShortlist } from "./shortlist.js";
 import { expandOneHop } from "./expand.js";
 import { readTopPages } from "./read-pages.js";
+import { detectInfraIntent } from "./infra-routing.js";
 import {
   synthesizePageFirstAnswer,
   PAGE_FIRST_PROMPT_VERSION,
@@ -98,6 +99,10 @@ export async function* pageFirstAsk(
   yield routeEvt;
 
   // 4. Shortlist
+  //    Intent classifier → scope to `domain=infra` when the question clearly
+  //    asks about infrastructure (접속·DB·VPN·배포 등). Generic questions
+  //    skip the filter and recall across all domains.
+  const inferredDomain = detectInfraIntent(question) ? "infra" : undefined;
   let shortlist;
   try {
     shortlist = await lexicalShortlist({
@@ -105,6 +110,7 @@ export async function* pageFirstAsk(
       userPermissions,
       question,
       topK: 20,
+      domain: inferredDomain,
     });
   } catch (err) {
     const message =

@@ -413,4 +413,67 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
       /"queryChunks":\[\{"value":\[""\]\},"뭐야",\{"value":\[""\]\}\]/,
     );
   });
+
+  // ---------------------------------------------------------------------
+  // domain filter (infra pipeline — Phase-3)
+  // ---------------------------------------------------------------------
+  it("domain option: appends frontmatter->>'domain' = $1 filter", async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce({
+      rows: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    await lexicalShortlist({
+      workspaceId: WS,
+      userPermissions: [PERMISSIONS.ADMIN_ALL],
+      question: "WHE 접속",
+      domain: "infra",
+    });
+
+    const serialized = stringifyQuery(
+      vi.mocked(db.execute).mock.calls[0]?.[0],
+    );
+    // Domain clause is bound via parameter, so the literal "infra" shows up
+    // as a queryChunks value and the ->> 'domain' key as a raw SQL fragment.
+    expect(serialized).toContain("frontmatter ->> 'domain'");
+    expect(serialized).toContain('"infra"');
+  });
+
+  it("no domain option: does not emit domain filter", async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce({
+      rows: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    await lexicalShortlist({
+      workspaceId: WS,
+      userPermissions: [PERMISSIONS.ADMIN_ALL],
+      question: "아무거나",
+    });
+
+    const serialized = stringifyQuery(
+      vi.mocked(db.execute).mock.calls[0]?.[0],
+    );
+    expect(serialized).not.toContain("frontmatter ->> 'domain'");
+  });
+
+  it("domain filter also applies to the no-token (recency-only) path", async () => {
+    vi.mocked(db.execute).mockResolvedValueOnce({
+      rows: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+
+    await lexicalShortlist({
+      workspaceId: WS,
+      userPermissions: [PERMISSIONS.ADMIN_ALL],
+      question: "?",
+      domain: "infra",
+    });
+
+    const serialized = stringifyQuery(
+      vi.mocked(db.execute).mock.calls[0]?.[0],
+    );
+    expect(serialized).toContain("frontmatter ->> 'domain'");
+    expect(serialized).toContain('"infra"');
+  });
 });

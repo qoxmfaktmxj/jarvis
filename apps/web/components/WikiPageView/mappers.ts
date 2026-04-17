@@ -1,5 +1,5 @@
 import type { WikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
-import type { WikiPage, WikiSensitivityUi } from "./types";
+import type { InfraRunbookMeta, WikiPage, WikiSensitivityUi } from "./types";
 
 /**
  * apps/web/components/WikiPageView/mappers.ts
@@ -29,11 +29,20 @@ export function mapDbSensitivity(db: string): WikiSensitivityUi {
 }
 
 export function mapDbRowToWikiPage(row: WikiPageIndex, body: string): WikiPage {
-  const fmTags = (row.frontmatter as { tags?: unknown } | undefined)?.tags;
+  const fm = (row.frontmatter ?? {}) as Record<string, unknown>;
+
+  const fmTags = fm.tags;
   const tags =
     Array.isArray(fmTags) && fmTags.every((t) => typeof t === "string")
       ? (fmTags as string[])
       : [];
+
+  const pageType = typeof fm.type === "string" ? fm.type : undefined;
+  const infra =
+    pageType === "infra-runbook" && fm.infra && typeof fm.infra === "object"
+      ? coerceInfraMeta(fm.infra as Record<string, unknown>)
+      : undefined;
+
   return {
     slug: row.slug,
     title: row.title,
@@ -42,5 +51,29 @@ export function mapDbRowToWikiPage(row: WikiPageIndex, body: string): WikiPage {
     updatedAt: row.updatedAt.toISOString(),
     workspaceId: row.workspaceId,
     content: body,
+    pageType,
+    infra,
+  };
+}
+
+function coerceInfraMeta(raw: Record<string, unknown>): InfraRunbookMeta {
+  const str = (v: unknown) =>
+    v === null || v === undefined ? null : typeof v === "string" ? v : String(v);
+  return {
+    enterCd: typeof raw.enterCd === "string" ? raw.enterCd : undefined,
+    companyCd: typeof raw.companyCd === "string" ? raw.companyCd : undefined,
+    envType: typeof raw.envType === "string" ? raw.envType : undefined,
+    connectCd: typeof raw.connectCd === "string" ? raw.connectCd : undefined,
+    vpnFileSeq:
+      typeof raw.vpnFileSeq === "string" || typeof raw.vpnFileSeq === "number"
+        ? raw.vpnFileSeq
+        : null,
+    domainAddr: str(raw.domainAddr),
+    loginInfo: str(raw.loginInfo),
+    svnAddr: str(raw.svnAddr),
+    dbConnectInfo: str(raw.dbConnectInfo),
+    dbUserInfo: str(raw.dbUserInfo),
+    srcInfo: str(raw.srcInfo),
+    classInfo: str(raw.classInfo),
   };
 }

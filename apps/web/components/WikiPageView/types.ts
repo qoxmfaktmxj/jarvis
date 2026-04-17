@@ -16,6 +16,34 @@ export type WikiPageMeta = {
   tags: string[];
   updatedAt: string;
   workspaceId: string;
+  /**
+   * Page type from frontmatter (`type:` field). Used to dispatch a
+   * specialized renderer — e.g. `infra-runbook` pages get a structured
+   * info panel above the markdown body. Undefined for legacy pages that
+   * didn't carry the field.
+   */
+  pageType?: string;
+  /**
+   * Structured infra metadata — populated when `pageType === "infra-runbook"`.
+   * Mirrors the TSMT001 EXPORT_TABLE columns documented in
+   * `docs/plan/2026-04-17-tsmt001-infra-pipeline.md` §B-2.
+   */
+  infra?: InfraRunbookMeta;
+};
+
+export type InfraRunbookMeta = {
+  enterCd?: string;
+  companyCd?: string;
+  envType?: string;
+  connectCd?: string;
+  vpnFileSeq?: string | number | null;
+  domainAddr?: string | null;
+  loginInfo?: string | null;
+  svnAddr?: string | null;
+  dbConnectInfo?: string | null;
+  dbUserInfo?: string | null;
+  srcInfo?: string | null;
+  classInfo?: string | null;
 };
 
 export type WikiPage = WikiPageMeta & {

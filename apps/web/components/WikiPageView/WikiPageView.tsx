@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { InfraRunbookHeader } from './InfraRunbookHeader';
 import type { WikiPage } from './types';
 
 const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g;
@@ -151,6 +152,10 @@ export function WikiPageView({
           {t('lastUpdated')}: {formattedDate}
         </p>
       </header>
+
+      {page.pageType === 'infra-runbook' && page.infra && (
+        <InfraRunbookHeader meta={page.infra} />
+      )}
 
       <div className="prose prose-sm max-w-none text-surface-800">
         <ReactMarkdown
