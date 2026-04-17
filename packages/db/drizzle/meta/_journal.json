@@ -176,6 +176,13 @@
       "when": 1776320446148,
       "tag": "0024_thankful_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1776320447148,
+      "tag": "0025_knowledge_page_embedding",
+      "breakpoints": true
     }
   ]
 }

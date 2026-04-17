@@ -305,6 +305,84 @@ export class PgSearchAdapter implements SearchAdapter {
   }
 
   // -----------------------------------------------------------------------
+  // Public: runVectorSearch — HNSW cosine-distance search against
+  // knowledge_page.embedding (Lane A; OpenAI text-embedding-3-small space).
+  // Callers supply the pre-computed query vector. This method never reads
+  // Lane B (precedent_case) — isolated per packages/search/README.md.
+  // -----------------------------------------------------------------------
+
+  async runVectorSearch(
+    query: SearchQuery,
+    queryVector: number[],
+    opts?: { limit?: number; offset?: number },
+  ): Promise<SearchResult> {
+    const startMs = Date.now();
+    const limit = opts?.limit ?? DEFAULT_LIMIT;
+    const offset = opts?.offset ?? 0;
+
+    const secretFilter = this.buildSecretFilter(query.userPermissions);
+    const extraFilters = this.buildExtraFilters(query);
+    const literal = `[${queryVector.join(',')}]`;
+
+    const rows = await db.execute<{
+      id: string;
+      title: string;
+      page_type: string;
+      sensitivity: string;
+      updated_at: Date;
+      vector_sim: number;
+      headline: string;
+      total_count: string;
+    }>(sql`
+      SELECT
+        id,
+        title,
+        page_type,
+        sensitivity,
+        updated_at,
+        1 - (embedding <=> ${literal}::vector)        AS vector_sim,
+        left(coalesce(summary, ''), 300)              AS headline,
+        COUNT(*) OVER ()::text                        AS total_count
+      FROM knowledge_page
+      WHERE
+        workspace_id = ${query.workspaceId}::uuid
+        AND publish_status != 'deleted'
+        AND embedding IS NOT NULL
+        ${sql.raw(secretFilter)}
+        ${sql.raw(extraFilters)}
+      ORDER BY embedding <=> ${literal}::vector
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+    const first = rows.rows[0];
+    const total = first ? parseInt(first.total_count, 10) : 0;
+    const hits: SearchHit[] = rows.rows.map((row) => ({
+      id: row.id,
+      resourceType: 'knowledge' as ResourceType,
+      title: row.title,
+      headline: sanitizeHeadline(row.headline ?? ''),
+      pageType: row.page_type,
+      sensitivity: row.sensitivity,
+      updatedAt: row.updated_at.toISOString(),
+      ftsRank: 0,
+      trgmSim: 0,
+      vectorSim: row.vector_sim,
+      freshness: this.computeFreshness(row.updated_at),
+      hybridScore: row.vector_sim,
+      url: `/knowledge/${row.id}`,
+    }));
+
+    return {
+      hits,
+      total,
+      facets: { byPageType: {}, bySensitivity: {} },
+      suggestions: [],
+      query: query.q,
+      durationMs: Date.now() - startMs,
+    };
+  }
+
+  // -----------------------------------------------------------------------
   // Private helpers
   // -----------------------------------------------------------------------
 

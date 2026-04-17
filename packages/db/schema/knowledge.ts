@@ -47,6 +47,10 @@ export const knowledgePage = pgTable("knowledge_page", {
   sourceType: varchar("source_type", { length: 50 }),
   sourceKey: varchar("source_key", { length: 1000 }),
   searchVector: tsvectorType("search_vector"),
+  // Phase-W5 T2: page-level OpenAI text-embedding-3-small 1536d vector.
+  // One embedding per page (Karpathy "compiled page = unit"; no chunks).
+  embedding: vector("embedding"),
+  lastEmbeddedAt: timestamp("last_embedded_at", { withTimezone: true }),
 
   // 4-surface 지식 모델 (2026-04-13)
   // surface: 지식 표면 종류

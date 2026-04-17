@@ -1,5 +1,5 @@
 export type SearchSortBy = 'relevance' | 'newest' | 'freshness' | 'hybrid';
-export type ResourceType = 'knowledge' | 'project' | 'system' | 'graph';
+export type ResourceType = 'knowledge' | 'project' | 'system' | 'graph' | 'case';
 export type QueryMode = 'phrase' | 'web' | 'prefix';
 
 export interface SearchQuery {
@@ -27,6 +27,7 @@ export interface SearchHit {
   updatedAt: string;
   ftsRank: number;
   trgmSim: number;
+  vectorSim?: number;     // Phase-W5: cosine similarity when vector lane ran
   freshness: number;
   hybridScore: number;
   url: string;

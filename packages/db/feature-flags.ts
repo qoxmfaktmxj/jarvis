@@ -45,3 +45,16 @@ export function featureWikiLintCron(): boolean {
 export function featureWikiFsMode(): boolean {
   return process.env.FEATURE_WIKI_FS_MODE === "true";
 }
+
+/**
+ * Phase-W5 T1: hybrid vector search in PgSearchAdapter.
+ *
+ * When true, `/api/search` runs the FTS + trgm + vector RRF hybrid path against
+ * `knowledge_page.embedding` (OpenAI text-embedding-3-small, 1536d). When false
+ * (default), only FTS + trgm fallback runs — behaviour identical to pre-W5.
+ *
+ * @defaultValue false (`FEATURE_SEARCH_HYBRID === 'true'`)
+ */
+export function featureSearchHybrid(): boolean {
+  return process.env.FEATURE_SEARCH_HYBRID === "true";
+}
