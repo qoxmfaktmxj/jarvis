@@ -115,7 +115,7 @@ export function ReviewPanel({ pageId, publishStatus, canReview, canEdit }: Revie
         {/* Review actions (reviewer-only) */}
         {publishStatus === 'review' && canReview && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-surface-500">
               <Clock className="h-4 w-4" />
               This page is awaiting review
             </div>
@@ -142,7 +142,7 @@ export function ReviewPanel({ pageId, publishStatus, canReview, canEdit }: Revie
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 border-red-300 text-red-600 hover:bg-red-50"
+                className="flex-1 border-danger text-danger hover:bg-danger-subtle"
                 onClick={() => postReview('reject')}
                 disabled={isPending}
               >
@@ -154,13 +154,13 @@ export function ReviewPanel({ pageId, publishStatus, canReview, canEdit }: Revie
         )}
 
         {publishStatus === 'published' && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-surface-500">
             This page is published. Edit it to create a new draft version.
           </p>
         )}
 
         {publishStatus === 'archived' && (
-          <p className="text-sm text-gray-500">This page is archived.</p>
+          <p className="text-sm text-surface-500">This page is archived.</p>
         )}
       </CardContent>
     </Card>

@@ -42,30 +42,30 @@ export function UserMenu({ userName }: { userName: string }) {
         onClick={() => setOpen((value) => !value)}
         className={cn(
           "flex items-center gap-2 rounded-lg px-3 py-2 transition-colors",
-          open ? "bg-gray-100" : "hover:bg-gray-100"
+          open ? "bg-surface-100" : "hover:bg-surface-100"
         )}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-medium text-white">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-isu-600 text-xs font-medium text-white">
           {userName.charAt(0)}
         </div>
-        <span className="text-sm text-gray-700">{userName}</span>
+        <span className="text-sm text-surface-700">{userName}</span>
         <ChevronDown
-          className={cn("h-4 w-4 text-gray-400 transition-transform", open && "rotate-180")}
+          className={cn("h-4 w-4 text-surface-400 transition-transform", open && "rotate-180")}
         />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-gray-200 bg-white p-2 shadow-xl"
+          className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-surface-200 bg-card p-2 shadow-xl"
         >
           <Link
             href="/profile"
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-50"
+            className="flex items-center gap-3 rounded-xl px-3 py-2 text-sm text-surface-700 transition-colors hover:bg-surface-50"
           >
-            <UserCircle2 className="h-4 w-4 text-gray-500" />
+            <UserCircle2 className="h-4 w-4 text-surface-500" />
             <span>{t("profile")}</span>
           </Link>
 
@@ -73,7 +73,7 @@ export function UserMenu({ userName }: { userName: string }) {
             type="button"
             role="menuitem"
             disabled
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-gray-400"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-surface-400"
           >
             <Palette className="h-4 w-4" />
             <span className="flex-1">테마 설정</span>
@@ -82,7 +82,7 @@ export function UserMenu({ userName }: { userName: string }) {
             </Badge>
           </button>
 
-          <div className="my-2 border-t border-gray-100" />
+          <div className="my-2 border-t border-surface-100" />
 
           <form action="/api/auth/logout" method="post">
             <button

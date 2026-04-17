@@ -219,7 +219,7 @@ export function AskPanel({
               {history.map((entry, index) => (
                 <div key={`${entry.question}-${index}`} className="space-y-3">
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-2.5 text-sm text-white">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-isu-600 px-4 py-2.5 text-sm text-white">
                       {entry.question}
                     </div>
                   </div>
@@ -240,7 +240,7 @@ export function AskPanel({
               {(isStreaming || answer) && (
                 <div className="space-y-3">
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-blue-600 px-4 py-2.5 text-sm text-white">
+                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-isu-600 px-4 py-2.5 text-sm text-white">
                       {question}
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function AskPanel({
                           </span>
                         )}
                         {isStreaming && (
-                          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse align-text-bottom bg-blue-600" />
+                          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse align-text-bottom bg-isu-600" />
                         )}
                       </div>
 

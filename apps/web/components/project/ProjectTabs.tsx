@@ -17,7 +17,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
   const baseHref = `/projects/${projectId}`;
 
   return (
-    <nav className="flex gap-1 border-b border-gray-200">
+    <nav className="flex gap-1 border-b border-surface-200">
       {tabs.map((tab) => {
         const href = tab.href ? `${baseHref}${tab.href}` : baseHref;
         const active = pathname === href;
@@ -29,8 +29,8 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
             className={cn(
               "border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               active
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-900"
+                ? "border-isu-600 text-isu-600"
+                : "border-transparent text-surface-500 hover:border-surface-300 hover:text-surface-900"
             )}
           >
             {tab.label}

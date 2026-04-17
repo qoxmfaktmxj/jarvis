@@ -75,7 +75,7 @@ export function RichTextEditor({
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { class: "text-blue-600 underline" },
+        HTMLAttributes: { class: "text-isu-600 underline" },
       }),
       CodeBlockLowlight.configure({ lowlight }),
       Markdown.configure({
@@ -110,14 +110,14 @@ export function RichTextEditor({
   if (!editor) {
     return (
       <div
-        className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-400"
+        className="rounded-lg border border-surface-200 bg-card p-6 text-sm text-surface-400"
         style={{ minHeight }}
       />
     );
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white">
+    <div className="rounded-lg border border-surface-200 bg-card">
       <Toolbar editor={editor} features={features} readOnly={readOnly} />
       <EditorContent editor={editor} />
     </div>

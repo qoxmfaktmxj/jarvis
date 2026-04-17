@@ -75,7 +75,7 @@ function renderWithWikilinks(
         className={
           isOrphan
             ? 'orphan-slug text-rose-600 underline underline-offset-2 decoration-dashed hover:text-rose-700'
-            : 'text-blue-600 underline underline-offset-2 hover:text-blue-700'
+            : 'text-isu-600 underline underline-offset-2 hover:text-isu-700'
         }
         title={isOrphan ? target : undefined}
       >
@@ -228,7 +228,7 @@ export function WikiPageView({
             a: ({ href, children }) => (
               <a
                 href={href}
-                className="text-blue-600 underline underline-offset-2 hover:text-blue-700"
+                className="text-isu-600 underline underline-offset-2 hover:text-isu-700"
               >
                 {children}
               </a>

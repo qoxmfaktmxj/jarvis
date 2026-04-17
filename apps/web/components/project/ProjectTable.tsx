@@ -55,14 +55,14 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
     columnHelper.accessor("code", {
       header: t("code"),
       cell: (info) => (
-        <span className="font-mono text-xs font-semibold text-gray-600">
+        <span className="font-mono text-xs font-semibold text-surface-600">
           {info.getValue()}
         </span>
       )
     }),
     columnHelper.accessor("name", {
       header: t("name"),
-      cell: (info) => <span className="font-medium text-gray-900">{info.getValue()}</span>
+      cell: (info) => <span className="font-medium text-surface-900">{info.getValue()}</span>
     }),
     columnHelper.accessor("status", {
       header: t("status"),
@@ -121,7 +121,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="rounded-2xl border border-surface-200 bg-card shadow-sm">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((group) => (
@@ -156,7 +156,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
           <TableBody>
             {table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="py-10 text-center text-gray-500">
+                <TableCell colSpan={columns.length} className="py-10 text-center text-surface-500">
                   {t("noResults")}
                 </TableCell>
               </TableRow>
@@ -175,7 +175,7 @@ export function ProjectTable({ data, page, totalPages, total }: Props) {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      <div className="flex items-center justify-between text-sm text-surface-500">
         <span>
           {t("pagination", { page, totalPages, total })}
         </span>

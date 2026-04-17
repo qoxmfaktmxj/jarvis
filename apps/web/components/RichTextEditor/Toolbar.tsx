@@ -89,7 +89,7 @@ export function Toolbar({ editor, features, readOnly = false }: ToolbarProps) {
 
   return (
     <div
-      className="flex flex-wrap items-center gap-1 border-b border-gray-200 px-2 py-1.5"
+      className="flex flex-wrap items-center gap-1 border-b border-surface-200 px-2 py-1.5"
       role="toolbar"
     >
       {has("bold") && (
@@ -129,7 +129,7 @@ export function Toolbar({ editor, features, readOnly = false }: ToolbarProps) {
         </ToolbarButton>
       )}
 
-      {inlineGroup && headingGroup && <span className="mx-1 h-5 w-px bg-gray-200" />}
+      {inlineGroup && headingGroup && <span className="mx-1 h-5 w-px bg-surface-200" />}
 
       {has("heading") && (
         <>
@@ -158,7 +158,7 @@ export function Toolbar({ editor, features, readOnly = false }: ToolbarProps) {
       )}
 
       {(inlineGroup || headingGroup) && listGroup && (
-        <span className="mx-1 h-5 w-px bg-gray-200" />
+        <span className="mx-1 h-5 w-px bg-surface-200" />
       )}
 
       {has("list") && (

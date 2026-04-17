@@ -176,7 +176,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <ExternalLink className="h-3.5 w-3.5 text-green-600" />
+        <ExternalLink className="h-3.5 w-3.5 text-success" />
         <span className="text-xs font-semibold text-surface-700">관련 시스템</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -190,11 +190,11 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
                 href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50/50 px-3 py-1.5 text-sm text-green-800 transition hover:bg-green-100"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-success-subtle bg-success-subtle/50 px-3 py-1.5 text-sm text-success transition hover:bg-success-subtle"
               >
                 <ExternalLink className="h-3 w-3" />
                 {label}
-                <Badge variant="outline" className="ml-1 border-green-300 text-[10px] text-green-600">
+                <Badge variant="outline" className="ml-1 border-success-subtle text-[10px] text-success">
                   {type}
                 </Badge>
               </Link>
@@ -203,10 +203,10 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
           return (
             <span
               key={`${s.entryId}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-green-200 bg-green-50/50 px-3 py-1.5 text-sm text-green-800"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-success-subtle bg-success-subtle/50 px-3 py-1.5 text-sm text-success"
             >
               {label}
-              <Badge variant="outline" className="ml-1 border-green-300 text-[10px] text-green-600">
+              <Badge variant="outline" className="ml-1 border-success-subtle text-[10px] text-success">
                 {type}
               </Badge>
             </span>
@@ -315,7 +315,7 @@ function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <Network className="h-3.5 w-3.5 text-blue-600" />
+        <Network className="h-3.5 w-3.5 text-isu-600" />
         <span className="text-xs font-semibold text-surface-700">지식 그래프</span>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -323,12 +323,12 @@ function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
           <Link
             key={`${s.nodeId}-${i}`}
             href={s.url}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50/50 px-3 py-1.5 text-sm text-blue-800 transition hover:bg-blue-100"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-isu-200 bg-isu-50/50 px-3 py-1.5 text-sm text-isu-700 transition hover:bg-isu-100"
           >
             <Network className="h-3 w-3" />
             {s.nodeLabel}
             {s.communityLabel && (
-              <span className="text-[10px] text-blue-500">{s.communityLabel}</span>
+              <span className="text-[10px] text-isu-500">{s.communityLabel}</span>
             )}
           </Link>
         ))}

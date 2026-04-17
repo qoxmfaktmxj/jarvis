@@ -86,7 +86,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("fields.code")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("fields.code")}</span>
           <Input placeholder={t("codePlaceholder")} {...register("code")} />
           {errors.code ? (
             <span className="text-sm text-rose-600">{errors.code.message}</span>
@@ -94,9 +94,9 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("fields.status")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("fields.status")}</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
             {...register("status")}
           >
             <option value="active">{t("statuses.active")}</option>
@@ -111,7 +111,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
       </div>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">{t("fields.name")}</span>
+        <span className="text-sm font-medium text-surface-700">{t("fields.name")}</span>
         <Input placeholder={t("namePlaceholder")} {...register("name")} />
         {errors.name ? (
           <span className="text-sm text-rose-600">{errors.name.message}</span>
@@ -119,7 +119,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
       </label>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">{t("fields.description")}</span>
+        <span className="text-sm font-medium text-surface-700">{t("fields.description")}</span>
         <Textarea
           placeholder="Summarize the scope, stakeholders, and delivery goals."
           {...register("description")}
@@ -133,7 +133,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">Start Date</span>
+          <span className="text-sm font-medium text-surface-700">Start Date</span>
           <Input type="date" {...register("startDate")} />
           {errors.startDate ? (
             <span className="text-sm text-rose-600">{errors.startDate.message}</span>
@@ -141,7 +141,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">End Date</span>
+          <span className="text-sm font-medium text-surface-700">End Date</span>
           <Input type="date" {...register("endDate")} />
           {errors.endDate ? (
             <span className="text-sm text-rose-600">{errors.endDate.message}</span>

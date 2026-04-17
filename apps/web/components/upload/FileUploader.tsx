@@ -160,7 +160,7 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
         className={cn(
           'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 cursor-pointer transition-colors',
           isDragOver
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
+            ? 'border-isu-500 bg-isu-50 dark:bg-isu-950'
             : 'border-muted-foreground/25 hover:border-muted-foreground/50',
           uploadState.status === 'uploading' && 'pointer-events-none opacity-70',
         )}
@@ -200,7 +200,7 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
             <p className="text-sm font-medium truncate">{uploadState.filename}</p>
             <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full bg-blue-500 transition-all duration-200"
+                className="h-full rounded-full bg-isu-500 transition-all duration-200"
                 style={{ width: `${uploadState.progress}%` }}
               />
             </div>
@@ -211,7 +211,7 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
         {uploadState.status === 'success' && (
           <div className="flex flex-col items-center gap-1">
             <svg
-              className="h-8 w-8 text-green-500"
+              className="h-8 w-8 text-success"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"

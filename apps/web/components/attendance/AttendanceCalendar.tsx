@@ -16,11 +16,11 @@ type StatusColor = {
 };
 
 const STATUS_COLORS: Record<string, StatusColor> = {
-  present:    { bg: 'bg-green-100',  dot: 'bg-green-500',  label: 'Present' },
-  late:       { bg: 'bg-yellow-100', dot: 'bg-yellow-500', label: 'Late' },
-  absent:     { bg: 'bg-red-100',    dot: 'bg-red-500',    label: 'Absent' },
-  remote:     { bg: 'bg-blue-100',   dot: 'bg-blue-500',   label: 'Remote' },
-  'half-day': { bg: 'bg-purple-100', dot: 'bg-purple-500', label: 'Half-day' },
+  present:    { bg: 'bg-success/10',  dot: 'bg-success',  label: 'Present' },
+  late:       { bg: 'bg-warning/10', dot: 'bg-warning', label: 'Late' },
+  absent:     { bg: 'bg-danger/10',    dot: 'bg-danger',    label: 'Absent' },
+  remote:     { bg: 'bg-isu-100',   dot: 'bg-isu-500',   label: 'Remote' },
+  'half-day': { bg: 'bg-isu-100', dot: 'bg-isu-500', label: 'Half-day' },
 };
 
 interface AttendanceCalendarProps {

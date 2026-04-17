@@ -93,17 +93,17 @@ export function TaskTable({ projectId, items, assignees }: Props) {
     <div className="space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+        className="rounded-2xl border border-surface-200 bg-card p-5 shadow-sm"
       >
         <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Add Task</h2>
-          <p className="text-sm text-gray-500">Capture a new task for this project.</p>
+          <h2 className="text-lg font-semibold text-surface-900">Add Task</h2>
+          <p className="text-sm text-surface-500">Capture a new task for this project.</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2 md:col-span-2">
-            <span className="text-sm font-medium text-gray-700">Title</span>
+            <span className="text-sm font-medium text-surface-700">Title</span>
             <Input
               value={form.title}
               onChange={(event) => updateField("title", event.target.value)}
@@ -113,7 +113,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
 
           {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Textarea component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2 md:col-span-2">
-            <span className="text-sm font-medium text-gray-700">Details</span>
+            <span className="text-sm font-medium text-surface-700">Details</span>
             <Textarea
               value={form.content}
               onChange={(event) => updateField("content", event.target.value)}
@@ -122,9 +122,9 @@ export function TaskTable({ projectId, items, assignees }: Props) {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Status</span>
+            <span className="text-sm font-medium text-surface-700">Status</span>
             <select
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
               value={form.status}
               onChange={(event) => updateField("status", event.target.value)}
             >
@@ -136,9 +136,9 @@ export function TaskTable({ projectId, items, assignees }: Props) {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Priority</span>
+            <span className="text-sm font-medium text-surface-700">Priority</span>
             <select
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
               value={form.priority}
               onChange={(event) => updateField("priority", event.target.value)}
             >
@@ -151,7 +151,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
 
           {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- label wraps custom Input component; rule cannot detect control association through custom wrappers */}
           <label className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Due Date</span>
+            <span className="text-sm font-medium text-surface-700">Due Date</span>
             <Input
               type="date"
               value={form.dueDate}
@@ -160,9 +160,9 @@ export function TaskTable({ projectId, items, assignees }: Props) {
           </label>
 
           <label className="space-y-2">
-            <span className="text-sm font-medium text-gray-700">Assignee</span>
+            <span className="text-sm font-medium text-surface-700">Assignee</span>
             <select
-              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
               value={form.assigneeId}
               onChange={(event) => updateField("assigneeId", event.target.value)}
             >
@@ -185,7 +185,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
         </div>
       </form>
 
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="rounded-2xl border border-surface-200 bg-card shadow-sm">
         <Table>
           <TableHeader>
             <TableRow>
@@ -199,7 +199,7 @@ export function TaskTable({ projectId, items, assignees }: Props) {
           <TableBody>
             {items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="py-10 text-center text-gray-500">
+                <TableCell colSpan={5} className="py-10 text-center text-surface-500">
                   No tasks yet.
                 </TableCell>
               </TableRow>
@@ -208,9 +208,9 @@ export function TaskTable({ projectId, items, assignees }: Props) {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-medium text-gray-900">{item.title}</div>
+                      <div className="font-medium text-surface-900">{item.title}</div>
                       {item.content ? (
-                        <div className="text-sm text-gray-500">{item.content}</div>
+                        <div className="text-sm text-surface-500">{item.content}</div>
                       ) : null}
                     </div>
                   </TableCell>

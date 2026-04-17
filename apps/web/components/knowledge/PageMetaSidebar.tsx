@@ -61,19 +61,19 @@ export function PageMetaSidebar({ page, canEdit }: PageMetaSidebarProps) {
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">Status</span>
+          <span className="text-surface-500">Status</span>
           <Badge variant={STATUS_VARIANTS[page.publishStatus ?? 'draft']}>
             {page.publishStatus ?? 'draft'}
           </Badge>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">Type</span>
+          <span className="text-surface-500">Type</span>
           <span className="font-medium">{PAGE_TYPE_LABELS[page.pageType] ?? page.pageType}</span>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-gray-500">
+          <span className="flex items-center gap-1 text-surface-500">
             <ShieldCheck className="h-3.5 w-3.5" /> Sensitivity
           </span>
           <Badge variant={SENSITIVITY_VARIANTS[page.sensitivity ?? 'INTERNAL']}>
@@ -82,11 +82,11 @@ export function PageMetaSidebar({ page, canEdit }: PageMetaSidebarProps) {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-gray-500">Version</span>
+          <span className="text-surface-500">Version</span>
           <span className="font-mono font-medium">v{versionNumber}</span>
         </div>
 
-        <div className="flex items-center gap-1 text-gray-500">
+        <div className="flex items-center gap-1 text-surface-500">
           <Clock className="h-3.5 w-3.5 flex-none" />
           <span>
             Updated{' '}
@@ -101,7 +101,7 @@ export function PageMetaSidebar({ page, canEdit }: PageMetaSidebarProps) {
         <>
           <Separator />
           <div className="space-y-2">
-            <div className="flex items-center gap-1 text-gray-500">
+            <div className="flex items-center gap-1 text-surface-500">
               <Tag className="h-3.5 w-3.5" /> Tags
             </div>
             <div className="flex flex-wrap gap-1">
@@ -119,7 +119,7 @@ export function PageMetaSidebar({ page, canEdit }: PageMetaSidebarProps) {
         <>
           <Separator />
           <div className="space-y-1">
-            <span className="text-gray-500">Summary</span>
+            <span className="text-surface-500">Summary</span>
             <p className="text-xs leading-relaxed">{page.summary}</p>
           </div>
         </>

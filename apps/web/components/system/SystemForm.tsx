@@ -90,7 +90,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("name")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("name")}</span>
           <Input placeholder="Payroll API" {...register("name")} />
           {errors.name ? (
             <span className="text-sm text-rose-600">{errors.name.message}</span>
@@ -98,9 +98,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("category")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("category")}</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
             {...register("category")}
           >
             <option value="">{t("selectCategory")}</option>
@@ -118,9 +118,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-3">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("environment")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("environment")}</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
             {...register("environment")}
           >
             <option value="prod">prod</option>
@@ -133,9 +133,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("sensitivity")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("sensitivity")}</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
             {...register("sensitivity")}
           >
             <option value="INTERNAL">INTERNAL</option>
@@ -149,9 +149,9 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("status")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("status")}</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
             {...register("status")}
           >
             <option value="active">active</option>
@@ -165,7 +165,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
       </div>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">{t("description")}</span>
+        <span className="text-sm font-medium text-surface-700">{t("description")}</span>
         <Textarea
           placeholder={t("descriptionPlaceholder")}
           {...register("description")}
@@ -176,7 +176,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
       </label>
 
       <label className="space-y-2">
-        <span className="text-sm font-medium text-gray-700">{t("techStack")}</span>
+        <span className="text-sm font-medium text-surface-700">{t("techStack")}</span>
         <Input
           placeholder={t("techStackPlaceholder")}
           {...register("techStack")}
@@ -188,7 +188,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
 
       <div className="grid gap-6 md:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("repositoryUrl")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("repositoryUrl")}</span>
           <Input
             placeholder="https://github.com/acme/payroll"
             {...register("repositoryUrl")}
@@ -201,7 +201,7 @@ export function SystemForm({ mode, systemId, defaultValues }: Props) {
         </label>
 
         <label className="space-y-2">
-          <span className="text-sm font-medium text-gray-700">{t("dashboardUrl")}</span>
+          <span className="text-sm font-medium text-surface-700">{t("dashboardUrl")}</span>
           <Input
             placeholder="https://grafana.example.com/payroll"
             {...register("dashboardUrl")}

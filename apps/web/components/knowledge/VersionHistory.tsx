@@ -53,7 +53,7 @@ export function VersionHistory({ versions, pageId }: VersionHistoryProps) {
   return (
     <div className="space-y-4">
       {selectedCount > 0 && (
-        <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-md px-3 py-2">
+        <div className="flex items-center gap-2 text-sm text-surface-500 bg-surface-50 rounded-md px-3 py-2">
           <GitCompare className="h-4 w-4" />
           {selectedCount === 1
             ? 'Select another version to compare'
@@ -81,10 +81,10 @@ export function VersionHistory({ versions, pageId }: VersionHistoryProps) {
                 <Badge variant={idx === 0 ? 'default' : 'secondary'}>v{v.versionNumber}</Badge>
               </TableCell>
               <TableCell className="max-w-xs truncate">{v.changeNote ?? '—'}</TableCell>
-              <TableCell className="text-sm text-gray-500">
+              <TableCell className="text-sm text-surface-500">
                 {v.authorName ?? v.authorEmail ?? 'Unknown'}
               </TableCell>
-              <TableCell className="text-sm text-gray-500">
+              <TableCell className="text-sm text-surface-500">
                 {v.createdAt
                   ? formatDistanceToNow(new Date(v.createdAt), { addSuffix: true })
                   : '—'}

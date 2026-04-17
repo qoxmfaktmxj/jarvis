@@ -28,16 +28,16 @@ type AccessEntry = {
 
 function renderSecretValue(field: SecretField) {
   if (!field.canView) {
-    return <span className="text-gray-400">Restricted</span>;
+    return <span className="text-surface-400">Restricted</span>;
   }
 
   const value = field.resolved ?? field.ref;
   if (!value) {
-    return <span className="text-gray-400">Not configured</span>;
+    return <span className="text-surface-400">Not configured</span>;
   }
 
   return (
-    <code className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700">
+    <code className="rounded bg-surface-100 px-2 py-1 text-xs text-surface-700">
       {value}
     </code>
   );
@@ -81,7 +81,7 @@ export function AccessPanel({
   if (entries.length === 0) {
     return (
       <Card>
-        <CardContent className="py-10 text-center text-sm text-gray-500">
+        <CardContent className="py-10 text-center text-sm text-surface-500">
           No access entries are registered for this system yet.
         </CardContent>
       </Card>
@@ -102,7 +102,7 @@ export function AccessPanel({
                 ) : null}
               </div>
               {(entry.host || entry.port) && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-surface-500">
                   {entry.host ?? "-"}
                   {entry.port ? `:${entry.port}` : ""}
                 </p>
@@ -123,24 +123,24 @@ export function AccessPanel({
           <CardContent className="space-y-4 text-sm">
             <dl className="grid gap-3 md:grid-cols-2">
               <div className="space-y-1">
-                <dt className="font-medium text-gray-700">Username</dt>
+                <dt className="font-medium text-surface-700">Username</dt>
                 <dd>{renderSecretValue(entry.usernameRef)}</dd>
               </div>
               <div className="space-y-1">
-                <dt className="font-medium text-gray-700">Password</dt>
+                <dt className="font-medium text-surface-700">Password</dt>
                 <dd>{renderSecretValue(entry.passwordRef)}</dd>
               </div>
               <div className="space-y-1">
-                <dt className="font-medium text-gray-700">Connection String</dt>
+                <dt className="font-medium text-surface-700">Connection String</dt>
                 <dd>{renderSecretValue(entry.connectionStringRef)}</dd>
               </div>
               <div className="space-y-1">
-                <dt className="font-medium text-gray-700">VPN File</dt>
+                <dt className="font-medium text-surface-700">VPN File</dt>
                 <dd>{renderSecretValue(entry.vpnFileRef)}</dd>
               </div>
             </dl>
             {entry.notes ? (
-              <div className="rounded-lg bg-gray-50 px-3 py-2 text-gray-600">
+              <div className="rounded-lg bg-surface-50 px-3 py-2 text-surface-600">
                 {entry.notes}
               </div>
             ) : null}

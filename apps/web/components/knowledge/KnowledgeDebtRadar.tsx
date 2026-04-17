@@ -28,9 +28,9 @@ function StatBadge({
   variant: 'destructive' | 'warning' | 'success';
 }) {
   const colors = {
-    destructive: 'border-red-200 bg-red-50 text-red-700',
-    warning: 'border-amber-200 bg-amber-50 text-amber-700',
-    success: 'border-green-200 bg-green-50 text-green-700',
+    destructive: 'border-danger/20 bg-danger/5 text-danger',
+    warning: 'border-warning/20 bg-warning/5 text-warning',
+    success: 'border-success/20 bg-success/5 text-success',
   };
 
   return (
@@ -86,7 +86,7 @@ export function KnowledgeDebtRadar({ workspaceId }: KnowledgeDebtRadarProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
             <h3 className="text-sm font-semibold">지식 부채 레이더</h3>
             <Badge variant="outline" className="text-[10px]">
               {data.totalDocuments}건 모니터링
@@ -105,10 +105,10 @@ export function KnowledgeDebtRadar({ workspaceId }: KnowledgeDebtRadarProps) {
             <span className="text-muted-foreground">문서 건강도</span>
             <span className="font-semibold">{healthScore}%</span>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-100">
             <div
               className={`h-full rounded-full transition-all ${
-                healthScore >= 80 ? 'bg-green-500' : healthScore >= 60 ? 'bg-amber-500' : 'bg-red-500'
+                healthScore >= 80 ? 'bg-success' : healthScore >= 60 ? 'bg-warning' : 'bg-danger'
               }`}
               style={{ width: `${healthScore}%` }}
             />
@@ -150,7 +150,7 @@ export function KnowledgeDebtRadar({ workspaceId }: KnowledgeDebtRadarProps) {
                 .slice(0, 5)
                 .map(([team, stats]) => (
                   <div key={team} className="flex items-center justify-between text-xs">
-                    <span className="text-gray-700">{team}</span>
+                    <span className="text-surface-700">{team}</span>
                     <div className="flex gap-2">
                       {stats.overdue > 0 && (
                         <Badge variant="destructive" className="text-[10px]">
@@ -179,10 +179,10 @@ export function KnowledgeDebtRadar({ workspaceId }: KnowledgeDebtRadarProps) {
               {data.staleDocuments.slice(0, 5).map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center justify-between rounded-md border border-red-100 bg-red-50/50 px-2.5 py-1.5"
+                  className="flex items-center justify-between rounded-md border border-danger/10 bg-danger/5 px-2.5 py-1.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-gray-800">
+                    <p className="truncate text-xs font-medium text-surface-800">
                       {doc.title}
                     </p>
                     <p className="text-[10px] text-muted-foreground">

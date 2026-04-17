@@ -69,7 +69,7 @@ export function ResultCard({ hit }: ResultCardProps) {
         {hit.sensitivity && (
           <span
             className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-              SENSITIVITY_COLORS[hit.sensitivity] ?? 'bg-gray-100 text-gray-800'
+              SENSITIVITY_COLORS[hit.sensitivity] ?? 'bg-surface-100 text-surface-800'
             }`}
           >
             {hit.sensitivity}

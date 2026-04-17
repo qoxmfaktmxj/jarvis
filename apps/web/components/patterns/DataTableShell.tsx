@@ -26,7 +26,7 @@ export function DataTableShell({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-surface-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-surface-200 bg-card">
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (

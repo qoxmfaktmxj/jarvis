@@ -45,7 +45,7 @@ export function SystemCard({ system }: SystemCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="min-h-12 text-sm text-gray-600">
+        <p className="min-h-12 text-sm text-surface-600">
           {system.description || "No description provided."}
         </p>
         <div className="flex flex-wrap gap-3 text-sm">
@@ -72,7 +72,7 @@ export function SystemCard({ system }: SystemCardProps) {
         </div>
         <Link
           href={`/systems/${system.id}`}
-          className="inline-flex rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          className="inline-flex rounded-lg border border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-100"
         >
           View Details
         </Link>

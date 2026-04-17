@@ -24,7 +24,7 @@ const trendIcons = {
 export function KpiTile({ label, value, trend, accent = "surface", footnote }: KpiTileProps) {
   const TrendIcon = trend ? trendIcons[trend.direction] : null;
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-surface-200 bg-white p-5">
+    <section className="flex flex-col gap-2 rounded-xl border border-surface-200 bg-card p-5">
       <p className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
         {label}
       </p>
