@@ -53,13 +53,13 @@ export function TimeDetailSheet({ record, open, onOpenChange }: TimeDetailSheetP
         <div className="mt-6 space-y-5">
           {/* Summary */}
           <div className="grid grid-cols-2 gap-y-3 text-sm">
-            <span className="text-gray-500">Status</span>
+            <span className="text-surface-500">Status</span>
             <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
 
-            <span className="text-gray-500">Destination</span>
+            <span className="text-surface-500">Destination</span>
             <span>{record.destination || '—'}</span>
 
-            <span className="text-gray-500">Purpose</span>
+            <span className="text-surface-500">Purpose</span>
             <span className="whitespace-pre-wrap">{record.purpose}</span>
           </div>
 
@@ -71,7 +71,7 @@ export function TimeDetailSheet({ record, open, onOpenChange }: TimeDetailSheetP
                 {record.details.map((d, i) => (
                   <div
                     key={d.id}
-                    className="rounded-md border bg-gray-50 px-3 py-2.5 text-sm space-y-1"
+                    className="rounded-md border bg-surface-50 px-3 py-2.5 text-sm space-y-1"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-medium tabular-nums">
@@ -79,10 +79,10 @@ export function TimeDetailSheet({ record, open, onOpenChange }: TimeDetailSheetP
                         {' – '}
                         {format(new Date(d.timeTo), 'HH:mm')}
                       </span>
-                      <span className="text-xs text-gray-400">Block {i + 1}</span>
+                      <span className="text-xs text-surface-400">Block {i + 1}</span>
                     </div>
                     {d.activity && (
-                      <p className="text-gray-500">{d.activity}</p>
+                      <p className="text-surface-500">{d.activity}</p>
                     )}
                   </div>
                 ))}

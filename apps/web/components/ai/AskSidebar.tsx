@@ -152,14 +152,14 @@ export function AskSidebar({
   const isWarning = conversationCount >= 16;
 
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-gray-200 bg-slate-50/80">
+    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-surface-200 bg-surface-50">
       {/* New conversation button */}
       <div className="p-3">
         <Link
           href="/ask"
           className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors duration-150 ease-out",
-            "hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700",
+            "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors duration-150 ease-out",
+            "hover:border-isu-300 hover:bg-isu-50 hover:text-isu-700",
           )}
         >
           <Plus className="h-4 w-4" />
@@ -178,7 +178,7 @@ export function AskSidebar({
             onKeyDown={handleKeyDown}
             placeholder={t("search")}
             aria-label={t("search")}
-            className="w-full rounded-md border border-gray-200 bg-white py-1.5 pl-8 pr-7 text-xs text-gray-800 placeholder:text-muted-foreground focus:border-violet-300 focus:outline-none focus:ring-1 focus:ring-violet-300"
+            className="w-full rounded-md border border-surface-200 bg-card py-1.5 pl-8 pr-7 text-xs text-surface-800 placeholder:text-muted-foreground focus:border-isu-400 focus:outline-none focus:ring-1 focus:ring-isu-300"
           />
           {searchQuery && (
             <button

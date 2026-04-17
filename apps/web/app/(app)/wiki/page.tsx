@@ -31,7 +31,7 @@ export default async function WikiHomePage() {
             <BookOpen className="h-7 w-7" /> {t('title')}
           </h1>
         </div>
-        <p className="text-sm text-gray-400 italic">{t('accessDenied')}</p>
+        <p className="text-sm text-surface-400 italic">{t('accessDenied')}</p>
       </div>
     );
   }

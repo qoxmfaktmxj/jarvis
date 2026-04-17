@@ -17,7 +17,7 @@ export function StatCard({
   accent?: ReactNode;
 }) {
   return (
-    <section className="flex h-full flex-col gap-3 rounded-xl border border-surface-200 bg-white p-5">
+    <section className="flex h-full flex-col gap-3 rounded-xl border border-surface-200 bg-card p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
           {title}

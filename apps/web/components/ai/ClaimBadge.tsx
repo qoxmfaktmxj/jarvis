@@ -40,7 +40,7 @@ function getSourceMeta(source: SourceRef): {
         hoverDetail: source.snapshotTitle,
         href: source.url,
         colorClass:
-          'inline-flex items-center justify-center rounded-full bg-blue-100 px-1 text-blue-800 text-[10px] font-bold hover:bg-blue-200 transition-colors dark:bg-blue-900 dark:text-blue-100',
+          'inline-flex items-center justify-center rounded-full bg-isu-100 px-1 text-isu-700 text-[10px] font-bold hover:bg-isu-200 transition-colors',
       };
     case 'case':
       return {
@@ -49,7 +49,7 @@ function getSourceMeta(source: SourceRef): {
         hoverDetail: source.symptom,
         href: null,
         colorClass:
-          'inline-flex items-center justify-center rounded-full bg-amber-100 px-1 text-amber-800 text-[10px] font-bold hover:bg-amber-200 transition-colors dark:bg-amber-900 dark:text-amber-100',
+          'inline-flex items-center justify-center rounded-full bg-warning-subtle px-1 text-warning text-[10px] font-bold transition-colors',
       };
     case 'directory':
       return {
@@ -58,7 +58,7 @@ function getSourceMeta(source: SourceRef): {
         hoverDetail: source.ownerTeam ?? null,
         href: source.url,
         colorClass:
-          'inline-flex items-center justify-center rounded-full bg-green-100 px-1 text-green-800 text-[10px] font-bold hover:bg-green-200 transition-colors dark:bg-green-900 dark:text-green-100',
+          'inline-flex items-center justify-center rounded-full bg-success-subtle px-1 text-success text-[10px] font-bold transition-colors',
       };
     case 'wiki-page':
       return {
@@ -67,7 +67,7 @@ function getSourceMeta(source: SourceRef): {
         hoverDetail: `${source.citation} · ${source.path}`,
         href: `/wiki/default/${encodeURIComponent(source.slug)}`,
         colorClass:
-          'inline-flex items-center justify-center rounded-full bg-indigo-100 px-1 text-indigo-800 text-[10px] font-bold hover:bg-indigo-200 transition-colors dark:bg-indigo-900 dark:text-indigo-100',
+          'inline-flex items-center justify-center rounded-full bg-lime-100 px-1 text-lime-700 text-[10px] font-bold hover:bg-lime-200 transition-colors',
       };
   }
 }

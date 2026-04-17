@@ -40,14 +40,14 @@ function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; inde
   // Wiki URL convention: `/wiki/{workspaceId}/{slug}`
   const href = `/wiki/default/${encodeURIComponent(source.slug)}`;
   return (
-    <Card className="border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50 transition-colors dark:border-indigo-900 dark:bg-indigo-950/20">
+    <Card className="border-lime-200 bg-lime-50/40 hover:bg-lime-50 transition-colors">
       <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-900 text-xs font-semibold flex items-center justify-center dark:bg-indigo-900 dark:text-indigo-100">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-lime-100 text-lime-700 text-xs font-semibold flex items-center justify-center">
           W{index + 1}
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href={href} className="text-sm font-medium text-indigo-800 hover:underline truncate dark:text-indigo-200">
+            <Link href={href} className="text-sm font-medium text-lime-700 hover:underline truncate">
               {source.title}
             </Link>
             <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
@@ -55,7 +55,7 @@ function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; inde
           </div>
           <p className="text-[10px] text-muted-foreground truncate">{source.path}</p>
           {source.origin === 'expand' && (
-            <p className="text-[10px] text-indigo-600 dark:text-indigo-400">↳ 1-hop wikilink</p>
+            <p className="text-[10px] text-lime-700">↳ 1-hop wikilink</p>
           )}
         </div>
       </CardContent>
@@ -95,15 +95,15 @@ function TextSourceCard({ source, index }: { source: TextSourceRef; index: numbe
 // ---------------------------------------------------------------------------
 function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: number }) {
   return (
-    <Card className="border-blue-200 bg-blue-50/30 hover:bg-blue-50 transition-colors dark:border-blue-900 dark:bg-blue-950/20">
+    <Card className="border-isu-200 bg-isu-50/40 hover:bg-isu-50 transition-colors">
       <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-900 text-xs font-semibold flex items-center justify-center dark:bg-blue-900 dark:text-blue-100">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-isu-100 text-isu-700 text-xs font-semibold flex items-center justify-center">
           G{index + 1}
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <Network className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
-            <Link href={source.url} className="text-sm font-medium text-blue-800 hover:underline truncate dark:text-blue-200">
+            <Network className="h-3 w-3 text-isu-600 shrink-0" />
+            <Link href={source.url} className="text-sm font-medium text-isu-700 hover:underline truncate">
               {source.nodeLabel}
             </Link>
           </div>
@@ -115,7 +115,7 @@ function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: num
             </p>
           )}
           {source.relationPath && source.relationPath.length > 0 && (
-            <p className="text-xs text-blue-700 dark:text-blue-300 line-clamp-1">
+            <p className="text-xs text-isu-600 line-clamp-1">
               {source.relationPath.join(' → ')}
             </p>
           )}
@@ -138,18 +138,18 @@ function CaseSourceCard({ source }: { source: CaseSourceRef; index: number }) {
     info_only: '안내',
   };
   return (
-    <Card className="border-amber-200 bg-amber-50/30 hover:bg-amber-50 transition-colors dark:border-amber-900 dark:bg-amber-950/20">
+    <Card className="border-warning-subtle bg-warning-subtle/40 hover:bg-warning-subtle transition-colors">
       <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold flex items-center justify-center dark:bg-amber-900 dark:text-amber-100">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-warning-subtle text-warning text-xs font-semibold flex items-center justify-center">
           <Briefcase className="h-3 w-3" />
         </span>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-amber-800 truncate dark:text-amber-200">
+            <span className="text-sm font-medium text-warning truncate">
               {source.title}
             </span>
             {source.result && (
-              <Badge variant="outline" className="text-xs shrink-0 border-amber-300 text-amber-700">
+              <Badge variant="outline" className="text-xs shrink-0 border-warning-subtle text-warning">
                 {resultLabel[source.result] ?? source.result}
               </Badge>
             )}
@@ -189,9 +189,9 @@ function DirectorySourceCard({ source }: { source: DirectorySourceRef; index: nu
     guide_link: '가이드',
   };
   return (
-    <Card className="border-green-200 bg-green-50/30 hover:bg-green-50 transition-colors dark:border-green-900 dark:bg-green-950/20">
+    <Card className="border-success-subtle bg-success-subtle/40 hover:bg-success-subtle transition-colors">
       <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-900 text-xs font-semibold flex items-center justify-center dark:bg-green-900 dark:text-green-100">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-success-subtle text-success text-xs font-semibold flex items-center justify-center">
           <ExternalLink className="h-3 w-3" />
         </span>
         <div className="min-w-0 flex-1 space-y-1">
@@ -201,16 +201,16 @@ function DirectorySourceCard({ source }: { source: DirectorySourceRef; index: nu
                 href={source.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-green-800 hover:underline truncate dark:text-green-200"
+                className="text-sm font-medium text-success hover:underline truncate"
               >
                 {source.nameKo ?? source.name}
               </Link>
             ) : (
-              <span className="text-sm font-medium text-green-800 truncate dark:text-green-200">
+              <span className="text-sm font-medium text-success truncate">
                 {source.nameKo ?? source.name}
               </span>
             )}
-            <Badge variant="outline" className="text-xs shrink-0 border-green-300 text-green-700">
+            <Badge variant="outline" className="text-xs shrink-0 border-success-subtle text-success">
               {typeLabel[source.entryType] ?? source.entryType}
             </Badge>
           </div>

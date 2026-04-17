@@ -93,11 +93,11 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
       />
 
       {isSearching ? (
-        <p className="text-sm text-gray-400 italic">...</p>
+        <p className="text-sm text-surface-400 italic">...</p>
       ) : results.length === 0 ? (
         <div className="space-y-1">
-          <p className="text-sm text-gray-400 italic">{t('noResults')}</p>
-          <p className="text-xs text-gray-400">{t('noResultsHint')}</p>
+          <p className="text-sm text-surface-400 italic">{t('noResults')}</p>
+          <p className="text-xs text-surface-400">{t('noResultsHint')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -115,7 +115,7 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
                       {t(`sensitivity.${page.sensitivity}`)}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-400 font-mono">{page.slug}</p>
+                  <p className="text-xs text-surface-400 font-mono">{page.slug}</p>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {page.tags.length > 0 && (
@@ -128,7 +128,7 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
                     </div>
                   )}
                   {page.updatedAt && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-surface-400">
                       {t('lastUpdated')}:{' '}
                       {new Date(page.updatedAt).toLocaleDateString('ko-KR')}
                     </p>

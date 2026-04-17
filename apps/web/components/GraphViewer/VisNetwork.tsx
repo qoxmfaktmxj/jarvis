@@ -174,7 +174,7 @@ export function VisNetwork({ data, onNodeClick, height = '600px' }: VisNetworkPr
     <div
       ref={containerRef}
       data-testid="vis-network-container"
-      className="border rounded-lg bg-white"
+      className="rounded-lg border border-surface-200 bg-card"
       style={{ height, width: '100%' }}
     />
   );

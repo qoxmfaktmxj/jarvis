@@ -81,7 +81,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
           >
             Date
-            <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+            <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-surface-400" />
           </Button>
         ),
         cell: ({ getValue }) => (
@@ -104,7 +104,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
           return v ? (
             <span className="max-w-[160px] truncate" title={v}>{v}</span>
           ) : (
-            <span className="text-gray-300">—</span>
+            <span className="text-surface-300">—</span>
           );
         },
         enableSorting: false,
@@ -203,7 +203,7 @@ export function OutManageTable({ records, isManager = false, onViewDetails }: Ou
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
+              <TableCell colSpan={columns.length} className="h-24 text-center text-surface-500">
                 No out-of-office requests found.
               </TableCell>
             </TableRow>

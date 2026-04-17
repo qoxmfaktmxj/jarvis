@@ -59,7 +59,7 @@ export function CheckInButton({ todayRecord }: CheckInButtonProps) {
 
   if (!action) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border bg-gray-50 px-4 py-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 rounded-lg border bg-surface-50 px-4 py-2 text-sm text-surface-500">
         <LogOut className="h-4 w-4" aria-hidden="true" />
         <span>{t("checkedOut", { time: format(new Date(todayRecord!.checkOut!), 'HH:mm') })}</span>
       </div>

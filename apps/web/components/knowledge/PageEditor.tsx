@@ -429,7 +429,7 @@ export function PageEditor({
           </TabsContent>
 
           <TabsContent value="preview" className="mt-0">
-            <div className="min-h-[500px] rounded-md border border-gray-200 bg-white p-4">
+            <div className="min-h-[500px] rounded-md border border-surface-200 bg-card p-4">
               <KnowledgeMarkdown content={mdxContent} />
             </div>
           </TabsContent>

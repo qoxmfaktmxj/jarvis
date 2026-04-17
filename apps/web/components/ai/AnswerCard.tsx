@@ -111,7 +111,7 @@ function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
   const parts = text.split(/(\[source:\d+\])/g);
 
   return (
-    <div className="prose prose-sm max-w-none text-sm leading-relaxed text-gray-800">
+    <div className="prose prose-sm max-w-none text-sm leading-relaxed text-surface-800">
       {parts.map((part, index) => {
         const match = part.match(/^\[source:(\d+)\]$/);
         if (match?.[1]) {
@@ -138,20 +138,20 @@ function DocumentSection({ sources }: { sources: TextSourceRef[] }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <FileText className="h-3.5 w-3.5 text-primary" />
-        <span className="text-xs font-semibold text-gray-700">근거 문서</span>
+        <span className="text-xs font-semibold text-surface-700">근거 문서</span>
       </div>
       <div className="space-y-1">
         {sources.map((s, i) => (
           <Link
             key={`${s.pageId}-${i}`}
             href={s.url}
-            className="flex items-center gap-2 rounded-lg border bg-gray-50/50 px-3 py-2 text-sm transition hover:bg-gray-100"
+            className="flex items-center gap-2 rounded-lg border bg-surface-50 px-3 py-2 text-sm transition hover:bg-surface-100"
           >
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
               {i + 1}
             </span>
-            <span className="flex-1 truncate text-gray-700">{s.title}</span>
-            <ChevronRight className="h-3 w-3 text-gray-400" />
+            <span className="flex-1 truncate text-surface-700">{s.title}</span>
+            <ChevronRight className="h-3 w-3 text-surface-400" />
           </Link>
         ))}
       </div>
@@ -177,7 +177,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <ExternalLink className="h-3.5 w-3.5 text-green-600" />
-        <span className="text-xs font-semibold text-gray-700">관련 시스템</span>
+        <span className="text-xs font-semibold text-surface-700">관련 시스템</span>
       </div>
       <div className="flex flex-wrap gap-2">
         {sources.map((s, i) => {
@@ -235,7 +235,7 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Briefcase className="h-3.5 w-3.5 text-amber-600" />
-        <span className="text-xs font-semibold text-gray-700">
+        <span className="text-xs font-semibold text-surface-700">
           유사 사례 ({sources.length}건)
         </span>
       </div>
@@ -259,12 +259,12 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
               )}
             </div>
             {s.symptom && (
-              <p className="mt-1 text-xs text-gray-600 line-clamp-1">
+              <p className="mt-1 text-xs text-surface-600 line-clamp-1">
                 <span className="font-medium">증상:</span> {s.symptom}
               </p>
             )}
             {s.action && (
-              <p className="text-xs text-gray-600 line-clamp-1">
+              <p className="text-xs text-surface-600 line-clamp-1">
                 <span className="font-medium">조치:</span> {s.action}
               </p>
             )}
@@ -288,15 +288,15 @@ function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <FileText className="h-3.5 w-3.5 text-indigo-600" />
-        <span className="text-xs font-semibold text-gray-700">위키 페이지</span>
+        <FileText className="h-3.5 w-3.5 text-isu-600" />
+        <span className="text-xs font-semibold text-surface-700">위키 페이지</span>
       </div>
       <div className="space-y-1">
         {sources.map((s, i) => (
           <Link
             key={`${s.pageId}-${i}`}
             href={`/wiki/default/${encodeURIComponent(s.slug)}`}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-indigo-800 hover:bg-indigo-50 transition-colors"
+            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-isu-700 hover:bg-isu-50 transition-colors"
           >
             <Badge variant="outline" className="text-[10px] shrink-0">{s.citation}</Badge>
             <span className="truncate">{s.title}</span>
@@ -316,7 +316,7 @@ function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Network className="h-3.5 w-3.5 text-blue-600" />
-        <span className="text-xs font-semibold text-gray-700">지식 그래프</span>
+        <span className="text-xs font-semibold text-surface-700">지식 그래프</span>
       </div>
       <div className="flex flex-wrap gap-2">
         {sources.map((s, i) => (
@@ -351,8 +351,8 @@ function OwnerTeamSection({ sources }: { sources: SourceRef[] }) {
 
   return (
     <div className="flex items-center gap-2">
-      <Users className="h-3.5 w-3.5 text-gray-500" />
-      <span className="text-xs font-semibold text-gray-700">담당 팀</span>
+      <Users className="h-3.5 w-3.5 text-surface-500" />
+      <span className="text-xs font-semibold text-surface-700">담당 팀</span>
       <div className="flex gap-1.5">
         {[...teams].map((team) => (
           <Badge key={team} variant="secondary" className="text-xs">
@@ -374,18 +374,18 @@ function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <ArrowRight className="h-3.5 w-3.5 text-violet-600" />
-        <span className="text-xs font-semibold text-gray-700">다음 행동</span>
+        <ArrowRight className="h-3.5 w-3.5 text-isu-600" />
+        <span className="text-xs font-semibold text-surface-700">다음 행동</span>
       </div>
-      <div className="flex items-center gap-2 text-sm text-gray-700">
+      <div className="flex items-center gap-2 text-sm text-surface-700">
         {actionable.slice(0, 3).map((s, i) => (
           <span key={s.entryId} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight className="h-3 w-3 text-gray-400" />}
+            {i > 0 && <ChevronRight className="h-3 w-3 text-surface-400" />}
             <Link
               href={s.url!}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-700 underline decoration-violet-200 underline-offset-2 hover:decoration-violet-400"
+              className="text-isu-700 underline decoration-isu-300 underline-offset-2 hover:decoration-isu-500"
             >
               {s.nameKo ?? s.name}
             </Link>
@@ -413,7 +413,7 @@ export function AnswerCard({ answer, sources }: AnswerCardProps) {
   }
 
   return (
-    <Card className="overflow-hidden border-gray-200 shadow-sm">
+    <Card className="overflow-hidden border-surface-200">
       {/* Answer body */}
       <CardHeader className="space-y-3 pb-3">
         <AnswerBody text={answer} sources={sources} />

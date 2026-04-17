@@ -37,7 +37,7 @@ export function GraphViewerPage({ data }: GraphViewerPageProps) {
     <div className="space-y-4">
       <VisNetwork data={data} onNodeClick={handleNodeClick} />
 
-      <div className="flex items-center gap-6 text-sm text-gray-600">
+      <div className="flex items-center gap-6 text-sm text-surface-600">
         <span>
           {t('nodeCount')}: <strong>{data.nodes.length}</strong>
         </span>

@@ -45,7 +45,7 @@ function StatCard({
       ? "border-destructive/30 bg-destructive/5"
       : tone === "warn"
         ? "border-amber-300 bg-amber-50"
-        : "border-surface-200 bg-white";
+        : "border-surface-200 bg-card";
   return (
     <section className={`flex flex-col gap-2 rounded-xl border p-5 ${toneClass}`}>
       <p className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
@@ -378,7 +378,7 @@ export default async function WikiObservabilityPage() {
 
         {/* Pages + type distribution */}
         <section className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-surface-200 bg-white">
+          <div className="rounded-xl border border-surface-200 bg-card">
             <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
               <h2 className="text-sm font-semibold text-surface-900">wiki_page_index 총 페이지</h2>
               <Badge variant="outline">{data.totalPages}</Badge>
@@ -410,7 +410,7 @@ export default async function WikiObservabilityPage() {
           </div>
 
           {/* Boundary violations */}
-          <div className="rounded-xl border border-surface-200 bg-white">
+          <div className="rounded-xl border border-surface-200 bg-card">
             <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
               <h2 className="text-sm font-semibold text-surface-900">auto/manual 경계 위반</h2>
               <Badge
@@ -453,7 +453,7 @@ export default async function WikiObservabilityPage() {
         </section>
 
         {/* Lint report */}
-        <div className="rounded-xl border border-surface-200 bg-white">
+        <div className="rounded-xl border border-surface-200 bg-card">
           <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
             <h2 className="text-sm font-semibold text-surface-900">최근 Lint 리포트</h2>
             {data.latestLintReport ? (
@@ -489,7 +489,7 @@ export default async function WikiObservabilityPage() {
         </div>
 
         {/* Review queue */}
-        <div className="rounded-xl border border-surface-200 bg-white">
+        <div className="rounded-xl border border-surface-200 bg-card">
           <header className="flex items-center justify-between border-b border-surface-200 bg-surface-50 px-4 py-2">
             <h2 className="text-sm font-semibold text-surface-900">리뷰 큐 (pending)</h2>
             <Badge

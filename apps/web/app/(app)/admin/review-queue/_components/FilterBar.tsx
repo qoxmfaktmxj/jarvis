@@ -80,7 +80,7 @@ export function FilterBar({ status, kind }: FilterBarProps) {
           id="kind-filter"
           value={kind}
           onChange={(e) => navigate({ kind: e.target.value === "all" ? null : e.target.value })}
-          className="rounded-md border border-surface-200 bg-white px-2 py-1.5 text-sm text-surface-900 focus:outline-none focus:ring-2 focus:ring-ring"
+          className="rounded-md border border-surface-200 bg-card px-2 py-1.5 text-sm text-surface-900 focus:outline-none focus:ring-2 focus:ring-ring"
         >
           {KIND_VALUES.map((k) => (
             <option key={k} value={k}>

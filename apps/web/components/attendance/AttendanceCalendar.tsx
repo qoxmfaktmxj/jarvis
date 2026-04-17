@@ -94,29 +94,29 @@ export function AttendanceCalendar({ records, month }: AttendanceCalendarProps) 
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
                 <span
-                  className={cn('h-2 w-2 rounded-full', colors?.dot ?? 'bg-gray-400')}
+                  className={cn('h-2 w-2 rounded-full', colors?.dot ?? 'bg-surface-400')}
                   aria-hidden="true"
                 />
                 <span className="text-sm font-semibold">
                   {colors?.label ?? record.status}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-500">
+              <div className="grid grid-cols-2 gap-x-3 text-xs text-surface-500">
                 <span>{t('checkIn')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-surface-900">
                   {formatTime(record.checkIn)}
                 </span>
                 <span>{t('checkOut')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-surface-900">
                   {formatTime(record.checkOut)}
                 </span>
                 <span>{t('duration')}</span>
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-surface-900">
                   {formatDuration(record.checkIn, record.checkOut)}
                 </span>
               </div>
               {record.note && (
-                <p className="text-xs text-gray-500 border-t pt-1 mt-1">{record.note}</p>
+                <p className="text-xs text-surface-500 border-t pt-1 mt-1">{record.note}</p>
               )}
             </div>
           </PopoverContent>
@@ -137,20 +137,20 @@ export function AttendanceCalendar({ records, month }: AttendanceCalendarProps) 
           month: 'space-y-4 w-full',
           table: 'w-full border-collapse',
           head_row: 'flex',
-          head_cell: 'text-gray-500 rounded-md w-full font-normal text-xs',
+          head_cell: 'text-surface-500 rounded-md w-full font-normal text-xs',
           row: 'flex w-full mt-2',
           cell: cn(
             'relative h-16 w-full p-0 text-center text-sm focus-within:relative focus-within:z-20',
           ),
           day: 'h-full w-full p-0 font-normal',
           day_outside: 'opacity-30',
-          day_disabled: 'text-gray-400 opacity-50',
+          day_disabled: 'text-surface-400 opacity-50',
         }}
       />
       {/* Legend */}
       <div className="mt-4 flex flex-wrap gap-3">
         {Object.entries(STATUS_COLORS).map(([key, val]) => (
-          <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500">
+          <div key={key} className="flex items-center gap-1.5 text-xs text-surface-500">
             <span className={cn('h-2.5 w-2.5 rounded-full', val.dot)} />
             {val.label}
           </div>

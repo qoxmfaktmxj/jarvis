@@ -15,7 +15,7 @@ export function ProjectStatsWidget({ stats }: { stats: ProjectStats }) {
   return (
     <section
       aria-label={t("title")}
-      className="flex h-full flex-col gap-5 rounded-xl border border-surface-200 bg-white p-5"
+      className="flex h-full flex-col gap-5 rounded-xl border border-surface-200 bg-card p-5"
     >
       <div className="flex items-center justify-between">
         <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">

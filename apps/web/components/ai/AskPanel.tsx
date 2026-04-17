@@ -139,7 +139,7 @@ export function AskPanel({
       <div className="flex items-center gap-2">
         {activeScope && (
           <Badge variant="outline" className="gap-1 py-1">
-            <BotMessageSquare className="h-3 w-3 text-violet-500" />
+            <BotMessageSquare className="h-3 w-3 text-isu-600" />
             <span className="text-xs">그래프 범위: {activeScope.title}</span>
             <button
               type="button"
@@ -156,8 +156,8 @@ export function AskPanel({
           onClick={() => setAskMode(askMode === 'simple' ? 'expert' : 'simple')}
           className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
             askMode === 'expert'
-              ? 'border-violet-300 bg-violet-50 text-violet-700'
-              : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+              ? 'border-isu-300 bg-isu-50 text-isu-700'
+              : 'border-surface-200 bg-card text-surface-600 hover:bg-surface-100'
           }`}
         >
           {askMode === 'expert' ? (
@@ -167,7 +167,7 @@ export function AskPanel({
           )}
         </button>
       </div>
-      <div className="relative flex items-end gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
+      <div className="relative flex items-end gap-2 rounded-2xl border border-surface-200 bg-card p-3">
         <Textarea
           ref={textareaRef}
           value={input}
@@ -214,7 +214,7 @@ export function AskPanel({
     <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col">
       {hasConversation ? (
         <>
-          <ScrollArea className="min-h-0 flex-1 rounded-[28px] border border-gray-200 bg-white shadow-sm">
+          <ScrollArea className="min-h-0 flex-1 rounded-2xl border border-surface-200 bg-card">
             <div className="space-y-6 p-5">
               {history.map((entry, index) => (
                 <div key={`${entry.question}-${index}`} className="space-y-3">
@@ -225,7 +225,7 @@ export function AskPanel({
                   </div>
 
                   <div className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-isu-600 text-xs font-bold text-white">
                       J
                     </div>
                     <div className="flex-1">
@@ -246,7 +246,7 @@ export function AskPanel({
                   </div>
 
                   <div className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-xs font-bold text-white">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-isu-600 text-xs font-bold text-white">
                       J
                     </div>
                     <div className="flex-1 space-y-2">
@@ -289,7 +289,7 @@ export function AskPanel({
                       {!isStreaming && answer && (
                         <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
                           {lane && (
-                            <span className="rounded-full border border-gray-200 px-2 py-0.5">
+                            <span className="rounded-full border border-surface-200 px-2 py-0.5">
                               {lane}
                             </span>
                           )}
@@ -301,7 +301,7 @@ export function AskPanel({
                             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
                               feedbackSent === 'up'
                                 ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                                : 'border-gray-200 hover:bg-gray-50'
+                                : 'border-surface-200 hover:bg-surface-100'
                             }`}
                             title="도움됨"
                           >
@@ -314,7 +314,7 @@ export function AskPanel({
                             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
                               feedbackSent === 'down'
                                 ? 'border-rose-300 bg-rose-50 text-rose-700'
-                                : 'border-gray-200 hover:bg-gray-50'
+                                : 'border-surface-200 hover:bg-surface-100'
                             }`}
                             title="도움 안 됨"
                           >
@@ -341,46 +341,46 @@ export function AskPanel({
         </>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col justify-end gap-6 pb-4">
-          <div className="rounded-[32px] border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-indigo-50 px-6 py-7 shadow-sm">
+          <div className="rounded-2xl border border-surface-200 bg-surface-50 px-6 py-7">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-isu-600 text-white">
                 <BotMessageSquare className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">문서 기반 AI 어시스턴트</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-semibold text-surface-900">문서 기반 AI 어시스턴트</p>
+                <p className="text-sm text-surface-600">
                   사내 문서와 운영 기록을 바탕으로 답변하고, 근거 문서를 바로 보여줍니다.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+              <div className="rounded-xl border border-surface-200 bg-card p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-violet-500" />
-                  <p className="text-sm font-semibold text-gray-900">빠른 요약</p>
+                  <Sparkles className="h-4 w-4 text-lime-600" />
+                  <p className="text-sm font-semibold text-surface-900">빠른 요약</p>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-surface-600">
                   운영 정책, 프로젝트 문서, 런북 내용을 한 번에 요약합니다.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+              <div className="rounded-xl border border-surface-200 bg-card p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-indigo-500" />
-                  <p className="text-sm font-semibold text-gray-900">출처 인용</p>
+                  <Sparkles className="h-4 w-4 text-isu-600" />
+                  <p className="text-sm font-semibold text-surface-900">출처 인용</p>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-surface-600">
                   답변마다 참고 문서를 붙여서 근거를 바로 확인할 수 있습니다.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/80 bg-white/80 p-4">
+              <div className="rounded-xl border border-surface-200 bg-card p-4">
                 <div className="mb-3 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-sky-500" />
-                  <p className="text-sm font-semibold text-gray-900">실시간 응답</p>
+                  <Sparkles className="h-4 w-4 text-isu-600" />
+                  <p className="text-sm font-semibold text-surface-900">실시간 응답</p>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-surface-600">
                   스트리밍으로 답변을 받아서 길게 기다리지 않고 바로 읽기 시작합니다.
                 </p>
               </div>
@@ -402,7 +402,7 @@ export function AskPanel({
                       setInput(prompt);
                       handleAsk(prompt);
                     }}
-                    className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-left text-sm text-gray-700 shadow-sm transition hover:border-violet-200 hover:bg-violet-50"
+                    className="rounded-xl border border-surface-200 bg-card px-4 py-3 text-left text-sm text-surface-700 transition hover:border-isu-300 hover:bg-isu-50"
                   >
                     {prompt}
                   </button>

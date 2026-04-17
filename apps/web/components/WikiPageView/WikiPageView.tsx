@@ -133,9 +133,9 @@ export function WikiPageView({
 
   return (
     <article className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <header className="space-y-3 border-b border-gray-200 pb-4">
+      <header className="space-y-3 border-b border-surface-200 pb-4">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">{page.title}</h1>
+          <h1 className="text-3xl font-bold text-surface-900">{page.title}</h1>
           <Badge variant={SENSITIVITY_VARIANT[page.sensitivity]}>
             {t(`sensitivity.${page.sensitivity}`)}
           </Badge>
@@ -147,12 +147,12 @@ export function WikiPageView({
             </Badge>
           ))}
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-surface-500">
           {t('lastUpdated')}: {formattedDate}
         </p>
       </header>
 
-      <div className="prose prose-sm max-w-none text-gray-800">
+      <div className="prose prose-sm max-w-none text-surface-800">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -180,7 +180,7 @@ export function WikiPageView({
               <ol className="list-decimal list-inside space-y-1 my-3">{children}</ol>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-gray-300 bg-gray-50 px-4 py-2 my-3 text-gray-700 italic">
+              <blockquote className="rounded-md bg-surface-100 px-5 py-3 my-4 text-surface-700 italic">
                 {children}
               </blockquote>
             ),
@@ -189,7 +189,7 @@ export function WikiPageView({
               if (isInline) {
                 return (
                   <code
-                    className="bg-gray-100 text-rose-700 rounded px-1 py-0.5 font-mono text-sm"
+                    className="bg-surface-100 text-rose-700 rounded px-1 py-0.5 font-mono text-sm"
                     {...props}
                   >
                     {children}
@@ -203,7 +203,7 @@ export function WikiPageView({
               );
             },
             pre: ({ children }) => (
-              <pre className="bg-gray-900 text-gray-100 rounded-md p-4 my-4 overflow-x-auto font-mono text-sm">
+              <pre className="bg-surface-900 text-surface-100 rounded-md p-4 my-4 overflow-x-auto font-mono text-sm">
                 {children}
               </pre>
             ),
@@ -213,15 +213,15 @@ export function WikiPageView({
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-gray-100">{children}</thead>
+              <thead className="bg-surface-100">{children}</thead>
             ),
             th: ({ children }) => (
-              <th className="border border-gray-300 px-3 py-2 text-left font-semibold">
+              <th className="border border-surface-300 px-3 py-2 text-left font-semibold">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="border border-gray-300 px-3 py-2">
+              <td className="border border-surface-300 px-3 py-2">
                 {processChildren(children, onWikiLinkClick, orphanSet)}
               </td>
             ),
@@ -240,7 +240,7 @@ export function WikiPageView({
       </div>
 
       {showEdit && (
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-surface-200">
           <Button variant="outline" size="sm">
             {t('edit')}
           </Button>

@@ -58,7 +58,7 @@ const columns = [
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Date
-        <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-gray-400" />
+        <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-surface-400" />
       </Button>
     ),
     cell: ({ getValue }) => {
@@ -99,9 +99,9 @@ const columns = [
     cell: ({ getValue }) => {
       const v = getValue();
       return v ? (
-        <span className="max-w-[180px] truncate text-sm text-gray-500" title={v}>{v}</span>
+        <span className="max-w-[180px] truncate text-sm text-surface-500" title={v}>{v}</span>
       ) : (
-        <span className="text-gray-300">—</span>
+        <span className="text-surface-300">—</span>
       );
     },
     enableSorting: false,
@@ -189,7 +189,7 @@ export function AttendanceTable({ records, month }: AttendanceTableProps) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-gray-500">
+                <TableCell colSpan={columns.length} className="h-24 text-center text-surface-500">
                   No attendance records for this month.
                 </TableCell>
               </TableRow>

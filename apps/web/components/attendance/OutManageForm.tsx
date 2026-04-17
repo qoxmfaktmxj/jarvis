@@ -175,7 +175,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
               name="destination"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Destination <span className="text-gray-400 text-xs">(optional)</span></FormLabel>
+                  <FormLabel>Destination <span className="text-surface-400 text-xs">(optional)</span></FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Client HQ, City Hall" {...field} />
                   </FormControl>
@@ -248,7 +248,7 @@ export function OutManageForm({ children }: OutManageFormProps) {
                       name={`details.${i}.activity`}
                       render={({ field }) => (
                         <FormItem className="flex-1">
-                          <FormLabel className="text-xs">Activity <span className="text-gray-400">(optional)</span></FormLabel>
+                          <FormLabel className="text-xs">Activity <span className="text-surface-400">(optional)</span></FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. Contract negotiation" {...field} />
                           </FormControl>

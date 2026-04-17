@@ -36,21 +36,21 @@ async function fetchVersionContent(pageId: string, versionId: string): Promise<V
 function DiffLine({ change }: { change: Change }) {
   if (change.added) {
     return (
-      <div className="bg-green-50 border-l-2 border-green-500 px-3 py-0.5 font-mono text-xs text-green-800 whitespace-pre-wrap">
-        + {change.value}
+      <div className="bg-green-50 px-3 py-0.5 font-mono text-xs text-green-800 whitespace-pre-wrap">
+        <span className="text-success mr-1">+</span>{change.value}
       </div>
     );
   }
   if (change.removed) {
     return (
-      <div className="bg-red-50 border-l-2 border-red-500 px-3 py-0.5 font-mono text-xs text-red-800 whitespace-pre-wrap line-through opacity-80">
-        - {change.value}
+      <div className="bg-red-50 px-3 py-0.5 font-mono text-xs text-red-800 whitespace-pre-wrap line-through opacity-80">
+        <span className="text-danger mr-1">-</span>{change.value}
       </div>
     );
   }
   return (
-    <div className="px-3 py-0.5 font-mono text-xs text-gray-500 whitespace-pre-wrap">
-      &nbsp;&nbsp;{change.value}
+    <div className="px-3 py-0.5 font-mono text-xs text-surface-500 whitespace-pre-wrap">
+      <span className="text-surface-500 mr-1">&nbsp;</span>{change.value}
     </div>
   );
 }
@@ -104,7 +104,7 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
             </DialogClose>
           </div>
           {!loading && !error && (
-            <div className="flex gap-4 text-sm text-gray-500 mt-1">
+            <div className="flex gap-4 text-sm text-surface-500 mt-1">
               <span className="font-mono">{labelA}</span>
               <span>→</span>
               <span className="font-mono">{labelB}</span>
@@ -114,7 +114,7 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
           )}
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto rounded-md border border-gray-200 bg-white">
+        <div className="flex-1 overflow-y-auto rounded-md border border-surface-200 bg-card">
           {loading && (
             <div className="p-4 space-y-2">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -126,12 +126,12 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
             <div className="p-4 text-sm text-red-600">{error}</div>
           )}
           {!loading && !error && (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-surface-100">
               {changes.map((change, i) => (
                 <DiffLine key={i} change={change} />
               ))}
               {changes.length === 0 && (
-                <p className="p-4 text-sm text-gray-400 italic">No differences found.</p>
+                <p className="p-4 text-sm text-surface-400 italic">No differences found.</p>
               )}
             </div>
           )}

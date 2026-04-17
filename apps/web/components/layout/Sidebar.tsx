@@ -49,10 +49,10 @@ function NavLink({
   Icon: typeof LayoutDashboard;
 }) {
   const base =
-    "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.8125rem] font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/70";
+    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[0.8125rem] transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/70";
   const state = active
-    ? "bg-lime-100 text-isu-900"
-    : "text-isu-200/80 hover:bg-isu-900 hover:text-surface-50";
+    ? "bg-lime-100 text-isu-900 font-semibold"
+    : "font-medium text-isu-200/80 hover:bg-isu-900 hover:text-surface-50";
 
   return (
     <Link
@@ -60,12 +60,6 @@ function NavLink({
       aria-current={active ? "page" : undefined}
       className={`${base} ${state}`}
     >
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-lime-500"
-        />
-      )}
       <Icon
         className={`h-[18px] w-[18px] shrink-0 ${active ? "text-lime-600" : ""}`}
       />
