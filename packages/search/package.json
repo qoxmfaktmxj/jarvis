@@ -8,6 +8,7 @@
     "./types": "./types.ts",
     "./adapter": "./adapter.ts",
     "./pg-search": "./pg-search.ts",
+    "./precedent-search": "./precedent-search.ts",
     "./query-parser": "./query-parser.ts",
     "./hybrid-ranker": "./hybrid-ranker.ts",
     "./highlighter": "./highlighter.ts",

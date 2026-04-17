@@ -16,21 +16,34 @@ export function freshnessScore(days: number): number {
 }
 
 /**
- * Compute hybrid relevance score combining:
+ * Compute hybrid relevance score.
+ *
+ * Legacy 3-lane mode (vectorSim omitted):
  *   - FTS rank (ts_rank_cd result, 0–1 range)         weight 0.6
  *   - trgm similarity (pg_trgm similarity(), 0–1)      weight 0.3
  *   - freshness score (computed from updatedAt days)   weight 0.1
  *
- * Returns a value in [0, 1].
+ * Phase-W5 4-lane mode (vectorSim provided):
+ *   - FTS rank                                         weight 0.4
+ *   - vector cosine similarity (1 - distance)          weight 0.35
+ *   - trgm similarity                                   weight 0.15
+ *   - freshness score                                   weight 0.1
+ *
+ * The 4-lane mode only activates when caller passes the 4th argument, so
+ * existing 3-arg callers (`runFtsSearch`, `runTrgmSearch`) retain identical
+ * behaviour. Returns a value in [0, 1].
  */
 export function computeHybridScore(
   ftsRank: number,
   trgmSim: number,
   freshnessDays: number,
+  vectorSim?: number,
 ): number {
   const fs = freshnessScore(freshnessDays);
-  const score = ftsRank * 0.6 + trgmSim * 0.3 + fs * 0.1;
-  // Clamp to [0, 1]
+  const score =
+    vectorSim === undefined
+      ? ftsRank * 0.6 + trgmSim * 0.3 + fs * 0.1
+      : ftsRank * 0.4 + vectorSim * 0.35 + trgmSim * 0.15 + fs * 0.1;
   return Math.min(1, Math.max(0, score));
 }
 

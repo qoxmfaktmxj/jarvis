@@ -79,12 +79,13 @@ describe('PgSearchAdapter.runVectorSearch', () => {
 
     expect(res.hits).toHaveLength(1);
     expect(res.total).toBe(1);
-    expect(res.hits[0].id).toBe('page-1');
-    expect(res.hits[0].resourceType).toBe('knowledge');
-    expect(res.hits[0].vectorSim).toBe(0.92);
-    expect(res.hits[0].ftsRank).toBe(0);
-    expect(res.hits[0].trgmSim).toBe(0);
-    expect(res.hits[0].url).toBe('/knowledge/page-1');
+    const hit = res.hits[0]!;
+    expect(hit.id).toBe('page-1');
+    expect(hit.resourceType).toBe('knowledge');
+    expect(hit.vectorSim).toBe(0.92);
+    expect(hit.ftsRank).toBe(0);
+    expect(hit.trgmSim).toBe(0);
+    expect(hit.url).toBe('/knowledge/page-1');
   });
 
   it('returns empty result when no rows match', async () => {
@@ -100,14 +101,14 @@ describe('PgSearchAdapter.runVectorSearch', () => {
     expect(mockDb.execute).toHaveBeenCalledTimes(1);
     // The exact SQL is an opaque drizzle tag — we just verify the call happened
     // with a single argument (the sql fragment).
-    const callArgs = mockDb.execute.mock.calls[0];
+    const callArgs = mockDb.execute.mock.calls[0]!;
     expect(callArgs).toHaveLength(1);
   });
 
   it('does not touch precedent_case (Lane B isolation)', async () => {
     mockDb.execute.mockResolvedValueOnce({ rows: [] });
     await adapter.runVectorSearch(baseQuery, zeroVec);
-    const rendered = JSON.stringify(mockDb.execute.mock.calls[0][0]);
+    const rendered = JSON.stringify(mockDb.execute.mock.calls[0]![0]);
     expect(rendered).not.toMatch(/precedent_case/i);
     expect(rendered).toMatch(/knowledge_page/i);
   });

@@ -3,16 +3,19 @@ import { Suspense } from 'react';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { executeSearch } from '@/lib/queries/search';
+import { executePrecedentSearch } from '@/lib/queries/precedent-search';
 import { SearchPage } from '@/components/search/SearchPage';
 import { SearchBar } from '@/components/search/SearchBar';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import type { SearchSortBy } from '@jarvis/search/types';
+import { ResourceTabs, type ResourceTabValue } from './ResourceTabs';
 
 export const dynamic = 'force-dynamic';
 
 interface SearchPageRouteProps {
   searchParams: Promise<{
     q?: string;
+    resourceType?: string;
     pageType?: string;
     sensitivity?: string;
     sortBy?: string;
@@ -28,6 +31,8 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
 
   const q = params.q?.trim() ?? '';
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10));
+  const resourceType: ResourceTabValue =
+    params.resourceType === 'case' ? 'case' : 'knowledge';
 
   if (!q) {
     return (
@@ -49,7 +54,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
     ? (rawSort as SearchSortBy)
     : sortAliases[rawSort] ?? 'relevance';
 
-  const result = await executeSearch({
+  const commonQueryArgs = {
     q,
     workspaceId: session.workspaceId,
     userId: session.userId,
@@ -62,16 +67,34 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
     sortBy: validSortBy,
     page: currentPage,
     limit: 20,
-  });
+  };
+
+  const result =
+    resourceType === 'case'
+      ? await executePrecedentSearch(commonQueryArgs)
+      : await executeSearch(commonQueryArgs);
 
   return (
-    <SearchPage
-      result={result}
-      currentQuery={q}
-      currentPage={currentPage}
-      pageType={params.pageType}
-      sortBy={validSortBy}
-    />
+    <div className="mx-auto max-w-4xl px-4 py-4">
+      <ResourceTabs
+        value={resourceType}
+        currentQuery={q}
+        extraParams={{
+          pageType: params.pageType,
+          sensitivity: params.sensitivity,
+          sortBy: params.sortBy,
+          dateFrom: params.dateFrom,
+          dateTo: params.dateTo,
+        }}
+      />
+      <SearchPage
+        result={result}
+        currentQuery={q}
+        currentPage={currentPage}
+        pageType={params.pageType}
+        sortBy={validSortBy}
+      />
+    </div>
   );
 }
 

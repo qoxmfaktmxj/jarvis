@@ -2,13 +2,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { PgSearchAdapter } from '@jarvis/search/pg-search';
+import { PrecedentSearchAdapter } from '@jarvis/search/precedent-search';
 import type { SearchResult } from '@jarvis/search/types';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getRedis } from '@jarvis/db/redis';
+import { embedSearchQuery } from '@/lib/server/search-embedder';
 
 const searchSchema = z.object({
   q: z.string().min(1).max(500),
+  // Phase-W5: resourceType routes to the appropriate Lane adapter.
+  //   'knowledge' (default) → PgSearchAdapter (wiki pages, Lane A)
+  //   'case'                → PrecedentSearchAdapter (precedent_case, Lane B)
+  resourceType: z.enum(['knowledge', 'case']).optional(),
   pageType: z.string().optional(),
   sensitivity: z.string().optional(),
   dateFrom: z.string().optional(),
@@ -18,7 +24,8 @@ const searchSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-const adapter = new PgSearchAdapter();
+const laneA = new PgSearchAdapter({ embedQuery: embedSearchQuery });
+const laneB = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
 
 // Rate limit: 60 requests per minute per user
 const RATE_LIMIT_WINDOW_SECONDS = 60;
@@ -86,6 +93,10 @@ export async function POST(request: NextRequest) {
   const normalizedSort = rawSort
     ? legacySortAliases[rawSort] ?? (rawSort as import('@jarvis/search/types').SearchSortBy)
     : undefined;
+
+  // Dispatch to the appropriate lane. Lanes live in separate vector spaces
+  // and must never be UNIONed — see packages/search/README.md.
+  const adapter = parsed.data.resourceType === 'case' ? laneB : laneA;
 
   try {
     const result: SearchResult = await adapter.search({

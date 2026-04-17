@@ -94,11 +94,23 @@ export function rrfMerge(
 }
 
 // ---------------------------------------------------------------------------
-// Text Claims Retrieval (기존 로직 유지)
+// Text Claims Retrieval (DEPRECATED — legacy fallback only)
 // ---------------------------------------------------------------------------
 /**
- * @deprecated use page-first path (featurePageFirstQuery=true).
- * Only used by legacy askAI fallback (FEATURE_PAGE_FIRST_QUERY=false).
+ * @deprecated **Scheduled for removal after Phase-W5 burn-in (2026-05+).**
+ *
+ * Ask AI defaults to `pageFirstAsk` (page-first pipeline). This hybrid
+ * retrieval only runs when `FEATURE_PAGE_FIRST_QUERY=false` — the one-way
+ * migration escape hatch.
+ *
+ * Semantic search has moved to:
+ *   - `packages/search/pg-search.ts` — Lane A (knowledge_page, OpenAI 1536d)
+ *   - `packages/search/precedent-search.ts` — Lane B (precedent_case, TF-IDF+SVD)
+ *
+ * DO NOT call from new code. Function body + legacy branch in `askAI` + the
+ * related `describe('retrieveRelevantClaims', ...)` block in `ask.test.ts`
+ * will be deleted in a dedicated follow-up once the page-first path has
+ * proven out for one week in production.
  */
 export async function retrieveRelevantClaims(
   question: string,

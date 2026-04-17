@@ -57,6 +57,34 @@ describe('computeHybridScore', () => {
     // expected: 0 + 0.8*0.3 + 0.2*0.1 = 0.24 + 0.02 = 0.26
     expect(computeHybridScore(0, 0.8, 90)).toBeCloseTo(0.26, 5);
   });
+
+  describe('Phase-W5 4-lane mode (vectorSim provided)', () => {
+    it('blends all four lanes: 0.4 fts + 0.35 vector + 0.15 trgm + 0.1 freshness', () => {
+      // ftsRank=1, trgmSim=1, freshnessDays=0 (fs=1), vectorSim=1
+      // expected: 0.4 + 0.35 + 0.15 + 0.1 = 1.0
+      expect(computeHybridScore(1, 1, 0, 1)).toBeCloseTo(1.0, 5);
+    });
+
+    it('pure vector score has 0.35 weight', () => {
+      // everything else 0, vectorSim=1, freshnessDays=1000 (fs=0.2)
+      // expected: 0 + 0.35 + 0 + 0.2*0.1 = 0.37
+      expect(computeHybridScore(0, 0, 1000, 1)).toBeCloseTo(0.37, 5);
+    });
+
+    it('vectorSim=0 is different from omitting the argument', () => {
+      const with4 = computeHybridScore(1, 1, 0, 0);
+      // 0.4*1 + 0.35*0 + 0.15*1 + 0.1*1 = 0.65
+      expect(with4).toBeCloseTo(0.65, 5);
+      const with3 = computeHybridScore(1, 1, 0);
+      // 0.6*1 + 0.3*1 + 0.1*1 = 1.0 (legacy mode)
+      expect(with3).toBeCloseTo(1.0, 5);
+    });
+
+    it('clamps 4-lane result to [0, 1]', () => {
+      expect(computeHybridScore(2, 2, 0, 2)).toBe(1);
+      expect(computeHybridScore(-1, -1, 0, -1)).toBe(0);
+    });
+  });
 });
 
 describe('daysSince', () => {

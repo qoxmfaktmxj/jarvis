@@ -4,6 +4,8 @@ import { PgSearchAdapter } from '@jarvis/search/pg-search';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
+// Suggest uses the trgm title-prefix path, not the vector lane, so it does
+// not need an embedder. Defaults to FTS-only behaviour.
 const adapter = new PgSearchAdapter();
 // Suggest responses depend on the caller's session and query string.
 export const dynamic = 'force-dynamic';

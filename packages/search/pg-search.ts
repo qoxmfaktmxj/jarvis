@@ -2,6 +2,7 @@
 import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
+import { featureSearchHybrid } from '@jarvis/db/feature-flags';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
 import type { SearchQuery, SearchResult, SearchHit, ResourceType } from './types.js';
@@ -16,14 +17,55 @@ import { FallbackChain } from './fallback-chain.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+/**
+ * Reciprocal Rank Fusion: combine two ranked hit lists into one.
+ *   score(doc) = Σ over lists of 1 / (k + rank_in_list).
+ * k=60 is the classic RRF constant. The merged list is sorted by combined
+ * score and truncated to `limit`.
+ */
+const RRF_K = 60;
+function mergeByRRF(a: SearchHit[], b: SearchHit[], limit: number): SearchHit[] {
+  const scores = new Map<string, { hit: SearchHit; score: number }>();
+  const visit = (list: SearchHit[]) => {
+    list.forEach((hit, idx) => {
+      const add = 1 / (RRF_K + idx + 1);
+      const prev = scores.get(hit.id);
+      if (prev) {
+        prev.score += add;
+        // Prefer the hit with richer fields (vectorSim present etc.)
+        if ((hit.vectorSim ?? 0) > (prev.hit.vectorSim ?? 0)) prev.hit = hit;
+      } else {
+        scores.set(hit.id, { hit, score: add });
+      }
+    });
+  };
+  visit(a);
+  visit(b);
+  return Array.from(scores.values())
+    .sort((x, y) => y.score - x.score)
+    .slice(0, limit)
+    .map(({ hit, score }) => ({ ...hit, hybridScore: score }));
+}
+
+export interface PgSearchAdapterOptions {
+  /**
+   * Phase-W5: pre-computes the query vector for Lane A hybrid search.
+   * If omitted or the `FEATURE_SEARCH_HYBRID` flag is off, the vector lane
+   * is skipped and `search()` falls back to FTS + trgm only.
+   */
+  embedQuery?: (text: string) => Promise<number[]>;
+}
+
 export class PgSearchAdapter implements SearchAdapter {
   private readonly fallbackChain: FallbackChain;
+  private readonly embedQuery?: (text: string) => Promise<number[]>;
 
-  constructor() {
+  constructor(opts: PgSearchAdapterOptions = {}) {
     this.fallbackChain = new FallbackChain(
       (q) => this.runFtsSearch(q),
       (q) => this.runTrgmSearch(q),
     );
+    this.embedQuery = opts.embedQuery;
   }
 
   // -----------------------------------------------------------------------
@@ -49,8 +91,32 @@ export class PgSearchAdapter implements SearchAdapter {
     // 4. Run main FTS search; if empty trigger fallback chain
     const ftsResult = await this.runFtsSearch(enrichedQuery, { limit, offset, parsed });
 
+    // 4b. Phase-W5: when FEATURE_SEARCH_HYBRID is on and embedQuery is wired,
+    //     also run the vector lane and RRF-merge the two ranked lists.
+    let vectorResult: SearchResult | null = null;
+    if (featureSearchHybrid() && this.embedQuery) {
+      try {
+        const qvec = await this.embedQuery(term);
+        vectorResult = await this.runVectorSearch(enrichedQuery, qvec, { limit, offset });
+      } catch (err) {
+        // Vector failures must not break search — degrade to FTS-only.
+        console.warn('[search] vector lane failed, falling back to FTS only:', err);
+        vectorResult = null;
+      }
+    }
+
     let result: SearchResult;
-    if (ftsResult.hits.length > 0) {
+    if (vectorResult && (ftsResult.hits.length > 0 || vectorResult.hits.length > 0)) {
+      const merged = mergeByRRF(ftsResult.hits, vectorResult.hits, limit);
+      result = {
+        hits: merged,
+        total: merged.length,
+        facets: { byPageType: {}, bySensitivity: {} },
+        suggestions: [],
+        query: enrichedQuery.q,
+        durationMs: Date.now() - startMs,
+      };
+    } else if (ftsResult.hits.length > 0) {
       result = ftsResult;
     } else {
       result = await this.fallbackChain.run(enrichedQuery);
