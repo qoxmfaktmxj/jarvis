@@ -115,7 +115,7 @@ export default async function KnowledgeHomePage() {
                 className="grid grid-cols-1 gap-4 rounded-lg border border-surface-200 bg-card p-4 md:grid-cols-[200px_1fr_auto] md:items-center md:gap-6"
               >
                 <h3 className="text-base font-semibold text-foreground">{section.label}</h3>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-sm">
                   {section.pages.length === 0 ? (
                     <span className="italic text-muted-foreground">No pages yet</span>
                   ) : (
@@ -123,7 +123,7 @@ export default async function KnowledgeHomePage() {
                       <Link
                         key={page.id}
                         href={`/knowledge/${page.id}`}
-                        className="truncate text-surface-700 underline-offset-4 hover:text-isu-700 hover:underline"
+                        className="block max-w-full truncate text-surface-700 underline-offset-4 hover:text-isu-700 hover:underline sm:max-w-[24ch]"
                       >
                         {page.title}
                       </Link>

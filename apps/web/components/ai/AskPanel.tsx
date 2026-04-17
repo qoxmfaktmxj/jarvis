@@ -355,22 +355,22 @@ export function AskPanel({
             </div>
           </header>
 
-          <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[auto_1fr] sm:gap-y-2">
-            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+          <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[6rem_1fr] sm:gap-y-2">
+            <dt className="text-display text-sm font-semibold text-isu-700">
               요약
             </dt>
             <dd className="text-surface-700">
               운영 정책, 프로젝트 문서, 런북을 한 번에 요약합니다.
             </dd>
 
-            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+            <dt className="text-display text-sm font-semibold text-isu-700">
               인용
             </dt>
             <dd className="text-surface-700">
               답변마다 참고 문서를 붙여 근거를 바로 확인할 수 있습니다.
             </dd>
 
-            <dt className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-isu-700">
+            <dt className="text-display text-sm font-semibold text-isu-700">
               스트리밍
             </dt>
             <dd className="text-surface-700">
