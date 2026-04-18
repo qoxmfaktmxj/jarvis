@@ -26,53 +26,71 @@ const sharp = require("C:/Users/sp20171217yw/Desktop/Devdev/jarvis/node_modules/
 //   Row 3: chef (col 0만)
 async function processTransparentSheet() {
   const SRC_FILE = "C:/Users/sp20171217yw/Downloads/Gemini_Generated_Image_it4h0ait4h0ait4h.png";
-  const layout = [
-    ["diver", "armchair", "astronaut"],
-    ["basic", "bird", "cabbage"],
-    ["chef", null, null],
-  ];
+  // 이 이미지는 실제로는 불투명이고 체크무늬 배경이 구워져 있음.
+  // 1) 체크무늬 회색 (r≈g≈b ∈ [60,150])을 투명으로 변환
+  // 2) 각 아이콘 영역을 수동 좌표로 extract
+  // 3) trim으로 깔끔한 bbox 추출
+
   const meta = await sharp(SRC_FILE).metadata();
   const { width, height } = meta;
   console.log(`\n[transparent sheet] ${width}×${height}`);
-  const cellW = Math.floor(width / 3);
-  const cellH = Math.floor(height / 3);
-  // 각 셀 안쪽으로 INSET 픽셀만큼 여유 — 옆/위 셀이 비치지 않게
-  const INSET = 80;
 
-  for (let row = 0; row < 3; row++) {
-    for (let col = 0; col < 3; col++) {
-      const name = layout[row][col];
-      if (!name) continue;
-      const left = col * cellW + INSET;
-      const top = row * cellH + INSET;
-      const w = cellW - INSET * 2;
-      const h = cellH - INSET * 2;
-      const cellBuf = await sharp(SRC_FILE)
-        .extract({ left, top, width: w, height: h })
-        .toBuffer();
-      // 투명 배경 자동 trim (alpha < 10인 영역 제거)
-      const trimmedBuf = await sharp(cellBuf).trim({ threshold: 10 }).toBuffer();
-      const tMeta = await sharp(trimmedBuf).metadata();
-      const sq = Math.round(Math.max(tMeta.width, tMeta.height) * 1.05);
-      const padX = Math.floor((sq - tMeta.width) / 2);
-      const padY = Math.floor((sq - tMeta.height) / 2);
-      const outPath = path.join(
-        "C:/Users/sp20171217yw/Desktop/Devdev/jarvis/apps/web/public/capybara",
-        `${name}.png`
-      );
-      await sharp(trimmedBuf)
-        .extend({
-          top: padY,
-          bottom: sq - tMeta.height - padY,
-          left: padX,
-          right: sq - tMeta.width - padX,
-          background: { r: 0, g: 0, b: 0, alpha: 0 },
-        })
-        .resize(512, 512, { fit: "cover" })
-        .png({ compressionLevel: 9 })
-        .toFile(outPath);
-      console.log(`  ${name}.png  (투명 3×3에서 재생성, 기존 교체)`);
-    }
+  const { data, info } = await sharp(SRC_FILE).raw().toBuffer({ resolveWithObject: true });
+  const out = Buffer.alloc(info.width * info.height * 4);
+  for (let i = 0, j = 0; i < data.length; i += info.channels, j += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    const isGray = Math.abs(r - g) < 6 && Math.abs(g - b) < 6 && Math.abs(r - b) < 6;
+    const gray = r >= 60 && r <= 150;
+    const alpha = (isGray && gray) ? 0 : 255;
+    out[j] = r; out[j + 1] = g; out[j + 2] = b; out[j + 3] = alpha;
+  }
+  const cleanedBuf = await sharp(out, {
+    raw: { width: info.width, height: info.height, channels: 4 },
+  }).png().toBuffer();
+  console.log(`  checker removed → transparent bg`);
+
+  // 색상 기반 bbox 스캔 결과 (probe-capy-sheet.mjs):
+  //   r1 y ≈ 64-689 (height 625, cy=376)
+  //   r2 y ≈ 756-1274 + basic/cabbage 약간 늦음 → cy ≈ 1015-1039
+  //   r3 y ≈ 1400-1880 (chef)
+  //   col x centers ≈ 583, 1110, 1820
+  // 각 icon은 원+환경(물고기/별 등)까지 포함 → bbox 더 넉넉히
+  const CELLS = {
+    diver:     { left: 80,   top: 60,   width: 800, height: 720 },
+    armchair:  { left: 800,  top: 60,   width: 700, height: 720 },
+    astronaut: { left: 1500, top: 60,   width: 630, height: 720 },
+    basic:     { left: 180,  top: 780,  width: 700, height: 610 },
+    bird:      { left: 880,  top: 700,  width: 500, height: 680 },
+    cabbage:   { left: 1480, top: 780,  width: 700, height: 610 },
+    chef:      { left: 120,  top: 1390, width: 780, height: 540 },
+  };
+
+  for (const [name, { left, top, width: w, height: h }] of Object.entries(CELLS)) {
+    const cellBuf = await sharp(cleanedBuf)
+      .extract({ left, top, width: w, height: h })
+      .toBuffer();
+    const trimmedBuf = await sharp(cellBuf).trim({ threshold: 10 }).toBuffer();
+    const tMeta = await sharp(trimmedBuf).metadata();
+    const sq = Math.round(Math.max(tMeta.width, tMeta.height) * 1.06);
+    const padX = Math.floor((sq - tMeta.width) / 2);
+    const padY = Math.floor((sq - tMeta.height) / 2);
+
+    const outPath = path.join(
+      "C:/Users/sp20171217yw/Desktop/Devdev/jarvis/apps/web/public/capybara",
+      `${name}.png`
+    );
+    await sharp(trimmedBuf)
+      .extend({
+        top: padY,
+        bottom: sq - tMeta.height - padY,
+        left: padX,
+        right: sq - tMeta.width - padX,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .resize(512, 512, { fit: "cover" })
+      .png({ compressionLevel: 9 })
+      .toFile(outPath);
+    console.log(`  ${name}.png region=(${left},${top},${w}×${h}) trimmed=${tMeta.width}×${tMeta.height}`);
   }
 }
 
