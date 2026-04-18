@@ -91,6 +91,8 @@ export interface RunWikiLintOptions {
   workspaceIds?: string[];
   /** Skip git commit + review_queue insert; only compute counters. */
   dryRun?: boolean;
+  /** Skip the LLM-backed contradictions check (saves cost). */
+  skipContradictions?: boolean;
 }
 
 // ── pg-boss handler ──────────────────────────────────────────────────────
@@ -167,7 +169,9 @@ async function runWikiLintForWorkspace(
   // 1~5 checks (serial — keeps DB load and LLM RPS modest).
   const orphans = await detectOrphans(workspaceId);
   const brokenLinks = await detectBrokenLinks(workspaceId);
-  const contradictions = await detectContradictions(workspaceId);
+  const contradictions: ContradictionFinding[] = opts.skipContradictions
+    ? []
+    : await detectContradictions(workspaceId);
   const stale = await detectStaleClaims(workspaceId);
   const missingXrefs = await suggestMissingCrossRefs(workspaceId);
 

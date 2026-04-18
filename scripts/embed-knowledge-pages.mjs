@@ -1,9 +1,13 @@
 #!/usr/bin/env node
+import 'dotenv/config';
+import { pathToFileURL } from 'node:url';
+
 // Phase-W5 T3: one-shot / cron-friendly ingest that keeps
 // knowledge_page.embedding in sync with title+summary content.
 //
 // Usage:
-//   OPENAI_API_KEY=... pnpm exec node scripts/embed-knowledge-pages.mjs
+//   pnpm exec tsx scripts/embed-knowledge-pages.mjs
+//   (dotenv loads OPENAI_API_KEY + DATABASE_URL from repo-root .env)
 //
 // Behaviour:
 //   - Selects every page where embedding IS NULL OR last_embedded_at < updated_at
@@ -48,9 +52,8 @@ export async function embedPages({ db, openai, sql }) {
   return rows.length;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const { sql } = await import('drizzle-orm');
-  const { db } = await import('../packages/db/src/client.js');
+if (pathToFileURL(process.argv[1]).href === import.meta.url) {
+  const { db, sql } = await import('../packages/db/client.ts');
   const { default: OpenAI } = await import('openai');
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   let total = 0;

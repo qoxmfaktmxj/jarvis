@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "wiki:bootstrap": "tsx src/jobs/wiki-bootstrap.ts"
+    "wiki:bootstrap": "tsx src/jobs/wiki-bootstrap.ts",
+    "wiki:lint": "tsx src/bin/wiki-lint.ts"
   },
   "dependencies": {
     "@jarvis/ai": "workspace:*",
