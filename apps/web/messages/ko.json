@@ -424,6 +424,7 @@
       "documentReview": "문서 검토 중…"
     },
     "sidebar": {
+      "title": "ASK",
       "newConversation": "새 대화",
       "today": "오늘",
       "yesterday": "어제",
@@ -577,7 +578,13 @@
       "secret": "시크릿"
     },
     "noResults": "검색 결과가 없습니다.",
-    "noResultsHint": "권한에 따라 일부 페이지가 표시되지 않을 수 있습니다."
+    "noResultsHint": "권한에 따라 일부 페이지가 표시되지 않을 수 있습니다.",
+    "total": "전체 {count}개",
+    "pagination": {
+      "previous": "이전",
+      "next": "다음",
+      "page": "{page} / {total} 페이지"
+    }
   },
   "WikiEditor": {
     "manualOnlyBanner": "이 페이지는 manual/ 편집 전용입니다. auto/ 영역은 LLM이 관리합니다.",

@@ -65,7 +65,10 @@ export async function loadWikiPageForView(
         .limit(1);
 
   const meta = rows[0];
-  if (!meta) return null;
+  if (!meta) {
+    console.warn('[wiki-page-loader] no DB match', { workspaceId, routeKeyOrSlug });
+    return null;
+  }
 
   let content: string;
   try {

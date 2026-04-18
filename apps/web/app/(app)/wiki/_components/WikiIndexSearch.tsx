@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, Loader2, X, FileText, ArrowUpRight } from 'lucide-react';
+import { Search, Loader2, X, FileText, ArrowUpRight, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import type { WikiPageMeta } from '@/components/WikiPageView';
+import { buttonVariants } from '@/components/ui/button';
+import { mapDbSensitivity, type WikiPageMeta } from '@/components/WikiPageView';
 import { cn } from '@/lib/utils';
 
 const SENSITIVITY_STYLES: Record<
@@ -37,11 +38,20 @@ const SENSITIVITY_STYLES: Record<
 type WikiIndexSearchProps = {
   pages: WikiPageMeta[];
   workspaceId: string;
+  total: number;
+  currentPage: number;
+  totalPages: number;
 };
 
 const DEBOUNCE_MS = 300;
 
-export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexSearchProps) {
+export function WikiIndexSearch({
+  pages: initialPages,
+  workspaceId,
+  total,
+  currentPage,
+  totalPages,
+}: WikiIndexSearchProps) {
   const t = useTranslations('Wiki');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WikiPageMeta[]>(initialPages);
@@ -81,7 +91,7 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
             const mapped: WikiPageMeta[] = (data.pages ?? []).map((r) => ({
               slug: r.routeKey ?? r.slug,
               title: r.title,
-              sensitivity: (r.sensitivity ?? 'internal') as WikiPageMeta['sensitivity'],
+              sensitivity: mapDbSensitivity(r.sensitivity ?? 'INTERNAL'),
               tags: [],
               updatedAt: '',
               workspaceId,
@@ -166,13 +176,21 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
 
       {/* Result summary */}
       <p className="text-display text-[11px] tabular-nums text-surface-500">
-        {filtered.length}
-        <span className="text-surface-300"> / </span>
-        {results.length} 페이지
-        {query && (
+        {query ? (
           <>
+            {filtered.length}
+            <span className="text-surface-300"> / </span>
+            {results.length} 페이지
             <span className="mx-1.5 text-surface-300">·</span>
             <span>“{query}”</span>
+          </>
+        ) : (
+          <>
+            {filtered.length}
+            <span className="text-surface-300"> / </span>
+            {t('total', { count: total })}
+            <span className="mx-1.5 text-surface-300">·</span>
+            {t('pagination.page', { page: currentPage, total: totalPages })}
           </>
         )}
       </p>
@@ -198,7 +216,163 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
           ))}
         </div>
       )}
+
+      {/* Pagination (hidden when searching) */}
+      {!query.trim() && totalPages > 1 && (
+        <WikiPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          previousLabel={t('pagination.previous')}
+          nextLabel={t('pagination.next')}
+        />
+      )}
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+type PageItem = number | 'ellipsis-left' | 'ellipsis-right';
+
+function buildPageItems(current: number, total: number, siblings = 1): PageItem[] {
+  // first + last + current + 2*siblings + 2 ellipsis placeholders
+  const totalSlots = siblings * 2 + 5;
+  if (total <= totalSlots) {
+    return Array.from({ length: total }, (_, i) => i + 1);
+  }
+
+  const leftSibling = Math.max(current - siblings, 1);
+  const rightSibling = Math.min(current + siblings, total);
+  const showLeftEllipsis = leftSibling > 2;
+  const showRightEllipsis = rightSibling < total - 1;
+
+  if (!showLeftEllipsis && showRightEllipsis) {
+    const leftCount = 3 + 2 * siblings;
+    const left = Array.from({ length: leftCount }, (_, i) => i + 1);
+    return [...left, 'ellipsis-right', total];
+  }
+  if (showLeftEllipsis && !showRightEllipsis) {
+    const rightCount = 3 + 2 * siblings;
+    const right = Array.from({ length: rightCount }, (_, i) => total - rightCount + 1 + i);
+    return [1, 'ellipsis-left', ...right];
+  }
+  const middle = Array.from(
+    { length: rightSibling - leftSibling + 1 },
+    (_, i) => leftSibling + i,
+  );
+  return [1, 'ellipsis-left', ...middle, 'ellipsis-right', total];
+}
+
+function WikiPagination({
+  currentPage,
+  totalPages,
+  previousLabel,
+  nextLabel,
+}: {
+  currentPage: number;
+  totalPages: number;
+  previousLabel: string;
+  nextLabel: string;
+}) {
+  const items = buildPageItems(currentPage, totalPages);
+  const hrefFor = (page: number) => `/wiki?page=${page}`;
+  const prevDisabled = currentPage <= 1;
+  const nextDisabled = currentPage >= totalPages;
+
+  return (
+    <nav
+      role="navigation"
+      aria-label="Pagination"
+      className="mt-4 flex w-full items-center justify-center border-t border-surface-200 pt-5"
+    >
+      <ul className="flex flex-row items-center gap-1">
+        <li>
+          <PaginationArrow
+            direction="prev"
+            href={prevDisabled ? null : hrefFor(currentPage - 1)}
+            label={previousLabel}
+          />
+        </li>
+
+        {items.map((item, idx) => {
+          if (item === 'ellipsis-left' || item === 'ellipsis-right') {
+            return (
+              <li key={`${item}-${idx}`}>
+                <span
+                  aria-hidden
+                  className="flex h-9 w-9 items-center justify-center text-surface-400"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">More pages</span>
+                </span>
+              </li>
+            );
+          }
+          const active = item === currentPage;
+          return (
+            <li key={item}>
+              <Link
+                href={hrefFor(item)}
+                aria-current={active ? 'page' : undefined}
+                aria-label={`Page ${item}`}
+                className={cn(
+                  buttonVariants({ variant: active ? 'outline' : 'ghost', size: 'icon' }),
+                  'text-display h-9 w-9 rounded-md text-[13px] tabular-nums transition-colors',
+                  active
+                    ? 'border-isu-300 bg-isu-50 text-isu-700 hover:bg-isu-50 hover:text-isu-700'
+                    : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
+                )}
+              >
+                {item}
+              </Link>
+            </li>
+          );
+        })}
+
+        <li>
+          <PaginationArrow
+            direction="next"
+            href={nextDisabled ? null : hrefFor(currentPage + 1)}
+            label={nextLabel}
+          />
+        </li>
+      </ul>
+    </nav>
+  );
+}
+
+function PaginationArrow({
+  direction,
+  href,
+  label,
+}: {
+  direction: 'prev' | 'next';
+  href: string | null;
+  label: string;
+}) {
+  const Icon = direction === 'prev' ? ChevronLeft : ChevronRight;
+  const classes = cn(
+    buttonVariants({ variant: 'ghost', size: 'sm' }),
+    'h-9 gap-1 rounded-md px-2.5 text-[13px] font-medium transition-colors',
+    href
+      ? 'text-surface-700 hover:bg-surface-100 hover:text-surface-900'
+      : 'pointer-events-none text-surface-300',
+  );
+  const content = (
+    <>
+      {direction === 'prev' && <Icon className="h-4 w-4" aria-hidden />}
+      <span>{label}</span>
+      {direction === 'next' && <Icon className="h-4 w-4" aria-hidden />}
+    </>
+  );
+  return href ? (
+    <Link href={href} className={classes} aria-label={label}>
+      {content}
+    </Link>
+  ) : (
+    <span className={classes} aria-disabled="true" aria-label={label}>
+      {content}
+    </span>
   );
 }
 
@@ -251,7 +425,7 @@ function WikiPageCard({
   workspaceId: string;
   t: ReturnType<typeof useTranslations<'Wiki'>>;
 }) {
-  const sens = SENSITIVITY_STYLES[page.sensitivity];
+  const sens = SENSITIVITY_STYLES[page.sensitivity] ?? SENSITIVITY_STYLES.internal;
   return (
     <Link
       href={`/wiki/${workspaceId}/${page.slug}`}

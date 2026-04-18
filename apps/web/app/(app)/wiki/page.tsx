@@ -4,7 +4,7 @@ import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { wikiPageIndex } from '@jarvis/db/schema/wiki-page-index';
-import { eq, and, desc, isNull, inArray, or } from 'drizzle-orm';
+import { eq, and, desc, isNull, inArray, or, sql } from 'drizzle-orm';
 import { resolveAllowedWikiSensitivities } from '@jarvis/auth/rbac';
 import { mapDbSensitivity } from '@/components/WikiPageView';
 import type { WikiPageMeta } from '@/components/WikiPageView';
@@ -15,13 +15,24 @@ import { WikiIndexSearch } from './_components/WikiIndexSearch';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '위키' };
 
-export default async function WikiHomePage() {
+const PAGE_SIZE = 20;
+
+export default async function WikiHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
   const t = await getTranslations('Wiki');
 
   const workspaceId = session.workspaceId;
   const perms = session.permissions ?? [];
   const allowedSensitivities = resolveAllowedWikiSensitivities(perms);
+
+  const params = await searchParams;
+  const rawPage = Array.isArray(params.page) ? params.page[0] : params.page;
+  const parsedPage = Number.parseInt(rawPage ?? '1', 10);
+  const requestedPage = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
 
   // No access at all
   if (allowedSensitivities.length === 0) {
@@ -55,6 +66,18 @@ export default async function WikiHomePage() {
     );
   }
 
+  const whereClause = and(...conditions);
+
+  const countRows = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(wikiPageIndex)
+    .where(whereClause);
+
+  const total = countRows[0]?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const offset = (currentPage - 1) * PAGE_SIZE;
+
   const rows = await db
     .select({
       slug: wikiPageIndex.slug,
@@ -65,9 +88,10 @@ export default async function WikiHomePage() {
       updatedAt: wikiPageIndex.updatedAt,
     })
     .from(wikiPageIndex)
-    .where(and(...conditions))
+    .where(whereClause)
     .orderBy(desc(wikiPageIndex.updatedAt))
-    .limit(50);
+    .limit(PAGE_SIZE)
+    .offset(offset);
 
   const pages: WikiPageMeta[] = rows.map((row) => {
     const fmTags = (row.frontmatter as { tags?: unknown } | undefined)?.tags;
@@ -93,7 +117,13 @@ export default async function WikiHomePage() {
         title={t('title')}
       />
 
-      <WikiIndexSearch pages={pages} workspaceId={workspaceId} />
+      <WikiIndexSearch
+        pages={pages}
+        workspaceId={workspaceId}
+        total={total}
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
     </div>
   );
 }
