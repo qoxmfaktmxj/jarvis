@@ -315,7 +315,15 @@ export function insertRelatedLink(
     return { changed: false, newBody: body };
   }
 
-  const bullet = `- Company: [[auto/companies/${companyStem}|${companyTitle}]]`;
+  // The wiki-fs wikilink parser uses `[^\]\n]+?` between `[[` and `]]`, so
+  // a `]` anywhere in the alias terminates parsing early and the whole
+  // link is dropped by downstream projection (we saw this in practice:
+  // alias `[e-HR] BGF리테일 — …` caused BGF/DHL/KCAR/YS infra pages to
+  // record 0 links while HMM/PSNM with `[`-free titles recorded 4 each).
+  // Replace `[` and `]` with their full-width analogs so the alias stays
+  // readable but the parser no longer mis-terminates.
+  const safeAlias = companyTitle.replace(/\[/g, "［").replace(/\]/g, "］");
+  const bullet = `- Company: [[auto/companies/${companyStem}|${safeAlias}]]`;
 
   // Detect an existing `## Related` heading. We match at line start to
   // avoid hits inside code blocks starting at column > 0.

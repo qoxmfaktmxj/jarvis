@@ -372,6 +372,27 @@ describe("insertRelatedLink", () => {
     assert.equal(res.changed, false);
     assert.equal(res.newBody, body);
   });
+
+  test("sanitizes `[` / `]` in alias so the wikilink parser doesn't mis-terminate", () => {
+    // Regression: company titles like "[e-HR] BGF리테일 — …" used to make
+    // parseWikilinks drop the whole link because its regex uses [^\]]+?.
+    const body = "# Title\n\ncontent\n";
+    const res = insertRelatedLink(
+      body,
+      "e-HR-BGF리테일",
+      "[e-HR] BGF리테일 — 서비스데스크 패턴 요약",
+    );
+    assert.equal(res.changed, true);
+    // Square brackets replaced with full-width analogs.
+    assert.ok(res.newBody.includes("［e-HR］ BGF리테일"));
+    assert.ok(!res.newBody.includes("[e-HR]"));
+    // The generated wikilink should now be parseable: exactly one `[[`,
+    // exactly one `]]`, and no `]` in between.
+    const opens = (res.newBody.match(/\[\[/g) ?? []).length;
+    const closes = (res.newBody.match(/\]\]/g) ?? []).length;
+    assert.equal(opens, 1);
+    assert.equal(closes, 1);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────
