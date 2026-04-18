@@ -6,7 +6,6 @@
   "exports": {
     ".": "./index.ts",
     "./client": "./client.ts",
-    "./redis": "./redis.ts",
     "./schema": "./schema/index.ts",
     "./schema/*": "./schema/*.ts",
     "./feature-flags": "./feature-flags.ts",
@@ -24,7 +23,6 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.45.2",
-    "ioredis": "^5.4.2",
     "pg": "^8.13.3"
   },
   "devDependencies": {
