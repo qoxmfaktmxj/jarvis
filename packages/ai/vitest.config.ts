@@ -13,7 +13,6 @@ export default defineConfig({
       "**/dist/**",
       "**/*.integration.test.ts",
       "**/ask.test.ts",
-      "**/embed.test.ts",
       "**/graph-context.test.ts",
       "**/ask-cache.test.ts",
     ],

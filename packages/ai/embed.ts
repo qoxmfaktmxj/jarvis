@@ -1,28 +1,27 @@
 // packages/ai/embed.ts
-import OpenAI from 'openai';
-import { createHash } from 'crypto';
-import { getRedis } from '@jarvis/db/redis';
-import { logLlmCall } from './logger.js';
-import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
+import OpenAI from "openai";
+import { createHash } from "crypto";
+import { and, eq, gt } from "@jarvis/db/operators";
+import { db } from "@jarvis/db/client";
+import { embedCache } from "@jarvis/db/schema/embed-cache";
+import { logLlmCall } from "./logger.js";
+import { assertBudget, BudgetExceededError, recordBlocked } from "./budget.js";
 
-const EMBED_OP = 'embed' as const;
+const EMBED_OP = "embed" as const;
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
-  if (!_openai) {
-    _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  }
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return _openai;
 }
 
-const EMBED_MODEL = 'text-embedding-3-small';
+const EMBED_MODEL = "text-embedding-3-small";
 const EMBED_DIMENSIONS = 1536;
 const CACHE_TTL_SECONDS = 86400;
 const EMBED_PRICE_PER_1K_IN = 0.00002;
 
-function embedCacheKey(text: string): string {
-  const hash = createHash('sha256').update(text).digest('hex');
-  return `embed:${hash}`;
+function embedCacheHash(text: string): string {
+  return createHash("sha256").update(text).digest("hex");
 }
 
 function computeCostUsd(tokensIn: number): string {
@@ -35,7 +34,7 @@ export interface EmbedMeta {
 }
 
 const DEFAULT_META: Required<EmbedMeta> = {
-  workspaceId: '00000000-0000-0000-0000-000000000000',
+  workspaceId: "00000000-0000-0000-0000-000000000000",
   requestId: null,
 };
 
@@ -43,12 +42,18 @@ export async function generateEmbedding(
   text: string,
   meta: EmbedMeta = DEFAULT_META,
 ): Promise<number[]> {
-  const redis = getRedis();
-  const cacheKey = embedCacheKey(text);
+  const hash = embedCacheHash(text);
 
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached) as number[];
+  // 1. 캐시 조회 (실패해도 OpenAI fallback)
+  try {
+    const rows = await db
+      .select({ embedding: embedCache.embedding })
+      .from(embedCache)
+      .where(and(eq(embedCache.hash, hash), gt(embedCache.expiresAt, new Date())))
+      .limit(1);
+    if (rows[0]) return rows[0].embedding;
+  } catch (err) {
+    console.warn("[embed] cache read failed, falling back to OpenAI", err);
   }
 
   const startedAt = Date.now();
@@ -72,9 +77,7 @@ export async function generateEmbedding(
     });
 
     const embedding = response.data[0]?.embedding;
-    if (!embedding) {
-      throw new Error('No embedding returned from OpenAI');
-    }
+    if (!embedding) throw new Error("No embedding returned from OpenAI");
 
     const tokensIn = response.usage?.prompt_tokens ?? 0;
     await logLlmCall({
@@ -87,15 +90,28 @@ export async function generateEmbedding(
       outputTokens: 0,
       costUsd: computeCostUsd(tokensIn),
       durationMs: Date.now() - startedAt,
-      status: 'ok',
+      status: "ok",
       blockedBy: null,
       errorCode: null,
     });
 
-    await redis.set(cacheKey, JSON.stringify(embedding), 'EX', CACHE_TTL_SECONDS);
+    // 2. 캐시 저장 (upsert; 실패는 조용히 무시)
+    const expiresAt = new Date(Date.now() + CACHE_TTL_SECONDS * 1000);
+    try {
+      await db
+        .insert(embedCache)
+        .values({ hash, embedding, expiresAt })
+        .onConflictDoUpdate({
+          target: embedCache.hash,
+          set: { embedding, expiresAt },
+        });
+    } catch (err) {
+      console.warn("[embed] cache write failed", err);
+    }
+
     return embedding;
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unknown error';
+    const message = err instanceof Error ? err.message : "Unknown error";
     await logLlmCall({
       op: EMBED_OP,
       workspaceId,
@@ -104,9 +120,9 @@ export async function generateEmbedding(
       promptVersion: null,
       inputTokens: 0,
       outputTokens: 0,
-      costUsd: '0',
+      costUsd: "0",
       durationMs: Date.now() - startedAt,
-      status: 'error',
+      status: "error",
       blockedBy: null,
       errorCode: message,
     });
