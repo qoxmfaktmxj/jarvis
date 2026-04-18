@@ -31,11 +31,6 @@ const laneB = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX = 60;
 
-function checkSearchRateLimit(userId: string): { allowed: boolean; retryAfterSec?: number } {
-  const r = checkRateLimit(`search:${userId}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS);
-  return { allowed: r.allowed, retryAfterSec: r.retryAfterSec };
-}
-
 export async function POST(request: NextRequest) {
   // 1. Auth check
   const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_READ);
@@ -46,7 +41,7 @@ export async function POST(request: NextRequest) {
   const { session } = auth;
 
   // 2. Rate limit
-  const rl = checkSearchRateLimit(session.userId);
+  const rl = checkRateLimit(`search:${session.userId}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS);
   if (!rl.allowed) {
     return NextResponse.json(
       { error: { code: 'RATE_LIMITED', message: 'Too many requests' } },

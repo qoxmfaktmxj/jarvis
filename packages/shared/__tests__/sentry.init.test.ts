@@ -17,7 +17,9 @@ describe("initSentry entry-point contract", () => {
     const { initSentry } = await import("../sentry.js");
     initSentry();
     expect(initSpy).toHaveBeenCalled();
-    expect(initSpy.mock.calls[0][0]).toMatchObject({
+    const firstCall = initSpy.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    expect(firstCall![0]).toMatchObject({
       dsn: "https://example@o0.ingest.sentry.io/0",
     });
   });

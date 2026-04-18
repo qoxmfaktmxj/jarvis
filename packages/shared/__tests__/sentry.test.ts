@@ -23,6 +23,8 @@ describe("sentry wrapper", () => {
     const { initSentry } = await import("../sentry.js");
     initSentry();
     expect(initMock).toHaveBeenCalledTimes(1);
-    expect(initMock.mock.calls[0][0].dsn).toBe(process.env.SENTRY_DSN);
+    const firstCall = initMock.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    expect(firstCall![0].dsn).toBe(process.env.SENTRY_DSN);
   });
 });

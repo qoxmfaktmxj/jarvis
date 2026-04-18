@@ -1,5 +1,7 @@
 // apps/web/lib/server/rate-limit.ts
-// In-memory sliding-window rate limiter. Single-instance deployment assumed.
+// In-memory fixed-window rate limiter. Single-instance deployment assumed.
+// (Bucket resets atomically once `now - windowStart > windowMs`. Allows a
+// burst up to 2×max at the window boundary — acceptable for 20/h and 60/min.)
 
 interface Bucket {
   count: number;
