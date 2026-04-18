@@ -97,7 +97,6 @@ async function seed() {
     .insert(system)
     .values([
       { workspaceId: wsId, name: 'PostgreSQL', description: 'Primary database', category: 'database', status: 'healthy', ownerId: adminUser.id },
-      { workspaceId: wsId, name: 'Redis', description: 'Cache + session store', category: 'cache', status: 'healthy', ownerId: adminUser.id },
       { workspaceId: wsId, name: 'MinIO', description: 'Object storage', category: 'storage', status: 'healthy', ownerId: adminUser.id },
       { workspaceId: wsId, name: 'PostgreSQL Search', description: 'FTS + pg_trgm + pgvector hybrid search', category: 'search', status: 'healthy', ownerId: aliceUser.id },
       { workspaceId: wsId, name: 'OpenAI API', description: 'AI embeddings + chat', category: 'ai', status: 'healthy', ownerId: aliceUser.id },

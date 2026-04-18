@@ -1,5 +1,5 @@
 # docker/docker-compose.yml — PRODUCTION
-# Services communicate via internal Docker network (no host port exposure for DB/Redis/MinIO)
+# Services communicate via internal Docker network (no host port exposure for DB/MinIO)
 # Only Nginx exposes 80/443 externally
 # Run: docker compose -f docker/docker-compose.yml up -d
 
@@ -9,7 +9,6 @@ networks:
 
 volumes:
   pgdata:
-  redisdata:
   miniodata:
 
 services:
@@ -32,21 +31,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
-
-  redis:
-    image: redis:7-alpine
-    container_name: jarvis-redis
-    restart: unless-stopped
-    networks: [jarvis-network]
-    volumes:
-      - redisdata:/data
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
 
   minio:
     image: minio/minio:latest
@@ -78,7 +62,6 @@ services:
     environment:
       NODE_ENV: production
       # DATABASE_URL is constructed by entrypoint.sh from pg_password secret
-      REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
@@ -93,8 +76,6 @@ services:
     secrets: [pg_password, session_secret, openai_api_key, minio_user, minio_password]
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -116,7 +97,6 @@ services:
     environment:
       NODE_ENV: production
       # DATABASE_URL is constructed by entrypoint.sh from pg_password secret
-      REDIS_URL: redis://redis:6379
       MINIO_ENDPOINT: minio
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
@@ -129,8 +109,6 @@ services:
     secrets: [pg_password, openai_api_key, minio_user, minio_password]
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]

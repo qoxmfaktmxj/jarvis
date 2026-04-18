@@ -1,5 +1,5 @@
 # docker/docker-compose.dev.yml — DEVELOPMENT OVERRIDE
-# Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres redis minio
+# Usage: docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up -d postgres minio
 # Next.js runs outside Docker (pnpm dev) for hot reload
 #
 # Dev secrets: placeholder files are created by scripts/setup-dev.sh
@@ -13,10 +13,6 @@ services:
     environment:
       POSTGRES_PASSWORD_FILE: ""
       POSTGRES_PASSWORD: ${PG_PASSWORD:-jarvispass}
-
-  redis:
-    ports:
-      - "127.0.0.1:6380:6379"
 
   minio:
     ports:

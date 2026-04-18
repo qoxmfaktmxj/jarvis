@@ -4,7 +4,6 @@
  * Checks all Jarvis services. Exit 0 if all healthy, exit 1 otherwise.
  */
 import { Client as PgClient } from 'pg';
-import Redis from 'ioredis';
 import * as Minio from 'minio';
 
 interface ServiceStatus {
@@ -26,20 +25,6 @@ async function checkPostgres(): Promise<ServiceStatus> {
     return { name: 'PostgreSQL', healthy: true, latencyMs: Date.now() - start, message: 'SELECT 1 OK' };
   } catch (err) {
     return { name: 'PostgreSQL', healthy: false, latencyMs: Date.now() - start, message: String(err) };
-  }
-}
-
-async function checkRedis(): Promise<ServiceStatus> {
-  const start = Date.now();
-  const url = process.env.REDIS_URL || 'redis://localhost:6380';
-  const redis = new Redis(url);
-  try {
-    const pong = await redis.ping();
-    redis.disconnect();
-    return { name: 'Redis', healthy: pong === 'PONG', latencyMs: Date.now() - start, message: pong };
-  } catch (err) {
-    redis.disconnect();
-    return { name: 'Redis', healthy: false, latencyMs: Date.now() - start, message: String(err) };
   }
 }
 
@@ -87,7 +72,7 @@ function printTable(statuses: ServiceStatus[]): void {
 }
 
 async function main(): Promise<void> {
-  const checks = await Promise.allSettled([checkPostgres(), checkRedis(), checkMinio(), checkNextJs()]);
+  const checks = await Promise.allSettled([checkPostgres(), checkMinio(), checkNextJs()]);
   const results: ServiceStatus[] = checks.map(r =>
     r.status === 'fulfilled' ? r.value : { name: 'Unknown', healthy: false, latencyMs: 0, message: String((r as PromiseRejectedResult).reason) }
   );
