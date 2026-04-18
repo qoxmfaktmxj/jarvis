@@ -9,7 +9,8 @@
     "./redis": "./redis.ts",
     "./schema": "./schema/index.ts",
     "./schema/*": "./schema/*.ts",
-    "./feature-flags": "./feature-flags.ts"
+    "./feature-flags": "./feature-flags.ts",
+    "./operators": "./operators.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
