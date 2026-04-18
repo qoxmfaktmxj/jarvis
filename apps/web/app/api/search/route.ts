@@ -6,7 +6,7 @@ import { PrecedentSearchAdapter } from '@jarvis/search/precedent-search';
 import type { SearchResult } from '@jarvis/search/types';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { getRedis } from '@jarvis/db/redis';
+import { checkRateLimit } from '@/lib/server/rate-limit';
 import { embedSearchQuery } from '@/lib/server/search-embedder';
 
 const searchSchema = z.object({
@@ -31,19 +31,9 @@ const laneB = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX = 60;
 
-async function checkRateLimit(userId: string): Promise<boolean> {
-  const key = `search:ratelimit:${userId}`;
-  try {
-    const redis = getRedis();
-    const count = await redis.incr(key);
-    if (count === 1) {
-      await redis.expire(key, RATE_LIMIT_WINDOW_SECONDS);
-    }
-    return count <= RATE_LIMIT_MAX;
-  } catch {
-    // If Redis is unavailable, allow the request
-    return true;
-  }
+function checkSearchRateLimit(userId: string): { allowed: boolean; retryAfterSec?: number } {
+  const r = checkRateLimit(`search:${userId}`, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS);
+  return { allowed: r.allowed, retryAfterSec: r.retryAfterSec };
 }
 
 export async function POST(request: NextRequest) {
@@ -56,11 +46,16 @@ export async function POST(request: NextRequest) {
   const { session } = auth;
 
   // 2. Rate limit
-  const allowed = await checkRateLimit(session.userId);
-  if (!allowed) {
+  const rl = checkSearchRateLimit(session.userId);
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: { code: 'RATE_LIMITED', message: 'Too many requests' } },
-      { status: 429 },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(rl.retryAfterSec ?? RATE_LIMIT_WINDOW_SECONDS),
+        },
+      },
     );
   }
 
