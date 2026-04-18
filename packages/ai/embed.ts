@@ -1,7 +1,7 @@
 // packages/ai/embed.ts
 import OpenAI from "openai";
 import { createHash } from "crypto";
-import { and, eq, gt } from "@jarvis/db/operators";
+import { and, eq, gt } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { embedCache } from "@jarvis/db/schema/embed-cache";
 import { logLlmCall } from "./logger.js";

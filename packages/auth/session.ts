@@ -1,7 +1,7 @@
 import { db } from "@jarvis/db/client";
 import { eq } from "@jarvis/db/operators";
 import { userSession } from "@jarvis/db/schema/user-session";
-import type { JarvisSession } from "./types.js";
+import { jarvisSessionSchema, type JarvisSession } from "./types.js";
 
 const SESSION_TTL_SEC = 60 * 60 * 8;
 
@@ -9,9 +9,21 @@ function newExpiry(): Date {
   return new Date(Date.now() + SESSION_TTL_SEC * 1000);
 }
 
+/**
+ * Validate a JSONB session blob. Returns the typed session on success,
+ * or null if the shape doesn't match (treat as corrupt/stale → caller
+ * should delete the row and force re-login).
+ */
+function parseSession(data: unknown): JarvisSession | null {
+  const parsed = jarvisSessionSchema.safeParse(data);
+  return parsed.success ? parsed.data : null;
+}
+
 export async function createSession(session: JarvisSession): Promise<void> {
   await db.insert(userSession).values({
     id: session.id,
+    // JarvisSession (typed object) → Record<string, unknown> (DB schema type).
+    // Structurally compatible but TS needs the widening; the cast is safe.
     data: session as unknown as Record<string, unknown>,
     expiresAt: newExpiry(),
   });
@@ -34,7 +46,13 @@ export async function getSession(sessionId: string): Promise<JarvisSession | nul
     return null;
   }
 
-  return row.data as unknown as JarvisSession;
+  const session = parseSession(row.data);
+  if (!session) {
+    // Corrupt row — treat as invalid, evict, force re-login.
+    await db.delete(userSession).where(eq(userSession.id, sessionId));
+    return null;
+  }
+  return session;
 }
 
 export async function deleteSession(sessionId: string): Promise<void> {
@@ -54,7 +72,12 @@ export async function refreshSession(sessionId: string): Promise<void> {
   const row = rows[0];
   if (!row) return;
 
-  const existing = row.data as unknown as JarvisSession;
+  const existing = parseSession(row.data);
+  if (!existing) {
+    await db.delete(userSession).where(eq(userSession.id, sessionId));
+    return;
+  }
+
   const session: JarvisSession = {
     ...existing,
     expiresAt: Date.now() + SESSION_TTL_SEC * 1000,
@@ -62,6 +85,9 @@ export async function refreshSession(sessionId: string): Promise<void> {
 
   await db
     .update(userSession)
-    .set({ data: session as unknown as Record<string, unknown>, expiresAt: newExpiry() })
+    .set({
+      data: session as unknown as Record<string, unknown>,
+      expiresAt: newExpiry(),
+    })
     .where(eq(userSession.id, sessionId));
 }

@@ -488,7 +488,7 @@ export async function* askAI(
   const { question, workspaceId, userPermissions, snapshotId, userCompany } = query;
 
   // ---------------------------------------------------------------------------
-  // Phase-7A cache-through (interim in-memory LRU; Phase-7B replaces with Redis)
+  // Cache-through (in-memory LRU; see packages/ai/cache.ts).
   // sensitivityScope encodes both knowledge clearance and graph access so that
   // users with different permission profiles never share a cache entry.
   // Format: workspace:<id>|level:<public|internal|restricted|secret>|graph:<0|1>

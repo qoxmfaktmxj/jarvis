@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@jarvis/db": "workspace:*",
-    "@jarvis/shared": "workspace:*"
+    "@jarvis/shared": "workspace:*",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "typescript": "^5.7.3",

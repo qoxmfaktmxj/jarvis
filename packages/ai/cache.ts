@@ -1,13 +1,10 @@
 // packages/ai/cache.ts
-// Phase-7A PR#5: workspace/prompt/scope-aware LLM response cache.
+// Workspace/prompt/scope-aware LLM response cache.
 // Phase-W1 T5: cache key에 `op` 선택 필드 추가 (wiki.* op 분리 저장).
 //
-// Intentionally minimal: in-memory LRU, no Redis. The public API
-// (makeCacheKey/getCached/setCached) is stable so Phase-7B can swap
-// the storage backend without touching ask.ts.
-//
-// INTERIM: This LRU store is a Phase-7A only helper. Phase-7B will
-// replace it with Redis/pg while keeping the same function signatures.
+// In-memory LRU store. The public API (makeCacheKey/getCached/setCached)
+// is stable; if persistence is later required, the backend can be swapped
+// without touching ask.ts.
 
 import { createHash } from 'node:crypto';
 import type { OpType } from '@jarvis/shared/constants';
