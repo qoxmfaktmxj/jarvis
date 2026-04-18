@@ -11,14 +11,20 @@ vi.mock("../logger.js", () => ({
 vi.mock("../budget.js", () => ({
   assertBudget: vi.fn().mockResolvedValue(undefined),
   BudgetExceededError: class extends Error {},
+  recordBlocked: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock("@jarvis/db/redis", () => ({
-  getRedis: () => ({
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue("OK"),
+// PG db mock — always cache-miss so the OpenAI call path is exercised
+const dbMock = vi.hoisted(() => ({
+  select: vi.fn().mockReturnValue({
+    from: () => ({ where: () => ({ limit: async () => [] }) }),
+  }),
+  insert: vi.fn().mockReturnValue({
+    values: () => ({ onConflictDoUpdate: async () => undefined }),
   }),
 }));
+
+vi.mock("@jarvis/db/client", () => ({ db: dbMock }));
 
 vi.mock("openai", () => {
   class OpenAI {
