@@ -27,3 +27,4 @@ export * from "./wiki-lint-report.js";
 export * from "./notice.js";
 export * from "./ask-conversation.js";
 export * from "./user-session.js";
+export * from "./embed-cache.js";
