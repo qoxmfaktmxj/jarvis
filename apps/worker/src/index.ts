@@ -12,6 +12,7 @@ import { graphifyBuildHandler } from './jobs/graphify-build.js';
 import { staleCheckHandler } from './jobs/stale-check.js';
 import { aggregatePopularHandler } from './jobs/aggregate-popular.js';
 import { cleanupHandler } from './jobs/cleanup.js';
+import { cacheCleanupHandler } from './jobs/cache-cleanup.js';
 import {
   wikiLintHandler,
   WIKI_LINT_QUEUE,
@@ -35,7 +36,7 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'embed', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup']) {
+  for (const q of ['ingest', 'embed', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup']) {
     await boss.createQueue(q);
   }
 
@@ -52,6 +53,10 @@ async function main() {
 
   await boss.schedule('cleanup', '0 0 1 * *', {});
   await boss.work('cleanup', cleanupHandler);
+
+  // 6시간마다 만료 세션·embed_cache 청소 (Redis → PG 이전 후 추가)
+  await boss.schedule('cache-cleanup', '0 */6 * * *', {});
+  await boss.work('cache-cleanup', cacheCleanupHandler);
 
   // Phase-W2 T3 — weekly wiki lint (Sunday 03:00 KST = Saturday 18:00 UTC).
   // Only register when the feature flag is ON so the cron does not fire
@@ -75,7 +80,7 @@ async function main() {
     'graphify-build',
     'check-freshness',
     'aggregate-popular',
-    'cleanup',
+    'cleanup', 'cache-cleanup',
     WIKI_LINT_QUEUE,
   ];
   const queueMetricsTimer = setInterval(async () => {
