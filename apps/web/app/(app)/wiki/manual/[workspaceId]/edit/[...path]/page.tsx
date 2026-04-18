@@ -30,7 +30,16 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_UPDATE, "/dashboard");
   const { workspaceId, path: pathSeg } = await params;
   const t = await getTranslations("WikiEditor");
-  const slug = (pathSeg ?? []).join("/");
+  // Next.js 15 dynamic catch-all segments are URL-encoded; decode before joining.
+  const slug = (pathSeg ?? [])
+    .map((seg) => {
+      try {
+        return decodeURIComponent(seg);
+      } catch {
+        return seg;
+      }
+    })
+    .join("/");
 
   // workspace 일치 검증 — 다른 워크스페이스 편집 차단
   if (session.workspaceId !== workspaceId) {

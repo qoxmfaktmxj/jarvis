@@ -36,7 +36,17 @@ type WikiDetailPageProps = {
 export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
   const { workspaceId, path } = await params;
-  const routeKey = path.join('/');
+  // Next.js 15 dynamic catch-all segments are URL-encoded; decode each segment
+  // before joining so DB lookups match routeKeys stored in decoded form (e.g. 한글).
+  const routeKey = path
+    .map((seg) => {
+      try {
+        return decodeURIComponent(seg);
+      } catch {
+        return seg;
+      }
+    })
+    .join('/');
 
   // Phase-W2: workspace 일치 검증 (다른 워크스페이스 페이지는 접근 불가).
   // 세션 워크스페이스가 아니면 명시적 403.
@@ -44,27 +54,11 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
     forbidden();
   }
 
-  console.warn('[wiki-viewer] lookup', {
-    sessionWorkspaceId: session.workspaceId,
-    urlWorkspaceId: workspaceId,
-    routeKey,
-    rawPath: path,
-  });
   const loaded = await loadWikiPageForView(workspaceId, routeKey);
   if (!loaded) {
     // DB 에 페이지가 없거나 publishedStatus != 'published' / 디스크 drift → 404.
     notFound();
   }
-  console.warn('[wiki-viewer] loaded', {
-    metaPath: loaded.meta.path,
-    sensitivity: loaded.meta.sensitivity,
-    requiredPermission: loaded.meta.requiredPermission,
-    canView: canViewSensitivity(session, loaded.meta.sensitivity),
-    hasRequired:
-      !loaded.meta.requiredPermission ||
-      hasPermission(session, PERMISSIONS.ADMIN_ALL) ||
-      hasPermission(session, loaded.meta.requiredPermission),
-  });
 
   // sensitivity 권한 필터: DB 의 4값(PUBLIC|INTERNAL|RESTRICTED|SECRET_REF_ONLY) 기준.
   // 페이지는 존재하나 열람 권한이 없는 것이므로 403 이 맞다(404 로 숨기지 않는다 —
