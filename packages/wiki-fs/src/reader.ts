@@ -1,19 +1,18 @@
 /**
  * High-level page reader for wiki pages.
  *
- * `readUtf8` (writer.ts) is path-agnostic — it just reads a file. page-first
- * navigation (packages/ai/page-first/*) + wiki lint both want a workspace-aware
- * helper that resolves `wiki/{workspaceId}/{relPath}` under `WIKI_ROOT`
- * (default `./wiki`, overridable via env — see README §WIKI_ROOT).
+ * Disk layout: `{WIKI_ROOT}/{workspace.code}/{relPath}` where `workspace.code`
+ * is the human slug (e.g. `jarvis`), NOT the UUID. The DB (`wiki_page_index.path`)
+ * stores the full repo-relative path `wiki/{code}/{relPath}`, so the reader
+ * strips `wiki/<anything>/` prefix generically and re-resolves against
+ * `WIKI_ROOT + workspaceDir`.
  *
  * Invariants:
  *   - `relPath` MUST NOT escape the workspace root. We block `..` segments
  *     defensively; callers should already be fetching from the DB index, so
  *     this is a belt-and-suspenders check against a future lint bug feeding
  *     arbitrary strings in.
- *   - Returns UTF-8 string with `\r\n` → `\n` normalization (same contract
- *     as `readUtf8`). Frontmatter + body stay intact; parsing happens in
- *     `parseFrontmatter` / `splitFrontmatter`.
+ *   - Returns UTF-8 string with `\r\n` → `\n` normalization.
  */
 
 import * as path from "node:path";
@@ -28,17 +27,20 @@ export function wikiRoot(): string {
   return path.resolve(process.env["WIKI_ROOT"] ?? "./wiki");
 }
 
+// 메모: workspace.id → workspace.code 룩업은 DB 없이는 불가 — 여기선 캐시 전역에
+// 둬서 caller가 미리 넣게 한다. 없으면 UUID 자체를 디렉토리명으로 폴백.
+const workspaceDirCache = new Map<string, string>();
+
+export function registerWorkspaceDir(workspaceId: string, dirName: string): void {
+  workspaceDirCache.set(workspaceId, dirName);
+}
+
 /**
  * Read a wiki page's raw markdown from disk.
  *
  * @param workspaceId UUID of the owning workspace.
- * @param relPath     path relative to `wiki/{workspaceId}/`, e.g.
- *                    `auto/entities/MindVault.md` or `manual/guides/foo.md`.
- *                    Either slash style works (we normalize).
- *
- * Throws `ENOENT`-wrapped error on missing file (callers should catch and
- * degrade — a stale DB index pointing at a deleted disk page is a known
- * transient state between ingest and lint).
+ * @param relPath     path from `wiki_page_index.path`, typically
+ *                    `wiki/{code}/auto/entities/Foo.md`. Slash style normalized.
  */
 export async function readPage(
   workspaceId: string,
@@ -54,13 +56,20 @@ export async function readPage(
     );
   }
 
-  // If caller already passed a path that starts with `wiki/{workspaceId}/…`
-  // (e.g. the index table stores full repo-relative paths from bootstrap),
-  // strip that prefix so we don't double-nest.
-  const stripped = normalized.startsWith(`wiki/${workspaceId}/`)
-    ? normalized.slice(`wiki/${workspaceId}/`.length)
-    : normalized;
+  // DB가 `wiki/{code}/...` 로 저장하고 있다고 가정. `wiki/<anything>/` prefix를
+  // generic하게 벗겨내고 그 첫 세그먼트를 workspaceDir로 채택.
+  let workspaceDir = workspaceDirCache.get(workspaceId) ?? workspaceId;
+  let stripped = normalized;
+  const m = normalized.match(/^wiki\/([^/]+)\/(.+)$/);
+  if (m) {
+    workspaceDir = m[1]!;
+    stripped = m[2]!;
+    // 캐시 (다음 호출에서 재사용)
+    if (!workspaceDirCache.has(workspaceId)) {
+      workspaceDirCache.set(workspaceId, workspaceDir);
+    }
+  }
 
-  const absolute = path.join(wikiRoot(), workspaceId, stripped);
+  const absolute = path.join(wikiRoot(), workspaceDir, stripped);
   return readUtf8(absolute);
 }
