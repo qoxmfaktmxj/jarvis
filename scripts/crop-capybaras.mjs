@@ -19,6 +19,63 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const sharp = require("C:/Users/sp20171217yw/Desktop/Devdev/jarvis/node_modules/.pnpm/sharp@0.34.5/node_modules/sharp");
 
+// ─── 배경 투명 3×3 (7개) 이미지 전용 크롭 ─────────────────────────────────────
+// C:/Users/sp20171217yw/Downloads/Gemini_Generated_Image_it4h0ait4h0ait4h.png
+//   Row 1: diver · armchair · astronaut
+//   Row 2: basic · bird · cabbage
+//   Row 3: chef (col 0만)
+async function processTransparentSheet() {
+  const SRC_FILE = "C:/Users/sp20171217yw/Downloads/Gemini_Generated_Image_it4h0ait4h0ait4h.png";
+  const layout = [
+    ["diver", "armchair", "astronaut"],
+    ["basic", "bird", "cabbage"],
+    ["chef", null, null],
+  ];
+  const meta = await sharp(SRC_FILE).metadata();
+  const { width, height } = meta;
+  console.log(`\n[transparent sheet] ${width}×${height}`);
+  const cellW = Math.floor(width / 3);
+  const cellH = Math.floor(height / 3);
+  // 각 셀 안쪽으로 INSET 픽셀만큼 여유 — 옆/위 셀이 비치지 않게
+  const INSET = 80;
+
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      const name = layout[row][col];
+      if (!name) continue;
+      const left = col * cellW + INSET;
+      const top = row * cellH + INSET;
+      const w = cellW - INSET * 2;
+      const h = cellH - INSET * 2;
+      const cellBuf = await sharp(SRC_FILE)
+        .extract({ left, top, width: w, height: h })
+        .toBuffer();
+      // 투명 배경 자동 trim (alpha < 10인 영역 제거)
+      const trimmedBuf = await sharp(cellBuf).trim({ threshold: 10 }).toBuffer();
+      const tMeta = await sharp(trimmedBuf).metadata();
+      const sq = Math.round(Math.max(tMeta.width, tMeta.height) * 1.05);
+      const padX = Math.floor((sq - tMeta.width) / 2);
+      const padY = Math.floor((sq - tMeta.height) / 2);
+      const outPath = path.join(
+        "C:/Users/sp20171217yw/Desktop/Devdev/jarvis/apps/web/public/capybara",
+        `${name}.png`
+      );
+      await sharp(trimmedBuf)
+        .extend({
+          top: padY,
+          bottom: sq - tMeta.height - padY,
+          left: padX,
+          right: sq - tMeta.width - padX,
+          background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .resize(512, 512, { fit: "cover" })
+        .png({ compressionLevel: 9 })
+        .toFile(outPath);
+      console.log(`  ${name}.png  (투명 3×3에서 재생성, 기존 교체)`);
+    }
+  }
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SRC = "C:/Users/sp20171217yw/Downloads/jarvis/project";
@@ -107,8 +164,15 @@ async function processFile(src) {
   }
 }
 
-for (const src of sources) {
-  await processFile(src);
+const mode = process.argv[2] ?? "all";
+
+if (mode === "transparent" || mode === "all") {
+  await processTransparentSheet();
+}
+if (mode === "all") {
+  for (const src of sources) {
+    await processFile(src);
+  }
 }
 
-console.log("\n✓ done — 16 capybaras written to apps/web/public/capybara/");
+console.log("\n✓ done — capybara assets updated at apps/web/public/capybara/");
