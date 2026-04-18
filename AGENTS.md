@@ -6,7 +6,7 @@
 
 ## 프로젝트 개요
 
-Jarvis = **사내 업무 시스템 + LLM 컴파일 위키**를 하나의 TypeScript 모노레포로 통합한 엔터프라이즈 지식 플랫폼. 2026-04-15부터 Karpathy LLM Wiki 방식 + Graphify 구조보조 + Git 단일 진실원천으로 피벗 중. 상세는 `WIKI-AGENTS.md` 참조. Next.js 15 App Router + Drizzle + PostgreSQL 16 (+pg_trgm, unaccent; pgvector는 레거시 호환용 비활성) + Redis + MinIO + pg-boss. 5000명 규모 배포를 목표로 한다.
+Jarvis = **사내 업무 시스템 + LLM 컴파일 위키**를 하나의 TypeScript 모노레포로 통합한 엔터프라이즈 지식 플랫폼. 2026-04-15부터 Karpathy LLM Wiki 방식 + Graphify 구조보조 + Git 단일 진실원천으로 피벗 중. 상세는 `WIKI-AGENTS.md` 참조. Next.js 15 App Router + Drizzle + PostgreSQL 16 (+pg_trgm, unaccent; pgvector는 레거시 호환용 비활성) + MinIO + pg-boss. 세션은 PG `user_session` 테이블, 임베딩 캐시는 `embed_cache` 테이블, rate-limit은 in-memory Map. 5000명 규모 배포를 목표로 한다.
 
 - 웹 앱: `apps/web` (Next.js, port 3010)
 - 백그라운드 워커: `apps/worker` (pg-boss)

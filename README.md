@@ -188,10 +188,11 @@ wiki/{workspaceId}/
 | **Wiki 파일시스템** | on-disk `wiki/{workspaceId}/` + Git (workspace당 독립 repo) | SSoT |
 | **ORM** | Drizzle ORM | `pnpm db:generate` 필수 |
 | **스토리지** | MinIO (raw source 불변 저장) | |
-| **캐시/세션** | Redis | |
+| **세션** | PostgreSQL `user_session` 테이블 (`id text PK, data jsonb, expires_at timestamptz`) | `sessionId` 쿠키 |
+| **캐시** | `embed_cache` 테이블 (pgvector) + in-memory Map (rate-limit) | pg-boss `cache-cleanup` cron (6h) |
 | **LLM** | OpenAI (`ASK_AI_MODEL`, 기본 `gpt-5.4-mini`) | Analysis/Generation 2-step |
 | **구조 보조** | Graphify 네이티브 바이너리 (tree-sitter AST + NetworkX + Leiden) | 결정론적, API 키 불필요 |
-| **인증** | 이메일+비밀번호 (Redis 세션) | |
+| **인증** | 이메일+비밀번호 (PostgreSQL 세션) | |
 | **테스트** | Vitest (단위), Playwright (E2E) | |
 
 **pgvector는 유지되나 비활성화.** 읽기·쓰기 경로는 전부 feature flag로 차단되며, 2~3 릴리스 안정 후 DROP 마이그레이션 예정입니다 ([§9](#9-환경변수-가이드) `FEATURE_RAW_CHUNK_QUERY=false`).
@@ -280,7 +281,6 @@ wiki/{workspaceId}/
 | 변수명 | 필수 | 설명 |
 |---|---:|---|
 | `DATABASE_URL` | 예 | PostgreSQL 연결 문자열 |
-| `REDIS_URL` | 예 | Redis 연결 문자열 |
 | `MINIO_ENDPOINT` / `MINIO_PORT` / `MINIO_USE_SSL` | 예 | MinIO 접근 정보 |
 | `MINIO_ACCESS_KEY` / `MINIO_SECRET_KEY` / `MINIO_BUCKET` | 예 | MinIO 자격증명, 버킷 (기본 `jarvis-files`) |
 | `SESSION_SECRET` | 예 | 세션 서명 (32자 이상) |
@@ -307,7 +307,6 @@ wiki/{workspaceId}/
 
 ```env
 DATABASE_URL=postgresql://jarvis:jarvispass@localhost:5436/jarvis
-REDIS_URL=redis://localhost:6380
 
 MINIO_ENDPOINT=localhost
 MINIO_PORT=9100
@@ -360,7 +359,7 @@ cp .env.example .env
 docker compose \
   -f docker/docker-compose.yml \
   -f docker/docker-compose.dev.yml \
-  up -d postgres redis minio
+  up -d postgres minio
 ```
 
 개발 환경 포트:
@@ -368,7 +367,6 @@ docker compose \
 | 서비스 | 호스트 포트 |
 |--------|------------|
 | PostgreSQL | `5436` |
-| Redis | `6380` |
 | MinIO API | `9100` |
 | MinIO Console | `9101` |
 
@@ -418,7 +416,7 @@ node scripts/check-schema-drift.mjs --precommit   # local pre-commit
 ### 11.1 인증
 
 - 이메일+비밀번호 인증
-- Redis 세션 저장 + `sessionId` 쿠키
+- PostgreSQL `user_session` 테이블 세션 저장 + `sessionId` 쿠키
 
 ### 11.2 인가 (RBAC + sensitivity)
 

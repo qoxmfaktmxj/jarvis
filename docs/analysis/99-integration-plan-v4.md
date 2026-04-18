@@ -171,7 +171,7 @@
 | **디스크** (`wiki/{workspaceId}/**/*.md`) | **본문 SSoT**. LLM/사람이 읽고 쓰는 실체 |
 | **git** (`wiki/{workspaceId}/.git/`) | 버전/감사 |
 | **DB** (`wiki_page_index`, `wiki_page_link`, `wiki_commit_log`, 기타) | **색인·권한·감사·메타 projection**. 본문 재구성은 디스크에서 |
-| **캐시** (redis/메모리) | 옵션. 본문 요약·토큰 카운트 등 재계산 가능한 파생물 |
+| **캐시** (PG `embed_cache` + in-memory) | 옵션. 본문 요약·토큰 카운트 등 재계산 가능한 파생물 |
 
 **불변량:** DB `wiki_page_index.gitSha == git show HEAD:{path}`. 어긋나면 G8 게이트 위반.
 

@@ -66,7 +66,7 @@ cp .env.example .env.local
 docker compose up -d
 ```
 
-이 명령은 PostgreSQL, Redis, MinIO를 띄웁니다. `docker compose ps`로 3개 컨테이너가 `healthy` 상태인지 확인합니다.
+이 명령은 PostgreSQL, MinIO를 띄웁니다. `docker compose ps`로 2개 컨테이너가 `healthy` 상태인지 확인합니다.
 
 ### 3.4 DB 마이그레이션
 

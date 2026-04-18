@@ -24,8 +24,8 @@ jarvis/
 │     └─ src/jobs/  # ingest, embed, compile, cleanup, freshness, popular
 ├─ packages/
 │  ├─ ai/           # RAG, embedding, citation stream (Anthropic + OpenAI)
-│  ├─ auth/         # 이메일+비밀번호 + Redis session + RBAC
-│  ├─ db/           # Drizzle schema, migrations, Postgres/Redis client
+│  ├─ auth/         # 이메일+비밀번호 + PostgreSQL session + RBAC
+│  ├─ db/           # Drizzle schema, migrations, Postgres client
 │  ├─ search/       # Hybrid search adapter (FTS + trigram + pgvector)
 │  ├─ secret/       # secret reference abstraction
 │  └─ shared/       # 권한 상수, 공통 타입, Zod validation
@@ -40,13 +40,14 @@ jarvis/
 | 모노레포 | pnpm workspace + Turborepo | `pnpm dev` / `pnpm build` |
 | 프레임워크 | Next.js 15 (App Router) | React 19, server actions |
 | DB | PostgreSQL 16 + Drizzle | `pgvector`, `pg_trgm`, `unaccent` 확장 |
-| 세션/캐시 | Redis | `sessionId` 쿠키 |
+| 세션 | PostgreSQL `user_session` 테이블 | `sessionId` 쿠키 |
+| 캐시 | `embed_cache` 테이블 + in-memory Map (rate-limit) | pg-boss `cache-cleanup` cron (6h) |
 | 오브젝트 스토리지 | MinIO | 버킷: `jarvis-files` |
 | 잡 큐 | pg-boss | 워커 프로세스 분리 |
 | AI | Anthropic (생성) + OpenAI (임베딩) | citation 포함 SSE |
-| 인증 | 이메일+비밀번호 (Redis 세션) | |
+| 인증 | 이메일+비밀번호 (PostgreSQL 세션) | |
 | i18n | next-intl | 단일 로케일(ko), 네임스페이스 기반 |
-| 테스트 | Vitest + Playwright | E2E는 Redis session inject |
+| 테스트 | Vitest + Playwright | |
 | 스타일 | Tailwind CSS 4 | 디자인 재구성 예정 |
 
 ## 핵심 도메인
@@ -199,7 +200,6 @@ pnpm --filter @jarvis/web exec playwright test
 |-------|------------|
 | Next.js web | 3010 |
 | PostgreSQL | 5436 |
-| Redis | 6380 |
 | MinIO API | 9100 |
 | MinIO Console | 9101 |
 
