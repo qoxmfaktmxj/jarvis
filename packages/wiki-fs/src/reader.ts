@@ -20,11 +20,25 @@ import * as path from "node:path";
 import { readUtf8 } from "./writer.js";
 
 /**
- * Resolve `WIKI_ROOT` from env once per process. `./wiki` fallback matches
- * README §WIKI_ROOT and local `docker compose` defaults.
+ * Resolve the wiki root directory.
+ *
+ * Resolution order:
+ *   1. `WIKI_ROOT` — explicit override pointing directly at the wiki/ dir.
+ *   2. `WIKI_REPO_ROOT` — repo root used by apps/web; we append `/wiki`.
+ *      Keeps a single source of truth when both packages run in the same
+ *      process (avoids env drift between `wiki-fs` and `apps/web`).
+ *   3. `./wiki` — matches `docker compose` defaults when cwd is the repo root.
  */
 export function wikiRoot(): string {
-  return path.resolve(process.env["WIKI_ROOT"] ?? "./wiki");
+  const direct = process.env["WIKI_ROOT"];
+  if (direct && direct.trim().length > 0) {
+    return path.resolve(direct);
+  }
+  const repoRoot = process.env["WIKI_REPO_ROOT"];
+  if (repoRoot && repoRoot.trim().length > 0) {
+    return path.resolve(repoRoot, "wiki");
+  }
+  return path.resolve("./wiki");
 }
 
 // 메모: workspace.id → workspace.code 룩업은 DB 없이는 불가 — 여기선 캐시 전역에
