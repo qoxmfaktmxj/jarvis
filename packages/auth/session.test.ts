@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSession, getSession, deleteSession, refreshSession } from "./session.js";
 import type { JarvisSession } from "./types.js";
 
@@ -24,6 +24,14 @@ function makeSession(overrides: Partial<JarvisSession> = {}): JarvisSession {
     expiresAt: Date.now() + 60_000,
     ...overrides,
   };
+}
+
+// Fix E: DRY helper for simple select mocks (no chain refs needed)
+function mockSelect(rows: unknown[]) {
+  const limit = vi.fn().mockResolvedValue(rows);
+  const where = vi.fn().mockReturnValue({ limit });
+  const from = vi.fn().mockReturnValue({ where });
+  dbMock.select.mockReturnValue({ from });
 }
 
 describe("session (PG-backed)", () => {
@@ -52,12 +60,16 @@ describe("session (PG-backed)", () => {
     expect(dbMock.select).not.toHaveBeenCalled();
   });
 
+  // Fix A: valid id, no row in DB
+  it("getSession returns null when no row matches", async () => {
+    mockSelect([]);
+
+    expect(await getSession("missing")).toBeNull();
+  });
+
   it("getSession returns session blob when row exists and not expired", async () => {
     const s = makeSession();
-    const limit = vi.fn().mockResolvedValue([{ id: s.id, data: s, expiresAt: new Date(Date.now() + 10_000) }]);
-    const where = vi.fn().mockReturnValue({ limit });
-    const from = vi.fn().mockReturnValue({ where });
-    dbMock.select.mockReturnValue({ from });
+    mockSelect([{ id: s.id, data: s, expiresAt: new Date(Date.now() + 10_000) }]);
 
     const result = await getSession("sess-1");
     expect(result).toEqual(s);
@@ -65,6 +77,7 @@ describe("session (PG-backed)", () => {
 
   it("getSession deletes and returns null when expired", async () => {
     const s = makeSession();
+    // Keep explicit chain here so we can reference whereDel for assertion
     const limit = vi.fn().mockResolvedValue([{ id: s.id, data: s, expiresAt: new Date(Date.now() - 1000) }]);
     const where = vi.fn().mockReturnValue({ limit });
     const from = vi.fn().mockReturnValue({ where });
@@ -78,16 +91,20 @@ describe("session (PG-backed)", () => {
     expect(dbMock.delete).toHaveBeenCalledOnce();
   });
 
+  // Fix B: assert where() was called (not just delete)
   it("deleteSession issues DELETE by id", async () => {
     const where = vi.fn().mockResolvedValue(undefined);
     dbMock.delete.mockReturnValue({ where });
 
     await deleteSession("sess-1");
     expect(dbMock.delete).toHaveBeenCalledOnce();
+    expect(where).toHaveBeenCalledOnce();
   });
 
+  // Fix C: assert read-then-write + Fix Issue #9 (clearer expiresAt comparison)
   it("refreshSession extends expires_at and data.expiresAt", async () => {
     const s = makeSession();
+    // Keep explicit chain to retain the select mock reference for assertion
     const limit = vi.fn().mockResolvedValue([{ id: s.id, data: s, expiresAt: new Date() }]);
     const where = vi.fn().mockReturnValue({ limit });
     const from = vi.fn().mockReturnValue({ where });
@@ -98,9 +115,11 @@ describe("session (PG-backed)", () => {
     dbMock.update.mockReturnValue({ set });
 
     await refreshSession("sess-1");
+
+    expect(dbMock.select).toHaveBeenCalledOnce();       // new — verify read step
     expect(set).toHaveBeenCalledOnce();
     const setArg = set.mock.calls[0]![0];
     expect(setArg.expiresAt).toBeInstanceOf(Date);
-    expect(setArg.data.expiresAt).toBeGreaterThan(Date.now());
+    expect(setArg.data.expiresAt).toBeGreaterThan(s.expiresAt);  // clearer than Date.now()
   });
 });
