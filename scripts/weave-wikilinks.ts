@@ -41,6 +41,7 @@ import {
 // catalog pages, which predates the validator's enum). Mirrors the
 // approach in `scripts/wiki-reproject.ts`.
 import YAML from "../packages/wiki-fs/node_modules/yaml/dist/index.js";
+import { CATALOG_PAGE_TYPE } from "./lib/wiki-constants.js";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -431,7 +432,7 @@ export function weavePage(args: {
   }
 
   // Guard: never touch catalog/index pages.
-  if (data["type"] === "index") {
+  if (data["type"] === CATALOG_PAGE_TYPE) {
     return {
       changed: false,
       newContent: content,

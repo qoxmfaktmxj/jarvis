@@ -34,6 +34,7 @@ import {
   parseFrontmatter,
   splitFrontmatter,
 } from "../packages/wiki-fs/src/index.js";
+import { CATALOG_PAGE_TYPE } from "./lib/wiki-constants.js";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -244,7 +245,12 @@ export async function collectPages(
   await walk(domainDir);
 
   // Deterministic sort: by relFromRoot ascending, en-US locale so non-ASCII
-  // (Hangul, CJK) orderings are stable across Node versions / platforms.
+  // (Hangul, CJK) orderings are stable for *this* Node version.
+  // Caveat: `Intl.Collator` ultimately depends on the ICU tables bundled
+  // with Node — a major Node upgrade that bumps ICU *can* re-shuffle ties
+  // involving certain CJK / Hangul characters. Callers that need permanent
+  // byte-equality should snapshot outputs in tests (see
+  // `scripts/tests/build-wiki-index.test.ts`) rather than trust forever.
   const collator = new Intl.Collator("en-US");
   entries.sort((a, b) => collator.compare(a.relFromRoot, b.relFromRoot));
   return entries;
@@ -313,7 +319,7 @@ export function renderIndex(args: {
   const fm = [
     "---",
     `title: "${prettyDomain} Index"`,
-    "type: index",
+    `type: ${CATALOG_PAGE_TYPE}`,
     "authority: auto",
     "sensitivity: INTERNAL",
     `domain: ${domain}`,
@@ -385,6 +391,9 @@ export async function discoverDomains(
     }
   }
 
+  // en-US collator for domain-dir order — same ICU-stability caveat as
+  // `collectPages`. Used so `discoverDomains` output is stable per Node
+  // version; tests assert via snapshots when byte-equality matters.
   const collator = new Intl.Collator("en-US");
   found.sort((a, b) => collator.compare(a.domainDir, b.domainDir));
   return found;
@@ -414,7 +423,7 @@ export async function writeIndex(
 
   if (dryRun) {
     console.log(
-      `[build-wiki-index] DRY ${idx.indexPath} (${idx.pages.length} pages)`,
+      `[build-wiki-index] DRY ${JSON.stringify(idx.indexPath)} (${idx.pages.length} pages)`,
     );
     for (const line of content.split("\n").slice(0, 12)) {
       console.log(`  | ${line}`);
@@ -424,7 +433,7 @@ export async function writeIndex(
 
   await fs.writeFile(idx.indexPath, content, "utf-8");
   console.log(
-    `[build-wiki-index] wrote ${idx.indexPath} (${idx.pages.length} pages)`,
+    `[build-wiki-index] wrote ${JSON.stringify(idx.indexPath)} (${idx.pages.length} pages)`,
   );
   return { wrote: true, content };
 }
@@ -443,7 +452,7 @@ export async function runBuildIndex(
   const filter = new Set((opts.domainFilter ?? []).filter(Boolean));
 
   console.log(
-    `[build-wiki-index] workspace=${workspaceCode} root=${wikiRoot} dry=${!!opts.dryRun}`,
+    `[build-wiki-index] workspace=${workspaceCode} root=${JSON.stringify(wikiRoot)} dry=${!!opts.dryRun}`,
   );
 
   const discovered = await discoverDomains(wikiRoot);
@@ -517,7 +526,11 @@ if (executedAsMain) {
         `[build-wiki-index] done: domainsScanned=${r.domainsScanned} indicesWritten=${r.indicesWritten} pagesListed=${r.pagesListed} skipped=${r.skipped.length}`,
       );
       if (r.skipped.length > 0) {
-        console.log(`[build-wiki-index] skipped (no pages):`, r.skipped);
+        // JSON.stringify keeps non-ASCII path segments from mojibake'ing
+        // through Windows consoles (cp949) that don't handle raw Unicode.
+        console.log(
+          `[build-wiki-index] skipped (no pages): ${JSON.stringify(r.skipped)}`,
+        );
       }
       process.exit(0);
     })
