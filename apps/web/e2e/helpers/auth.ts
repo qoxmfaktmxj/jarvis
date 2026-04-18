@@ -1,12 +1,11 @@
 import { type Page } from '@playwright/test';
-import Redis from 'ioredis';
 import { randomUUID } from 'crypto';
 import { ROLE_PERMISSIONS } from '@jarvis/shared/constants/permissions';
+import { db } from '@jarvis/db/client';
+import { userSession } from '@jarvis/db/schema/user-session';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6380';
 const SESSION_COOKIE = 'sessionId';
-const SESSION_PREFIX = 'jarvis:session:';
-const SESSION_TTL = 60 * 60 * 8;
+const SESSION_TTL_SEC = 60 * 60 * 8;
 
 // Canonical UUIDs for e2e fixtures. Database columns (workspace.id, user.id) are
 // `uuid`, so non-UUID strings trigger Postgres 22P02 on the dashboard query path.
@@ -25,12 +24,11 @@ interface LoginOptions {
 
 async function loginWithRole(page: Page, opts: LoginOptions): Promise<void> {
   const sessionId = randomUUID();
-  const redis = new Redis(REDIS_URL);
 
   const now = Date.now();
   const permissions = ROLE_PERMISSIONS[opts.role] ?? [];
 
-  const sessionData = JSON.stringify({
+  const sessionData = {
     id: sessionId,
     userId: opts.userId ?? TEST_USER_ID,
     workspaceId: TEST_WORKSPACE_ID,
@@ -41,11 +39,14 @@ async function loginWithRole(page: Page, opts: LoginOptions): Promise<void> {
     permissions: [...permissions],
     orgId: undefined,
     createdAt: now,
-    expiresAt: now + SESSION_TTL * 1000,
-  });
+    expiresAt: now + SESSION_TTL_SEC * 1000,
+  };
 
-  await redis.setex(`${SESSION_PREFIX}${sessionId}`, SESSION_TTL, sessionData);
-  await redis.quit();
+  await db.insert(userSession).values({
+    id: sessionId,
+    data: sessionData as unknown as Record<string, unknown>,
+    expiresAt: new Date(Date.now() + SESSION_TTL_SEC * 1000),
+  });
 
   await page.context().addCookies([
     {

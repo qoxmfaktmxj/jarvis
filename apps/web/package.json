@@ -51,7 +51,6 @@
     "date-fns": "^3.6.0",
     "diff": "^8.0.4",
     "drizzle-orm": "^0.45.2",
-    "ioredis": "^5.4.2",
     "lowlight": "^3.3.0",
     "lucide-react": "^0.468.0",
     "minio": "^8.0.0",
