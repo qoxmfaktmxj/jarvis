@@ -1,5 +1,5 @@
 // apps/web/components/ai/AnswerCard.tsx
-// 구조화된 답변 카드 — 4종 SourceRef 별 섹션 자동 분리
+// 구조화된 답변 카드 — flow layout, hairline sections, single-tone accents.
 'use client';
 
 import Link from 'next/link';
@@ -13,9 +13,6 @@ import {
   Users,
   ArrowRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import type {
   SourceRef,
   TextSourceRef,
@@ -69,12 +66,37 @@ function categorizeSources(sources: SourceRef[]) {
 }
 
 // ---------------------------------------------------------------------------
-// Confidence display
+// Section header — uniform across all source types
 // ---------------------------------------------------------------------------
-function ConfidenceBadge({ sources }: { sources: SourceRef[] }) {
-  if (sources.length === 0) return null;
+function SectionHeader({
+  icon: Icon,
+  label,
+  count,
+}: {
+  icon: typeof FileText;
+  label: string;
+  count?: number;
+}) {
+  return (
+    <div className="mb-2.5 flex items-baseline gap-2">
+      <Icon className="h-3.5 w-3.5 text-surface-400" aria-hidden />
+      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+        {label}
+      </span>
+      {typeof count === 'number' && count > 0 ? (
+        <span className="text-display text-[11px] font-semibold tabular-nums text-surface-400">
+          {count}
+        </span>
+      ) : null}
+      <span className="h-px flex-1 bg-surface-200" aria-hidden />
+    </div>
+  );
+}
 
-  // Average confidence across all sources that have it
+// ---------------------------------------------------------------------------
+// Confidence inline marker
+// ---------------------------------------------------------------------------
+function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
   const withConf = sources.filter(
     (s): s is TextSourceRef | GraphSourceRef | CaseSourceRef =>
       'confidence' in s && typeof s.confidence === 'number',
@@ -82,30 +104,27 @@ function ConfidenceBadge({ sources }: { sources: SourceRef[] }) {
   if (withConf.length === 0) return null;
 
   const avg = withConf.reduce((sum, s) => sum + s.confidence, 0) / withConf.length;
+  const pct = Math.round(avg * 100);
 
-  if (avg >= 0.85) {
-    return (
-      <Badge variant="default" className="gap-1 text-xs">
-        <Shield className="h-3 w-3" /> 높은 신뢰도
-      </Badge>
-    );
-  }
-  if (avg >= 0.65) {
-    return (
-      <Badge variant="secondary" className="gap-1 text-xs">
-        <Shield className="h-3 w-3" /> 보통 신뢰도
-      </Badge>
-    );
-  }
+  const tone =
+    avg >= 0.85
+      ? { label: '높은 신뢰도', dot: 'bg-lime-500', text: 'text-lime-700' }
+      : avg >= 0.65
+        ? { label: '보통 신뢰도', dot: 'bg-isu-400', text: 'text-isu-700' }
+        : { label: '낮은 신뢰도', dot: 'bg-warning', text: 'text-warning' };
+
   return (
-    <Badge variant="outline" className="gap-1 text-xs">
-      <Shield className="h-3 w-3" /> 낮은 신뢰도
-    </Badge>
+    <span className={`inline-flex items-center gap-1.5 text-[11px] font-medium ${tone.text}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden />
+      <Shield className="h-3 w-3" aria-hidden />
+      {tone.label}
+      <span className="tabular-nums text-surface-400">· {pct}%</span>
+    </span>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Answer text with inline source references
+// Answer body — inline citations preserved
 // ---------------------------------------------------------------------------
 function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
   const parts = text.split(/(\[source:\d+\])/g);
@@ -130,37 +149,37 @@ function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Section: 근거 문서 (Text sources)
+// Section: 근거 문서 (Text sources) — hairline rows
 // ---------------------------------------------------------------------------
 function DocumentSection({ sources }: { sources: TextSourceRef[] }) {
   if (sources.length === 0) return null;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <FileText className="h-3.5 w-3.5 text-primary" />
-        <span className="text-xs font-semibold text-surface-700">근거 문서</span>
-      </div>
-      <div className="space-y-1">
+    <div>
+      <SectionHeader icon={FileText} label="근거 문서" count={sources.length} />
+      <ul className="divide-y divide-surface-100">
         {sources.map((s, i) => (
-          <Link
-            key={`${s.pageId}-${i}`}
-            href={s.url}
-            className="flex items-center gap-2 rounded-lg border bg-surface-50 px-3 py-2 text-sm transition hover:bg-surface-100"
-          >
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-semibold text-primary">
-              {i + 1}
-            </span>
-            <span className="flex-1 truncate text-surface-700">{s.title}</span>
-            <ChevronRight className="h-3 w-3 text-surface-400" />
-          </Link>
+          <li key={`${s.pageId}-${i}`}>
+            <Link
+              href={s.url}
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-surface-50 -mx-2 px-2 rounded-md"
+            >
+              <span className="text-display w-5 shrink-0 text-center text-[11px] font-semibold tabular-nums text-surface-400">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="flex-1 truncate text-sm text-surface-800 group-hover:text-isu-700">
+                {s.title}
+              </span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-surface-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-isu-500" aria-hidden />
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section: 관련 시스템/바로가기 (Directory sources)
+// Section: 관련 시스템 (Directory sources) — chip row
 // ---------------------------------------------------------------------------
 function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
   if (sources.length === 0) return null;
@@ -174,51 +193,50 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
   };
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <ExternalLink className="h-3.5 w-3.5 text-success" />
-        <span className="text-xs font-semibold text-surface-700">관련 시스템</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div>
+      <SectionHeader icon={ExternalLink} label="관련 시스템" count={sources.length} />
+      <ul className="flex flex-wrap gap-1.5">
         {sources.map((s, i) => {
           const label = s.nameKo ?? s.name;
           const type = typeLabel[s.entryType] ?? s.entryType;
+          const inner = (
+            <>
+              <span className="text-surface-800 group-hover:text-isu-700">{label}</span>
+              <span className="text-display text-[10px] uppercase tracking-wide text-surface-400">
+                {type}
+              </span>
+            </>
+          );
           if (s.url) {
             return (
-              <Link
-                key={`${s.entryId}-${i}`}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-success-subtle bg-success-subtle/50 px-3 py-1.5 text-sm text-success transition hover:bg-success-subtle"
-              >
-                <ExternalLink className="h-3 w-3" />
-                {label}
-                <Badge variant="outline" className="ml-1 border-success-subtle text-[10px] text-success">
-                  {type}
-                </Badge>
-              </Link>
+              <li key={`${s.entryId}-${i}`}>
+                <Link
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center gap-2 rounded-md border border-surface-200 bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:border-isu-300 hover:bg-isu-50"
+                >
+                  {inner}
+                </Link>
+              </li>
             );
           }
           return (
-            <span
+            <li
               key={`${s.entryId}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-success-subtle bg-success-subtle/50 px-3 py-1.5 text-sm text-success"
+              className="inline-flex items-center gap-2 rounded-md border border-surface-200 bg-surface-50 px-2.5 py-1 text-xs"
             >
-              {label}
-              <Badge variant="outline" className="ml-1 border-success-subtle text-[10px] text-success">
-                {type}
-              </Badge>
-            </span>
+              {inner}
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section: 유사 사례 (Case sources)
+// Section: 유사 사례 (Case sources) — hairline rows, monochrome
 // ---------------------------------------------------------------------------
 function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
   if (sources.length === 0) return null;
@@ -231,108 +249,119 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
     info_only: '안내',
   };
 
+  const resultTone: Record<string, string> = {
+    resolved: 'bg-lime-500',
+    workaround: 'bg-isu-400',
+    escalated: 'bg-warning',
+    no_fix: 'bg-danger',
+    info_only: 'bg-surface-400',
+  };
+
+  const visible = sources.slice(0, 3);
+
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Briefcase className="h-3.5 w-3.5 text-amber-600" />
-        <span className="text-xs font-semibold text-surface-700">
-          유사 사례 ({sources.length}건)
-        </span>
-      </div>
-      <div className="space-y-1.5">
-        {sources.slice(0, 3).map((s, i) => (
-          <div
-            key={`${s.caseId}-${i}`}
-            className="rounded-lg border border-amber-200 bg-amber-50/30 px-3 py-2"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-sm font-medium text-amber-900 line-clamp-1">
+    <div>
+      <SectionHeader icon={Briefcase} label="유사 사례" count={sources.length} />
+      <ul className="divide-y divide-surface-100">
+        {visible.map((s, i) => (
+          <li key={`${s.caseId}-${i}`} className="py-2">
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <p className="flex-1 truncate text-sm font-medium text-surface-800">
                 {s.title}
-              </span>
-              {s.result && (
-                <Badge
-                  variant="outline"
-                  className="shrink-0 border-amber-300 text-[10px] text-amber-700"
-                >
+              </p>
+              {s.result ? (
+                <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-surface-600">
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${resultTone[s.result] ?? 'bg-surface-400'}`}
+                    aria-hidden
+                  />
                   {resultLabel[s.result] ?? s.result}
-                </Badge>
-              )}
+                </span>
+              ) : null}
             </div>
-            {s.symptom && (
-              <p className="mt-1 text-xs text-surface-600 line-clamp-1">
-                <span className="font-medium">증상:</span> {s.symptom}
+            {s.symptom ? (
+              <p className="truncate text-xs text-surface-500">
+                <span className="text-display font-semibold uppercase tracking-wide text-surface-400">증상</span>{' '}
+                {s.symptom}
               </p>
-            )}
-            {s.action && (
-              <p className="text-xs text-surface-600 line-clamp-1">
-                <span className="font-medium">조치:</span> {s.action}
+            ) : null}
+            {s.action ? (
+              <p className="truncate text-xs text-surface-500">
+                <span className="text-display font-semibold uppercase tracking-wide text-surface-400">조치</span>{' '}
+                {s.action}
               </p>
-            )}
-          </div>
+            ) : null}
+          </li>
         ))}
-        {sources.length > 3 && (
-          <p className="text-xs text-muted-foreground">
-            외 {sources.length - 3}건 유사 사례
-          </p>
-        )}
-      </div>
+      </ul>
+      {sources.length > 3 ? (
+        <p className="mt-1.5 text-xs text-surface-400">
+          외 {sources.length - 3}건 더
+        </p>
+      ) : null}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section: 위키 페이지 (page-first navigation sources)
+// Section: 위키 페이지 (page-first) — hairline rows
 // ---------------------------------------------------------------------------
 function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
   if (sources.length === 0) return null;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <FileText className="h-3.5 w-3.5 text-isu-600" />
-        <span className="text-xs font-semibold text-surface-700">위키 페이지</span>
-      </div>
-      <div className="space-y-1">
+    <div>
+      <SectionHeader icon={FileText} label="위키 페이지" count={sources.length} />
+      <ul className="divide-y divide-surface-100">
         {sources.map((s, i) => (
-          <Link
-            key={`${s.pageId}-${i}`}
-            href={`/wiki/default/${encodeURIComponent(s.slug)}`}
-            className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-isu-700 hover:bg-isu-50 transition-colors"
-          >
-            <Badge variant="outline" className="text-[10px] shrink-0">{s.citation}</Badge>
-            <span className="truncate">{s.title}</span>
-          </Link>
+          <li key={`${s.pageId}-${i}`}>
+            <Link
+              href={`/wiki/default/${encodeURIComponent(s.slug)}`}
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-surface-50 -mx-2 px-2 rounded-md"
+            >
+              <span className="text-display text-[10px] font-semibold tabular-nums text-surface-400">
+                {s.citation}
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block truncate text-sm text-surface-800 group-hover:text-isu-700">
+                  {s.title}
+                </span>
+                <span className="block truncate text-[11px] text-surface-400">
+                  {s.path}
+                </span>
+              </span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-surface-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-isu-500" aria-hidden />
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section: 그래프 컨텍스트 (Graph sources)
+// Section: 지식 그래프 (Graph sources)
 // ---------------------------------------------------------------------------
 function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
   if (sources.length === 0) return null;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <Network className="h-3.5 w-3.5 text-isu-600" />
-        <span className="text-xs font-semibold text-surface-700">지식 그래프</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
+    <div>
+      <SectionHeader icon={Network} label="지식 그래프" count={sources.length} />
+      <ul className="flex flex-wrap gap-1.5">
         {sources.map((s, i) => (
-          <Link
-            key={`${s.nodeId}-${i}`}
-            href={s.url}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-isu-200 bg-isu-50/50 px-3 py-1.5 text-sm text-isu-700 transition hover:bg-isu-100"
-          >
-            <Network className="h-3 w-3" />
-            {s.nodeLabel}
-            {s.communityLabel && (
-              <span className="text-[10px] text-isu-500">{s.communityLabel}</span>
-            )}
-          </Link>
+          <li key={`${s.nodeId}-${i}`}>
+            <Link
+              href={s.url}
+              className="group inline-flex items-center gap-2 rounded-md border border-surface-200 bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:border-isu-300 hover:bg-isu-50"
+            >
+              <Network className="h-3 w-3 text-surface-400 group-hover:text-isu-500" aria-hidden />
+              <span className="text-surface-800 group-hover:text-isu-700">{s.nodeLabel}</span>
+              {s.communityLabel ? (
+                <span className="text-[10px] text-surface-400">{s.communityLabel}</span>
+              ) : null}
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
@@ -350,42 +379,42 @@ function OwnerTeamSection({ sources }: { sources: SourceRef[] }) {
   if (teams.size === 0) return null;
 
   return (
-    <div className="flex items-center gap-2">
-      <Users className="h-3.5 w-3.5 text-surface-500" />
-      <span className="text-xs font-semibold text-surface-700">담당 팀</span>
-      <div className="flex gap-1.5">
-        {[...teams].map((team) => (
-          <Badge key={team} variant="secondary" className="text-xs">
-            {team}
-          </Badge>
-        ))}
-      </div>
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <Users className="h-3.5 w-3.5 text-surface-400" aria-hidden />
+      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+        담당 팀
+      </span>
+      {[...teams].map((team) => (
+        <span
+          key={team}
+          className="inline-flex items-center rounded-md bg-surface-100 px-2 py-0.5 text-xs text-surface-700"
+        >
+          {team}
+        </span>
+      ))}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section: 다음 행동 (extract from directory entries)
+// Section: 다음 행동 — breadcrumb-style chain
 // ---------------------------------------------------------------------------
 function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
   const actionable = sources.filter((s) => s.url);
   if (actionable.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <ArrowRight className="h-3.5 w-3.5 text-isu-600" />
-        <span className="text-xs font-semibold text-surface-700">다음 행동</span>
-      </div>
-      <div className="flex items-center gap-2 text-sm text-surface-700">
+    <div>
+      <SectionHeader icon={ArrowRight} label="다음 행동" />
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
         {actionable.slice(0, 3).map((s, i) => (
-          <span key={s.entryId} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight className="h-3 w-3 text-surface-400" />}
+          <span key={s.entryId} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight className="h-3 w-3 text-surface-300" aria-hidden />}
             <Link
               href={s.url!}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-isu-700 underline decoration-isu-300 underline-offset-2 hover:decoration-isu-500"
+              className="text-isu-700 underline decoration-isu-200 underline-offset-4 transition-colors duration-150 hover:decoration-isu-500"
             >
               {s.nameKo ?? s.name}
             </Link>
@@ -397,81 +426,39 @@ function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main Component
+// Main Component — flow layout, no Card chrome
 // ---------------------------------------------------------------------------
 export function AnswerCard({ answer, sources }: AnswerCardProps) {
   const { text, graph, cases, directory, wikiPages } = categorizeSources(sources);
-  const hasSections = text.length > 0 || graph.length > 0 || cases.length > 0 || directory.length > 0 || wikiPages.length > 0;
+  const hasSections =
+    text.length > 0 ||
+    graph.length > 0 ||
+    cases.length > 0 ||
+    directory.length > 0 ||
+    wikiPages.length > 0;
 
   if (!hasSections) {
-    // No sources — just render the answer text
-    return (
-      <div className="space-y-2">
-        <AnswerBody text={answer} sources={sources} />
-      </div>
-    );
+    return <AnswerBody text={answer} sources={sources} />;
   }
 
   return (
-    <Card className="overflow-hidden border-surface-200">
-      {/* Answer body */}
-      <CardHeader className="space-y-3 pb-3">
+    <div className="space-y-5">
+      {/* Answer body + confidence */}
+      <div className="space-y-2">
         <AnswerBody text={answer} sources={sources} />
-        <ConfidenceBadge sources={sources} />
-      </CardHeader>
+        <ConfidenceInline sources={sources} />
+      </div>
 
-      <CardContent className="space-y-4 pt-0">
-        {/* 근거 문서 */}
-        {text.length > 0 && (
-          <>
-            <Separator />
-            <DocumentSection sources={text} />
-          </>
-        )}
-
-        {/* 관련 시스템 */}
-        {directory.length > 0 && (
-          <>
-            <Separator />
-            <DirectorySection sources={directory} />
-          </>
-        )}
-
-        {/* 유사 사례 */}
-        {cases.length > 0 && (
-          <>
-            <Separator />
-            <CaseSection sources={cases} />
-          </>
-        )}
-
-        {/* 위키 페이지 (page-first) */}
-        {wikiPages.length > 0 && (
-          <>
-            <Separator />
-            <WikiPageSection sources={wikiPages} />
-          </>
-        )}
-
-        {/* 지식 그래프 */}
-        {graph.length > 0 && (
-          <>
-            <Separator />
-            <GraphSection sources={graph} />
-          </>
-        )}
-
-        {/* 다음 행동 */}
-        {directory.length > 0 && (
-          <>
-            <Separator />
-            <NextActionSection sources={directory} />
-          </>
-        )}
-
-        {/* 담당 팀 */}
+      {/* Evidence sections in consistent flow */}
+      <div className="space-y-5">
+        <DocumentSection sources={text} />
+        <WikiPageSection sources={wikiPages} />
+        <GraphSection sources={graph} />
+        <CaseSection sources={cases} />
+        <DirectorySection sources={directory} />
+        <NextActionSection sources={directory} />
         <OwnerTeamSection sources={sources} />
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AskConversation } from "@jarvis/db/schema/ask-conversation";
 import { cn } from "@/lib/utils";
@@ -141,30 +141,33 @@ export function AskSidebarItem({
       <Link
         href={`/ask/${conversation.id}`}
         className={cn(
-          "flex items-start gap-2 rounded-lg px-3 py-2 text-sm transition-colors duration-150 ease-out",
+          "relative block rounded-md pl-3 pr-8 py-2 text-sm transition-colors duration-150 ease-out",
           isActive
-            ? "bg-muted font-medium"
-            : "hover:bg-muted/60",
+            ? "bg-isu-50 text-isu-800"
+            : "text-surface-700 hover:bg-surface-100",
         )}
         aria-selected={isActive}
         aria-label={`${t("conversationLabel")}: ${conversation.title}, ${timeLabel}`}
       >
-        <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm">{conversation.title}</p>
-          <p className="text-[11px] text-muted-foreground">{timeLabel}</p>
-        </div>
+        {isActive ? (
+          <span
+            className="absolute left-0 top-2 h-[calc(100%-1rem)] w-[2px] rounded-full bg-isu-500"
+            aria-hidden
+          />
+        ) : null}
+        <p className={cn("truncate text-sm", isActive && "font-medium")}>{conversation.title}</p>
+        <p className="text-display text-[10px] tabular-nums text-surface-400">{timeLabel}</p>
       </Link>
 
-      {/* More menu - fade in on hover */}
+      {/* More menu — fade in on hover */}
       <div className="absolute right-1 top-1.5 opacity-0 transition-opacity duration-100 ease-out group-hover:opacity-100">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-muted"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-surface-500 hover:bg-surface-200 hover:text-surface-800"
             >
-              <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+              <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">

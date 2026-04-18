@@ -3,7 +3,6 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { and, asc, eq, desc, count, sql } from "drizzle-orm";
-import { Sparkles } from "lucide-react";
 import { getSession } from "@jarvis/auth/session";
 import { canAccessGraphSnapshotSensitivity } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
@@ -158,21 +157,15 @@ export default async function ConversationPage({ params }: Props) {
   const popularQuestions = await getPopularQuestions(session.workspaceId);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-5 p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary">
-          <Sparkles className="h-4 w-4 text-primary-foreground" />
-        </div>
-        <div>
-          <p className="mb-0.5 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-isu-600">
-            <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
-            Ask AI
-          </p>
-          <h1 className="text-lg font-semibold leading-tight">{t("title")}</h1>
-          <p className="text-xs text-muted-foreground">
-            {conversation.title}
-          </p>
-        </div>
+    <div className="flex h-full min-h-0 flex-col gap-5 px-6 pb-4 pt-6">
+      <div className="flex items-baseline gap-3 border-b border-surface-200 pb-4">
+        <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+          <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
+          Ask AI
+        </p>
+        <h1 className="text-display truncate text-base font-semibold tracking-tight text-surface-900">
+          {conversation.title || t("title")}
+        </h1>
       </div>
 
       <Suspense fallback={null}>

@@ -1,4 +1,6 @@
 // apps/web/components/ai/ClaimBadge.tsx
+// Inline citation badge — superscript number/letter rendered in the accent
+// color of its source kind. Consistent typography; no full-color fills.
 'use client';
 
 import {
@@ -15,59 +17,57 @@ interface ClaimBadgeProps {
   sources: SourceRef[];
 }
 
-/** SourceRef 종류에 따라 tooltip 레이블/상세 및 URL을 추출 */
+/** SourceRef → inline badge metadata.
+ *  All kinds share one visual shape (tiny pill, hairline border, tabular label);
+ *  only the text color shifts with the kind so inline citations remain
+ *  unobtrusive inside a paragraph. */
 function getSourceMeta(source: SourceRef): {
-  label: string;
+  letter: string | '';
   hoverTitle: string;
   hoverDetail: string | null;
   href: string | null;
-  colorClass: string;
+  textClass: string;
 } {
   switch (source.kind) {
     case 'text':
       return {
-        label: '',         // 숫자만 (호출 측에서 sourceNumber 표시)
+        letter: '',
         hoverTitle: source.title,
         hoverDetail: source.excerpt,
         href: source.url,
-        colorClass:
-          'inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/15 text-primary text-[10px] font-bold hover:bg-primary/25 transition-colors',
+        textClass: 'text-isu-700 hover:text-isu-800',
       };
     case 'graph':
       return {
-        label: 'G',
-        hoverTitle: `Graph: ${source.nodeLabel}`,
+        letter: 'G',
+        hoverTitle: `Graph · ${source.nodeLabel}`,
         hoverDetail: source.snapshotTitle,
         href: source.url,
-        colorClass:
-          'inline-flex items-center justify-center rounded-full bg-isu-100 px-1 text-isu-700 text-[10px] font-bold hover:bg-isu-200 transition-colors',
+        textClass: 'text-isu-700 hover:text-isu-800',
       };
     case 'case':
       return {
-        label: 'C',
-        hoverTitle: `사례: ${source.title}`,
+        letter: 'C',
+        hoverTitle: `사례 · ${source.title}`,
         hoverDetail: source.symptom,
         href: null,
-        colorClass:
-          'inline-flex items-center justify-center rounded-full bg-warning-subtle px-1 text-warning text-[10px] font-bold transition-colors',
+        textClass: 'text-surface-700',
       };
     case 'directory':
       return {
-        label: 'D',
+        letter: 'D',
         hoverTitle: source.nameKo ?? source.name,
         hoverDetail: source.ownerTeam ?? null,
         href: source.url,
-        colorClass:
-          'inline-flex items-center justify-center rounded-full bg-success-subtle px-1 text-success text-[10px] font-bold transition-colors',
+        textClass: 'text-surface-700 hover:text-surface-900',
       };
     case 'wiki-page':
       return {
-        label: 'W',
+        letter: 'W',
         hoverTitle: source.title,
         hoverDetail: `${source.citation} · ${source.path}`,
         href: `/wiki/default/${encodeURIComponent(source.slug)}`,
-        colorClass:
-          'inline-flex items-center justify-center rounded-full bg-lime-100 px-1 text-lime-700 text-[10px] font-bold hover:bg-lime-200 transition-colors',
+        textClass: 'text-lime-700 hover:text-lime-800',
       };
   }
 }
@@ -76,13 +76,13 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
   const source = sources[sourceNumber - 1];
 
   if (!source) {
-    return (
-      <sup className="text-xs text-muted-foreground">[{sourceNumber}]</sup>
-    );
+    return <sup className="text-[10px] text-surface-400">[{sourceNumber}]</sup>;
   }
 
-  const { label, hoverTitle, hoverDetail, href, colorClass } = getSourceMeta(source);
-  const displayLabel = label ? `${label}${sourceNumber}` : String(sourceNumber);
+  const { letter, hoverTitle, hoverDetail, href, textClass } = getSourceMeta(source);
+  const display = letter ? `${letter}${sourceNumber}` : String(sourceNumber);
+
+  const pillCls = `text-display mx-0.5 inline-flex h-[14px] items-center rounded-[3px] border border-surface-200 bg-card px-1 align-[1px] text-[10px] font-semibold leading-none tabular-nums transition-colors duration-150 ${textClass} hover:border-current`;
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -92,23 +92,23 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
             {href ? (
               <Link
                 href={href}
-                className={colorClass}
+                className={pillCls}
                 {...(source.kind === 'directory' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               >
-                {displayLabel}
+                {display}
               </Link>
             ) : (
-              <span className={colorClass}>{displayLabel}</span>
+              <span className={pillCls}>{display}</span>
             )}
           </sup>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
-          <p className="font-medium text-xs">{hoverTitle}</p>
-          {hoverDetail && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          <p className="text-xs font-medium">{hoverTitle}</p>
+          {hoverDetail ? (
+            <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
               {hoverDetail}
             </p>
-          )}
+          ) : null}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

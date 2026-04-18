@@ -1,9 +1,8 @@
 // apps/web/components/ai/SourceRefCard.tsx
-// 5종 SourceRef (text | graph | case | directory | wiki-page) 렌더러
+// 5종 SourceRef (text | graph | case | directory | wiki-page) — flow row renderer.
+// Hairline rows with a left-edge kind marker instead of full card chrome.
 import Link from 'next/link';
-import { Network, Briefcase, ExternalLink } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { FileText, Network, Briefcase, ExternalLink, BookOpen, ChevronRight } from 'lucide-react';
 import type {
   SourceRef,
   TextSourceRef,
@@ -18,118 +17,144 @@ interface SourceRefCardProps {
   index: number;
 }
 
-function confidenceLabel(score: number): { label: string; variant: 'default' | 'secondary' | 'outline' } {
-  if (score >= 0.85) return { label: '높음', variant: 'default' };
-  if (score >= 0.65) return { label: '보통', variant: 'secondary' };
-  return { label: '낮음', variant: 'outline' };
+function confidenceTone(score: number): { label: string; dot: string; text: string } {
+  if (score >= 0.85) return { label: '높음', dot: 'bg-lime-500', text: 'text-lime-700' };
+  if (score >= 0.65) return { label: '보통', dot: 'bg-isu-400', text: 'text-isu-700' };
+  return { label: '낮음', dot: 'bg-surface-400', text: 'text-surface-500' };
 }
 
+// ─────────────────────────────────────────────────────────────
+// Shared row primitive — uniform hairline layout across all kinds.
+// Kind is shown as a 1-letter prefix + icon on the left; color is the
+// accent. Confidence (where available) is a small dot+label on the right.
+// ─────────────────────────────────────────────────────────────
+function SourceRow({
+  index,
+  kindLetter,
+  icon: Icon,
+  accentText,
+  title,
+  href,
+  meta,
+  subMeta,
+  confidence,
+  external,
+}: {
+  index: number;
+  kindLetter: string | null;
+  icon: typeof FileText;
+  accentText: string;
+  title: React.ReactNode;
+  href?: string | null;
+  meta?: React.ReactNode;
+  subMeta?: React.ReactNode;
+  confidence?: number;
+  external?: boolean;
+}) {
+  const label = kindLetter ? `${kindLetter}${index + 1}` : String(index + 1).padStart(2, '0');
+
+  const body = (
+    <>
+      <span className="text-display w-8 shrink-0 text-center text-[11px] font-semibold tabular-nums text-surface-400">
+        {label}
+      </span>
+      <Icon className={`h-3.5 w-3.5 shrink-0 ${accentText} opacity-70`} aria-hidden />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <p className={`truncate text-sm font-medium ${href ? `${accentText} group-hover:underline decoration-current decoration-1 underline-offset-4` : 'text-surface-800'}`}>
+            {title}
+          </p>
+          {typeof confidence === 'number' ? (
+            <span className="inline-flex shrink-0 items-center gap-1 text-[11px]">
+              <span className={`h-1.5 w-1.5 rounded-full ${confidenceTone(confidence).dot}`} aria-hidden />
+              <span className={confidenceTone(confidence).text}>
+                {confidenceTone(confidence).label}
+              </span>
+            </span>
+          ) : null}
+        </div>
+        {meta ? <p className="truncate text-xs text-surface-500">{meta}</p> : null}
+        {subMeta ? <p className="truncate text-[11px] text-surface-400">{subMeta}</p> : null}
+      </div>
+      {href ? (
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-surface-300 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-isu-500" aria-hidden />
+      ) : null}
+    </>
+  );
+
+  const baseCls =
+    'group -mx-2 flex items-start gap-2.5 rounded-md px-2 py-1.5 transition-colors duration-150';
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`${baseCls} hover:bg-surface-50`}
+        {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className={baseCls}>{body}</div>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Dispatcher
+// ─────────────────────────────────────────────────────────────
 export function SourceRefCard({ source, index }: SourceRefCardProps) {
-  if (source.kind === 'graph') return <GraphSourceCard source={source} index={index} />;
-  if (source.kind === 'case') return <CaseSourceCard source={source} index={index} />;
-  if (source.kind === 'directory') return <DirectorySourceCard source={source} index={index} />;
-  if (source.kind === 'wiki-page') return <WikiPageSourceCard source={source} index={index} />;
-  return <TextSourceCard source={source} index={index} />;
+  if (source.kind === 'graph') return <GraphSourceRow source={source} index={index} />;
+  if (source.kind === 'case') return <CaseSourceRow source={source} index={index} />;
+  if (source.kind === 'directory') return <DirectorySourceRow source={source} index={index} />;
+  if (source.kind === 'wiki-page') return <WikiPageSourceRow source={source} index={index} />;
+  return <TextSourceRow source={source} index={index} />;
 }
 
-// ---------------------------------------------------------------------------
-// Wiki Page (Phase-W2 T2 page-first navigation)
-// ---------------------------------------------------------------------------
-function WikiPageSourceCard({ source, index }: { source: WikiPageSourceRef; index: number }) {
-  const { label, variant } = confidenceLabel(source.confidence);
-  // Wiki URL convention: `/wiki/{workspaceId}/{slug}`
-  const href = `/wiki/default/${encodeURIComponent(source.slug)}`;
-  return (
-    <Card className="border-lime-200 bg-lime-50/40 hover:bg-lime-50 transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-lime-100 text-lime-700 text-xs font-semibold flex items-center justify-center">
-          W{index + 1}
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href={href} className="text-sm font-medium text-lime-700 hover:underline truncate">
-              {source.title}
-            </Link>
-            <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
-            <Badge variant="outline" className="text-xs shrink-0">{source.citation}</Badge>
-          </div>
-          <p className="text-[10px] text-muted-foreground truncate">{source.path}</p>
-          {source.origin === 'expand' && (
-            <p className="text-[10px] text-lime-700">↳ 1-hop wikilink</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Text
-// ---------------------------------------------------------------------------
-function TextSourceCard({ source, index }: { source: TextSourceRef; index: number }) {
-  const { label, variant } = confidenceLabel(source.confidence);
+// ─────────────────────────────────────────────────────────────
+function TextSourceRow({ source, index }: { source: TextSourceRef; index: number }) {
   return (
-    <Card className="hover:bg-muted/50 transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center">
-          {index + 1}
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href={source.url} className="text-sm font-medium text-primary hover:underline truncate">
-              {source.title}
-            </Link>
-            <Badge variant={variant} className="text-xs shrink-0">{label}</Badge>
-          </div>
-          {source.excerpt && (
-            <p className="text-xs text-muted-foreground line-clamp-2">{source.excerpt}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <SourceRow
+      index={index}
+      kindLetter={null}
+      icon={FileText}
+      accentText="text-isu-700"
+      title={source.title}
+      href={source.url}
+      meta={source.excerpt}
+      confidence={source.confidence}
+    />
   );
 }
 
-// ---------------------------------------------------------------------------
+// ─────────────────────────────────────────────────────────────
 // Graph
-// ---------------------------------------------------------------------------
-function GraphSourceCard({ source, index }: { source: GraphSourceRef; index: number }) {
+// ─────────────────────────────────────────────────────────────
+function GraphSourceRow({ source, index }: { source: GraphSourceRef; index: number }) {
+  const metaParts: string[] = [];
+  if (source.sourceFile) metaParts.push(source.sourceFile);
+  if (source.communityLabel) metaParts.push(`Community · ${source.communityLabel}`);
+  if (source.relationPath?.length) metaParts.push(source.relationPath.join(' → '));
+
   return (
-    <Card className="border-isu-200 bg-isu-50/40 hover:bg-isu-50 transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-isu-100 text-isu-700 text-xs font-semibold flex items-center justify-center">
-          G{index + 1}
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Network className="h-3 w-3 text-isu-600 shrink-0" />
-            <Link href={source.url} className="text-sm font-medium text-isu-700 hover:underline truncate">
-              {source.nodeLabel}
-            </Link>
-          </div>
-          {(source.sourceFile || source.communityLabel) && (
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {source.sourceFile && <span>{source.sourceFile}</span>}
-              {source.sourceFile && source.communityLabel && <span> · </span>}
-              {source.communityLabel && <span>Community: {source.communityLabel}</span>}
-            </p>
-          )}
-          {source.relationPath && source.relationPath.length > 0 && (
-            <p className="text-xs text-isu-600 line-clamp-1">
-              {source.relationPath.join(' → ')}
-            </p>
-          )}
-          <p className="text-[10px] text-muted-foreground">Graph: {source.snapshotTitle}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <SourceRow
+      index={index}
+      kindLetter="G"
+      icon={Network}
+      accentText="text-isu-700"
+      title={source.nodeLabel}
+      href={source.url}
+      meta={metaParts.join(' · ') || undefined}
+      subMeta={`Graph · ${source.snapshotTitle}`}
+    />
   );
 }
 
-// ---------------------------------------------------------------------------
-// Case (유지보수 사례)
-// ---------------------------------------------------------------------------
-function CaseSourceCard({ source }: { source: CaseSourceRef; index: number }) {
+// ─────────────────────────────────────────────────────────────
+// Case
+// ─────────────────────────────────────────────────────────────
+function CaseSourceRow({ source, index }: { source: CaseSourceRef; index: number }) {
   const resultLabel: Record<string, string> = {
     resolved: '해결',
     workaround: '우회',
@@ -137,50 +162,31 @@ function CaseSourceCard({ source }: { source: CaseSourceRef; index: number }) {
     no_fix: '미해결',
     info_only: '안내',
   };
+  const metaParts: string[] = [];
+  if (source.symptom) metaParts.push(`증상 · ${source.symptom}`);
+  if (source.action) metaParts.push(`조치 · ${source.action}`);
+  const subParts: string[] = [];
+  if (source.result) subParts.push(resultLabel[source.result] ?? source.result);
+  if (source.clusterLabel) subParts.push(source.clusterLabel);
+  if (source.requestCompany) subParts.push(source.requestCompany);
+
   return (
-    <Card className="border-warning-subtle bg-warning-subtle/40 hover:bg-warning-subtle transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-warning-subtle text-warning text-xs font-semibold flex items-center justify-center">
-          <Briefcase className="h-3 w-3" />
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-warning truncate">
-              {source.title}
-            </span>
-            {source.result && (
-              <Badge variant="outline" className="text-xs shrink-0 border-warning-subtle text-warning">
-                {resultLabel[source.result] ?? source.result}
-              </Badge>
-            )}
-          </div>
-          {source.symptom && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              <span className="font-medium">증상:</span> {source.symptom}
-            </p>
-          )}
-          {source.action && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              <span className="font-medium">조치:</span> {source.action}
-            </p>
-          )}
-          {(source.clusterLabel || source.requestCompany) && (
-            <p className="text-[10px] text-muted-foreground">
-              {source.clusterLabel && <span>{source.clusterLabel}</span>}
-              {source.clusterLabel && source.requestCompany && <span> · </span>}
-              {source.requestCompany && <span>{source.requestCompany}</span>}
-            </p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <SourceRow
+      index={index}
+      kindLetter="C"
+      icon={Briefcase}
+      accentText="text-surface-800"
+      title={source.title}
+      meta={metaParts.join(' · ') || undefined}
+      subMeta={subParts.join(' · ') || undefined}
+    />
   );
 }
 
-// ---------------------------------------------------------------------------
-// Directory (바로가기 카드)
-// ---------------------------------------------------------------------------
-function DirectorySourceCard({ source }: { source: DirectorySourceRef; index: number }) {
+// ─────────────────────────────────────────────────────────────
+// Directory
+// ─────────────────────────────────────────────────────────────
+function DirectorySourceRow({ source, index }: { source: DirectorySourceRef; index: number }) {
   const typeLabel: Record<string, string> = {
     tool: '시스템',
     form: '양식',
@@ -188,37 +194,41 @@ function DirectorySourceCard({ source }: { source: DirectorySourceRef; index: nu
     system_link: '메뉴',
     guide_link: '가이드',
   };
+  const kindText = typeLabel[source.entryType] ?? source.entryType;
+  const sub = source.ownerTeam ? `${kindText} · 담당 ${source.ownerTeam}` : kindText;
   return (
-    <Card className="border-success-subtle bg-success-subtle/40 hover:bg-success-subtle transition-colors">
-      <CardContent className="p-3 flex gap-3 items-start">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-success-subtle text-success text-xs font-semibold flex items-center justify-center">
-          <ExternalLink className="h-3 w-3" />
-        </span>
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            {source.url ? (
-              <Link
-                href={source.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-success hover:underline truncate"
-              >
-                {source.nameKo ?? source.name}
-              </Link>
-            ) : (
-              <span className="text-sm font-medium text-success truncate">
-                {source.nameKo ?? source.name}
-              </span>
-            )}
-            <Badge variant="outline" className="text-xs shrink-0 border-success-subtle text-success">
-              {typeLabel[source.entryType] ?? source.entryType}
-            </Badge>
-          </div>
-          {source.ownerTeam && (
-            <p className="text-xs text-muted-foreground">담당: {source.ownerTeam}</p>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+    <SourceRow
+      index={index}
+      kindLetter="D"
+      icon={ExternalLink}
+      accentText="text-surface-800"
+      title={source.nameKo ?? source.name}
+      href={source.url ?? null}
+      external={!!source.url}
+      subMeta={sub}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Wiki Page
+// ─────────────────────────────────────────────────────────────
+function WikiPageSourceRow({ source, index }: { source: WikiPageSourceRef; index: number }) {
+  const href = `/wiki/default/${encodeURIComponent(source.slug)}`;
+  const sub =
+    source.origin === 'expand'
+      ? `${source.citation} · ${source.path} · ↳ 1-hop`
+      : `${source.citation} · ${source.path}`;
+  return (
+    <SourceRow
+      index={index}
+      kindLetter="W"
+      icon={BookOpen}
+      accentText="text-lime-700"
+      title={source.title}
+      href={href}
+      subMeta={sub}
+      confidence={source.confidence}
+    />
   );
 }

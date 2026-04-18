@@ -4,38 +4,47 @@ import { Fragment, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, Pencil, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Capy } from '@/components/layout/Capy';
+import { cn } from '@/lib/utils';
 import { InfraRunbookHeader } from './InfraRunbookHeader';
 import type { WikiPage } from './types';
 
 const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g;
 
-const SENSITIVITY_VARIANT: Record<
+const SENSITIVITY_STYLES: Record<
   WikiPage['sensitivity'],
-  'success' | 'warning' | 'destructive'
+  { chip: string; bar: string; label: string }
 > = {
-  public: 'success',
-  internal: 'warning',
-  restricted: 'warning',
-  secret: 'destructive',
+  public: {
+    chip: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+    bar: 'from-emerald-500/70 to-emerald-500/0',
+    label: 'Public',
+  },
+  internal: {
+    chip: 'bg-isu-50 text-isu-700 ring-isu-500/25',
+    bar: 'from-isu-500/70 to-isu-500/0',
+    label: 'Internal',
+  },
+  restricted: {
+    chip: 'bg-amber-50 text-amber-800 ring-amber-600/25',
+    bar: 'from-amber-500/70 to-amber-500/0',
+    label: 'Restricted',
+  },
+  secret: {
+    chip: 'bg-red-50 text-red-700 ring-red-600/25',
+    bar: 'from-red-500/70 to-red-500/0',
+    label: 'Secret',
+  },
 };
 
 type WikiPageViewProps = {
   page: WikiPage;
   onWikiLinkClick: (slug: string) => void;
-  /**
-   * T6 — 본문에서 `[[...]]` 로 참조되지만 DB 에 실제 페이지가 없는
-   * target slug 집합. 전달되면 해당 링크를 orphan 스타일(빨간색)로 표시한다.
-   * SSoT 는 `wiki_page_link.toPageId IS NULL` — 서버 컴포넌트가 조회해 넘긴다.
-   */
   orphanSlugs?: readonly string[];
 };
 
-/**
- * `[[target|alias]]` / `[[target#anchor]]` 에서 target 만 뽑는다.
- * DB orphan set 과 비교할 키는 target 이므로 alias/anchor 는 잘라낸다.
- */
 function extractWikilinkTarget(inner: string): string {
   let rest = inner.trim();
   const pipeIdx = rest.indexOf('|');
@@ -65,7 +74,7 @@ function renderWithWikilinks(
     const inner = (match[1] ?? '').trim();
     const target = extractWikilinkTarget(inner);
     const isOrphan = orphanSet.has(target);
-    const label = inner; // 화면에는 alias/anchor 포함한 원본 표기를 그대로 보여준다.
+    const label = inner;
     nodes.push(
       <button
         key={`l-${key++}`}
@@ -75,8 +84,8 @@ function renderWithWikilinks(
         aria-label={isOrphan ? `${target} (orphan)` : target}
         className={
           isOrphan
-            ? 'orphan-slug text-rose-600 underline underline-offset-2 decoration-dashed hover:text-rose-700'
-            : 'text-isu-600 underline underline-offset-2 hover:text-isu-700'
+            ? 'orphan-slug font-medium text-red-600 decoration-red-400/60 decoration-dashed underline underline-offset-[3px] hover:text-red-700'
+            : 'font-medium text-isu-600 decoration-isu-300 underline underline-offset-[3px] hover:text-isu-700 hover:decoration-isu-500'
         }
         title={isOrphan ? target : undefined}
       >
@@ -123,8 +132,8 @@ export function WikiPageView({
     ? new Set(orphanSlugs)
     : new Set();
   const t = useTranslations('Wiki');
-  const showEdit =
-    page.slug.startsWith('manual/') && page.sensitivity !== 'secret';
+  const showEdit = page.slug.startsWith('manual/') && page.sensitivity !== 'secret';
+  const sens = SENSITIVITY_STYLES[page.sensitivity];
 
   const formattedDate = new Date(page.updatedAt).toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -133,68 +142,122 @@ export function WikiPageView({
   });
 
   return (
-    <article className="max-w-4xl mx-auto py-8 px-4 space-y-6">
-      <header className="space-y-3 border-b border-surface-200 pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <h1 className="text-3xl font-bold text-surface-900">{page.title}</h1>
-          <Badge variant={SENSITIVITY_VARIANT[page.sensitivity]}>
-            {t(`sensitivity.${page.sensitivity}`)}
-          </Badge>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {page.tags.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              #{tag}
-            </Badge>
-          ))}
-        </div>
-        <p className="text-sm text-surface-500">
-          {t('lastUpdated')}: {formattedDate}
+    <article className="mx-auto max-w-4xl px-4 py-8">
+      {/* Header */}
+      <header className="relative border-b border-surface-200 pb-5">
+        {/* Sensitivity accent ribbon */}
+        <div
+          className={cn(
+            'absolute -left-4 top-0 h-1 w-[calc(100%+2rem)] rounded-full bg-gradient-to-r',
+            sens.bar,
+          )}
+          aria-hidden
+        />
+
+        {/* Eyebrow — slug path */}
+        <p className="text-display mt-2 truncate text-[11px] uppercase tracking-[0.12em] text-surface-400">
+          {page.slug.split('/').join(' / ')}
         </p>
+
+        <div className="mt-1 flex items-start justify-between gap-4">
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-surface-900 [text-wrap:pretty]">
+            {page.title}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2">
+            <Capy name="astronaut" size={48} className="shrink-0" />
+            <span
+              className={cn(
+                'rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
+                sens.chip,
+              )}
+            >
+              {t(`sensitivity.${page.sensitivity}`)}
+            </span>
+          </div>
+        </div>
+
+        {/* Tags */}
+        {page.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            {page.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-0.5 rounded-full bg-surface-50 px-2 py-0.5 text-[11px] font-medium text-surface-600 ring-1 ring-inset ring-surface-200"
+              >
+                <Hash className="h-2.5 w-2.5 text-surface-400" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Meta row */}
+        <div className="text-display mt-3 flex items-center gap-1.5 text-[11px] tabular-nums text-surface-500">
+          <Calendar className="h-3 w-3 text-surface-400" />
+          <span>{t('lastUpdated')}</span>
+          <span className="text-surface-300">·</span>
+          <span className="font-medium text-surface-700">{formattedDate}</span>
+        </div>
       </header>
 
       {page.pageType === 'infra-runbook' && page.infra && (
-        <InfraRunbookHeader meta={page.infra} />
+        <div className="mt-6">
+          <InfraRunbookHeader meta={page.infra} />
+        </div>
       )}
 
-      <div className="prose prose-sm max-w-none text-surface-800">
+      {/* Body */}
+      <div className="prose prose-sm mt-6 max-w-none text-[14.5px] leading-[1.75] text-surface-800">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
             p: ({ children }) => (
-              <p className="leading-7 my-3">
+              <p className="my-3.5 leading-[1.75] [text-wrap:pretty]">
                 {processChildren(children, onWikiLinkClick, orphanSet)}
               </p>
             ),
             li: ({ children }) => (
-              <li className="my-1">{processChildren(children, onWikiLinkClick, orphanSet)}</li>
+              <li className="my-1 leading-[1.7]">
+                {processChildren(children, onWikiLinkClick, orphanSet)}
+              </li>
             ),
             h1: ({ children }) => (
-              <h1 className="text-2xl font-bold mt-6 mb-3">{children}</h1>
+              <h1 className="mt-8 mb-3 border-b border-surface-200 pb-2 text-[22px] font-bold tracking-tight text-surface-900">
+                {children}
+              </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-xl font-semibold mt-5 mb-2">{children}</h2>
+              <h2 className="mt-7 mb-2.5 text-[18px] font-semibold tracking-tight text-surface-900">
+                {children}
+              </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-lg font-semibold mt-4 mb-2">{children}</h3>
+              <h3 className="mt-5 mb-2 text-[15px] font-semibold text-surface-900">
+                {children}
+              </h3>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc list-inside space-y-1 my-3">{children}</ul>
+              <ul className="my-3 list-disc space-y-1 pl-5 marker:text-surface-400">
+                {children}
+              </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal list-inside space-y-1 my-3">{children}</ol>
+              <ol className="my-3 list-decimal space-y-1 pl-5 marker:text-surface-400 marker:font-semibold">
+                {children}
+              </ol>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="rounded-md bg-surface-100 px-5 py-3 my-4 text-surface-700 italic">
+              <blockquote className="my-4 rounded-r-md border-l-[3px] border-isu-400 bg-isu-50/60 px-4 py-3 text-[14px] italic text-surface-700 [&_p]:my-0">
                 {children}
               </blockquote>
             ),
+            hr: () => <hr className="my-6 border-surface-200" />,
             code: ({ className, children, ...props }) => {
               const isInline = !className;
               if (isInline) {
                 return (
                   <code
-                    className="bg-surface-100 text-rose-700 rounded px-1 py-0.5 font-mono text-sm"
+                    className="rounded-[4px] bg-surface-100 px-[0.35em] py-[0.15em] font-mono text-[0.88em] text-rose-700 ring-1 ring-inset ring-surface-200"
                     {...props}
                   >
                     {children}
@@ -202,41 +265,49 @@ export function WikiPageView({
                 );
               }
               return (
-                <code className={className} {...props}>
+                <code className={cn('font-mono text-[13px]', className)} {...props}>
                   {children}
                 </code>
               );
             },
             pre: ({ children }) => (
-              <pre className="bg-surface-900 text-surface-100 rounded-md p-4 my-4 overflow-x-auto font-mono text-sm">
+              <pre className="relative my-4 overflow-x-auto rounded-md bg-[#0f172a] p-4 font-mono text-[13px] leading-[1.65] text-slate-100 ring-1 ring-inset ring-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 {children}
               </pre>
             ),
             table: ({ children }) => (
-              <div className="my-4 overflow-x-auto">
-                <table className="w-full border-collapse text-sm">{children}</table>
+              <div className="my-4 overflow-hidden overflow-x-auto rounded-md border border-surface-200">
+                <table className="w-full border-collapse text-[13px]">{children}</table>
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-surface-100">{children}</thead>
+              <thead className="bg-surface-50 text-left">{children}</thead>
             ),
             th: ({ children }) => (
-              <th className="border border-surface-300 px-3 py-2 text-left font-semibold">
+              <th className="text-display border-b border-surface-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-surface-600">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="border border-surface-300 px-3 py-2">
+              <td className="border-b border-surface-100 px-3 py-2 text-surface-700 last:border-0">
                 {processChildren(children, onWikiLinkClick, orphanSet)}
               </td>
             ),
             a: ({ href, children }) => (
               <a
                 href={href}
-                className="text-isu-600 underline underline-offset-2 hover:text-isu-700"
+                className="font-medium text-isu-600 decoration-isu-300 underline underline-offset-[3px] hover:text-isu-700 hover:decoration-isu-500"
               >
                 {children}
               </a>
+            ),
+            img: ({ src, alt }) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={src}
+                alt={alt ?? ''}
+                className="my-4 rounded-md border border-surface-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              />
             ),
           }}
         >
@@ -245,8 +316,12 @@ export function WikiPageView({
       </div>
 
       {showEdit && (
-        <div className="pt-4 border-t border-surface-200">
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-surface-200 pt-5">
+          <p className="text-display text-[11px] text-surface-500">
+            직접 수정하려면 편집 모드로 전환하세요.
+          </p>
           <Button variant="outline" size="sm">
+            <Pencil className="h-3.5 w-3.5" />
             {t('edit')}
           </Button>
         </div>

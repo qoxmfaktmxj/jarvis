@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl";
 import type { AskConversation } from "@jarvis/db/schema/ask-conversation";
 import { MAX_CONVERSATIONS_PER_USER } from "@jarvis/shared/constants/ask";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import { AskSidebarDateGroup } from "./AskSidebarDateGroup";
 import { AskSidebarItem } from "./AskSidebarItem";
 
@@ -153,24 +152,25 @@ export function AskSidebar({
 
   return (
     <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-surface-200 bg-surface-50">
-      {/* New conversation button */}
-      <div className="p-3">
+      {/* Header — brand wordmark + new conversation */}
+      <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
+        <span className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-surface-500">
+          {t("title")}
+        </span>
         <Link
           href="/ask"
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-surface-300 px-3 py-2 text-sm font-medium text-surface-700 transition-colors duration-150 ease-out",
-            "hover:border-isu-300 hover:bg-isu-50 hover:text-isu-700",
-          )}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-surface-500 transition-colors duration-150 hover:bg-surface-100 hover:text-surface-800"
+          title={t("newConversation")}
+          aria-label={t("newConversation")}
         >
-          <Plus className="h-4 w-4" />
-          {t("newConversation")}
+          <Plus className="h-3.5 w-3.5" />
         </Link>
       </div>
 
       {/* Search */}
       <div className="px-3 pb-2">
         <div className="relative flex items-center">
-          <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-surface-400" aria-hidden />
           <input
             type="text"
             value={searchQuery}
@@ -178,14 +178,14 @@ export function AskSidebar({
             onKeyDown={handleKeyDown}
             placeholder={t("search")}
             aria-label={t("search")}
-            className="w-full rounded-md border border-surface-200 bg-card py-1.5 pl-8 pr-7 text-xs text-surface-800 placeholder:text-muted-foreground focus:border-isu-400 focus:outline-none focus:ring-1 focus:ring-isu-300"
+            className="w-full rounded-md border border-surface-200 bg-card py-1.5 pl-8 pr-7 text-xs text-surface-800 placeholder:text-surface-400 focus:border-isu-400 focus:outline-none focus:ring-1 focus:ring-isu-200"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={clearSearch}
               aria-label={t("clearSearch")}
-              className="absolute right-2 text-muted-foreground hover:text-foreground"
+              className="absolute right-2 text-surface-400 hover:text-surface-700"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -198,13 +198,15 @@ export function AskSidebar({
         {filteredGroups.length === 0 ? (
           debouncedQuery.trim() ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-sm text-muted-foreground">{t("noSearchResults")}</p>
+              <p className="text-xs text-surface-500">{t("noSearchResults")}</p>
             </div>
           ) : (
-            <div className="px-4 py-8 text-center">
-              <MessageSquare className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm font-semibold text-foreground">{t("emptyTitle")}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{t("emptyDescription")}</p>
+            <div className="px-4 py-10 text-center">
+              <MessageSquare className="mx-auto mb-2 h-6 w-6 text-surface-300" />
+              <p className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-surface-500">
+                {t("emptyTitle")}
+              </p>
+              <p className="mt-1 text-xs text-surface-400">{t("emptyDescription")}</p>
             </div>
           )
         ) : (
@@ -222,30 +224,30 @@ export function AskSidebar({
         )}
       </div>
 
-      {/* Counter footer */}
-      <div>
-        <Separator />
-        <div className="flex items-center gap-2 px-4 py-3">
-          <MessageSquare
-            className={cn(
-              "h-3.5 w-3.5",
-              isWarning ? "text-amber-600" : "text-muted-foreground",
-            )}
-          />
+      {/* Counter footer — hairline, tabular */}
+      <div className="border-t border-surface-200">
+        <div className="flex items-center justify-between gap-2 px-4 py-2.5">
           <span
             className={cn(
-              "text-xs",
-              isWarning ? "text-amber-600" : "text-muted-foreground",
+              "text-display text-[10px] font-semibold uppercase tracking-[0.14em]",
+              isWarning ? "text-warning" : "text-surface-400",
             )}
           >
-            {conversationCount} / {MAX_CONVERSATIONS_PER_USER}
+            Conversations
           </span>
-          {isAtLimit && (
-            <span className="text-xs text-amber-600">
-              {t("limitWarning")}
-            </span>
-          )}
+          <span
+            className={cn(
+              "text-display text-xs font-semibold tabular-nums",
+              isWarning ? "text-warning" : "text-surface-600",
+            )}
+          >
+            {conversationCount}
+            <span className="text-surface-400">/{MAX_CONVERSATIONS_PER_USER}</span>
+          </span>
         </div>
+        {isAtLimit && (
+          <p className="px-4 pb-2 text-[11px] text-warning">{t("limitWarning")}</p>
+        )}
       </div>
     </aside>
   );

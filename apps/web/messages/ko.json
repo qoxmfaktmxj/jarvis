@@ -419,6 +419,9 @@
     "subtitle": "지식 베이스 기반 AI 답변, 출처 인용, 실시간 스트리밍",
     "graphScope": "그래프 범위: {title}",
     "clearScope": "범위 초기화",
+    "thinking": {
+      "documentReview": "문서 검토 중…"
+    },
     "sidebar": {
       "newConversation": "새 대화",
       "today": "오늘",

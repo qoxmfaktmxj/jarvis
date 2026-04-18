@@ -7,6 +7,7 @@ import { executePrecedentSearch } from '@/lib/queries/precedent-search';
 import { SearchPage } from '@/components/search/SearchPage';
 import { SearchBar } from '@/components/search/SearchBar';
 import { PageHeader } from '@/components/patterns/PageHeader';
+import { GlobeLoader } from '@/components/layout/GlobeLoader';
 import type { SearchSortBy } from '@jarvis/search/types';
 import { ResourceTabs, type ResourceTabValue } from './ResourceTabs';
 
@@ -100,7 +101,13 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
 
 export default function Page(props: SearchPageRouteProps) {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">검색 중...</div>}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-20">
+          <GlobeLoader size={80} tone="muted" label="문서를 찾는 중…" />
+        </div>
+      }
+    >
       <SearchResults {...props} />
     </Suspense>
   );

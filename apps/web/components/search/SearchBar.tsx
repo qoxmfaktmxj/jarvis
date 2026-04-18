@@ -115,7 +115,7 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
   return (
     <div ref={containerRef} className={cn('relative w-full', className)}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
         <Input
           id={inputId}
           type="search"
@@ -123,14 +123,14 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
-          placeholder="검색어를 입력하세요..."
-          className="pl-9 pr-9"
+          placeholder="위키, 런북, 회의록, 코드… 검색"
+          className="h-12 rounded-md border-surface-200 bg-white pl-11 pr-11 text-[15px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
           // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
           autoFocus={autoFocus}
           aria-label="검색"
         />
         {isLoading ? (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          <Loader2 className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-surface-400" />
         ) : query ? (
           <button
             type="button"
@@ -140,12 +140,16 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
               setIsOpen(false);
               document.getElementById(inputId)?.focus();
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-surface-400 transition-colors hover:text-surface-700"
             aria-label="검색어 지우기"
           >
             <X className="h-4 w-4" />
           </button>
-        ) : null}
+        ) : (
+          <kbd className="text-display absolute right-4 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-surface-200 bg-surface-50 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 sm:inline-flex">
+            <span className="text-[11px]">⌘</span>K
+          </kbd>
+        )}
       </div>
 
       {isOpen && suggestions.length > 0 && (
@@ -153,10 +157,12 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           id="search-suggestions"
           role="listbox"
           aria-label="추천 검색어"
-          className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover shadow-md"
+          className="absolute top-full z-50 mt-2 w-full overflow-hidden rounded-md border border-surface-200 bg-white shadow-lg ring-1 ring-black/5"
         >
-          <div className="p-1">
-            <p className="px-2 py-1 text-xs font-medium text-muted-foreground">추천 검색어</p>
+          <div className="p-1.5">
+            <p className="text-display px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-400">
+              추천 검색어
+            </p>
             {suggestions.map((suggestion, index) => (
               <button
                 key={suggestion}
@@ -165,14 +171,19 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
                 type="button"
                 onClick={() => navigate(suggestion)}
                 className={cn(
-                  'flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm',
+                  'flex w-full cursor-pointer items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-sm transition-colors',
                   selectedIndex === index
-                    ? 'bg-accent text-accent-foreground'
-                    : 'hover:bg-accent hover:text-accent-foreground',
+                    ? 'bg-isu-50 text-isu-800'
+                    : 'text-surface-700 hover:bg-surface-100',
                 )}
               >
-                <Search className="h-3 w-3 text-muted-foreground" />
-                {suggestion}
+                <Search
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    selectedIndex === index ? 'text-isu-500' : 'text-surface-400',
+                  )}
+                />
+                <span className="truncate">{suggestion}</span>
               </button>
             ))}
           </div>

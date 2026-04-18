@@ -1,21 +1,37 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Search, Loader2, X, FileText, ArrowUpRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { WikiPageMeta } from '@/components/WikiPageView';
+import { cn } from '@/lib/utils';
 
-const SENSITIVITY_VARIANT: Record<
+const SENSITIVITY_STYLES: Record<
   WikiPageMeta['sensitivity'],
-  'success' | 'warning' | 'destructive'
+  { dot: string; chip: string; label: string }
 > = {
-  public: 'success',
-  internal: 'warning',
-  restricted: 'warning',
-  secret: 'destructive',
+  public: {
+    dot: 'bg-emerald-500',
+    chip: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+    label: 'Public',
+  },
+  internal: {
+    dot: 'bg-isu-500',
+    chip: 'bg-isu-50 text-isu-700 ring-isu-500/20',
+    label: 'Internal',
+  },
+  restricted: {
+    dot: 'bg-amber-500',
+    chip: 'bg-amber-50 text-amber-800 ring-amber-600/20',
+    label: 'Restricted',
+  },
+  secret: {
+    dot: 'bg-red-500',
+    chip: 'bg-red-50 text-red-700 ring-red-600/20',
+    label: 'Secret',
+  },
 };
 
 type WikiIndexSearchProps = {
@@ -30,12 +46,12 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<WikiPageMeta[]>(initialPages);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<WikiPageMeta['sensitivity'] | 'all'>('all');
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const trimmed = query.trim();
 
-    // Empty query: show server-provided initial pages
     if (!trimmed) {
       abortRef.current?.abort();
       setResults(initialPages);
@@ -46,7 +62,6 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
     setIsSearching(true);
 
     const timer = setTimeout(() => {
-      // Abort previous in-flight request
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -59,18 +74,22 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
         })
-        .then((data: { pages: Array<{ slug: string; title: string; routeKey?: string; sensitivity?: string }> }) => {
-          const mapped: WikiPageMeta[] = (data.pages ?? []).map((r) => ({
-            slug: r.routeKey ?? r.slug,
-            title: r.title,
-            sensitivity: (r.sensitivity ?? 'internal') as WikiPageMeta['sensitivity'],
-            tags: [],
-            updatedAt: '',
-            workspaceId,
-          }));
-          setResults(mapped);
-          setIsSearching(false);
-        })
+        .then(
+          (data: {
+            pages: Array<{ slug: string; title: string; routeKey?: string; sensitivity?: string }>;
+          }) => {
+            const mapped: WikiPageMeta[] = (data.pages ?? []).map((r) => ({
+              slug: r.routeKey ?? r.slug,
+              title: r.title,
+              sensitivity: (r.sensitivity ?? 'internal') as WikiPageMeta['sensitivity'],
+              tags: [],
+              updatedAt: '',
+              workspaceId,
+            }));
+            setResults(mapped);
+            setIsSearching(false);
+          },
+        )
         .catch((err) => {
           if (err instanceof DOMException && err.name === 'AbortError') return;
           setIsSearching(false);
@@ -82,63 +101,216 @@ export function WikiIndexSearch({ pages: initialPages, workspaceId }: WikiIndexS
     };
   }, [query, workspaceId, initialPages]);
 
-  return (
-    <div className="space-y-6">
-      <Input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder={t('search')}
-        className="max-w-md"
-      />
+  // Facet counts (over current results)
+  const facets = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of results) counts[p.sensitivity] = (counts[p.sensitivity] ?? 0) + 1;
+    return counts;
+  }, [results]);
 
+  const filtered = useMemo(
+    () => (activeFilter === 'all' ? results : results.filter((p) => p.sensitivity === activeFilter)),
+    [results, activeFilter],
+  );
+
+  const SENS_KEYS: WikiPageMeta['sensitivity'][] = ['public', 'internal', 'restricted', 'secret'];
+
+  return (
+    <div className="space-y-5">
+      {/* Search + filter row */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-md">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
+          <Input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('search')}
+            className="h-10 rounded-md border-surface-200 bg-white pl-10 pr-10 text-[14px] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
+          />
+          {isSearching ? (
+            <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-surface-400" />
+          ) : query ? (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-surface-400 hover:text-surface-700"
+              aria-label="Clear"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="ml-auto inline-flex rounded-md bg-surface-100 p-0.5 ring-1 ring-inset ring-surface-200">
+          <FilterTab
+            active={activeFilter === 'all'}
+            onClick={() => setActiveFilter('all')}
+            label="전체"
+            count={results.length}
+          />
+          {SENS_KEYS.map((sens) =>
+            facets[sens] ? (
+              <FilterTab
+                key={sens}
+                active={activeFilter === sens}
+                onClick={() => setActiveFilter(sens)}
+                label={SENSITIVITY_STYLES[sens].label}
+                count={facets[sens]}
+                dotClass={SENSITIVITY_STYLES[sens].dot}
+              />
+            ) : null,
+          )}
+        </div>
+      </div>
+
+      {/* Result summary */}
+      <p className="text-display text-[11px] tabular-nums text-surface-500">
+        {filtered.length}
+        <span className="text-surface-300"> / </span>
+        {results.length} 페이지
+        {query && (
+          <>
+            <span className="mx-1.5 text-surface-300">·</span>
+            <span>“{query}”</span>
+          </>
+        )}
+      </p>
+
+      {/* Results */}
       {isSearching ? (
-        <p className="text-sm text-surface-400 italic">...</p>
-      ) : results.length === 0 ? (
-        <div className="space-y-1">
-          <p className="text-sm text-surface-400 italic">{t('noResults')}</p>
-          <p className="text-xs text-surface-400">{t('noResultsHint')}</p>
+        <div className="flex items-center gap-2 text-sm text-surface-500">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          검색 중…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center rounded-md border border-dashed border-surface-200 bg-surface-50/60 px-6 py-14 text-center">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white ring-1 ring-surface-200">
+            <FileText className="h-4 w-4 text-surface-500" />
+          </div>
+          <p className="mt-3 text-[14px] font-semibold text-surface-800">{t('noResults')}</p>
+          <p className="mt-1 text-[12px] text-surface-500">{t('noResultsHint')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {results.map((page) => (
-            <Link
-              key={page.slug}
-              href={`/wiki/${workspaceId}/${page.slug}`}
-              className="block"
-            >
-              <Card className="hover:border-blue-400 hover:shadow-sm transition-all h-full">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base">{page.title}</CardTitle>
-                    <Badge variant={SENSITIVITY_VARIANT[page.sensitivity]}>
-                      {t(`sensitivity.${page.sensitivity}`)}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-surface-400 font-mono">{page.slug}</p>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  {page.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {page.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  {page.updatedAt && (
-                    <p className="text-xs text-surface-400">
-                      {t('lastUpdated')}:{' '}
-                      {new Date(page.updatedAt).toLocaleDateString('ko-KR')}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {filtered.map((page) => (
+            <WikiPageCard key={page.slug} page={page} workspaceId={workspaceId} t={t} />
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+function FilterTab({
+  active,
+  onClick,
+  label,
+  count,
+  dotClass,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+  dotClass?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-[12px] font-medium transition-colors',
+        active
+          ? 'bg-white text-surface-900 shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
+          : 'text-surface-600 hover:text-surface-900',
+      )}
+    >
+      {dotClass && <span className={cn('h-1.5 w-1.5 rounded-full', dotClass)} aria-hidden />}
+      {label}
+      <span
+        className={cn(
+          'text-display rounded px-1 text-[10px] tabular-nums',
+          active ? 'bg-surface-100 text-surface-600' : 'text-surface-400',
+        )}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function WikiPageCard({
+  page,
+  workspaceId,
+  t,
+}: {
+  page: WikiPageMeta;
+  workspaceId: string;
+  t: ReturnType<typeof useTranslations<'Wiki'>>;
+}) {
+  const sens = SENSITIVITY_STYLES[page.sensitivity];
+  return (
+    <Link
+      href={`/wiki/${workspaceId}/${page.slug}`}
+      className="group relative block overflow-hidden rounded-md border border-surface-200 bg-white p-4 transition-all hover:-translate-y-[1px] hover:border-isu-200 hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]"
+    >
+      {/* Sensitivity accent stripe */}
+      <span
+        className={cn('absolute left-0 top-0 h-full w-[2px]', sens.dot)}
+        aria-hidden
+      />
+
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-50 text-surface-500 ring-1 ring-inset ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200">
+          <FileText className="h-3.5 w-3.5" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="line-clamp-1 text-[14px] font-semibold text-surface-900 group-hover:text-isu-700">
+              {page.title}
+            </h3>
+            <span
+              className={cn(
+                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
+                sens.chip,
+              )}
+            >
+              {t(`sensitivity.${page.sensitivity}`)}
+            </span>
+          </div>
+
+          <p className="text-display mt-0.5 truncate text-[11px] text-surface-400">
+            {page.slug}
+          </p>
+
+          {(page.tags.length > 0 || page.updatedAt) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              {page.tags.slice(0, 4).map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center rounded-full bg-surface-50 px-2 py-0.5 text-[10px] font-medium text-surface-600 ring-1 ring-inset ring-surface-200"
+                >
+                  #{tag}
+                </span>
+              ))}
+              {page.updatedAt && (
+                <span className="text-display ml-auto text-[11px] tabular-nums text-surface-400">
+                  {new Date(page.updatedAt).toLocaleDateString('ko-KR', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        <ArrowUpRight className="absolute right-3 top-3 h-3.5 w-3.5 text-surface-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 group-hover:text-isu-500" />
+      </div>
+    </Link>
   );
 }

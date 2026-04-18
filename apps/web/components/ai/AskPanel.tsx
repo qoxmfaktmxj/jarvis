@@ -2,14 +2,15 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
 import type { AskMode, SourceRef } from "@jarvis/ai/types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { useAskAI } from "@/lib/hooks/useAskAI";
+import { Capy } from "@/components/layout/Capy";
+import { GlobeLoader } from "@/components/layout/GlobeLoader";
 import { AnswerCard } from "./AnswerCard";
 import { ClaimBadge } from "./ClaimBadge";
 import { SourceRefCard } from "./SourceRefCard";
@@ -61,6 +62,7 @@ export function AskPanel({
   initialMessages = [],
 }: AskPanelProps) {
   const router = useRouter();
+  const tThinking = useTranslations("Ask.thinking");
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
   const [askMode, setAskMode] = useState<AskMode>('simple');
@@ -135,77 +137,94 @@ export function AskPanel({
   const featuredPrompts = popularQuestions.slice(0, 3);
 
   const composer = (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        {activeScope && (
-          <Badge variant="outline" className="gap-1 py-1">
-            <BotMessageSquare className="h-3 w-3 text-isu-600" />
-            <span className="text-xs">그래프 범위: {activeScope.title}</span>
+    <div className="space-y-2.5">
+      {/* Scope / mode chips — compact hairline row */}
+      <div className="flex items-center gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setAskMode(askMode === 'simple' ? 'expert' : 'simple')}
+          className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
+            askMode === 'expert'
+              ? 'border-isu-300 bg-isu-50 text-isu-700'
+              : 'border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50'
+          }`}
+          title={askMode === 'expert' ? '전문가 모드 — 기술 세부까지' : '일반 모드 — 요약 위주'}
+        >
+          {askMode === 'expert' ? (
+            <>
+              <GraduationCap className="h-3 w-3" aria-hidden /> Expert
+            </>
+          ) : (
+            <>
+              <Zap className="h-3 w-3" aria-hidden /> Simple
+            </>
+          )}
+        </button>
+
+        {activeScope ? (
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-surface-200 bg-card px-2 py-1 text-surface-700">
+            <BotMessageSquare className="h-3 w-3 text-isu-500" aria-hidden />
+            <span className="text-display text-[10px] font-semibold uppercase tracking-wide text-surface-400">
+              Graph
+            </span>
+            <span className="max-w-[180px] truncate">{activeScope.title}</span>
             <button
               type="button"
               onClick={() => setActiveScope(null)}
               aria-label="범위 해제"
-              className="ml-1 rounded-sm opacity-60 hover:opacity-100"
+              className="ml-0.5 rounded text-surface-400 hover:text-surface-700"
             >
               ✕
             </button>
-          </Badge>
-        )}
-        <button
-          type="button"
-          onClick={() => setAskMode(askMode === 'simple' ? 'expert' : 'simple')}
-          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-            askMode === 'expert'
-              ? 'border-isu-300 bg-isu-50 text-isu-700'
-              : 'border-surface-200 bg-card text-surface-600 hover:bg-surface-100'
-          }`}
-        >
-          {askMode === 'expert' ? (
-            <><GraduationCap className="h-3 w-3" /> Expert</>
-          ) : (
-            <><Zap className="h-3 w-3" /> Simple</>
-          )}
-        </button>
+          </span>
+        ) : null}
+
+        <span className="ml-auto text-[11px] text-surface-400">
+          Enter 전송 · Shift+Enter 줄바꿈
+        </span>
       </div>
-      <div className="relative flex items-end gap-2 rounded-2xl border border-surface-200 bg-card p-3">
+
+      {/* Composer — hairline, flush textarea */}
+      <div className="relative flex items-end gap-2 rounded-xl border border-surface-200 bg-card p-2.5 transition-colors duration-150 focus-within:border-isu-300 focus-within:ring-1 focus-within:ring-isu-200">
         <Textarea
           ref={textareaRef}
           value={input}
           onChange={(event) => setInput(event.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="질문을 입력하세요... (Enter로 전송, Shift+Enter로 줄바꿈)"
-          className="min-h-[84px] max-h-[240px] resize-none border-0 bg-transparent px-1 py-1 pr-2 text-sm shadow-none focus-visible:ring-0"
+          placeholder="무엇이든 물어보세요…"
+          className="min-h-[72px] max-h-[240px] resize-none border-0 bg-transparent px-1.5 py-1 text-sm leading-relaxed shadow-none focus-visible:ring-0"
           disabled={isStreaming}
         />
-        <div className="flex shrink-0 gap-1.5 pb-0.5">
+        <div className="flex shrink-0 items-center gap-1 pb-0.5">
           {hasConversation && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
+              className="h-8 w-8 text-surface-500 hover:text-surface-800"
               onClick={handleReset}
               title="대화 초기화"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5" />
             </Button>
           )}
           <Button
             size="icon"
-            className="h-9 w-9 rounded-xl"
+            className="h-8 w-8 rounded-lg"
             onClick={() => handleAsk(input)}
             disabled={isStreaming || !input.trim()}
             title="전송 (Enter)"
           >
             {isStreaming ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             )}
           </Button>
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground">
-        Jarvis는 지식 베이스에 등록된 내용을 바탕으로만 답변합니다.
+
+      <p className="text-center text-[11px] text-surface-400">
+        Jarvis는 지식 베이스에 등록된 내용만 근거로 답합니다.
       </p>
     </div>
   );
@@ -214,58 +233,96 @@ export function AskPanel({
     <div className="mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col">
       {hasConversation ? (
         <>
-          <ScrollArea className="min-h-0 flex-1 rounded-2xl border border-surface-200 bg-card">
-            <div className="space-y-6 p-5">
+          <ScrollArea className="min-h-0 flex-1">
+            <div className="mx-auto max-w-3xl space-y-8 py-6 pr-4">
               {history.map((entry, index) => (
-                <div key={`${entry.question}-${index}`} className="space-y-3">
+                <div key={`${entry.question}-${index}`} className="space-y-4">
+                  {/* User turn — right-aligned monochrome bubble */}
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-isu-600 px-4 py-2.5 text-sm text-white">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-surface-100 px-3.5 py-2 text-sm leading-relaxed text-surface-800">
                       {entry.question}
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-isu-600 text-xs font-bold text-white">
-                      J
+                  {/* Assistant turn — full-width flow */}
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="text-display text-[10px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+                        Jarvis
+                      </span>
+                      <span className="h-px flex-1 bg-surface-200" aria-hidden />
                     </div>
-                    <div className="flex-1">
-                      <AnswerCard answer={entry.answer} sources={entry.sources} />
-                    </div>
+                    <AnswerCard answer={entry.answer} sources={entry.sources} />
                   </div>
-
-                  {index < history.length - 1 && <Separator />}
                 </div>
               ))}
 
               {(isStreaming || answer) && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-end">
-                    <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-isu-600 px-4 py-2.5 text-sm text-white">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-surface-100 px-3.5 py-2 text-sm leading-relaxed text-surface-800">
                       {question}
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-isu-600 text-xs font-bold text-white">
-                      J
+                  <div className="relative">
+                    {!isStreaming && answer && !feedbackSent ? (
+                      <Capy
+                        name="watermelon"
+                        size={56}
+                        className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 drop-shadow-sm opacity-0 animate-[popIn_420ms_ease-out_forwards]"
+                      />
+                    ) : null}
+                    <div className="mb-2 flex items-center gap-2">
+                      <span
+                        className={`text-display text-[10px] font-semibold uppercase tracking-[0.18em] ${
+                          isStreaming ? 'text-isu-500' : 'text-isu-600'
+                        }`}
+                      >
+                        {isStreaming ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span className="relative flex h-1.5 w-1.5">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-isu-400 opacity-60" />
+                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-isu-500" />
+                            </span>
+                            Thinking
+                          </span>
+                        ) : (
+                          'Jarvis'
+                        )}
+                      </span>
+                      <span className="h-px flex-1 bg-surface-200" aria-hidden />
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="prose prose-sm max-w-none text-sm leading-relaxed">
+                    <div className="space-y-3">
+                      {isStreaming && !answer ? (
+                        <div className="flex items-center gap-3 py-1">
+                          <GlobeLoader
+                            size={64}
+                            tone="brand"
+                            label={tThinking("documentReview")}
+                          />
+                        </div>
+                      ) : null}
+                      <div className="prose prose-sm max-w-none text-sm leading-relaxed text-surface-800">
                         {answer ? (
                           <AnswerText text={answer} sources={sources} />
-                        ) : (
-                          <span className="animate-pulse text-xs text-muted-foreground">
-                            답변을 생성하는 중...
-                          </span>
-                        )}
-                        {isStreaming && (
-                          <span className="ml-0.5 inline-block h-4 w-0.5 animate-pulse align-text-bottom bg-isu-600" />
+                        ) : null}
+                        {isStreaming && answer && (
+                          <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse align-text-bottom bg-isu-600" />
                         )}
                       </div>
 
                       {!isStreaming && sources.length > 0 && (
-                        <div className="space-y-1.5 pt-1">
-                          <p className="text-xs font-medium text-muted-foreground">참고 문서</p>
+                        <div className="space-y-2 pt-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+                              참고 문서
+                            </span>
+                            <span className="text-display text-[11px] font-semibold tabular-nums text-surface-400">
+                              {sources.length}
+                            </span>
+                            <span className="h-px flex-1 bg-surface-200" aria-hidden />
+                          </div>
                           {sources.map((source, sourceIndex) => {
                             const keyPart =
                               source.kind === 'text'
@@ -287,21 +344,21 @@ export function AskPanel({
                       )}
 
                       {!isStreaming && answer && (
-                        <div className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
-                          {lane && (
-                            <span className="rounded-full border border-surface-200 px-2 py-0.5">
-                              {lane}
+                        <div className="flex items-center gap-2 pt-2 text-xs">
+                          {lane ? (
+                            <span className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-400">
+                              lane · {lane}
                             </span>
-                          )}
-                          <span className="ml-auto">이 답변이 도움이 됐나요?</span>
+                          ) : null}
+                          <span className="ml-auto text-surface-500">이 답변이 도움이 됐나요?</span>
                           <button
                             type="button"
                             onClick={() => sendFeedback('up')}
                             disabled={!!feedbackSent}
-                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'up'
-                                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                                : 'border-surface-200 hover:bg-surface-100'
+                                ? 'border-lime-300 bg-lime-50 text-lime-700'
+                                : 'border-surface-200 text-surface-500 hover:bg-surface-100 hover:text-surface-700'
                             }`}
                             title="도움됨"
                           >
@@ -311,10 +368,10 @@ export function AskPanel({
                             type="button"
                             onClick={() => sendFeedback('down')}
                             disabled={!!feedbackSent}
-                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 transition ${
+                            className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'down'
-                                ? 'border-rose-300 bg-rose-50 text-rose-700'
-                                : 'border-surface-200 hover:bg-surface-100'
+                                ? 'border-danger/40 bg-danger/10 text-danger'
+                                : 'border-surface-200 text-surface-500 hover:bg-surface-100 hover:text-surface-700'
                             }`}
                             title="도움 안 됨"
                           >
@@ -328,8 +385,11 @@ export function AskPanel({
               )}
 
               {error && (
-                <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {error}
+                <div className="flex items-start gap-2 border-l-2 border-danger bg-danger/5 px-3 py-2 text-sm text-danger">
+                  <span className="text-display text-[10px] font-semibold uppercase tracking-wide">
+                    Error
+                  </span>
+                  <span className="flex-1">{error}</span>
                 </div>
               )}
 
@@ -337,67 +397,70 @@ export function AskPanel({
             </div>
           </ScrollArea>
 
-          <div className="pt-4">{composer}</div>
+          <div className="mx-auto w-full max-w-3xl pt-4">{composer}</div>
         </>
       ) : (
-        <section className="flex min-h-0 flex-1 flex-col justify-end gap-6 pb-4">
-          <header className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-isu-600 text-white">
-              <BotMessageSquare className="h-5 w-5" aria-hidden />
-            </div>
-            <div className="space-y-1">
-              <p className="text-display text-lg font-semibold tracking-tight text-surface-900">
-                문서 기반 AI 어시스턴트
-              </p>
-              <p className="max-w-xl text-sm leading-relaxed text-surface-600">
-                사내 문서와 운영 기록을 바탕으로 답변하고, 근거 문서를 바로 보여줍니다.
-              </p>
-            </div>
+        <section className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col justify-end gap-8 pb-4">
+          <header className="space-y-2">
+            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+              문서 기반 AI 어시스턴트
+            </p>
+            <h2 className="text-display text-2xl font-bold tracking-tight text-surface-900 sm:text-3xl">
+              무엇이 궁금하신가요?
+            </h2>
+            <p className="max-w-xl text-sm leading-relaxed text-surface-600">
+              사내 문서와 운영 기록을 근거로 답변하고, 인용 문서를 함께 보여줍니다.
+            </p>
           </header>
 
-          <dl className="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-[6rem_1fr] sm:gap-y-2">
-            <dt className="text-display text-sm font-semibold text-isu-700">
+          <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[5rem_1fr]">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
               요약
             </dt>
             <dd className="text-surface-700">
               운영 정책, 프로젝트 문서, 런북을 한 번에 요약합니다.
             </dd>
 
-            <dt className="text-display text-sm font-semibold text-isu-700">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
               인용
             </dt>
             <dd className="text-surface-700">
               답변마다 참고 문서를 붙여 근거를 바로 확인할 수 있습니다.
             </dd>
 
-            <dt className="text-display text-sm font-semibold text-isu-700">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
               스트리밍
             </dt>
             <dd className="text-surface-700">
-              길게 기다리지 않고 답변을 받으면서 바로 읽기 시작합니다.
+              길게 기다리지 않고, 답변이 생성되는 동안 바로 읽기 시작합니다.
             </dd>
           </dl>
 
-          <hr className="border-surface-200" aria-hidden />
-
           {featuredPrompts.length > 0 && (
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">추천 질문</Badge>
-                <p className="text-xs text-muted-foreground">자주 쓰는 질문으로 바로 시작하세요.</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+                  추천 질문
+                </span>
+                <span className="h-px flex-1 bg-surface-200" aria-hidden />
               </div>
 
-              <div className="grid gap-2 md:grid-cols-3">
-                {featuredPrompts.map((prompt) => (
+              <div className="grid gap-1.5 md:grid-cols-1">
+                {featuredPrompts.map((prompt, i) => (
                   <button
                     key={prompt}
                     onClick={() => {
                       setInput(prompt);
                       handleAsk(prompt);
                     }}
-                    className="rounded-xl border border-surface-200 bg-card px-4 py-3 text-left text-sm text-surface-700 transition hover:border-isu-300 hover:bg-isu-50"
+                    className="group flex items-start gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 hover:border-surface-200 hover:bg-surface-50"
                   >
-                    {prompt}
+                    <span className="text-display mt-0.5 w-6 shrink-0 text-[11px] font-semibold tabular-nums text-surface-400 group-hover:text-isu-500">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <span className="flex-1 text-sm text-surface-700 group-hover:text-surface-900">
+                      {prompt}
+                    </span>
                   </button>
                 ))}
               </div>

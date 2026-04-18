@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/callback", "/api/auth"];
+const PUBLIC_PATHS = ["/login", "/callback", "/api/auth", "/capybara"];
 
 function ensureRequestId(request: NextRequest): string {
   const existing = request.headers.get("x-request-id");

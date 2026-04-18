@@ -23,13 +23,11 @@ export function FilterPanel({ facets, baseQuery }: FilterPanelProps) {
       params.set('q', baseQuery);
 
       if (params.get(key) === value) {
-        // Toggle off: remove filter
         params.delete(key);
       } else {
         params.set(key, value);
       }
 
-      // Reset to page 1 when filter changes
       params.delete('page');
       router.push(`/search?${params.toString()}`);
     },
@@ -41,14 +39,33 @@ export function FilterPanel({ facets, baseQuery }: FilterPanelProps) {
 
   if (!hasPageTypeFacets && !hasSensitivityFacets) return null;
 
+  const hasAnyActive = activePageType || activeSensitivity;
+
   return (
-    <aside className="space-y-4">
+    <aside className="sticky top-6 space-y-5 rounded-md border border-surface-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+      <div className="flex items-center justify-between">
+        <p className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+          필터
+        </p>
+        {hasAnyActive && (
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set('q', baseQuery);
+              router.push(`/search?${params.toString()}`);
+            }}
+            className="text-[11px] font-medium text-isu-600 hover:text-isu-700"
+          >
+            초기화
+          </button>
+        )}
+      </div>
+
       {hasPageTypeFacets && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Page Type
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <p className="mb-2 text-[11px] font-semibold text-surface-700">문서 종류</p>
+          <div className="flex flex-wrap gap-1.5">
             {Object.entries(facets.byPageType).map(([type, count]) => (
               <FacetBadge
                 key={type}
@@ -64,10 +81,8 @@ export function FilterPanel({ facets, baseQuery }: FilterPanelProps) {
 
       {hasSensitivityFacets && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Sensitivity
-          </p>
-          <div className="flex flex-wrap gap-2">
+          <p className="mb-2 text-[11px] font-semibold text-surface-700">보안 등급</p>
+          <div className="flex flex-wrap gap-1.5">
             {Object.entries(facets.bySensitivity).map(([sens, count]) => (
               <FacetBadge
                 key={sens}

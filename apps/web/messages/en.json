@@ -1,4 +1,9 @@
 {
+  "Ask": {
+    "thinking": {
+      "documentReview": "Reviewing documents…"
+    }
+  },
   "WikiGraph": {
     "title": "Knowledge Graph",
     "loading": "Loading graph...",
