@@ -386,9 +386,6 @@ importers:
         specifier: ^8.13.3
         version: 8.20.0
     devDependencies:
-      '@jarvis/auth':
-        specifier: workspace:*
-        version: link:../auth
       '@types/pg':
         specifier: ^8.11.10
         version: 8.20.0
