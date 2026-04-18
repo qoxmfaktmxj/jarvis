@@ -158,9 +158,6 @@ export function CommandPalette() {
             aria-label="Command palette search"
             className="flex-1 bg-transparent text-sm text-surface-900 placeholder:text-surface-400 focus:outline-none"
           />
-          <kbd className="rounded border border-surface-200 bg-surface-50 px-1.5 py-0.5 text-mono-xs text-surface-500">
-            ESC
-          </kbd>
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-2">
