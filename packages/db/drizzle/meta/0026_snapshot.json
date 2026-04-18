@@ -1,6 +1,6 @@
 {
-  "id": "94b52e89-5f30-4c7f-8289-ffa615c44420",
-  "prevId": "fbfb84bd-a29d-42c1-b516-f5aadb10a72b",
+  "id": "e9fe627a-3595-4de8-ac0a-6879e2c84281",
+  "prevId": "94b52e89-5f30-4c7f-8289-ffa615c44420",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1222,6 +1222,18 @@
         "search_vector": {
           "name": "search_vector",
           "type": "tsvector",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "embedding": {
+          "name": "embedding",
+          "type": "vector(1536)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_embedded_at": {
+          "name": "last_embedded_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -6682,6 +6694,53 @@
           "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user_session": {
+      "name": "user_session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_user_session_expires_at": {
+          "name": "idx_user_session_expires_at",
+          "columns": [
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
