@@ -185,6 +185,9 @@ export async function POST(request: NextRequest) {
       let totalTokens = 0;
       let lane: string | null = null;
       let streamSuccess = false;
+      // 에러로 끝났을 때도 대화 맥락을 잃지 않기 위해 error 메시지를 붙잡는다.
+      // 재방문 시 UI 가 "질문 → ⚠️ 에러" 쌍으로 렌더링할 수 있어야 함.
+      let errorMessage: string | null = null;
 
       try {
         const permissions = session.permissions ?? [];
@@ -214,18 +217,27 @@ export async function POST(request: NextRequest) {
             streamSuccess = true;
             break;
           } else if (event.type === 'error') {
+            errorMessage = event.message;
             break;
           }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Stream error';
+        errorMessage = message;
         const errorEvent: SSEEvent = { type: 'error', message };
         controller.enqueue(encoder.encode(formatSSE(errorEvent)));
       } finally {
-        // 스트림 성공 시 메시지 저장 (fire-and-forget, 스트림 종료를 블로킹하지 않음)
-        if (streamSuccess && convId) {
+        // 성공/에러 둘 다 저장 — conversation row 만 남고 메시지가 비는 상태를 방지.
+        // 어느 쪽도 아닌 경우(예: 이벤트 0개 — 클라이언트 조기 disconnect)는 skip.
+        const shouldPersist = Boolean(convId) && (streamSuccess || errorMessage !== null);
+        if (shouldPersist && convId) {
           const baseOrder = currentMessageCount;
           const now = new Date();
+          const assistantContent = streamSuccess
+            ? fullAnswer
+            : `⚠️ ${errorMessage}`;
+          const assistantLane = streamSuccess ? lane : 'error';
+          const assistantTokens = streamSuccess ? totalTokens : null;
 
           try {
             await db.insert(askMessage).values([
@@ -242,10 +254,10 @@ export async function POST(request: NextRequest) {
               {
                 conversationId: convId,
                 role: 'assistant',
-                content: fullAnswer,
+                content: assistantContent,
                 sources: collectedSources as unknown[],
-                lane,
-                totalTokens,
+                lane: assistantLane,
+                totalTokens: assistantTokens,
                 sortOrder: baseOrder + 1,
                 createdAt: now,
               },
