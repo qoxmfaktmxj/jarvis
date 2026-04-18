@@ -1,75 +1,177 @@
 "use client";
 
 /**
- * Topbar — 브랜드 마크 + 글로벌 검색 트리거 + 유저 메뉴
+ * Topbar — 52px. 좌측 라우트 라벨, 중앙 커맨드 팔레트 트리거, 우측 테마/알림/Tweaks/유저.
  *
- * 검색 트리거는 ⌘K 팔레트를 연다. 기존 /search 링크 대신 CommandPalette 오버레이.
- * 알림 버튼은 드롭다운 플레이스홀더 (미구현 시 숨김 가능).
+ * 브랜드 Capy는 Sidebar 헤더로 이동했으므로 여기서는 제거.
+ * 라우트 라벨은 usePathname 기반 정적 lookup (i18n 불필요).
  */
 
-import Link from "next/link";
-import { Bell, Search } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useCallback, useState } from "react";
+import { usePathname } from "next/navigation";
+import { Bell, Moon, Search, Settings, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
-import { Capy } from "./Capy";
+import { TweaksPanel } from "./TweaksPanel";
+import { setTheme, useTheme } from "./uiPrefs";
+
+const ROUTE_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["/dashboard",    "대시보드"],
+  ["/ask",          "AI 질문"],
+  ["/search",       "검색"],
+  ["/wiki",         "위키"],
+  ["/knowledge",    "Knowledge Base"],
+  ["/projects",     "프로젝트"],
+  ["/systems",      "시스템"],
+  ["/attendance",   "근태등록"],
+  ["/admin",        "관리자"],
+  ["/notices",      "공지"],
+  ["/infra",        "인프라"],
+  ["/architecture", "아키텍처"],
+];
+
+function routeLabel(pathname: string): string {
+  for (const [prefix, label] of ROUTE_LABELS) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return label;
+  }
+  return "";
+}
 
 export function Topbar({ userName }: { userName: string }) {
-  const t = useTranslations("Common");
+  const pathname = usePathname();
+  const theme = useTheme();
+  const [tweaksOpen, setTweaksOpen] = useState(false);
 
-  const openPalette = () => {
-    // 동일한 ⌘K 트리거 — CommandPalette가 window keydown을 듣고 있음.
+  const openPalette = useCallback(() => {
+    // CommandPalette는 window keydown(⌘K)으로 트리거되는 기존 계약을 유지.
     const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
     window.dispatchEvent(evt);
-  };
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [theme]);
 
   return (
     <>
-      <header className="fixed left-0 right-0 top-0 z-[var(--z-topbar)] flex h-[var(--topbar-height)] items-center border-b border-surface-200 bg-surface-50/90 px-4 backdrop-blur-sm">
-        <div className="flex w-[var(--sidebar-width)] items-center gap-2 pl-1 pr-4">
-          <Link
-            href="/dashboard"
-            className="text-display flex items-center gap-1.5 text-lg font-bold tracking-tight text-isu-700"
-          >
-            <Capy name="reading" size={28} priority className="shrink-0" />
-            Jarvis
-          </Link>
-          <span className="rounded-md bg-lime-100 px-1.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-lime-700">
-            ISU
-          </span>
-        </div>
+      <header
+        className="fixed right-0 top-0 z-[var(--z-topbar)] flex items-center border-b px-5"
+        style={{
+          left: "var(--sidebar-width)",
+          height: "var(--topbar-height)",
+          background: "var(--panel)",
+          borderColor: "var(--line)",
+          gap: 14,
+          transition: "left .2s ease",
+        }}
+      >
+        <span
+          className="text-[13.5px] font-medium"
+          style={{ color: "var(--ink)" }}
+        >
+          {routeLabel(pathname)}
+        </span>
 
-        <div className="flex max-w-xl flex-1 items-center">
-          <button
-            type="button"
-            onClick={openPalette}
-            className="flex w-full items-center gap-2.5 rounded-lg border border-surface-200 bg-white px-3.5 py-2 text-sm text-surface-400 transition-colors hover:border-surface-300 hover:bg-surface-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-isu-400"
-          >
-            <Search className="h-4 w-4" aria-hidden />
-            <span className="flex-1 text-left">{t("searchKnowledge")}</span>
-            <kbd className="rounded border border-surface-200 bg-surface-50 px-1.5 py-0.5 text-mono-xs text-surface-500">
-              ⌘K
-            </kbd>
-          </button>
-        </div>
+        <div className="flex-1" />
 
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="relative rounded-lg p-2 text-surface-500 transition-colors hover:bg-surface-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-isu-400"
+        <button
+          type="button"
+          onClick={openPalette}
+          className="flex items-center rounded-lg border text-[13px] transition-colors"
+          style={{
+            gap: 10,
+            padding: "6px 10px",
+            width: 320,
+            background: "var(--bg)",
+            borderColor: "var(--line)",
+            color: "var(--muted)",
+          }}
+        >
+          <Search className="h-4 w-4" aria-hidden />
+          <span className="flex-1 text-left">검색하거나 명령을 실행하세요</span>
+          <kbd
+            className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border px-1.5 text-[11px]"
+            style={{
+              background: "var(--panel)",
+              borderColor: "var(--line)",
+              color: "var(--muted)",
+              fontFamily: "var(--font-mono)",
+            }}
           >
-            <Bell className="h-[18px] w-[18px]" aria-hidden />
-            <span
-              aria-hidden
-              className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-lime-500"
-            />
-          </button>
-          <UserMenu userName={userName} />
-        </div>
+            ⌘
+          </kbd>
+          <kbd
+            className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border px-1.5 text-[11px]"
+            style={{
+              background: "var(--panel)",
+              borderColor: "var(--line)",
+              color: "var(--muted)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            K
+          </kbd>
+        </button>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "라이트 테마로" : "다크 테마로"}
+          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
+          style={{ color: "var(--muted)" }}
+        >
+          {theme === "dark" ? (
+            <Sun className="h-[18px] w-[18px]" aria-hidden />
+          ) : (
+            <Moon className="h-[18px] w-[18px]" aria-hidden />
+          )}
+        </button>
+
+        <button
+          type="button"
+          aria-label="알림"
+          className="relative rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
+          style={{ color: "var(--muted)" }}
+        >
+          <Bell className="h-[18px] w-[18px]" aria-hidden />
+          <span
+            aria-hidden
+            className="absolute rounded-full"
+            style={{
+              top: 6,
+              right: 6,
+              width: 6,
+              height: 6,
+              background: "var(--accent)",
+              border: "2px solid var(--panel)",
+            }}
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setTweaksOpen((v) => !v)}
+          aria-label="Tweaks"
+          aria-pressed={tweaksOpen}
+          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
+          style={{
+            color: tweaksOpen ? "var(--ink)" : "var(--muted)",
+            background: tweaksOpen ? "var(--line2)" : "transparent",
+          }}
+        >
+          <Settings className="h-[18px] w-[18px]" aria-hidden />
+        </button>
+
+        <div
+          aria-hidden
+          style={{ width: 1, height: 20, background: "var(--line)" }}
+        />
+
+        <UserMenu userName={userName} />
       </header>
 
       <CommandPalette />
+      <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
     </>
   );
 }

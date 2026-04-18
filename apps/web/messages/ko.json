@@ -310,6 +310,7 @@
   "Projects": {
     "title": "프로젝트",
     "description": "워크스페이스 프로젝트를 관리합니다 (전체 {total}개)",
+    "subtitle": "워크스페이스 프로젝트 {total}개 진행 중",
     "newProject": "새 프로젝트",
     "allStatuses": "전체 상태",
     "statuses": {

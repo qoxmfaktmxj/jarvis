@@ -1,61 +1,85 @@
 import type { JSX, ReactNode } from "react";
 
-export type PageHeaderProps = {
-  eyebrow?: string;
+/**
+ * Primary API — mirrors the prototype `PH` component in project/app.jsx:
+ * large mono left stamp (e.g. "W16") · kicker with mint accent dot · title · subtitle · right actions.
+ */
+export interface PageHeaderProps {
+  /** Large mono left stamp (e.g. "W16" ISO week). Hidden when omitted. */
+  stamp?: string;
+  /** Uppercase small label above title with a leading mint dot. */
+  kicker?: string;
+  /** Main title (30px bold). */
   title: string;
-  description?: string;
-  meta?: ReactNode;
+  /** Descriptive subtitle (14px muted, max-w 560). */
+  subtitle?: string;
+  /** Right-side action slot (buttons, links). */
+  actions?: ReactNode;
+
+  // ---- Back-compat aliases for existing call sites -----------------------
+  /** @deprecated Use `stamp`. */
   accent?: string;
-};
+  /** @deprecated Use `kicker`. */
+  eyebrow?: string;
+  /** @deprecated Use `subtitle`. */
+  description?: string;
+  /** @deprecated Use `actions`. */
+  meta?: ReactNode;
+}
 
 /**
  * PageHeader — ISU signature page treatment.
  *
- * When `accent` is provided, renders an oversized typographic element (e.g.
- * "W16", "17", or a section glyph) on the far left in a muted tint, with the
- * title block stacked to its right. The muted giant vs. active heading creates
- * the signature visual tension.
+ * Layout (per app.jsx `PH`):
+ *   [stamp 72px mono light]  [kicker · · · · · · ·]            [actions]
+ *                            [title  30px bold]
+ *                            [subtitle 14px muted max-w 560]
  *
- * Without `accent`, falls back to a clean eyebrow / title / description stack.
+ * Back-compat: older pages pass `accent` / `eyebrow` / `description` / `meta`.
+ * We alias those to the new props so the whole repo does not need to change
+ * at once — but new code should use the primary names.
  */
-export function PageHeader({
-  eyebrow,
-  title,
-  description,
-  meta,
-  accent
-}: PageHeaderProps): JSX.Element {
+export function PageHeader(props: PageHeaderProps): JSX.Element {
+  const stamp = props.stamp ?? props.accent;
+  const kicker = props.kicker ?? props.eyebrow;
+  const subtitle = props.subtitle ?? props.description;
+  const actions = props.actions ?? props.meta;
+  const { title } = props;
+
   return (
-    <header className="mb-10 flex items-start gap-6 border-b border-surface-200 pb-6">
-      {accent ? (
+    <header className="mb-7 flex items-start gap-5">
+      {stamp ? (
         <span
           aria-hidden="true"
-          className="text-display select-none text-7xl font-black leading-[0.85] tracking-tight text-surface-200 md:text-8xl"
+          className="text-display select-none font-mono text-[72px] font-bold leading-[0.85] tracking-[-0.04em] text-surface-200 pt-0.5"
         >
-          {accent}
+          {stamp}
         </span>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 items-start justify-between gap-6">
+      <div className="flex min-w-0 flex-1 items-start justify-between gap-5">
         <div className="min-w-0">
-          {eyebrow ? (
-            <p className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-isu-600">
-              <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
-              {eyebrow}
+          {kicker ? (
+            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.08em] text-surface-500">
+              <span
+                aria-hidden="true"
+                className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle"
+              />
+              {kicker}
             </p>
           ) : null}
-          <h1 className="text-display text-3xl font-bold leading-tight tracking-tight text-surface-900 md:text-4xl">
+          <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-[-0.02em] text-surface-900">
             {title}
           </h1>
-          {description ? (
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-surface-600">
-              {description}
+          {subtitle ? (
+            <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-surface-500">
+              {subtitle}
             </p>
           ) : null}
         </div>
 
-        {meta ? (
-          <div className="flex shrink-0 items-center gap-2 pt-1">{meta}</div>
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2 pt-1">{actions}</div>
         ) : null}
       </div>
     </header>

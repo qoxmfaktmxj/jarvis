@@ -50,11 +50,11 @@ export default async function SystemsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Systems"
+        stamp={`W${isoWeekNumber(new Date())}`}
+        kicker="Systems"
         title={t("title")}
-        description={t("description", { total: result.pagination.total })}
-        accent={`W${isoWeekNumber(new Date())}`}
-        meta={
+        subtitle={t("description", { total: result.pagination.total })}
+        actions={
           canCreate ? (
             <Button asChild>
               <Link href="/systems/new">{t("registerSystem")}</Link>

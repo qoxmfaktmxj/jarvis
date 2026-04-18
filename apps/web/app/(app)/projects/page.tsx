@@ -51,11 +51,11 @@ export default async function ProjectsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Projects"
+        stamp={`W${isoWeekNumber(new Date())}`}
+        kicker="Projects"
         title={t("title")}
-        description={t("description", { total: result.meta.total })}
-        accent={`W${isoWeekNumber(new Date())}`}
-        meta={
+        subtitle={t("subtitle", { total: result.meta.total })}
+        actions={
           canCreate ? (
             <Button asChild>
               <Link href="/projects/new">

@@ -76,11 +76,10 @@ export default async function KnowledgeHomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge"
-        accent="KB"
+        kicker="Knowledge"
         title="Knowledge Base"
-        description="회사의 모든 문서·가이드·의사결정이 한곳에."
-        meta={
+        subtitle="회사의 모든 문서·가이드·의사결정이 한곳에."
+        actions={
           canCreate ? (
             <Button asChild>
               <Link href="/knowledge/new">

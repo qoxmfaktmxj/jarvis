@@ -1,18 +1,13 @@
 "use client";
 
 /**
- * Sidebar — 그룹화된 내비게이션, 한 레벨 섹션 구분.
+ * Sidebar — rail(60px) / expanded(220px) 2모드.
  *
- * 구조:
- *   Workspace (Dashboard, Ask AI, Search)
- *   Knowledge (Wiki, Knowledge, Notices)
- *   Build     (Projects, Systems, Infra, Architecture)
- *   Me        (Attendance)
- *   ─────
- *   Admin     (권한 있을 때만)
+ * - rail:     아이콘만, 활성은 좌측 3px 인디케이터
+ * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터
  *
- * 시각: 다크 사이드바, ISU Blue-950 바탕, 라임 액티브 바.
- * 푸터: ISU 브랜드 마크.
+ * 모드 전환은 TweaksPanel에서. localStorage 키 `jv.sidebar`.
+ * 색상은 app.jsx 디자인 토큰(--panel/--line/--ink/--muted/--line2) 사용.
  */
 
 import Link from "next/link";
@@ -23,142 +18,157 @@ import {
   FolderKanban,
   LayoutDashboard,
   Library,
-  Megaphone,
   MessageSquare,
-  Network,
   Search,
   Server,
   ShieldCheck,
-  Workflow,
   type LucideIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Capy } from "./Capy";
+import { useSidebar } from "./uiPrefs";
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
-type NavGroup = { id: string; label: string; items: ReadonlyArray<NavItem> };
+type NavItem = { href: string; label: string; icon: LucideIcon; badge?: string };
 
-const GROUPS: ReadonlyArray<NavGroup> = [
-  {
-    id: "workspace",
-    label: "Workspace",
-    items: [
-      { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
-      { href: "/ask",       label: "Ask AI",   icon: MessageSquare },
-      { href: "/search",    label: "검색",     icon: Search },
-    ],
-  },
-  {
-    id: "knowledge",
-    label: "Knowledge",
-    items: [
-      { href: "/wiki",      label: "위키",       icon: Library },
-      { href: "/knowledge", label: "지식 베이스", icon: BookOpen },
-      { href: "/notices",   label: "공지",       icon: Megaphone },
-    ],
-  },
-  {
-    id: "build",
-    label: "Build",
-    items: [
-      { href: "/projects",     label: "프로젝트",   icon: FolderKanban },
-      { href: "/systems",      label: "시스템",     icon: Server },
-      { href: "/infra",        label: "인프라",     icon: Network },
-      { href: "/architecture", label: "아키텍처",   icon: Workflow },
-    ],
-  },
-  {
-    id: "me",
-    label: "Me",
-    items: [
-      { href: "/attendance", label: "근태", icon: Calendar },
-    ],
-  },
+const NAV: ReadonlyArray<NavItem> = [
+  { href: "/dashboard",  label: "대시보드",  icon: LayoutDashboard },
+  { href: "/ask",        label: "AI 질문",   icon: MessageSquare, badge: "AI" },
+  { href: "/search",     label: "검색",       icon: Search },
+  { href: "/wiki",       label: "위키",       icon: Library },
+  { href: "/knowledge",  label: "Knowledge", icon: BookOpen },
+  { href: "/projects",   label: "프로젝트",  icon: FolderKanban },
+  { href: "/systems",    label: "시스템",    icon: Server },
+  { href: "/attendance", label: "근태등록",  icon: Calendar },
 ];
 
-const ADMIN_ITEM: NavItem = { href: "/admin", label: "관리자", icon: ShieldCheck };
+const ADMIN: NavItem = { href: "/admin", label: "Admin", icon: ShieldCheck };
 
-function NavLink({ href, label, active, icon: Icon }: NavItem & { active: boolean }) {
+function isActive(pathname: string, href: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function NavButton({
+  item,
+  active,
+  expanded,
+}: {
+  item: NavItem;
+  active: boolean;
+  expanded: boolean;
+}) {
+  const { icon: Icon, href, label, badge } = item;
   return (
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-[0.8125rem] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/70",
-        active
-          ? "bg-[color:var(--color-sidebar-active)] font-semibold text-white"
-          : "font-medium text-[color:var(--color-sidebar-foreground)] hover:bg-[color:var(--color-sidebar-hover)] hover:text-white"
-      )}
+      title={!expanded ? label : undefined}
+      className="group relative flex items-center rounded-lg transition-colors"
+      style={{
+        gap: 10,
+        padding: expanded ? "7px 10px" : "9px 0",
+        justifyContent: expanded ? "flex-start" : "center",
+        color: active ? "var(--ink)" : "var(--muted)",
+        background: active && expanded ? "var(--line2)" : "transparent",
+        fontWeight: active ? 500 : 400,
+        fontSize: 13.5,
+      }}
     >
-      {active ? (
+      {active && !expanded ? (
         <span
           aria-hidden
-          className="absolute left-0 top-1/2 h-5 w-0.5 -translate-x-2 -translate-y-1/2 rounded-r bg-lime-400"
+          className="absolute"
+          style={{
+            left: 6,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 3,
+            height: 14,
+            background: "var(--ink)",
+            borderRadius: 2,
+          }}
         />
       ) : null}
-      <Icon
-        className={cn(
-          "h-[17px] w-[17px] shrink-0",
-          active ? "text-lime-400" : "text-[color:var(--color-sidebar-muted)] group-hover:text-white"
-        )}
-        aria-hidden
-      />
-      <span className="truncate">{label}</span>
+      <span className="inline-flex shrink-0">
+        <Icon className="h-4 w-4" aria-hidden />
+      </span>
+      {expanded ? <span className="truncate">{label}</span> : null}
+      {expanded && badge ? (
+        <span
+          className="ml-auto inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
+          style={{ background: "var(--accent-tint)", color: "var(--accent-ink)" }}
+        >
+          {badge}
+        </span>
+      ) : null}
     </Link>
   );
 }
 
 export function Sidebar() {
   const pathname = usePathname();
-  const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard";
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+  const mode = useSidebar();
+  const expanded = mode === "expanded";
 
   return (
     <aside
       aria-label="Primary navigation"
-      className="fixed bottom-0 left-0 top-[var(--topbar-height)] z-[var(--z-sidebar)] flex w-[var(--sidebar-width)] flex-col overflow-y-auto bg-[color:var(--color-sidebar)] text-[color:var(--color-sidebar-foreground)]"
+      className="fixed bottom-0 left-0 top-0 z-[var(--z-sidebar)] flex flex-col overflow-hidden border-r"
+      style={{
+        width: "var(--sidebar-width)",
+        background: "var(--panel)",
+        borderColor: "var(--line)",
+        transition: "width .2s ease",
+      }}
     >
-      <nav aria-label="Main" className="flex-1 px-3 py-4">
-        {GROUPS.map((group) => (
-          <div key={group.id} className="mb-5 last:mb-0">
-            <p className="mb-1.5 px-3 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-sidebar-muted)]">
-              {group.label}
-            </p>
-            <ul className="space-y-0.5">
-              {group.items.map((it) => (
-                <li key={it.href}>
-                  <NavLink {...it} active={isActive(it.href)} />
-                </li>
-              ))}
-            </ul>
-          </div>
+      {/* Brand header */}
+      <div
+        className="flex items-center border-b"
+        style={{
+          height: "var(--topbar-height)",
+          padding: expanded ? "0 16px" : 0,
+          justifyContent: expanded ? "flex-start" : "center",
+          borderColor: "var(--line)",
+          gap: 8,
+        }}
+      >
+        <Capy name="reading" size={28} priority className="shrink-0 rounded-full" />
+        {expanded ? (
+          <span
+            className="text-display text-[15px] font-bold tracking-tight"
+            style={{ color: "var(--ink)" }}
+          >
+            Jarvis
+          </span>
+        ) : null}
+      </div>
+
+      {/* Nav */}
+      <nav
+        aria-label="Main"
+        className="flex flex-1 flex-col overflow-y-auto"
+        style={{ padding: 8, gap: 2 }}
+      >
+        {NAV.map((item) => (
+          <NavButton
+            key={item.href}
+            item={item}
+            active={isActive(pathname, item.href)}
+            expanded={expanded}
+          />
         ))}
       </nav>
 
-      <div className="border-t border-[color:var(--color-sidebar-border)] px-3 py-3">
-        <NavLink {...ADMIN_ITEM} active={isActive(ADMIN_ITEM.href)} />
-      </div>
-
-      <footer
-        aria-label="Brand"
-        className="border-t border-[color:var(--color-sidebar-border)] px-5 pb-5 pt-4"
+      {/* Footer (Admin) */}
+      <div
+        className="border-t"
+        style={{ padding: 8, borderColor: "var(--line)" }}
       >
-        <div
-          className="text-display flex items-baseline gap-0.5 text-3xl font-bold leading-none tracking-tight text-white"
-          aria-label="ISU"
-        >
-          <span>IS</span>
-          <span>U</span>
-          <span
-            aria-hidden
-            className="ml-1 inline-block h-[7px] w-[7px] translate-y-[-2px] rounded-full bg-lime-400"
-          />
-        </div>
-        <p className="mt-2 text-[0.625rem] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-sidebar-muted)]">
-          이수시스템 · Internal Portal
-        </p>
-      </footer>
+        <NavButton
+          item={ADMIN}
+          active={isActive(pathname, ADMIN.href)}
+          expanded={expanded}
+        />
+      </div>
     </aside>
   );
 }
