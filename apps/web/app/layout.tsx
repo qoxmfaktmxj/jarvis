@@ -30,7 +30,7 @@ export default async function RootLayout({
 }) {
   const messages = await getMessages();
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <head>
         <link
           rel="stylesheet"
