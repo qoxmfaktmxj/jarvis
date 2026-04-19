@@ -3,7 +3,7 @@
 import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { User, Lock, CircleAlert, ArrowRight } from 'lucide-react';
-import { GlobeLoader } from '@/components/layout/GlobeLoader';
+import { LoadingOverlay } from '@/components/layout/LoadingOverlay';
 import { ShaderBackground, SHADER_ACCENTS } from './_components/ShaderBackground';
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -57,6 +57,8 @@ function LoginContent() {
       <ShaderBackground
         onIndexPicked={(i) => setAccentColor(SHADER_ACCENTS[i] ?? SHADER_ACCENTS[0])}
       />
+
+      {isLoading && <LoadingOverlay label="로그인 중…" />}
 
       <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
         <div className="flex w-full max-w-[380px] flex-col items-center gap-8">
@@ -186,14 +188,7 @@ function LoginContent() {
               disabled={isLoading}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-surface-900 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-surface-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-surface-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isLoading ? (
-                <>
-                  <GlobeLoader size={18} tone="inverse" />
-                  <span>로그인 중…</span>
-                </>
-              ) : (
-                <span>로그인</span>
-              )}
+              <span>{isLoading ? '로그인 중…' : '로그인'}</span>
             </button>
           </form>
           </div>

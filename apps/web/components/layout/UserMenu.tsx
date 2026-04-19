@@ -1,16 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Palette, UserCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
+import { LoadingOverlay } from "@/components/layout/LoadingOverlay";
 import { cn } from "@/lib/utils";
 
 export function UserMenu({ userName }: { userName: string }) {
   const t = useTranslations("Common");
   const [open, setOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  async function handleLogout(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // swallow — still redirect to login so user isn't stranded
+    }
+    window.location.assign("/login");
+  }
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -84,11 +98,12 @@ export function UserMenu({ userName }: { userName: string }) {
 
           <div className="my-2 border-t border-surface-100" />
 
-          <form action="/api/auth/logout" method="post">
+          <form onSubmit={handleLogout}>
             <button
               type="submit"
               role="menuitem"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition-colors hover:bg-rose-50"
+              disabled={isLoggingOut}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
               <span>로그아웃</span>
@@ -96,6 +111,8 @@ export function UserMenu({ userName }: { userName: string }) {
           </form>
         </div>
       )}
+
+      {isLoggingOut && <LoadingOverlay label="로그아웃 중…" />}
     </div>
   );
 }
