@@ -57,8 +57,15 @@ data/guidebook/*
 # Git worktrees (Claude Code managed)
 .claude/worktrees/
 
+# Claude Code local state (per-machine, not shared)
+.claude/*.local.md
+.claude/*.lock
+
 # Codex artifacts (screen captures, QA results)
 .codex-artifacts/
+
+# Playwright MCP cache
+.playwright-mcp/
 
 # Obsidian workspace
 .obsidian/
@@ -89,4 +96,8 @@ docs/guidebook/images/
 # Infra export (TSMT001) — contains plaintext credentials, NEVER commit
 TSMT001.sql
 data/infra/
+
+# Root-level ad-hoc captures and task archives
+/*.png
+/*.zip
 

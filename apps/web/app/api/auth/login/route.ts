@@ -16,11 +16,16 @@ export async function POST(request: NextRequest) {
   const payload = await request.json() as {
     username?: string;
     password?: string;
+    keepSignedIn?: boolean;
   };
 
   if (!payload.username || !payload.password) {
     return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
+
+  const sessionLifetimeMs = payload.keepSignedIn === true
+    ? 30 * 24 * 60 * 60 * 1000
+    : 8 * 60 * 60 * 1000;
 
   const account = findTempDevAccount(payload.username, payload.password);
   if (!account) {
@@ -64,14 +69,14 @@ export async function POST(request: NextRequest) {
     permissions,
     orgId: dbUser.orgId ?? undefined,
     createdAt: now,
-    expiresAt: now + 8 * 60 * 60 * 1000,
+    expiresAt: now + sessionLifetimeMs,
   });
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set("sessionId", sessionId, {
     httpOnly: true,
     secure: false,
-    maxAge: 8 * 60 * 60,
+    maxAge: Math.floor(sessionLifetimeMs / 1000),
     sameSite: "lax",
     path: "/",
   });
