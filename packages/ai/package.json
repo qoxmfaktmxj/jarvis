@@ -8,6 +8,8 @@
     "./types": "./types.ts",
     "./embed": "./embed.ts",
     "./ask": "./ask.ts",
+    "./provider": "./provider.ts",
+    "./breaker": "./breaker.ts",
     "./page-first": "./page-first/index.ts",
     "./page-first/shortlist": "./page-first/shortlist.ts",
     "./page-first/expand": "./page-first/expand.ts",

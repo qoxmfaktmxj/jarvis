@@ -21,7 +21,7 @@ import {
 } from '../lib/pii-redactor.js';
 // @legacy-rag — claim 임베딩용 (legacyTwoStepIngest 내부 사용). Phase-W4에서 삭제 예정.
 import { generateEmbedding } from '@jarvis/ai/embed';
-import OpenAI from 'openai';
+import { callChatWithFallback } from '@jarvis/ai/breaker';
 import { analyze } from './ingest/analyze.js';
 import { generate } from './ingest/generate.js';
 import { writeAndCommit } from './ingest/write-and-commit.js';
@@ -46,7 +46,6 @@ export interface IngestExecutionResult {
 }
 
 const INGEST_MODEL = process.env['INGEST_AI_MODEL'] ?? 'gpt-5.4-mini';
-const ingestOpenAI = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
 
 async function downloadFromMinio(storagePath: string): Promise<Buffer> {
   const stream = await minioClient.getObject(BUCKET, storagePath);
@@ -126,7 +125,9 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
 
   let synthesis: { title: string; summary: string; claims: string[] };
   try {
-    const resp = await ingestOpenAI.chat.completions.create({
+    // Phase-W1.5 — gateway-aware (FEATURE_SUBSCRIPTION_INGEST) with circuit
+    // breaker fallback to OPENAI_API_KEY direct on 3 consecutive failures.
+    const resp = await callChatWithFallback('ingest', {
       model: INGEST_MODEL,
       temperature: 0,
       response_format: { type: 'json_object' },

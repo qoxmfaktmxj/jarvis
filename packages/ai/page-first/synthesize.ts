@@ -21,6 +21,7 @@
 import OpenAI from "openai";
 
 import { createChatWithTokenFallback } from "../openai-compat.js";
+import { getProvider } from "../provider.js";
 import { logLlmCall } from "../logger.js";
 import {
   assertBudget,
@@ -174,7 +175,8 @@ export async function* synthesizePageFirstAnswer(
 
   const context = buildPagesContext(pages);
 
-  const openai = new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] });
+  // Phase-W1.5 — gateway-aware client (FEATURE_SUBSCRIPTION_QUERY).
+  const openai = getProvider("query").client;
 
   let tokensIn = 0;
   let tokensOut = 0;

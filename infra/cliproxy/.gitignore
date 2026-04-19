@@ -1,0 +1,8 @@
+# Plain-text OAuth bundles never enter git.
+auths/
+logs/
+.age.key
+
+# sops-encrypted variants are committed.
+!auths.tgz.enc
+!.age.pub

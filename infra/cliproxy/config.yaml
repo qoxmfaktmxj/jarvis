@@ -1,0 +1,80 @@
+# infra/cliproxy/config.yaml
+#
+# CLIProxyAPI v6.9.29 — Phase-W1.5 Subscription Gateway
+# See docs/plan/2026-04-19-Jarvis_openai연동가이드.md §4 for the design notes.
+#
+# This config is mounted read-only into the `cli-proxy` container. All secret
+# material (Codex/Claude OAuth tokens) lives under `auths/` which is gitignored
+# in dev and sops-encrypted (`auths.tgz.enc`) in prod.
+
+port: 8317
+host: ""
+
+# Mount target inside the container; the host bind is `infra/cliproxy/auths`.
+auth-dir: "/root/.cli-proxy-api"
+
+# Inbound API key the Jarvis web/worker uses (Bearer header).
+# In dev this is a fixed string; in prod inject via env_file.
+api-keys:
+  - "sk-jarvis-local-dev"
+
+debug: false
+logging-to-file: true
+logs-max-total-size-mb: 500
+error-logs-max-files: 30
+usage-statistics-enabled: true
+
+# Upstream is rolling-release; account-level 429s are retryable.
+request-retry: 3
+max-retry-credentials: 0
+max-retry-interval: 30
+
+quota-exceeded:
+  switch-project: true
+  switch-preview-model: true
+
+routing:
+  strategy: "round-robin"
+
+# Codex OAuth alias — exposes Jarvis legacy ASK_AI_MODEL strings without
+# requiring code-side renames.
+oauth-model-alias:
+  codex:
+    - { name: "gpt-5", alias: "gpt-5" }
+    - { name: "gpt-5-codex", alias: "gpt-5-codex" }
+    - { name: "gpt-5-codex-mini", alias: "gpt-5.4-mini" }
+    - { name: "gpt-5-pro", alias: "gpt-5-pro" }
+
+# Default reasoning effort for all gpt-5* Codex calls.
+payload:
+  override:
+    - models: [{ name: "gpt-5*", protocol: "codex" }]
+      params:
+        "reasoning.effort": "medium"
+
+# Keep streams from idling out behind the Next.js fetch default.
+streaming:
+  keepalive-seconds: 15
+  bootstrap-retries: 1
+
+nonstream-keepalive-interval: 20
+
+# Register OPENAI_API_KEY as a compat upstream so the gateway can also
+# fall back internally when every OAuth credential hits its quota.
+# NOTE: ${OPENAI_API_KEY} is interpolated by env_file at container start
+# only when the runtime supports it; prod uses sops-decrypted values written
+# directly into this file. Local dev should set OPENAI_API_KEY in .env and
+# either rely on container env interpolation OR substitute manually.
+openai-compatibility:
+  - name: "openai-direct"
+    prefix: "direct"
+    base-url: "https://api.openai.com/v1"
+    api-key-entries:
+      - api-key: "${OPENAI_API_KEY}"
+    models:
+      - { name: "gpt-5", alias: "gpt-5-direct" }
+      - { name: "gpt-5-codex-mini", alias: "gpt-5.4-mini-direct" }
+
+pprof:
+  enable: false
+  addr: "127.0.0.1:8316"

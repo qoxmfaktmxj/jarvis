@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { getProvider } from './provider.js';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import { generateEmbedding } from './embed.js';
@@ -190,11 +191,12 @@ export async function retrieveRelevantClaims(
 }
 
 // ---------------------------------------------------------------------------
-// OpenAI Client
+// OpenAI Client (lazy — resolved per-call so FEATURE_SUBSCRIPTION_QUERY can
+// flip at runtime in tests / pilot toggles without a worker restart).
 // ---------------------------------------------------------------------------
-const openai = new OpenAI({
-  apiKey: process.env['OPENAI_API_KEY'],
-});
+function getAskClient(): OpenAI {
+  return getProvider('query').client;
+}
 
 // ---------------------------------------------------------------------------
 // XML / Helper utilities (기존 유지)
@@ -400,7 +402,7 @@ export async function* generateAnswer(
       AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
       Record<string, unknown>
     >(
-      openai,
+      getAskClient(),
       ASK_MODEL,
       {
         stream: true,

@@ -51,6 +51,24 @@ services:
       retries: 3
       start_period: 30s
 
+  cli-proxy:
+    # Phase-W1.5 Subscription Gateway. See infra/cliproxy/README.md.
+    # Pinned tag — CLIProxyAPI is rolling-release; never use :latest.
+    image: eceasy/cli-proxy-api:v6.9.29
+    container_name: jarvis-cli-proxy
+    restart: unless-stopped
+    networks: [jarvis-network]
+    volumes:
+      - ../infra/cliproxy/config.yaml:/CLIProxyAPI/config.yaml:ro
+      - ../infra/cliproxy/auths:/root/.cli-proxy-api:rw
+      - ../infra/cliproxy/logs:/CLIProxyAPI/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8317/v1/models || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   web:
     image: jarvis-web:latest
     build:
@@ -67,6 +85,12 @@ services:
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
       APP_URL: ${APP_URL:-http://localhost}
+      # Phase-W1.5 — gateway URL is internal compose DNS.
+      LLM_GATEWAY_URL: http://cli-proxy:8317/v1
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-sk-jarvis-local-dev}
+      FEATURE_SUBSCRIPTION_INGEST: ${FEATURE_SUBSCRIPTION_INGEST:-false}
+      FEATURE_SUBSCRIPTION_QUERY: ${FEATURE_SUBSCRIPTION_QUERY:-false}
+      FEATURE_SUBSCRIPTION_LINT: ${FEATURE_SUBSCRIPTION_LINT:-false}
     # entrypoint.sh reads these secret files and exports as env vars:
     #   pg_password     → DATABASE_URL
     #   session_secret  → SESSION_SECRET
@@ -78,6 +102,8 @@ services:
       postgres:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      cli-proxy:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
@@ -101,6 +127,11 @@ services:
       MINIO_PORT: "9000"
       MINIO_USE_SSL: "false"
       MINIO_BUCKET: jarvis-files
+      # Phase-W1.5 — gateway URL is internal compose DNS.
+      LLM_GATEWAY_URL: http://cli-proxy:8317/v1
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-sk-jarvis-local-dev}
+      FEATURE_SUBSCRIPTION_INGEST: ${FEATURE_SUBSCRIPTION_INGEST:-false}
+      FEATURE_SUBSCRIPTION_LINT: ${FEATURE_SUBSCRIPTION_LINT:-false}
     # entrypoint.sh reads these secret files and exports as env vars:
     #   pg_password      → DATABASE_URL
     #   openai_api_key   → OPENAI_API_KEY
@@ -109,6 +140,8 @@ services:
     secrets: [pg_password, openai_api_key, minio_user, minio_password]
     depends_on:
       postgres:
+        condition: service_healthy
+      cli-proxy:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "node -e 'process.exit(0)' || exit 1"]

@@ -18,11 +18,11 @@ import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import OpenAI from "openai";
 import { ilike, eq, and, sql } from "drizzle-orm";
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
+import { callChatWithFallback } from "@jarvis/ai/breaker";
 import {
   buildAnalysisPrompt,
   MAX_EXISTING_PAGES,
@@ -56,14 +56,6 @@ export interface AnalyzeOutput {
 }
 
 const INGEST_MODEL = process.env["INGEST_AI_MODEL"] ?? "gpt-5.4-mini";
-
-let _openai: OpenAI | null = null;
-function getOpenAI(): OpenAI {
-  if (!_openai) {
-    _openai = new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] });
-  }
-  return _openai;
-}
 
 /**
  * Build the workspace-relative wiki repo root.
@@ -211,8 +203,9 @@ export async function analyze(input: AnalyzeInput): Promise<AnalyzeOutput> {
   if (folderContext !== undefined) analysisPromptInput.folderContext = folderContext;
   const messages = buildAnalysisPrompt(analysisPromptInput);
 
-  const openai = getOpenAI();
-  const resp = await openai.chat.completions.create({
+  // Phase-W1.5 — gateway-aware (FEATURE_SUBSCRIPTION_INGEST) with circuit
+  // breaker fallback to OPENAI_API_KEY direct on 3 consecutive failures.
+  const resp = await callChatWithFallback("ingest", {
     model: INGEST_MODEL,
     temperature: 0,
     response_format: { type: "json_object" },

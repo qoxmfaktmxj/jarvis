@@ -25,6 +25,15 @@ services:
       MINIO_ROOT_USER: ${MINIO_USER:-jarvisadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD:-jarvispassword}
 
+  cli-proxy:
+    # Expose 8317 on host for `pnpm dev` (Next.js runs outside Docker).
+    ports:
+      - "127.0.0.1:8317:8317"
+    # Opt-in: only start when --profile gateway is passed.
+    # Until OAuth is configured the proxy 404s every request, so don't
+    # auto-start it in plain `docker compose ... up postgres minio`.
+    profiles: ["gateway"]
+
   # web + worker: run via pnpm dev outside Docker for hot reload
   # Only start nginx if explicitly needed: docker compose ... --profile nginx up nginx
   web:

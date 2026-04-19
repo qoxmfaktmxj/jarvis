@@ -13,7 +13,7 @@
  * route low-output runs to ingest_dlq.
  */
 
-import OpenAI from "openai";
+import { callChatWithFallback } from "@jarvis/ai/breaker";
 
 import {
   buildGenerationPrompt,
@@ -26,14 +26,6 @@ import {
 } from "@jarvis/wiki-agent";
 
 const INGEST_MODEL = process.env["INGEST_AI_MODEL"] ?? "gpt-5.4-mini";
-
-let _openai: OpenAI | null = null;
-function getOpenAI(): OpenAI {
-  if (!_openai) {
-    _openai = new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] });
-  }
-  return _openai;
-}
 
 export interface GenerateInput {
   rawSourceId: string;
@@ -72,8 +64,9 @@ export async function generate(input: GenerateInput): Promise<GenerateOutput> {
   if (input.folderContext !== undefined) promptInput.folderContext = input.folderContext;
   const messages = buildGenerationPrompt(promptInput);
 
-  const openai = getOpenAI();
-  const resp = await openai.chat.completions.create({
+  // Phase-W1.5 — gateway-aware (FEATURE_SUBSCRIPTION_INGEST) with circuit
+  // breaker fallback to OPENAI_API_KEY direct on 3 consecutive failures.
+  const resp = await callChatWithFallback("ingest", {
     model: INGEST_MODEL,
     temperature: 0,
     messages,

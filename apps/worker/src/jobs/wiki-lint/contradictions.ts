@@ -20,6 +20,7 @@ import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
 import { readPage } from "@jarvis/wiki-fs";
 import { and, desc, eq, sql } from "drizzle-orm";
 import OpenAI from "openai";
+import { getProvider } from "@jarvis/ai/provider";
 
 const CONTRADICTION_MODEL =
   process.env["LINT_CONTRADICTION_MODEL"] ?? "gpt-5.4-mini";
@@ -69,11 +70,12 @@ export async function detectContradictions(
   const pairs = buildCandidatePairs(pages).slice(0, MAX_PAIRS);
   if (pairs.length === 0) return [];
 
+  // Phase-W1.5 — gateway-aware client (FEATURE_SUBSCRIPTION_LINT) when no
+  // explicit `deps.openai` injection. Tests still pass `deps.openai` or
+  // `deps.judgePair` to bypass the network entirely.
   const openai =
     deps.openai ??
-    (deps.judgePair
-      ? null
-      : new OpenAI({ apiKey: process.env["OPENAI_API_KEY"] }));
+    (deps.judgePair ? null : getProvider("lint").client);
 
   const findings: ContradictionFinding[] = [];
   for (const [a, b] of pairs) {

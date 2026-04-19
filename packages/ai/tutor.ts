@@ -5,9 +5,13 @@
 import OpenAI from 'openai';
 import type { SSEEvent, SourceRef, AskQuery } from './types.js';
 import { createChatWithTokenFallback } from './openai-compat.js';
+import { getProvider } from './provider.js';
 
-// Module-level singleton — shared across all tutor invocations
-const openai = new OpenAI({ apiKey: process.env['OPENAI_API_KEY'] });
+// Lazy per-call client — routes through the subscription gateway when
+// FEATURE_SUBSCRIPTION_QUERY=true, otherwise direct OPENAI_API_KEY.
+function getTutorClient(): OpenAI {
+  return getProvider('query').client;
+}
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 // page-first retrieval: shortlist → 1-hop expand → disk read
 import { lexicalShortlist } from './page-first/shortlist.js';
@@ -188,7 +192,7 @@ export async function* tutorAI(
     AsyncIterable<OpenAI.Chat.Completions.ChatCompletionChunk>,
     Record<string, unknown>
   >(
-    openai,
+    getTutorClient(),
     ASK_MODEL,
     {
       stream: true,
