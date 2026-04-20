@@ -9,14 +9,22 @@ import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, and } from 'drizzle-orm';
 import { Client } from 'minio';
 
-// Inline MinIO client — share with worker via packages/storage in the future
-const minioClient = new Client({
-  endPoint: process.env['MINIO_ENDPOINT']!,
-  port: parseInt(process.env['MINIO_PORT'] ?? '9000', 10),
-  useSSL: process.env['MINIO_USE_SSL'] === 'true',
-  accessKey: process.env['MINIO_ACCESS_KEY']!,
-  secretKey: process.env['MINIO_SECRET_KEY']!,
-});
+// Lazy MinIO client — constructed at request time so `next build` can collect
+// page data without MINIO_* env vars set. Share with worker via packages/storage
+// in the future.
+let _minioClient: Client | null = null;
+function getMinioClient(): Client {
+  if (!_minioClient) {
+    _minioClient = new Client({
+      endPoint: process.env['MINIO_ENDPOINT']!,
+      port: parseInt(process.env['MINIO_PORT'] ?? '9000', 10),
+      useSSL: process.env['MINIO_USE_SSL'] === 'true',
+      accessKey: process.env['MINIO_ACCESS_KEY']!,
+      secretKey: process.env['MINIO_SECRET_KEY']!,
+    });
+  }
+  return _minioClient;
+}
 const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 
 export async function GET(
@@ -63,7 +71,7 @@ export async function GET(
 
   // Return presigned URL as JSON (60s validity)
   // Client loads it directly into iframe src
-  const url = await minioClient.presignedGetObject(BUCKET, storagePath, 60);
+  const url = await getMinioClient().presignedGetObject(BUCKET, storagePath, 60);
 
   return NextResponse.json({ url });
 }

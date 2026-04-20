@@ -32,6 +32,9 @@ ALTER TABLE "project" ADD CONSTRAINT "project_workspace_company_unique" UNIQUE (
 
 -- 7. graph_scope_type enum cleanup: drop legacy 'project', rename 'system' -> 'project'
 UPDATE "graph_snapshot" SET "scope_type" = 'workspace' WHERE "scope_type"::text = 'project';--> statement-breakpoint
+-- Drop the DEFAULT so ALTER COLUMN TYPE can cast cleanly (Postgres cannot
+-- auto-cast a DEFAULT value between enum types).
+ALTER TABLE "graph_snapshot" ALTER COLUMN "scope_type" DROP DEFAULT;--> statement-breakpoint
 ALTER TYPE "graph_scope_type" RENAME TO "graph_scope_type_old";--> statement-breakpoint
 CREATE TYPE "graph_scope_type" AS ENUM ('attachment', 'project', 'workspace');--> statement-breakpoint
 ALTER TABLE "graph_snapshot"
@@ -43,4 +46,6 @@ ALTER TABLE "graph_snapshot"
       ELSE "scope_type"::text
     END
   )::"graph_scope_type";--> statement-breakpoint
+-- Restore the DEFAULT under the new enum type.
+ALTER TABLE "graph_snapshot" ALTER COLUMN "scope_type" SET DEFAULT 'workspace';--> statement-breakpoint
 DROP TYPE "graph_scope_type_old";
