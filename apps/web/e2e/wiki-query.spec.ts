@@ -6,10 +6,14 @@ test.describe('Wiki Query — Page-First RAG Pipeline', () => {
     await loginAsTestUser(page);
   });
 
-  test('page-first shortlist 반환 — smoke', async ({ request }) => {
+  test('page-first shortlist 반환 — smoke', async ({ page }) => {
     // Smoke test: POST /api/wiki/query → 200 OK, pages[] 배열 존재
-    // DB에 페이지가 없을 수 있으므로 빈 배열 허용
-    const response = await request.post('/api/wiki/query', {
+    // DB에 페이지가 없을 수 있으므로 빈 배열 허용.
+    // NOTE: Use `page.request` (not the top-level `request` fixture) so the
+    // auth cookie set by `loginAsTestUser(page)` is inherited. The fixture
+    // `request` runs in its own context with no session, gets redirected to
+    // /login, and returns HTML instead of JSON.
+    const response = await page.request.post('/api/wiki/query', {
       data: { query: '회사 휴가 정책' },
     });
     expect(response.status()).toBe(200);
