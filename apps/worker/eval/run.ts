@@ -146,8 +146,8 @@ async function main(): Promise<void> {
   const fixtures = loadFixtures(FIXTURE_DIR).sort((a, b) =>
     a.id.localeCompare(b.id),
   );
-  if (fixtures.length !== 30) {
-    console.warn(`[eval] expected 30 fixtures, found ${fixtures.length}`);
+  if (fixtures.length !== 50) {
+    console.warn(`[eval] expected 50 fixtures, found ${fixtures.length}`);
   }
 
   const summary = await runEval({ fixturesDir: FIXTURE_DIR, dryRun: false });
