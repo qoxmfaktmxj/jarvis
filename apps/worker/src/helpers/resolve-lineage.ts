@@ -3,7 +3,9 @@
 import { db } from '@jarvis/db/client';
 import { eq } from 'drizzle-orm';
 import { attachment } from '@jarvis/db/schema/file';
-import { system } from '@jarvis/db/schema/system';
+// parallel worker renamed schema module system → project; alias locally to
+// keep domain-layer 'system' resourceType/scopeType strings unchanged here.
+import { project as system } from '@jarvis/db/schema/project';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
 
 /**
