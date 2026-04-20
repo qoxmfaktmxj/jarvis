@@ -11,7 +11,8 @@
     "./constants/*": "./constants/*.ts",
     "./validation": "./validation/index.ts",
     "./validation/*": "./validation/*.ts",
-    "./sentry": "./sentry.ts"
+    "./sentry": "./sentry.ts",
+    "./leave-compute": "./leave-compute.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
