@@ -73,6 +73,8 @@ function normalizeDefaults(v?: Partial<AddDevFormValues>): AddDevFormValues {
 
 export function AddDevForm({ mode, id, defaultValues }: Props) {
   const t = useTranslations("AdditionalDev.fields");
+  const tActions = useTranslations("AdditionalDev.actions");
+  const tSections = useTranslations("AdditionalDev.sections");
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -136,10 +138,10 @@ export function AddDevForm({ mode, id, defaultValues }: Props) {
 
       {/* 요청 섹션 */}
       <section className="space-y-4">
-        <h3 className="text-base font-semibold text-surface-800">요청</h3>
+        <h3 className="text-base font-semibold text-surface-800">{tSections("request")}</h3>
 
         <div className="block space-y-2">
-          <label htmlFor="projectId" className="text-sm font-medium text-surface-700">프로젝트 ID *</label>
+          <label htmlFor="projectId" className="text-sm font-medium text-surface-700">{t("projectId")}</label>
           <Input id="projectId" name="projectId" defaultValue={vals.projectId} required placeholder="UUID" />
         </div>
 
@@ -203,7 +205,7 @@ export function AddDevForm({ mode, id, defaultValues }: Props) {
 
       {/* 계약 섹션 */}
       <section className="space-y-4">
-        <h3 className="text-base font-semibold text-surface-800">계약</h3>
+        <h3 className="text-base font-semibold text-surface-800">{tSections("contract")}</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
@@ -247,14 +249,14 @@ export function AddDevForm({ mode, id, defaultValues }: Props) {
         </div>
 
         <div className="block space-y-2">
-          <label htmlFor="estimateProgress" className="text-sm font-medium text-surface-700">견적진행</label>
+          <label htmlFor="estimateProgress" className="text-sm font-medium text-surface-700">{t("estimateProgress")}</label>
           <Textarea id="estimateProgress" name="estimateProgress" defaultValue={vals.estimateProgress} rows={2} />
         </div>
       </section>
 
       {/* 개발 섹션 */}
       <section className="space-y-4">
-        <h3 className="text-base font-semibold text-surface-800">개발</h3>
+        <h3 className="text-base font-semibold text-surface-800">{tSections("development")}</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
@@ -302,7 +304,7 @@ export function AddDevForm({ mode, id, defaultValues }: Props) {
 
       <div className="flex gap-3">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "저장 중..." : mode === "create" ? "등록" : "수정"}
+          {isSubmitting ? tActions("saving") : mode === "create" ? tActions("create") : tActions("update")}
         </Button>
         <Button
           type="button"
@@ -310,7 +312,7 @@ export function AddDevForm({ mode, id, defaultValues }: Props) {
           onClick={() => router.back()}
           disabled={isSubmitting}
         >
-          취소
+          {tActions("cancel")}
         </Button>
       </div>
     </form>

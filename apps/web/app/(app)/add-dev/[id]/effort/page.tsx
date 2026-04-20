@@ -40,7 +40,6 @@ export default async function AddDevEffortPage({
           <select
             name="year"
             defaultValue={String(selectedYear)}
-            onChange="this.form.submit()"
             className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none"
           >
             {years.map((y) => (
@@ -49,9 +48,7 @@ export default async function AddDevEffortPage({
               </option>
             ))}
           </select>
-          <noscript>
-            <button type="submit">적용</button>
-          </noscript>
+          <button type="submit" className="rounded-md bg-isu-600 px-3 py-1 text-sm text-white hover:bg-isu-700">적용</button>
         </form>
       </SectionHeader>
 

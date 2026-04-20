@@ -643,9 +643,16 @@
       "overview": "개요",
       "effort": "공수",
       "revenue": "매출",
-      "staff": "투입인력"
+      "staff": "투입인력",
+      "edit": "수정"
+    },
+    "sections": {
+      "request": "요청",
+      "contract": "계약",
+      "development": "개발"
     },
     "fields": {
+      "projectId": "프로젝트 ID *",
       "requestYearMonth": "요청년월",
       "requestSequence": "요청순번",
       "requesterName": "요청자",
@@ -660,6 +667,7 @@
       "isPaid": "유상여부",
       "invoiceIssued": "세금계산서",
       "inspectionConfirmed": "검수확인",
+      "estimateProgress": "견적진행",
       "pm": "PM",
       "developer": "개발자",
       "devStartDate": "개발시작",
@@ -668,6 +676,12 @@
       "actualEffort": "실공수",
       "vendorContactNote": "업체담당자",
       "remark": "비고"
+    },
+    "actions": {
+      "saving": "저장 중...",
+      "create": "등록",
+      "update": "수정",
+      "cancel": "취소"
     }
   },
   "Contractors": {
