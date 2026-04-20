@@ -81,17 +81,19 @@ export function UserTable({ orgOptions, positionOptions, jobTitleOptions }: Prop
 
   const handleDeactivate = async (id: string) => {
     if (!confirm('Deactivate this user?')) return;
-    await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/users?id=${id}`, { method: 'DELETE' });
+    if (!res.ok) { alert('Failed to deactivate user'); return; }
     fetchData();
   };
 
   const handleToggleLock = async (u: UserWithOrg) => {
     const next: UserStatus = u.status === 'locked' ? 'active' : 'locked';
-    await fetch('/api/admin/users', {
+    const res = await fetch('/api/admin/users', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ id: u.id, status: next }),
     });
+    if (!res.ok) { alert('Failed to update status'); return; }
     fetchData();
   };
 
@@ -102,6 +104,7 @@ export function UserTable({ orgOptions, positionOptions, jobTitleOptions }: Prop
       body:    JSON.stringify({ id }),
     });
     if (res.ok) alert(t('toast.passwordResetStub'));
+    else       alert('Failed to request password reset');
   };
 
   const handleExport = () => {
