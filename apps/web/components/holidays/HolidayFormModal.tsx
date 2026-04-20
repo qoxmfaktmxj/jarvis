@@ -59,6 +59,7 @@ export function HolidayFormModal({
         justifyContent: "center",
         zIndex: 50,
       }}
+      onClick={onClose}
     >
       <div
         style={{
@@ -67,6 +68,7 @@ export function HolidayFormModal({
           borderRadius: 8,
           minWidth: 360,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: "0 0 12px" }}>
           {initial ? "공휴일 수정" : "공휴일 추가"}

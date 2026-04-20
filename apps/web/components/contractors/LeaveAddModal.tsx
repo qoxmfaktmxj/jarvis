@@ -65,6 +65,7 @@ export function LeaveAddModal({
         justifyContent: "center",
         zIndex: 50
       }}
+      onClick={onClose}
     >
       <div
         style={{
@@ -73,6 +74,7 @@ export function LeaveAddModal({
           borderRadius: 8,
           minWidth: 360
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: "0 0 12px" }}>{t("actions.addLeave")}</h3>
         <div style={{ display: "grid", gap: 8 }}>
