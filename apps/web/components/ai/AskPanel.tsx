@@ -29,6 +29,8 @@ interface AskPanelProps {
   conversationId?: string;
   /** 기존 대화 복원 시 서버에서 로드한 메시지 히스토리. */
   initialMessages?: HistoryEntry[];
+  /** session workspaceId — Wiki source link 생성에 사용. */
+  workspaceId: string;
 }
 
 function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
@@ -60,6 +62,7 @@ export function AskPanel({
   popularQuestions = [],
   conversationId: initialConversationId,
   initialMessages = [],
+  workspaceId,
 }: AskPanelProps) {
   const router = useRouter();
   const tThinking = useTranslations("Ask.thinking");
@@ -337,7 +340,7 @@ export function AskPanel({
                                         ? source.pageId
                                         : String(sourceIndex);
                             return (
-                              <SourceRefCard key={`${keyPart}-${sourceIndex}`} source={source} index={sourceIndex} />
+                              <SourceRefCard key={`${keyPart}-${sourceIndex}`} source={source} index={sourceIndex} workspaceId={workspaceId} />
                             );
                           })}
                         </div>
