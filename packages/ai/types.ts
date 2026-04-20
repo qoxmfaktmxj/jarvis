@@ -99,7 +99,7 @@ export interface SSETextEvent { type: 'text'; content: string }
 export interface SSESourcesEvent { type: 'sources'; sources: SourceRef[] }
 export interface SSEDoneEvent { type: 'done'; totalTokens: number }
 export interface SSEErrorEvent { type: 'error'; message: string }
-export interface SSERouteEvent { type: 'route'; lane: string; confidence: number }
+export interface SSERouteEvent { type: 'route'; lane: string; confidence: number; shortlistVia?: 'llm' | 'legacy' }
 /**
  * Phase-W2 T2: side-channel metadata event.
  *

@@ -8,8 +8,14 @@
  * vector/claims/chunks pipeline stays untouched in ask.ts; this module
  * only has to emit the same SSE shape.
  *
- * Pipeline:
- *   1. lexical shortlist  (wiki_page_index)
+ * Pipeline (FEATURE_LLM_SHORTLIST=true):
+ *   1. inferDomain → getCatalog (RBAC filtered)
+ *   2. selectPages  (LLM shortlist; fallback to legacyLexicalShortlist)
+ *   3. disk read of top 5~8 pages  (skip expandOneHop — LLM already selected)
+ *   4. LLM synthesis with [[slug]] citations
+ *
+ * Pipeline (FEATURE_LLM_SHORTLIST=false — legacy):
+ *   1. legacyLexicalShortlist  (wiki_page_index lexical scoring)
  *   2. 1-hop wikilink expansion  (wiki_page_link, inbound-heavy hubs first)
  *   3. disk read of top 5~8 pages
  *   4. LLM synthesis with [[slug]] citations
@@ -25,7 +31,10 @@ import {
 } from "../budget.js";
 import { makeCacheKey, getCached, setCached } from "../cache.js";
 
-import { lexicalShortlist } from "./shortlist.js";
+import { legacyLexicalShortlist } from "./shortlist.js";
+import { getCatalog } from "./catalog.js";
+import { inferDomain } from "./domain-infer.js";
+import { selectPages } from "./llm-shortlist.js";
 import { expandOneHop } from "./expand.js";
 import { readTopPages } from "./read-pages.js";
 import { detectInfraIntent } from "./infra-routing.js";
@@ -87,68 +96,134 @@ export async function* pageFirstAsk(
 
   const collected: SSEEvent[] = [];
 
-  // 3. Emit a synthetic "route" event so the UI knows which lane won.
-  //    lane name is stable for dashboards; confidence is always 1.0 when
-  //    the feature flag explicitly forces this path.
+  // 3. Feature flag: LLM-first shortlist (Phase-γ) vs legacy lexical shortlist.
+  const useLlmShortlist = process.env["FEATURE_LLM_SHORTLIST"] === "true";
+
+  let shortlistVia: "llm" | "legacy" = "legacy";
+  let candidates: import("./expand.js").ExpandedPage[];
+
+  if (useLlmShortlist) {
+    // ── LLM-first path ─────────────────────────────────────────────────────
+    const domain = inferDomain(question);
+    const catalog = await getCatalog({
+      workspaceId,
+      userPermissions,
+      domain: domain ?? undefined,
+      limit: 500,
+    });
+
+    if (catalog.length === 0) {
+      yield { type: "error", message: "해당 워크스페이스에 접근 가능한 페이지가 없습니다." };
+      yield { type: "done", totalTokens: 0 };
+      return;
+    }
+
+    const result = await selectPages({ question, catalog });
+
+    if (result.fallback) {
+      // Graceful degradation to legacy lexical shortlist.
+      const legacy = await legacyLexicalShortlist({
+        workspaceId,
+        userPermissions,
+        question,
+        topK: 8,
+      });
+      candidates = legacy.map((h) => ({
+        id: h.id,
+        slug: h.slug,
+        path: h.path,
+        title: h.title,
+        sensitivity: h.sensitivity,
+        requiredPermission: h.requiredPermission,
+        origin: "shortlist" as const,
+        inboundCount: 0,
+        score: h.score,
+      }));
+      shortlistVia = "legacy";
+    } else {
+      // Map LLM-selected slugs back to catalog rows.
+      // catalog doesn't have id; read-pages reads by path so id="" is fine.
+      const pagesMap = new Map(catalog.map((r) => [r.slug, r]));
+      const chosen = result.pages
+        .map((slug) => pagesMap.get(slug))
+        .filter((x): x is NonNullable<typeof x> => x != null);
+
+      candidates = chosen.map((r) => ({
+        id: "",
+        slug: r.slug,
+        path: r.path,
+        title: r.title,
+        // catalog doesn't expose sensitivity; RBAC filter already ran in getCatalog.
+        sensitivity: "INTERNAL",
+        requiredPermission: null,
+        origin: "shortlist" as const,
+        inboundCount: 0,
+        score: 1,
+      }));
+      shortlistVia = "llm";
+    }
+    // LLM already selected the right pages — skip expandOneHop.
+  } else {
+    // ── Legacy path ────────────────────────────────────────────────────────
+    const inferredDomain = detectInfraIntent(question) ? "infra" : undefined;
+    let shortlist;
+    try {
+      shortlist = await legacyLexicalShortlist({
+        workspaceId,
+        userPermissions,
+        question,
+        topK: 20,
+        domain: inferredDomain,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "shortlist failed";
+      yield { type: "error", message };
+      yield { type: "done", totalTokens: 0 };
+      return;
+    }
+
+    // 1-hop expansion (best-effort — a link table outage should not kill
+    // the whole query; we just lose the hub-page hint).
+    candidates = shortlist.map((s) => ({
+      id: s.id,
+      path: s.path,
+      title: s.title,
+      slug: s.slug,
+      sensitivity: s.sensitivity,
+      requiredPermission: s.requiredPermission,
+      origin: "shortlist" as const,
+      inboundCount: 0,
+      score: s.score,
+    }));
+    try {
+      candidates = await expandOneHop({
+        workspaceId,
+        userPermissions,
+        shortlist,
+        fanOut: 30,
+      });
+    } catch (err) {
+      console.warn(
+        "[page-first] expandOneHop failed (degrading to shortlist only):",
+        err instanceof Error ? err.message : err,
+      );
+    }
+    shortlistVia = "legacy";
+  }
+
+  // 4. Emit a synthetic "route" event so the UI knows which lane won.
+  //    shortlistVia is included for observability (dashboard / logs).
   const routeEvt: SSEEvent = {
     type: "route",
     lane: "wiki.page-first",
     confidence: 1,
+    shortlistVia,
   };
   collected.push(routeEvt);
   yield routeEvt;
 
-  // 4. Shortlist
-  //    Intent classifier → scope to `domain=infra` when the question clearly
-  //    asks about infrastructure (접속·DB·VPN·배포 등). Generic questions
-  //    skip the filter and recall across all domains.
-  const inferredDomain = detectInfraIntent(question) ? "infra" : undefined;
-  let shortlist;
-  try {
-    shortlist = await lexicalShortlist({
-      workspaceId,
-      userPermissions,
-      question,
-      topK: 20,
-      domain: inferredDomain,
-    });
-  } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "shortlist failed";
-    yield { type: "error", message };
-    yield { type: "done", totalTokens: 0 };
-    return;
-  }
-
-  // 5. 1-hop expansion (best-effort — a link table outage should not kill
-  //    the whole query; we just lose the hub-page hint).
-  //    Fallback shape is identical to `ExpandedPage` so the types unify.
-  let candidates: import("./expand.js").ExpandedPage[] = shortlist.map((s) => ({
-    id: s.id,
-    path: s.path,
-    title: s.title,
-    slug: s.slug,
-    sensitivity: s.sensitivity,
-    requiredPermission: s.requiredPermission,
-    origin: "shortlist" as const,
-    inboundCount: 0,
-    score: s.score,
-  }));
-  try {
-    candidates = await expandOneHop({
-      workspaceId,
-      userPermissions,
-      shortlist,
-      fanOut: 30,
-    });
-  } catch (err) {
-    console.warn(
-      "[page-first] expandOneHop failed (degrading to shortlist only):",
-      err instanceof Error ? err.message : err,
-    );
-  }
-
-  // 6. Read top pages from disk
+  // 5. Read top pages from disk
   const readResult = await readTopPages({
     workspaceId,
     candidates,
@@ -164,7 +239,7 @@ export async function* pageFirstAsk(
 
   const pages = readResult.pages;
 
-  // 7. Synthesize answer + stream events; collect for cache persistence.
+  // 6. Synthesize answer + stream events; collect for cache persistence.
   for await (const evt of synthesizePageFirstAnswer({
     question,
     pages,
@@ -176,7 +251,7 @@ export async function* pageFirstAsk(
     yield evt;
   }
 
-  // 8. Cache only successful streams.
+  // 7. Cache only successful streams.
   const hasError = collected.some((e) => e.type === "error");
   if (!hasError) {
     await setCached(cacheKey, JSON.stringify(collected));

@@ -30,7 +30,7 @@ const mockExpandOneHop = vi.fn();
 const mockReadTopPages = vi.fn();
 
 vi.mock("../page-first/shortlist.js", () => ({
-  lexicalShortlist: (...args: unknown[]) => mockLexicalShortlist(...args),
+  legacyLexicalShortlist: (...args: unknown[]) => mockLexicalShortlist(...args),
 }));
 
 vi.mock("../page-first/expand.js", () => ({
@@ -164,7 +164,7 @@ async function* fakeStream() {
 function resetMocks() {
   mockLexicalShortlist.mockReset().mockResolvedValue(FAKE_SHORTLIST);
   mockExpandOneHop.mockReset().mockResolvedValue(FAKE_EXPANDED);
-  mockReadTopPages.mockReset().mockResolvedValue(FAKE_PAGES);
+  mockReadTopPages.mockReset().mockResolvedValue({ ok: true, pages: FAKE_PAGES });
   mockRetrieveRelevantCases.mockReset().mockResolvedValue({
     cases: [],
     xml: "",

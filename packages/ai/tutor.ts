@@ -14,7 +14,7 @@ function getTutorClient(): OpenAI {
 }
 const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 // page-first retrieval: shortlist → 1-hop expand → disk read
-import { lexicalShortlist } from './page-first/shortlist.js';
+import { legacyLexicalShortlist } from './page-first/shortlist.js';
 import { expandOneHop } from './page-first/expand.js';
 import { readTopPages, type LoadedPage } from './page-first/read-pages.js';
 import { retrieveRelevantCases, toCaseSourceRef } from './case-context.js';
@@ -112,17 +112,24 @@ export async function* tutorAI(
   const [pages, caseResult, dirResult] = await Promise.all([
     // page-first retrieval: shortlist -> expand -> read
     (async (): Promise<LoadedPage[]> => {
-      const shortlist = await lexicalShortlist({
+      const shortlist = await legacyLexicalShortlist({
         workspaceId, userPermissions, question, topK: 20,
       });
       const candidates = await expandOneHop({
         workspaceId, userPermissions, shortlist, fanOut: 30,
-      }).catch(() => shortlist.map(s => ({
-        ...s,
+      }).catch(() => shortlist.map((s) => ({
+        id: s.id,
+        path: s.path,
+        title: s.title,
+        slug: s.slug,
+        sensitivity: s.sensitivity,
+        requiredPermission: s.requiredPermission,
         origin: 'shortlist' as const,
         inboundCount: 0,
+        score: s.score,
       })));
-      return readTopPages({ workspaceId, candidates, topN: 7 });
+      const result = await readTopPages({ workspaceId, candidates, topN: 7 });
+      return result.ok ? result.pages : [];
     })(),
     retrieveRelevantCases(question, workspaceId, { topK: 3, userPermissions }),
     searchDirectory(question, workspaceId, { topK: 5 }),
