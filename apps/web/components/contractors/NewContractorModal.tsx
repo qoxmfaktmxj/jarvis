@@ -58,6 +58,7 @@ export function NewContractorModal({
         justifyContent: "center",
         zIndex: 50
       }}
+      onClick={onClose}
     >
       <div
         style={{
@@ -66,6 +67,7 @@ export function NewContractorModal({
           borderRadius: 8,
           minWidth: 400
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <h3 style={{ margin: "0 0 12px" }}>{t("actions.addContractor")}</h3>
         <div style={{ display: "grid", gap: 8 }}>
