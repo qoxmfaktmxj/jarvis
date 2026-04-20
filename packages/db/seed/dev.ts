@@ -9,7 +9,7 @@ loadEnv();
 const { db } = await import('../client.js');
 const { workspace, organization } = await import('../schema/tenant.js');
 const { user, role, userRole } = await import('../schema/user.js');
-const { system, systemAccess } = await import('../schema/system.js');
+const { systemAccess } = await import('../schema/project.js');
 const { knowledgePage, knowledgePageVersion, knowledgeClaim } = await import('../schema/knowledge.js');
 const { menuItem } = await import('../schema/menu.js');
 
@@ -66,26 +66,11 @@ async function seed() {
     { userId: bobUser.id, roleId: viewerRole.id },
   ]);
 
-  // ---- Systems ----
-  const systems = await db
-    .insert(system)
-    .values([
-      { workspaceId: wsId, name: 'PostgreSQL', description: 'Primary database', category: 'database', status: 'healthy', ownerId: adminUser.id },
-      { workspaceId: wsId, name: 'MinIO', description: 'Object storage', category: 'storage', status: 'healthy', ownerId: adminUser.id },
-      { workspaceId: wsId, name: 'PostgreSQL Search', description: 'FTS + pg_trgm + pgvector hybrid search', category: 'search', status: 'healthy', ownerId: aliceUser.id },
-      { workspaceId: wsId, name: 'OpenAI API', description: 'AI embeddings + chat', category: 'ai', status: 'healthy', ownerId: aliceUser.id },
-    ])
-    .returning();
-
-  console.log(`[seed] Created ${systems.length} systems`);
-
-  // System access entries (one per system for admin)
-  const accessEntries = systems.flatMap((s) => [
-    { workspaceId: wsId, systemId: s.id, accessType: 'web', label: 'Admin Dashboard', requiredRole: 'ADMIN', sortOrder: 1 },
-  ]);
-
-  await db.insert(systemAccess).values(accessEntries);
-  console.log(`[seed] Created ${accessEntries.length} system access entries`);
+  // NOTE: 'project' table (formerly 'system') now requires company_id NOT NULL.
+  // Dev seed skips project/systemAccess insertion — company must be created first.
+  // P2-A seed update will add proper project seeding with company data.
+  console.log('[seed] Skipping project seed (company_id required — P2-A will add)');
+  void systemAccess; // keep import for type-check pass
 
   // ---- Knowledge Pages ----
   const knowledgeData = [

@@ -25,8 +25,7 @@ export const buildStatusEnum = pgEnum('build_status', [
 
 export const graphScopeTypeEnum = pgEnum('graph_scope_type', [
   'attachment',
-  'project',
-  'system',
+  'project',  // was 'system' — now means TSMT001 project inventory
   'workspace',
 ]);
 
