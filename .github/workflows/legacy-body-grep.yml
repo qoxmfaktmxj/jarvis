@@ -19,7 +19,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          matches=$(grep -rnE 'wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
+          # Exclude the guard module — it intentionally references legacy column
+          # names in comments/tests to enforce they are not used elsewhere.
+          matches=$(grep -rnE --exclude-dir=guards 'wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
           status=$?
           set -e
 
