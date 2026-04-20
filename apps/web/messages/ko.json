@@ -623,6 +623,9 @@
     "title": "추가개발",
     "subtitle": "총 {total}건의 추가개발 프로젝트",
     "newAddDev": "새 추가개발",
+    "projectTab": {
+      "heading": "이 프로젝트의 추가개발 {count}건"
+    },
     "searchPlaceholder": "프로젝트명 또는 요청내용 검색",
     "applyFilters": "필터 적용",
     "allStatuses": "전체 상태",

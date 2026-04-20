@@ -39,6 +39,7 @@ type Props = {
   mode: "create" | "edit";
   id?: string;
   defaultValues?: Partial<AddDevFormValues>;
+  initialProjectId?: string;
 };
 
 function normalizeDefaults(v?: Partial<AddDevFormValues>): AddDevFormValues {
@@ -71,14 +72,17 @@ function normalizeDefaults(v?: Partial<AddDevFormValues>): AddDevFormValues {
   };
 }
 
-export function AddDevForm({ mode, id, defaultValues }: Props) {
+export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props) {
   const t = useTranslations("AdditionalDev.fields");
   const tActions = useTranslations("AdditionalDev.actions");
   const tSections = useTranslations("AdditionalDev.sections");
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const vals = normalizeDefaults(defaultValues);
+  const vals = normalizeDefaults({
+    projectId: initialProjectId,
+    ...defaultValues,
+  });
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -6,14 +6,19 @@ import { requirePageSession } from "@/lib/server/page-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function AddDevNewPage() {
+export default async function AddDevNewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ projectId?: string }>;
+}) {
   const t = await getTranslations("AdditionalDev");
   await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_CREATE, "/add-dev");
+  const sp = await searchParams;
 
   return (
     <div className="space-y-6">
       <PageHeader kicker="Add-Dev" title={t("newAddDev")} />
-      <AddDevForm mode="create" />
+      <AddDevForm mode="create" initialProjectId={sp.projectId} />
     </div>
   );
 }
