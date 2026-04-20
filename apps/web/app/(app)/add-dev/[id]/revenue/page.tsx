@@ -15,11 +15,11 @@ export default async function AddDevRevenuePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_READ, "/add-dev");
+  const session = await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_READ, "/add-dev");
   const { id } = await params;
   const sp = await searchParams;
 
-  const data = await listRevenues({ addDevId: id });
+  const data = await listRevenues({ addDevId: id, workspaceId: session.workspaceId });
 
   const currentYear = new Date().getFullYear();
   const years = Array.from(

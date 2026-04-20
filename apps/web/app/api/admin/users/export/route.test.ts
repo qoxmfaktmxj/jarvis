@@ -77,7 +77,8 @@ describe('CSV injection neutralization', () => {
       return s;
     }
 
-    expect(escape('=HYPERLINK("http://evil.com","click")')).toBe(`'=HYPERLINK("http://evil.com","click")`);
+    // After apostrophe prefix, if the string still contains " it gets CSV-quoted.
+    expect(escape('=HYPERLINK("http://evil.com","click")')).toBe(`"'=HYPERLINK(""http://evil.com"",""click"")"`);
     expect(escape('+cmd')).toBe("'+cmd");
     expect(escape('-1+2')).toBe("'-1+2");
     expect(escape('@SUM(A1)')).toBe("'@SUM(A1)");

@@ -186,6 +186,25 @@ describe("listAdditionalDev", () => {
 // ---------------------------------------------------------------------------
 
 describe("createAdditionalDev", () => {
+  function makeCreateDatabase(createdRows: unknown[]) {
+    // createAdditionalDev calls select (FK guard) then insert.
+    const selectChain = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([{ id: "proj-1" }]),
+    };
+    const insertChain = {
+      values: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockResolvedValue(createdRows),
+      onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+    };
+    const db = {
+      select: vi.fn().mockReturnValue(selectChain),
+      insert: vi.fn().mockReturnValue(insertChain),
+    };
+    return { db, insertChain };
+  }
+
   it("persists projectId and defaults status to '협의중'", async () => {
     const createdRow = {
       id: "new-add-dev-1",
@@ -197,7 +216,7 @@ describe("createAdditionalDev", () => {
       updatedAt: new Date("2026-01-01"),
     };
 
-    const { db, insertChain } = makeInsertDatabase([createdRow]);
+    const { db, insertChain } = makeCreateDatabase([createdRow]);
 
     const result = await createAdditionalDev({
       workspaceId: "ws-1",
@@ -223,7 +242,7 @@ describe("createAdditionalDev", () => {
       updatedAt: new Date("2026-01-01"),
     };
 
-    const { db, insertChain } = makeInsertDatabase([createdRow]);
+    const { db, insertChain } = makeCreateDatabase([createdRow]);
 
     await createAdditionalDev({
       workspaceId: "ws-1",
@@ -352,10 +371,20 @@ describe("upsertEffort", () => {
       returning: vi.fn().mockResolvedValue([]),
       onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
     };
-    const db = { insert: vi.fn().mockReturnValue(insertChain) };
+    // assertAddDevInWorkspace uses select/from/where/limit chain — mock it to return a row.
+    const selectChain = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([{ id: "add-dev-1" }]),
+    };
+    const db = {
+      insert: vi.fn().mockReturnValue(insertChain),
+      select: vi.fn().mockReturnValue(selectChain),
+    };
 
     await upsertEffort({
       addDevId: "add-dev-1",
+      workspaceId: "ws-1",
       yearMonth: "2026-01",
       effort: "10.5",
       database: db as never,
