@@ -10,6 +10,10 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 const statusEnum = z.enum(['active', 'inactive', 'locked']);
 
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, '\\$&');
+}
+
 function escape(v: unknown): string {
   if (v === null || v === undefined) return '';
   const s = String(v);
@@ -46,9 +50,9 @@ export async function GET(req: NextRequest) {
   const conditions = [eq(user.workspaceId, session.workspaceId)];
   if (q) {
     conditions.push(or(
-      ilike(user.name, `%${q}%`),
-      ilike(user.employeeId, `%${q}%`),
-      ilike(user.email, `%${q}%`),
+      ilike(user.name, `%${escapeLike(q)}%`),
+      ilike(user.employeeId, `%${escapeLike(q)}%`),
+      ilike(user.email, `%${escapeLike(q)}%`),
     )!);
   }
   if (orgId) conditions.push(eq(user.orgId, orgId));

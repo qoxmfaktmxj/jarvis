@@ -11,6 +11,10 @@ import {
   and, eq, ilike, or, desc, count, inArray, sql,
 } from 'drizzle-orm';
 
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, '\\$&');
+}
+
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
 const statusEnum = z.enum(['active', 'inactive', 'locked']);
@@ -77,9 +81,9 @@ export async function GET(req: NextRequest) {
   if (q) {
     conditions.push(
       or(
-        ilike(user.name, `%${q}%`),
-        ilike(user.employeeId, `%${q}%`),
-        ilike(user.email, `%${q}%`),
+        ilike(user.name, `%${escapeLike(q)}%`),
+        ilike(user.employeeId, `%${escapeLike(q)}%`),
+        ilike(user.email, `%${escapeLike(q)}%`),
       )!,
     );
   }
@@ -255,6 +259,8 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) return NextResponse.json({ error: 'id must be uuid' }, { status: 400 });
 
   const [updated] = await db
     .update(user)
