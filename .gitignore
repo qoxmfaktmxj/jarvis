@@ -108,3 +108,6 @@ data/tsvd999.json
 /*.png
 /*.zip
 
+
+# Superpowers brainstorm artifacts (local only)
+.superpowers/
