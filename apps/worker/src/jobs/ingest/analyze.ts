@@ -123,7 +123,14 @@ async function shortlistCandidates(
   // (no sql.raw of user data → no SQL injection surface).
   // `jsonb ?| text[]` checks if ANY of the array's keys exist as top-level
   // elements of the JSONB array, which matches our alias semantics.
-  const aliasCond = sql`${wikiPageIndex.frontmatter} -> 'aliases' ?| ${keywords}::text[]`;
+  // NOTE: `${array}` expands to a record tuple `($1, $2)`, which Postgres
+  // cannot cast to text[]. Build an explicit ARRAY[...] literal with each
+  // keyword bound separately so the final SQL is `ARRAY[$1, $2]::text[]`.
+  const aliasKeywordParams = sql.join(
+    keywords.map((kw) => sql`${kw}`),
+    sql`, `,
+  );
+  const aliasCond = sql`${wikiPageIndex.frontmatter} -> 'aliases' ?| ARRAY[${aliasKeywordParams}]::text[]`;
   const rows = await db
     .select({
       path: wikiPageIndex.path,
