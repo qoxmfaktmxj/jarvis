@@ -58,12 +58,17 @@ services:
     container_name: jarvis-cli-proxy
     restart: unless-stopped
     networks: [jarvis-network]
+    ports:
+      # Localhost-only bind: prevents public exposure. Internal Jarvis services
+      # reach cli-proxy via compose network (http://cli-proxy:8317). Host bind
+      # is only for dev smoke tests (curl from user machine).
+      - "127.0.0.1:8317:8317"
     volumes:
       - ../infra/cliproxy/config.yaml:/CLIProxyAPI/config.yaml:ro
       - ../infra/cliproxy/auths:/root/.cli-proxy-api:rw
       - ../infra/cliproxy/logs:/CLIProxyAPI/logs
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8317/v1/models || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- --header='Authorization: Bearer sk-jarvis-local-dev' http://127.0.0.1:8317/v1/models || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
