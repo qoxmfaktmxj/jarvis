@@ -35,7 +35,7 @@ vi.mock("@jarvis/db/client", () => ({
     select: () => ({
       from: () => ({
         where: () => ({
-          limit: () => Promise.resolve([{ userId: "uid-1" }])
+          limit: () => Promise.resolve([{ userId: "00000000-0000-0000-0000-000000000001", startDate: "2024-03-01", endDate: "2024-03-01" }])
         })
       })
     })
@@ -66,7 +66,7 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
 
 const SELF_SESSION = {
   id: "session-1",
-  userId: "uid-1",
+  userId: "00000000-0000-0000-0000-000000000001",
   workspaceId: "ws-1",
   roles: ["DEVELOPER"],
   permissions: ["contractor:read"]
@@ -85,8 +85,8 @@ describe("/api/leave-requests/[id] PATCH", () => {
 
   it("returns 401 when no session cookie", async () => {
     const response = await PATCH(
-      new NextRequest("http://localhost/api/leave-requests/lr-1", { method: "PATCH" }),
-      ctx("lr-1")
+      new NextRequest("http://localhost/api/leave-requests/00000000-0000-0000-0000-000000000002", { method: "PATCH" }),
+      ctx("00000000-0000-0000-0000-000000000002")
     );
     expect(response.status).toBe(401);
   });
@@ -94,26 +94,26 @@ describe("/api/leave-requests/[id] PATCH", () => {
   it("returns 403 when canAccessContractorData is false", async () => {
     canAccessContractorDataMock.mockReturnValue(false);
     const response = await PATCH(
-      buildRequest("http://localhost/api/leave-requests/lr-1", {
+      buildRequest("http://localhost/api/leave-requests/00000000-0000-0000-0000-000000000002", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ reason: "updated" })
       }),
-      ctx("lr-1")
+      ctx("00000000-0000-0000-0000-000000000002")
     );
     expect(response.status).toBe(403);
   });
 
   it("updates leave request and returns 200", async () => {
-    updateLeaveRequestMock.mockResolvedValue({ id: "lr-1", reason: "updated" });
+    updateLeaveRequestMock.mockResolvedValue({ id: "00000000-0000-0000-0000-000000000002", reason: "updated" });
 
     const response = await PATCH(
-      buildRequest("http://localhost/api/leave-requests/lr-1", {
+      buildRequest("http://localhost/api/leave-requests/00000000-0000-0000-0000-000000000002", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ reason: "updated" })
       }),
-      ctx("lr-1")
+      ctx("00000000-0000-0000-0000-000000000002")
     );
     expect(response.status).toBe(200);
   });
@@ -125,21 +125,21 @@ describe("/api/leave-requests/[id] DELETE", () => {
     getSessionMock.mockResolvedValue(SELF_SESSION);
     hasPermissionMock.mockReturnValue(true);
     canAccessContractorDataMock.mockReturnValue(true);
-    cancelLeaveRequestMock.mockResolvedValue({ id: "lr-1", status: "cancelled" });
+    cancelLeaveRequestMock.mockResolvedValue({ id: "00000000-0000-0000-0000-000000000002", status: "cancelled" });
   });
 
   it("returns 401 when no session cookie", async () => {
     const response = await DELETE(
-      new NextRequest("http://localhost/api/leave-requests/lr-1", { method: "DELETE" }),
-      ctx("lr-1")
+      new NextRequest("http://localhost/api/leave-requests/00000000-0000-0000-0000-000000000002", { method: "DELETE" }),
+      ctx("00000000-0000-0000-0000-000000000002")
     );
     expect(response.status).toBe(401);
   });
 
   it("cancels leave request (soft delete) and returns 200", async () => {
     const response = await DELETE(
-      buildRequest("http://localhost/api/leave-requests/lr-1", { method: "DELETE" }),
-      ctx("lr-1")
+      buildRequest("http://localhost/api/leave-requests/00000000-0000-0000-0000-000000000002", { method: "DELETE" }),
+      ctx("00000000-0000-0000-0000-000000000002")
     );
     expect(response.status).toBe(200);
   });

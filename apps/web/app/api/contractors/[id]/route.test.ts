@@ -61,8 +61,8 @@ describe("/api/contractors/[id] GET", () => {
 
   it("returns 401 when no session cookie", async () => {
     const response = await GET(
-      new NextRequest("http://localhost/api/contractors/uid-1"),
-      ctx("uid-1")
+      new NextRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(401);
   });
@@ -70,8 +70,8 @@ describe("/api/contractors/[id] GET", () => {
   it("returns 403 when canAccessContractorData is false", async () => {
     canAccessContractorDataMock.mockReturnValue(false);
     const response = await GET(
-      buildRequest("http://localhost/api/contractors/uid-1"),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(403);
   });
@@ -79,22 +79,22 @@ describe("/api/contractors/[id] GET", () => {
   it("returns 404 when contractor not found", async () => {
     getContractorByIdMock.mockResolvedValue(null);
     const response = await GET(
-      buildRequest("http://localhost/api/contractors/uid-1"),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(404);
   });
 
   it("returns 200 with contractor detail", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1", name: "홍길동" },
+      user: { id: "00000000-0000-0000-0000-000000000001", name: "홍길동" },
       contracts: [],
       activeContract: null,
       leaves: []
     });
     const response = await GET(
-      buildRequest("http://localhost/api/contractors/uid-1"),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(200);
   });
@@ -109,21 +109,21 @@ describe("/api/contractors/[id] DELETE", () => {
 
   it("returns 404 when no active contract", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       contracts: [],
       activeContract: null,
       leaves: []
     });
     const response = await DELETE(
-      buildRequest("http://localhost/api/contractors/uid-1", { method: "DELETE" }),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001", { method: "DELETE" }),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(404);
   });
 
   it("terminates active contract and returns 200", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       contracts: [{ id: "contract-1", status: "active" }],
       activeContract: { id: "contract-1", status: "active" },
       leaves: []
@@ -131,8 +131,8 @@ describe("/api/contractors/[id] DELETE", () => {
     terminateContractMock.mockResolvedValue({ id: "contract-1", status: "terminated" });
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/contractors/uid-1", { method: "DELETE" }),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001", { method: "DELETE" }),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(200);
   });

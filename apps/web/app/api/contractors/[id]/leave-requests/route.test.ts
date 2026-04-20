@@ -49,7 +49,7 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
 
 const SELF_SESSION = {
   id: "session-1",
-  userId: "uid-1",
+  userId: "00000000-0000-0000-0000-000000000001",
   workspaceId: "ws-1",
   roles: ["DEVELOPER"],
   permissions: ["contractor:read"]
@@ -68,8 +68,8 @@ describe("/api/contractors/[id]/leave-requests GET", () => {
 
   it("returns 401 when no session cookie", async () => {
     const response = await GET(
-      new NextRequest("http://localhost/api/contractors/uid-1/leave-requests"),
-      ctx("uid-1")
+      new NextRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(401);
   });
@@ -77,16 +77,16 @@ describe("/api/contractors/[id]/leave-requests GET", () => {
   it("returns 403 when canAccessContractorData is false", async () => {
     canAccessContractorDataMock.mockReturnValue(false);
     const response = await GET(
-      buildRequest("http://localhost/api/contractors/uid-1/leave-requests"),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(403);
   });
 
   it("returns 200 with leave request list", async () => {
     const response = await GET(
-      buildRequest("http://localhost/api/contractors/uid-1/leave-requests"),
-      ctx("uid-1")
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests"),
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(200);
   });
@@ -103,12 +103,12 @@ describe("/api/contractors/[id]/leave-requests POST", () => {
 
   it("returns 422 for invalid body", async () => {
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/leave-requests", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ type: "invalid_type" })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(422);
   });
@@ -119,7 +119,7 @@ describe("/api/contractors/[id]/leave-requests POST", () => {
     createLeaveRequestMock.mockRejectedValue(err);
 
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/leave-requests", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -128,7 +128,7 @@ describe("/api/contractors/[id]/leave-requests POST", () => {
           endDate: "2024-03-01"
         })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(409);
   });
@@ -137,7 +137,7 @@ describe("/api/contractors/[id]/leave-requests POST", () => {
     createLeaveRequestMock.mockResolvedValue({ id: "lr-1", type: "day_off", hours: "8" });
 
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/leave-requests", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/leave-requests", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +146,7 @@ describe("/api/contractors/[id]/leave-requests POST", () => {
           endDate: "2024-03-01"
         })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(201);
   });

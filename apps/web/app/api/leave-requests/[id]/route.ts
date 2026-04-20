@@ -12,31 +12,31 @@ import {
 import { getHolidaySetForRange } from "@/lib/queries/holidays";
 import { requireApiSession } from "@/lib/server/api-auth";
 import { updateLeaveBodySchema } from "../../contractors/_schemas";
+import { isValidUuid } from "@jarvis/shared/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
-
-async function loadOwnerId(workspaceId: string, id: string): Promise<string | null> {
-  const [row] = await db
-    .select({ userId: leaveRequest.userId })
-    .from(leaveRequest)
-    .where(and(eq(leaveRequest.id, id), eq(leaveRequest.workspaceId, workspaceId)))
-    .limit(1);
-  return row?.userId ?? null;
-}
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
   const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
-  const ownerId = await loadOwnerId(auth.session.workspaceId, id);
-  if (!ownerId) {
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
+  const [existing] = await db
+    .select({ userId: leaveRequest.userId, startDate: leaveRequest.startDate, endDate: leaveRequest.endDate })
+    .from(leaveRequest)
+    .where(and(eq(leaveRequest.id, id), eq(leaveRequest.workspaceId, auth.session.workspaceId)))
+    .limit(1);
+  if (!existing) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  if (!canAccessContractorData(auth.session, ownerId)) {
+  if (!canAccessContractorData(auth.session, existing.userId)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -46,10 +46,12 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
+  const fromDate = parsed.data.startDate ?? String(existing.startDate);
+  const toDate = parsed.data.endDate ?? String(existing.endDate);
   const holidays = await getHolidaySetForRange({
     workspaceId: auth.session.workspaceId,
-    from: parsed.data.startDate ?? "1900-01-01",
-    to: parsed.data.endDate ?? "2999-12-31"
+    from: fromDate,
+    to: toDate
   });
 
   const updated = await updateLeaveRequest({
@@ -67,12 +69,20 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
-  const ownerId = await loadOwnerId(auth.session.workspaceId, id);
-  if (!ownerId) {
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
+
+  const [existing] = await db
+    .select({ userId: leaveRequest.userId })
+    .from(leaveRequest)
+    .where(and(eq(leaveRequest.id, id), eq(leaveRequest.workspaceId, auth.session.workspaceId)))
+    .limit(1);
+  if (!existing) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  if (!canAccessContractorData(auth.session, ownerId)) {
+  if (!canAccessContractorData(auth.session, existing.userId)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

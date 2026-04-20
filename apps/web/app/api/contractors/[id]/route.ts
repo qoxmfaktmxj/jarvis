@@ -3,6 +3,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { canAccessContractorData } from "@jarvis/auth/rbac";
 import { getContractorById, terminateContract } from "@/lib/queries/contractors";
 import { requireApiSession } from "@/lib/server/api-auth";
+import { isValidUuid } from "@jarvis/shared/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -13,6 +14,9 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
 
   if (!canAccessContractorData(auth.session, id)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -35,6 +39,9 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
 
   const detail = await getContractorById({
     workspaceId: auth.session.workspaceId,
