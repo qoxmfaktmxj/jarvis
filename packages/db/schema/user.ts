@@ -1,6 +1,7 @@
 import {
   boolean,
   jsonb,
+  pgEnum,
   pgTable,
   primaryKey,
   text,
@@ -10,6 +11,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { organization, workspace } from "./tenant.js";
+
+export const userStatusEnum = pgEnum("user_status", ["active", "inactive", "locked"]);
 
 export const user = pgTable("user", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,7 +25,9 @@ export const user = pgTable("user", {
   phone: varchar("phone", { length: 50 }),
   orgId: uuid("org_id").references(() => organization.id),
   position: varchar("position", { length: 100 }),
-  isActive: boolean("is_active").default(true).notNull(),
+  jobTitle: varchar("job_title", { length: 50 }),
+  status: userStatusEnum("status").default("active").notNull(),
+  isOutsourced: boolean("is_outsourced").default(false).notNull(),
   avatarUrl: varchar("avatar_url", { length: 500 }),
   preferences: jsonb("preferences")
     .$type<Record<string, unknown>>()
