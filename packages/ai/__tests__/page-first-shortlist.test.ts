@@ -162,12 +162,12 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
   });
 
   // ---------------------------------------------------------------------
-  // 4) SYSTEM_ACCESS_SECRET → SECRET_REF_ONLY 포함
+  // 4) PROJECT_ACCESS_SECRET → SECRET_REF_ONLY 포함
   // ---------------------------------------------------------------------
-  // TODO(pre-existing): buildWikiSensitivitySqlFilter가 SYSTEM_ACCESS_SECRET +
+  // TODO(pre-existing): buildWikiSensitivitySqlFilter가 PROJECT_ACCESS_SECRET +
   // KNOWLEDGE_READ 조합에서 SECRET_REF_ONLY를 include 하지 않음 (Phase-γ 리팩터
   // 이전부터 존재하던 RBAC 버그). 별도 Task에서 wiki-sensitivity.ts 수정 필요.
-  it.skip("SYSTEM_ACCESS_SECRET (+ KNOWLEDGE_READ): SQL filter includes SECRET_REF_ONLY", async () => {
+  it.skip("PROJECT_ACCESS_SECRET (+ KNOWLEDGE_READ): SQL filter includes SECRET_REF_ONLY", async () => {
     vi.mocked(db.execute).mockResolvedValueOnce({
       rows: [],
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -177,7 +177,7 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
       workspaceId: WS,
       userPermissions: [
         PERMISSIONS.KNOWLEDGE_READ,
-        PERMISSIONS.SYSTEM_ACCESS_SECRET,
+        PERMISSIONS.PROJECT_ACCESS_SECRET,
       ],
       question: "시크릿",
     });
