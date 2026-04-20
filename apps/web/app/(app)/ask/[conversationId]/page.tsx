@@ -175,6 +175,7 @@ export default async function ConversationPage({ params }: Props) {
           popularQuestions={popularQuestions}
           conversationId={conversationId}
           initialMessages={initialMessages}
+          workspaceId={session.workspaceId}
         />
       </Suspense>
     </div>

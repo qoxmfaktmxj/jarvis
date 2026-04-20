@@ -47,7 +47,7 @@ vi.mock("../logger.js", () => ({
   withRequestId: vi.fn(),
 }));
 
-import { lexicalShortlist } from "../page-first/shortlist.js";
+import { legacyLexicalShortlist as lexicalShortlist } from "../page-first/shortlist.js";
 import { db } from "@jarvis/db/client";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
@@ -174,7 +174,7 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
       workspaceId: WS,
       userPermissions: [
         PERMISSIONS.KNOWLEDGE_READ,
-        PERMISSIONS.SYSTEM_ACCESS_SECRET,
+        PERMISSIONS.PROJECT_ACCESS_SECRET,
       ],
       question: "시크릿",
     });

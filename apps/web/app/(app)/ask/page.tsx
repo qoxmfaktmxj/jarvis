@@ -99,6 +99,7 @@ export default async function AskPage({ searchParams }: Props) {
           initialScope={initialScope}
           popularQuestions={popularQuestions}
           conversationId={undefined}
+          workspaceId={session.workspaceId}
         />
       </Suspense>
     </div>

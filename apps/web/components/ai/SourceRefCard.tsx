@@ -15,6 +15,7 @@ import type {
 interface SourceRefCardProps {
   source: SourceRef;
   index: number;
+  workspaceId: string;
 }
 
 function confidenceTone(score: number): { label: string; dot: string; text: string } {
@@ -102,11 +103,11 @@ function SourceRow({
 // ─────────────────────────────────────────────────────────────
 // Dispatcher
 // ─────────────────────────────────────────────────────────────
-export function SourceRefCard({ source, index }: SourceRefCardProps) {
+export function SourceRefCard({ source, index, workspaceId }: SourceRefCardProps) {
   if (source.kind === 'graph') return <GraphSourceRow source={source} index={index} />;
   if (source.kind === 'case') return <CaseSourceRow source={source} index={index} />;
   if (source.kind === 'directory') return <DirectorySourceRow source={source} index={index} />;
-  if (source.kind === 'wiki-page') return <WikiPageSourceRow source={source} index={index} />;
+  if (source.kind === 'wiki-page') return <WikiPageSourceRow source={source} index={index} workspaceId={workspaceId} />;
   return <TextSourceRow source={source} index={index} />;
 }
 
@@ -213,8 +214,28 @@ function DirectorySourceRow({ source, index }: { source: DirectorySourceRef; ind
 // ─────────────────────────────────────────────────────────────
 // Wiki Page
 // ─────────────────────────────────────────────────────────────
-function WikiPageSourceRow({ source, index }: { source: WikiPageSourceRef; index: number }) {
-  const href = `/wiki/default/${encodeURIComponent(source.slug)}`;
+
+/** source.path (repo-relative, e.g. "auto/entities/MindVault.md") → URL routeKey.
+ *  Strips optional "wiki/<workspaceId>/" prefix and removes .md/.mdx extension.
+ */
+function pathToRouteKey(filePath: string, workspaceId: string): string {
+  const wsPrefix = 'wiki/' + workspaceId + '/';
+  let key = filePath.startsWith(wsPrefix) ? filePath.slice(wsPrefix.length) : filePath;
+  key = key.replace(/.mdx?$/, '');
+  return key;
+}
+
+function WikiPageSourceRow({
+  source,
+  index,
+  workspaceId,
+}: {
+  source: WikiPageSourceRef;
+  index: number;
+  workspaceId: string;
+}) {
+  const routeKey = pathToRouteKey(source.path, workspaceId);
+  const href = '/wiki/' + workspaceId + '/' + routeKey;
   const sub =
     source.origin === 'expand'
       ? `${source.citation} · ${source.path} · ↳ 1-hop`

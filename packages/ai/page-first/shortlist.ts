@@ -3,6 +3,9 @@
  *
  * Phase-W2 T2 — page-first navigation step 1/4.
  *
+ * **LEGACY FALLBACK** — `catalog.ts` + `llm-shortlist.ts`가 기본 경로.
+ * FEATURE_LLM_SHORTLIST=false 또는 LLM shortlist 실패 시 graceful fallback.
+ *
  * Lexical shortlist against `wiki_page_index`. Intentionally NOT vector-based:
  * the page-first design (WIKI-AGENTS.md §7, .claude/commands/wiki-query.md)
  * trusts the human-authored page title, slug, and `frontmatter.aliases` as
@@ -92,7 +95,7 @@ function tokenize(question: string): string[] {
   return [...new Set(raw.filter((t) => t.length >= 2 && !stop.has(t)))];
 }
 
-export async function lexicalShortlist(
+export async function legacyLexicalShortlist(
   opts: ShortlistOptions,
 ): Promise<ShortlistHit[]> {
   const { workspaceId, userPermissions, question } = opts;
