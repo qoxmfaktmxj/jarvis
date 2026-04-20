@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@jarvis/db/client';
 import { askConversation, askMessage } from '@jarvis/db/schema';
-import { askAI } from '@jarvis/ai/ask';
+import { pageFirstAsk } from '@jarvis/ai/page-first';
 import type { SourceRef, SSEEvent } from '@jarvis/ai/types';
 import { checkRateLimit } from '@/lib/server/rate-limit';
 import { requireApiSession } from '@/lib/server/api-auth';
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
 
       try {
         const permissions = session.permissions ?? [];
-        const generator = askAI({
+        const generator = pageFirstAsk({
           question: body.question,
           workspaceId: session.workspaceId,
           userId: session.userId,

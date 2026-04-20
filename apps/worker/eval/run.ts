@@ -47,8 +47,8 @@ async function runOne(fx: EvalFixture, seen: Set<string>): Promise<Row> {
   let resultText = "";
 
   try {
-    const { askAI } = await import("@jarvis/ai/ask");
-    for await (const ev of askAI({
+    const { pageFirstAsk } = await import("@jarvis/ai/page-first");
+    for await (const ev of pageFirstAsk({
       question: fx.query,
       workspaceId: WORKSPACE_ID,
       userPermissions: ["graph:read"],

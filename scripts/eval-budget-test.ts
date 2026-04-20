@@ -3,7 +3,7 @@
 // 사용: pnpm eval:budget-test
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
-import { generateAnswer } from '@jarvis/ai/ask';
+import { pageFirstAsk } from '@jarvis/ai/page-first';
 
 process.env.LLM_DAILY_BUDGET_USD = '0.01';
 const WS = process.env['EVAL_WORKSPACE_ID'] ?? '00000000-0000-0000-0000-0000000000ee';
@@ -26,8 +26,10 @@ async function main() {
   let ok = 0;
   for (let i = 0; i < 5; i++) {
     const events = await drain(
-      generateAnswer('ping?', '<context/>', [], [], [], [], 'simple', {
+      pageFirstAsk({
+        question: 'ping?',
         workspaceId: WS,
+        userPermissions: [],
         requestId: `eval-${i}`,
       }) as AsyncGenerator<{ type: string; message?: string }>,
     );
