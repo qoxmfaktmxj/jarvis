@@ -9,7 +9,7 @@ loadEnv();
 const { db } = await import('../client.js');
 const { workspace, organization } = await import('../schema/tenant.js');
 const { user, role, userRole } = await import('../schema/user.js');
-const { systemAccess } = await import('../schema/project.js');
+const { projectAccess } = await import('../schema/project.js');
 const { knowledgePage, knowledgePageVersion, knowledgeClaim } = await import('../schema/knowledge.js');
 const { menuItem } = await import('../schema/menu.js');
 
@@ -67,10 +67,10 @@ async function seed() {
   ]);
 
   // NOTE: 'project' table (formerly 'system') now requires company_id NOT NULL.
-  // Dev seed skips project/systemAccess insertion — company must be created first.
+  // Dev seed skips project/projectAccess insertion — company must be created first.
   // P2-A seed update will add proper project seeding with company data.
   console.log('[seed] Skipping project seed (company_id required — P2-A will add)');
-  void systemAccess; // keep import for type-check pass
+  void projectAccess; // keep import for type-check pass
 
   // ---- Knowledge Pages ----
   const knowledgeData = [

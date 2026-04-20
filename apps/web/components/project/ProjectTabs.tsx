@@ -8,12 +8,13 @@ const tabs = [
   { label: "Overview", href: "" },
   { label: "Access", href: "/access" },
   { label: "Deploy", href: "/deploy" },
-  { label: "Runbook", href: "/runbook" }
+  { label: "Runbook", href: "/runbook" },
+  { label: "추가개발", href: "/add-dev" }
 ] as const;
 
-export function SystemTabs({ systemId }: { systemId: string }) {
+export function ProjectTabs({ projectId }: { projectId: string }) {
   const pathname = usePathname();
-  const baseHref = `/systems/${systemId}`;
+  const baseHref = `/projects/${projectId}`;
 
   return (
     <nav className="flex gap-1 border-b border-surface-200">

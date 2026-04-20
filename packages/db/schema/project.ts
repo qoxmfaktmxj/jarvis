@@ -88,7 +88,3 @@ export const projectAccessRelations = relations(projectAccess, ({ one }) => ({
   project: one(project, { fields: [projectAccess.projectId], references: [project.id] }),
 }));
 
-/** @deprecated alias kept for P2-A transition; callers will be migrated to `projectAccess` in P3-A */
-export const systemAccess = projectAccess;
-/** @deprecated */
-export const systemAccessRelations = projectAccessRelations;

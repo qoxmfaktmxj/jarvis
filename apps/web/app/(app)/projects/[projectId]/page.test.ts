@@ -7,7 +7,7 @@ const {
   notFoundMock,
   getSessionMock,
   hasPermissionMock,
-  getSystemMock
+  getProjectMock
 } = vi.hoisted(() => ({
   headersMock: vi.fn(),
   redirectMock: vi.fn((location: string) => {
@@ -18,7 +18,7 @@ const {
   }),
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  getSystemMock: vi.fn()
+  getProjectMock: vi.fn()
 }));
 
 vi.mock("next/headers", () => ({
@@ -38,51 +38,49 @@ vi.mock("@jarvis/auth/rbac", () => ({
   hasPermission: hasPermissionMock
 }));
 
-vi.mock("@/lib/queries/systems", () => ({
-  getSystem: getSystemMock
+vi.mock("@/lib/queries/projects", () => ({
+  getProject: getProjectMock
 }));
 
-import SystemOverviewPage from "./page";
+import ProjectOverviewPage from "./page";
 
-describe("SystemOverviewPage", () => {
+describe("ProjectOverviewPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     headersMock.mockResolvedValue(new Headers({ "x-session-id": "session-1" }));
     getSessionMock.mockResolvedValue({
       id: "session-1",
       workspaceId: "ws-1",
-      permissions: ["system:read", "system:update"]
+      permissions: ["project:read", "project:update"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
-  it("renders the system overview", async () => {
-    getSystemMock.mockResolvedValue({
-      id: "sys-1",
+  it("renders the project overview", async () => {
+    getProjectMock.mockResolvedValue({
+      id: "proj-1",
       name: "Payroll",
       status: "active",
       sensitivity: "INTERNAL",
       description: "Handles payroll",
-      techStack: "Next.js, PostgreSQL",
-      repositoryUrl: "https://github.com/acme/payroll",
-      dashboardUrl: "https://grafana.example.com/payroll",
+      prodDomainUrl: "https://payroll.example.com",
+      devDomainUrl: null,
       createdAt: new Date("2026-04-07T09:00:00.000Z")
     });
 
     const html = renderToStaticMarkup(
-      await SystemOverviewPage({ params: Promise.resolve({ systemId: "sys-1" }) })
+      await ProjectOverviewPage({ params: Promise.resolve({ projectId: "proj-1" }) })
     );
 
     expect(html).toContain("Handles payroll");
-    expect(html).toContain("Next.js, PostgreSQL");
-    expect(html).toContain("https://github.com/acme/payroll");
+    expect(html).toContain("https://payroll.example.com");
   });
 
-  it("throws notFound when the system is missing", async () => {
-    getSystemMock.mockResolvedValue(null);
+  it("throws notFound when the project is missing", async () => {
+    getProjectMock.mockResolvedValue(null);
 
     await expect(
-      SystemOverviewPage({ params: Promise.resolve({ systemId: "sys-1" }) })
+      ProjectOverviewPage({ params: Promise.resolve({ projectId: "proj-1" }) })
     ).rejects.toThrowError("notFound");
   });
 });

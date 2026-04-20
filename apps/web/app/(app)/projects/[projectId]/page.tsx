@@ -6,33 +6,33 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeader } from "@/components/patterns/SectionHeader";
-import { getSystem } from "@/lib/queries/systems";
+import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
-export default async function SystemOverviewPage({
+export default async function ProjectOverviewPage({
   params
 }: {
-  params: Promise<{ systemId: string }>;
+  params: Promise<{ projectId: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/systems");
-  const { systemId } = await params;
-  const system = await getSystem({
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
+  const { projectId } = await params;
+  const project = await getProject({
     workspaceId: session.workspaceId,
-    systemId
+    projectId
   });
 
-  if (!system) {
+  if (!project) {
     notFound();
   }
 
-  const canEdit = hasPermission(session, PERMISSIONS.SYSTEM_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="System Overview">
+      <SectionHeader title="Project Overview">
         {canEdit ? (
           <Button asChild variant="outline" size="sm">
-            <Link href={`/systems/${systemId}/edit`}>Edit System</Link>
+            <Link href={`/projects/${projectId}/edit`}>Edit Project</Link>
           </Button>
         ) : null}
       </SectionHeader>
@@ -42,59 +42,52 @@ export default async function SystemOverviewPage({
           <dl className="grid gap-4 text-sm md:grid-cols-[180px_1fr]">
             <dt className="font-medium text-surface-500">Status</dt>
             <dd>
-              <Badge variant={system.status === "active" ? "success" : "warning"}>
-                {system.status}
+              <Badge variant={project.status === "active" ? "success" : "warning"}>
+                {project.status}
               </Badge>
             </dd>
 
             <dt className="font-medium text-surface-500">Sensitivity</dt>
             <dd>
-              <Badge variant="outline">{system.sensitivity}</Badge>
+              <Badge variant="outline">{project.sensitivity}</Badge>
             </dd>
 
-            {system.description ? (
+            {project.description ? (
               <>
                 <dt className="font-medium text-surface-500">Description</dt>
                 <dd className="whitespace-pre-wrap text-surface-700">
-                  {system.description}
+                  {project.description}
                 </dd>
               </>
             ) : null}
 
-            {system.techStack ? (
+            {project.prodDomainUrl ? (
               <>
-                <dt className="font-medium text-surface-500">Tech Stack</dt>
-                <dd className="text-surface-700">{system.techStack}</dd>
-              </>
-            ) : null}
-
-            {system.repositoryUrl ? (
-              <>
-                <dt className="font-medium text-surface-500">Repository</dt>
+                <dt className="font-medium text-surface-500">Prod URL</dt>
                 <dd>
                   <a
-                    href={system.repositoryUrl}
+                    href={project.prodDomainUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="text-isu-600 hover:underline"
                   >
-                    {system.repositoryUrl}
+                    {project.prodDomainUrl}
                   </a>
                 </dd>
               </>
             ) : null}
 
-            {system.dashboardUrl ? (
+            {project.devDomainUrl ? (
               <>
-                <dt className="font-medium text-surface-500">Dashboard</dt>
+                <dt className="font-medium text-surface-500">Dev URL</dt>
                 <dd>
                   <a
-                    href={system.dashboardUrl}
+                    href={project.devDomainUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="text-isu-600 hover:underline"
                   >
-                    {system.dashboardUrl}
+                    {project.devDomainUrl}
                   </a>
                 </dd>
               </>
@@ -105,7 +98,7 @@ export default async function SystemOverviewPage({
               {new Intl.DateTimeFormat("ko-KR", {
                 dateStyle: "long",
                 timeStyle: "short"
-              }).format(new Date(system.createdAt))}
+              }).format(new Date(project.createdAt))}
             </dd>
           </dl>
         </CardContent>

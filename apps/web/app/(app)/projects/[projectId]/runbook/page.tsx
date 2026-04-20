@@ -5,27 +5,27 @@ import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSystem } from "@/lib/queries/systems";
+import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
-export default async function SystemRunbookPage({
+export default async function ProjectRunbookPage({
   params
 }: {
-  params: Promise<{ systemId: string }>;
+  params: Promise<{ projectId: string }>;
 }) {
-  const t = await getTranslations("Systems.detail");
-  const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/systems");
-  const { systemId } = await params;
-  const system = await getSystem({
+  const t = await getTranslations("Projects.detail");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
+  const { projectId } = await params;
+  const project = await getProject({
     workspaceId: session.workspaceId,
-    systemId
+    projectId
   });
 
-  if (!system) {
+  if (!project) {
     notFound();
   }
 
-  const canEdit = hasPermission(session, PERMISSIONS.SYSTEM_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
 
   return (
     <Card>
@@ -33,11 +33,11 @@ export default async function SystemRunbookPage({
         <CardTitle>{t("runbook")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3 text-sm text-surface-600">
-        {system.knowledgePageId ? (
+        {project.knowledgePageId ? (
           <>
             <p>{t("runbookLinked")}</p>
             <Button asChild variant="outline" size="sm">
-              <Link href={`/knowledge/${system.knowledgePageId}`}>
+              <Link href={`/knowledge/${project.knowledgePageId}`}>
                 Open Knowledge Page
               </Link>
             </Button>
@@ -46,11 +46,11 @@ export default async function SystemRunbookPage({
           <>
             <p>
               No runbook is linked yet. Connect incident response, recovery steps, and
-              monitoring notes for this system.
+              monitoring notes for this project.
             </p>
             {canEdit ? (
               <Button asChild size="sm">
-                <Link href={`/knowledge/new?systemId=${systemId}&type=runbook`}>
+                <Link href={`/knowledge/new?projectId=${projectId}&type=runbook`}>
                   Create Runbook
                 </Link>
               </Button>

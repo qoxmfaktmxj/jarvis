@@ -4,21 +4,21 @@ import { NextRequest } from "next/server";
 const {
   getSessionMock,
   hasPermissionMock,
-  getSystemMock,
-  updateSystemMock,
-  deleteSystemMock,
-  listSystemAccessEntriesMock,
-  createSystemAccessMock,
-  deleteSystemAccessMock
+  getProjectMock,
+  updateProjectMock,
+  deleteProjectMock,
+  listProjectAccessEntriesMock,
+  createProjectAccessMock,
+  deleteProjectAccessMock
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  getSystemMock: vi.fn(),
-  updateSystemMock: vi.fn(),
-  deleteSystemMock: vi.fn(),
-  listSystemAccessEntriesMock: vi.fn(),
-  createSystemAccessMock: vi.fn(),
-  deleteSystemAccessMock: vi.fn()
+  getProjectMock: vi.fn(),
+  updateProjectMock: vi.fn(),
+  deleteProjectMock: vi.fn(),
+  listProjectAccessEntriesMock: vi.fn(),
+  createProjectAccessMock: vi.fn(),
+  deleteProjectAccessMock: vi.fn()
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
@@ -29,13 +29,13 @@ vi.mock("@jarvis/auth/rbac", () => ({
   hasPermission: hasPermissionMock
 }));
 
-vi.mock("@/lib/queries/systems", () => ({
-  getSystem: getSystemMock,
-  updateSystem: updateSystemMock,
-  deleteSystem: deleteSystemMock,
-  listSystemAccessEntries: listSystemAccessEntriesMock,
-  createSystemAccess: createSystemAccessMock,
-  deleteSystemAccess: deleteSystemAccessMock
+vi.mock("@/lib/queries/projects", () => ({
+  getProject: getProjectMock,
+  updateProject: updateProjectMock,
+  deleteProject: deleteProjectMock,
+  listProjectAccessEntries: listProjectAccessEntriesMock,
+  createProjectAccess: createProjectAccessMock,
+  deleteProjectAccess: deleteProjectAccessMock
 }));
 
 import { DELETE, GET, PUT } from "./route";
@@ -55,9 +55,9 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
   });
 }
 
-const params = { params: Promise.resolve({ systemId: "sys-1" }) };
+const params = { params: Promise.resolve({ projectId: "proj-1" }) };
 
-describe("/api/systems/[systemId]", () => {
+describe("/api/projects/[projectId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue({
@@ -65,38 +65,38 @@ describe("/api/systems/[systemId]", () => {
       userId: "user-1",
       workspaceId: "ws-1",
       roles: ["ADMIN"],
-      permissions: ["system:read", "system:update", "system:delete"]
+      permissions: ["project:read", "project:update", "project:delete"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
-  it("returns 404 when the system is missing", async () => {
-    getSystemMock.mockResolvedValue(null);
+  it("returns 404 when the project is missing", async () => {
+    getProjectMock.mockResolvedValue(null);
 
-    const response = await GET(buildRequest("http://localhost/api/systems/sys-1"), params);
+    const response = await GET(buildRequest("http://localhost/api/projects/proj-1"), params);
 
     expect(response.status).toBe(404);
   });
 
-  it("returns the system detail", async () => {
-    getSystemMock.mockResolvedValue({
-      id: "sys-1",
+  it("returns the project detail", async () => {
+    getProjectMock.mockResolvedValue({
+      id: "proj-1",
       name: "Payroll"
     });
 
-    const response = await GET(buildRequest("http://localhost/api/systems/sys-1"), params);
+    const response = await GET(buildRequest("http://localhost/api/projects/proj-1"), params);
 
     expect(response.status).toBe(200);
   });
 
   it("returns 422 for invalid updates", async () => {
     const response = await PUT(
-      buildRequest("http://localhost/api/systems/sys-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "PUT",
         headers: {
           "content-type": "application/json"
         },
-        body: JSON.stringify({ repositoryUrl: "not-a-url" })
+        body: JSON.stringify({ prodDomainUrl: "not-a-url" })
       }),
       params
     );
@@ -104,11 +104,11 @@ describe("/api/systems/[systemId]", () => {
     expect(response.status).toBe(422);
   });
 
-  it("updates the system", async () => {
-    updateSystemMock.mockResolvedValue({ id: "sys-1", name: "Renamed" });
+  it("updates the project", async () => {
+    updateProjectMock.mockResolvedValue({ id: "proj-1", name: "Renamed" });
 
     const response = await PUT(
-      buildRequest("http://localhost/api/systems/sys-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "PUT",
         headers: {
           "content-type": "application/json"
@@ -119,21 +119,21 @@ describe("/api/systems/[systemId]", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateSystemMock).toHaveBeenCalledWith({
+    expect(updateProjectMock).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      systemId: "sys-1",
-      input: {
+      projectId: "proj-1",
+      input: expect.objectContaining({
         name: "Renamed",
         status: "deprecated"
-      }
+      })
     });
   });
 
-  it("deletes the system", async () => {
-    deleteSystemMock.mockResolvedValue({ id: "sys-1" });
+  it("deletes the project", async () => {
+    deleteProjectMock.mockResolvedValue({ id: "proj-1" });
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/systems/sys-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "DELETE"
       }),
       params
@@ -143,7 +143,7 @@ describe("/api/systems/[systemId]", () => {
   });
 });
 
-describe("/api/systems/[systemId]/access", () => {
+describe("/api/projects/[projectId]/access", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue({
@@ -151,13 +151,13 @@ describe("/api/systems/[systemId]/access", () => {
       userId: "user-1",
       workspaceId: "ws-1",
       roles: ["ADMIN"],
-      permissions: ["system:read", "system:update"]
+      permissions: ["project:read", "project:update"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
   it("returns resolved access entries", async () => {
-    listSystemAccessEntriesMock.mockResolvedValue([
+    listProjectAccessEntriesMock.mockResolvedValue([
       {
         id: "acc-1",
         label: "Primary DB",
@@ -170,22 +170,22 @@ describe("/api/systems/[systemId]/access", () => {
     ]);
 
     const response = await GETAccess(
-      buildRequest("http://localhost/api/systems/sys-1/access"),
+      buildRequest("http://localhost/api/projects/proj-1/access"),
       params
     );
 
     expect(response.status).toBe(200);
-    expect(listSystemAccessEntriesMock).toHaveBeenCalledWith({
+    expect(listProjectAccessEntriesMock).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      systemId: "sys-1",
+      projectId: "proj-1",
       sessionRoles: ["ADMIN"],
-      sessionPermissions: ["system:read", "system:update"]
+      sessionPermissions: ["project:read", "project:update"]
     });
   });
 
   it("returns 422 for invalid access payloads", async () => {
     const response = await POSTAccess(
-      buildRequest("http://localhost/api/systems/sys-1/access", {
+      buildRequest("http://localhost/api/projects/proj-1/access", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -199,10 +199,10 @@ describe("/api/systems/[systemId]/access", () => {
   });
 
   it("creates an access entry", async () => {
-    createSystemAccessMock.mockResolvedValue({ id: "acc-1" });
+    createProjectAccessMock.mockResolvedValue({ id: "acc-1" });
 
     const response = await POSTAccess(
-      buildRequest("http://localhost/api/systems/sys-1/access", {
+      buildRequest("http://localhost/api/projects/proj-1/access", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -221,7 +221,7 @@ describe("/api/systems/[systemId]/access", () => {
 
   it("requires accessId for deletion", async () => {
     const response = await DELETEAccess(
-      buildRequest("http://localhost/api/systems/sys-1/access", {
+      buildRequest("http://localhost/api/projects/proj-1/access", {
         method: "DELETE"
       }),
       params

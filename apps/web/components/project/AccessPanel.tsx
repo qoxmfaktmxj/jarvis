@@ -45,11 +45,11 @@ function renderSecretValue(field: SecretField) {
 
 export function AccessPanel({
   entries,
-  systemId,
+  projectId,
   canManage
 }: {
   entries: AccessEntry[];
-  systemId: string;
+  projectId: string;
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -64,7 +64,7 @@ export function AccessPanel({
     setDeletingId(accessId);
     try {
       const response = await fetch(
-        `/api/systems/${systemId}/access?accessId=${accessId}`,
+        `/api/projects/${projectId}/access?accessId=${accessId}`,
         {
           method: "DELETE"
         }

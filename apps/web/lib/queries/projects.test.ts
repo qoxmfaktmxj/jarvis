@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { listSystemAccessEntries } from "./systems";
+import { listProjectAccessEntries } from "./projects";
 
 function makeDatabase(systemRows: unknown[], accessRows: unknown[]) {
   const query = {
@@ -14,12 +14,12 @@ function makeDatabase(systemRows: unknown[], accessRows: unknown[]) {
   };
 }
 
-describe("listSystemAccessEntries", () => {
+describe("listProjectAccessEntries", () => {
   it("filters out entries above the caller role and hides secret values without secret permission", async () => {
     const database = makeDatabase(
       [
         {
-          id: "sys-1",
+          id: "proj-1",
           workspaceId: "ws-1",
           sensitivity: "INTERNAL"
         }
@@ -60,9 +60,9 @@ describe("listSystemAccessEntries", () => {
       resolve: vi.fn().mockResolvedValue("resolved-secret")
     };
 
-    const entries = await listSystemAccessEntries({
+    const entries = await listProjectAccessEntries({
       workspaceId: "ws-1",
-      systemId: "sys-1",
+      projectId: "proj-1",
       sessionRoles: ["VIEWER"],
       sessionPermissions: ["project:read"],
       database: database as never,

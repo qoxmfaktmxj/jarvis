@@ -1,49 +1,40 @@
 import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { Badge } from "@/components/ui/badge";
-import { SystemTabs } from "@/components/system/SystemTabs";
+import { ProjectTabs } from "@/components/project/ProjectTabs";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { getSystem } from "@/lib/queries/systems";
+import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function SystemDetailLayout({
+export default async function ProjectDetailLayout({
   children,
   params
 }: {
   children: React.ReactNode;
-  params: Promise<{ systemId: string }>;
+  params: Promise<{ projectId: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/systems");
-  const { systemId } = await params;
-  const system = await getSystem({
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
+  const { projectId } = await params;
+  const project = await getProject({
     workspaceId: session.workspaceId,
-    systemId
+    projectId
   });
 
-  if (!system) {
+  if (!project) {
     notFound();
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="System"
-        title={system.name}
-        description={system.description ?? undefined}
-        accent={system.name?.slice(0, 3).toUpperCase()}
-        meta={
-          <div className="flex items-center gap-2">
-            {system.environment ? (
-              <Badge variant="secondary">{system.environment}</Badge>
-            ) : null}
-            {system.category ? <Badge variant="outline">{system.category}</Badge> : null}
-          </div>
-        }
+        eyebrow="Project"
+        title={project.name}
+        description={project.description ?? undefined}
+        accent={project.name?.slice(0, 3).toUpperCase()}
       />
 
-      <SystemTabs systemId={systemId} />
+      <ProjectTabs projectId={projectId} />
       <div>{children}</div>
     </div>
   );

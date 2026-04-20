@@ -2,28 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { createSystemAccessSchema } from "@jarvis/shared/validation/system";
 import {
-  createSystemAccess,
-  deleteSystemAccess,
-  listSystemAccessEntries
-} from "@/lib/queries/systems";
+  createProjectAccess,
+  deleteProjectAccess,
+  listProjectAccessEntries
+} from "@/lib/queries/projects";
 import { requireApiSession } from "@/lib/server/api-auth";
 
 type RouteContext = {
   params: Promise<{
-    systemId: string;
+    projectId: string;
   }>;
 };
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_READ);
   if (auth.response) {
     return auth.response;
   }
 
-  const { systemId } = await context.params;
-  const entries = await listSystemAccessEntries({
+  const { projectId } = await context.params;
+  const entries = await listProjectAccessEntries({
     workspaceId: auth.session.workspaceId,
-    systemId,
+    projectId,
     sessionRoles: auth.session.roles,
     sessionPermissions: auth.session.permissions
   });
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_UPDATE);
   if (auth.response) {
     return auth.response;
   }
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { systemId } = await context.params;
-  const created = await createSystemAccess({
+  const { projectId } = await context.params;
+  const created = await createProjectAccess({
     workspaceId: auth.session.workspaceId,
-    systemId,
+    projectId,
     input: parsed.data
   });
 
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_UPDATE);
   if (auth.response) {
     return auth.response;
   }
@@ -72,10 +72,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ error: "accessId is required" }, { status: 400 });
   }
 
-  const { systemId } = await context.params;
-  const deleted = await deleteSystemAccess({
+  const { projectId } = await context.params;
+  const deleted = await deleteProjectAccess({
     workspaceId: auth.session.workspaceId,
-    systemId,
+    projectId,
     accessId
   });
 

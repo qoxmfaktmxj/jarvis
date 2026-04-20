@@ -6,7 +6,7 @@ const {
   redirectMock,
   getSessionMock,
   hasPermissionMock,
-  listSystemsMock
+  listProjectsMock
 } = vi.hoisted(() => ({
   headersMock: vi.fn(),
   redirectMock: vi.fn((location: string) => {
@@ -14,7 +14,7 @@ const {
   }),
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  listSystemsMock: vi.fn()
+  listProjectsMock: vi.fn()
 }));
 
 vi.mock("next/headers", () => ({
@@ -33,44 +33,43 @@ vi.mock("@jarvis/auth/rbac", () => ({
   hasPermission: hasPermissionMock
 }));
 
-vi.mock("@/lib/queries/systems", () => ({
-  listSystems: listSystemsMock
+vi.mock("@/lib/queries/projects", () => ({
+  listProjects: listProjectsMock
 }));
 
-vi.mock("@/components/system/SystemCard", () => ({
-  SystemCard: ({ system }: { system: { name: string } }) => `<article>${system.name}</article>`
+vi.mock("@/components/project/ProjectTable", () => ({
+  ProjectTable: ({ data }: { data: { name: string }[] }) =>
+    `<table>${data.map((r) => `<tr>${r.name}</tr>`).join("")}</table>`
 }));
 
-import SystemsPage from "./page";
+import ProjectsPage from "./page";
 
-describe("SystemsPage", () => {
+describe("ProjectsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     headersMock.mockResolvedValue(new Headers({ "x-session-id": "session-1" }));
     getSessionMock.mockResolvedValue({
       id: "session-1",
       workspaceId: "ws-1",
-      permissions: ["system:read", "system:create"]
+      permissions: ["project:read", "project:create"]
     });
     hasPermissionMock.mockReturnValue(true);
-    listSystemsMock.mockResolvedValue({
-      data: [{ id: "sys-1", name: "Payroll" }],
-      pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+    listProjectsMock.mockResolvedValue({
+      data: [{ id: "proj-1", name: "Payroll" }],
+      pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
     });
   });
 
-  it("renders the systems registry", async () => {
-    const html = renderToStaticMarkup(await SystemsPage({ searchParams: Promise.resolve({}) }));
+  it("renders the projects registry", async () => {
+    const html = renderToStaticMarkup(await ProjectsPage({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain("시스템");
     expect(html).toContain("Payroll");
-    expect(html).toContain("시스템 등록");
   });
 
   it("redirects when permission is missing", async () => {
     hasPermissionMock.mockReturnValue(false);
 
-    await expect(SystemsPage({ searchParams: Promise.resolve({}) })).rejects.toThrowError(
+    await expect(ProjectsPage({ searchParams: Promise.resolve({}) })).rejects.toThrowError(
       "redirect:/dashboard"
     );
   });

@@ -25,7 +25,7 @@ const defaultValues: FormValues = {
   requiredRole: "DEVELOPER"
 };
 
-export function AccessEntryForm({ systemId }: { systemId: string }) {
+export function AccessEntryForm({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const form = useForm<FormValues>({
@@ -35,7 +35,7 @@ export function AccessEntryForm({ systemId }: { systemId: string }) {
 
   async function onSubmit(values: FormValues) {
     setServerError(null);
-    const response = await fetch(`/api/systems/${systemId}/access`, {
+    const response = await fetch(`/api/projects/${projectId}/access`, {
       method: "POST",
       headers: {
         "content-type": "application/json"

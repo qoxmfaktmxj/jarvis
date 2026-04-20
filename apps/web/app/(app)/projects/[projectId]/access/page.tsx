@@ -1,31 +1,31 @@
 import { notFound } from "next/navigation";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { AccessEntryForm } from "@/components/system/AccessEntryForm";
-import { AccessPanel } from "@/components/system/AccessPanel";
+import { AccessEntryForm } from "@/components/project/AccessEntryForm";
+import { AccessPanel } from "@/components/project/AccessPanel";
 import { SectionHeader } from "@/components/patterns/SectionHeader";
-import { getSystem, listSystemAccessEntries } from "@/lib/queries/systems";
+import { getProject, listProjectAccessEntries } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
-export default async function SystemAccessPage({
+export default async function ProjectAccessPage({
   params
 }: {
-  params: Promise<{ systemId: string }>;
+  params: Promise<{ projectId: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SYSTEM_READ, "/systems");
-  const { systemId } = await params;
-  const system = await getSystem({
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
+  const { projectId } = await params;
+  const project = await getProject({
     workspaceId: session.workspaceId,
-    systemId
+    projectId
   });
 
-  if (!system) {
+  if (!project) {
     notFound();
   }
 
-  const entries = await listSystemAccessEntries({
+  const entries = await listProjectAccessEntries({
     workspaceId: session.workspaceId,
-    systemId,
+    projectId,
     sessionRoles: session.roles ?? [],
     sessionPermissions: session.permissions ?? []
   });
@@ -34,7 +34,7 @@ export default async function SystemAccessPage({
     notFound();
   }
 
-  const canManage = hasPermission(session, PERMISSIONS.SYSTEM_UPDATE);
+  const canManage = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
 
   return (
     <div className="space-y-6">
@@ -45,8 +45,8 @@ export default async function SystemAccessPage({
         </p>
       </div>
 
-      {canManage ? <AccessEntryForm systemId={systemId} /> : null}
-      <AccessPanel entries={entries} systemId={systemId} canManage={canManage} />
+      {canManage ? <AccessEntryForm projectId={projectId} /> : null}
+      <AccessPanel entries={entries} projectId={projectId} canManage={canManage} />
     </div>
   );
 }

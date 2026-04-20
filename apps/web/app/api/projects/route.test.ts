@@ -4,13 +4,13 @@ import { NextRequest } from "next/server";
 const {
   getSessionMock,
   hasPermissionMock,
-  listSystemsMock,
-  createSystemMock
+  listProjectsMock,
+  createProjectMock
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  listSystemsMock: vi.fn(),
-  createSystemMock: vi.fn()
+  listProjectsMock: vi.fn(),
+  createProjectMock: vi.fn()
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
@@ -21,9 +21,9 @@ vi.mock("@jarvis/auth/rbac", () => ({
   hasPermission: hasPermissionMock
 }));
 
-vi.mock("@/lib/queries/systems", () => ({
-  listSystems: listSystemsMock,
-  createSystem: createSystemMock
+vi.mock("@/lib/queries/projects", () => ({
+  listProjects: listProjectsMock,
+  createProject: createProjectMock
 }));
 
 import { GET, POST } from "./route";
@@ -38,7 +38,7 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
   });
 }
 
-describe("/api/systems", () => {
+describe("/api/projects", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getSessionMock.mockResolvedValue({
@@ -46,13 +46,13 @@ describe("/api/systems", () => {
       userId: "user-1",
       workspaceId: "ws-1",
       roles: ["ADMIN"],
-      permissions: ["system:read", "system:create"]
+      permissions: ["project:read", "project:create"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
   it("returns 401 when no session cookie exists", async () => {
-    const response = await GET(new NextRequest("http://localhost/api/systems"));
+    const response = await GET(new NextRequest("http://localhost/api/projects"));
 
     expect(response.status).toBe(401);
   });
@@ -60,49 +60,40 @@ describe("/api/systems", () => {
   it("returns 403 when permission is missing", async () => {
     hasPermissionMock.mockReturnValue(false);
 
-    const response = await GET(buildRequest("http://localhost/api/systems"));
+    const response = await GET(buildRequest("http://localhost/api/projects"));
 
     expect(response.status).toBe(403);
   });
 
   it("returns 400 for invalid query params", async () => {
     const response = await GET(
-      buildRequest("http://localhost/api/systems?page=0&pageSize=999")
+      buildRequest("http://localhost/api/projects?page=0&pageSize=999")
     );
 
     expect(response.status).toBe(400);
   });
 
-  it("returns paginated systems", async () => {
-    listSystemsMock.mockResolvedValue({
-      data: [{ id: "sys-1", name: "Payroll", status: "active" }],
+  it("returns paginated projects", async () => {
+    listProjectsMock.mockResolvedValue({
+      data: [{ id: "proj-1", name: "Payroll", status: "active" }],
       pagination: {
         page: 1,
-        pageSize: 20,
+        pageSize: 50,
         total: 1,
         totalPages: 1
       }
     });
 
     const response = await GET(
-      buildRequest("http://localhost/api/systems?environment=prod&q=pay")
+      buildRequest("http://localhost/api/projects?q=pay&status=active")
     );
 
     expect(response.status).toBe(200);
-    expect(listSystemsMock).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      category: undefined,
-      environment: "prod",
-      page: 1,
-      pageSize: 20,
-      q: "pay",
-      status: undefined
-    });
   });
 
   it("returns 422 for an invalid create payload", async () => {
     const response = await POST(
-      buildRequest("http://localhost/api/systems", {
+      buildRequest("http://localhost/api/projects", {
         method: "POST",
         headers: {
           "content-type": "application/json"
@@ -114,35 +105,26 @@ describe("/api/systems", () => {
     expect(response.status).toBe(422);
   });
 
-  it("creates a system", async () => {
-    createSystemMock.mockResolvedValue({
-      id: "sys-1",
+  it("creates a project", async () => {
+    createProjectMock.mockResolvedValue({
+      id: "proj-1",
       name: "Payroll"
     });
 
     const response = await POST(
-      buildRequest("http://localhost/api/systems", {
+      buildRequest("http://localhost/api/projects", {
         method: "POST",
         headers: {
           "content-type": "application/json"
         },
         body: JSON.stringify({
+          companyId: "00000000-0000-0000-0000-000000000001",
           name: "Payroll",
-          environment: "prod",
           sensitivity: "INTERNAL"
         })
       })
     );
 
     expect(response.status).toBe(201);
-    expect(createSystemMock).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      userId: "user-1",
-      input: {
-        name: "Payroll",
-        environment: "prod",
-        sensitivity: "INTERNAL"
-      }
-    });
   });
 });

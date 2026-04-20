@@ -1,21 +1,21 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { SystemForm } from "@/components/system/SystemForm";
+import { ProjectForm } from "@/components/project/ProjectForm";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 
-export default async function NewSystemPage() {
-  const t = await getTranslations("Systems.create");
-  await requirePageSession(PERMISSIONS.SYSTEM_CREATE, "/systems");
+export default async function NewProjectPage() {
+  const t = await getTranslations("Projects.create");
+  await requirePageSession(PERMISSIONS.PROJECT_CREATE, "/projects");
 
   return (
     <div className="max-w-3xl space-y-6">
       <PageHeader
-        eyebrow="Systems · New"
+        eyebrow="Projects · New"
         title={t("title")}
         description={t("description")}
       />
-      <SystemForm mode="create" />
+      <ProjectForm mode="create" />
     </div>
   );
 }

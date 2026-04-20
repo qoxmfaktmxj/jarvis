@@ -1,40 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { createSystemSchema } from "@jarvis/shared/validation/system";
+import { z } from "zod";
 import {
-  deleteSystem,
-  getSystem,
-  updateSystem
-} from "@/lib/queries/systems";
+  deleteProject,
+  getProject,
+  updateProject
+} from "@/lib/queries/projects";
 import { requireApiSession } from "@/lib/server/api-auth";
 
 type RouteContext = {
   params: Promise<{
-    systemId: string;
+    projectId: string;
   }>;
 };
 
-function normalizeSystemInput(input: ReturnType<typeof createSystemSchema.partial>["_output"]) {
-  return {
-    ...input,
-    category: input.category || undefined,
-    description: input.description || undefined,
-    techStack: input.techStack || undefined,
-    repositoryUrl: input.repositoryUrl || undefined,
-    dashboardUrl: input.dashboardUrl || undefined
-  };
-}
+const updateProjectBodySchema = z.object({
+  name: z.string().min(1).max(300).optional(),
+  description: z.string().max(4000).optional().or(z.literal("")),
+  sensitivity: z.enum(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]).optional(),
+  status: z.enum(["active", "deprecated", "decommissioned"]).optional(),
+  prodDomainUrl: z.string().url().optional().or(z.literal("")),
+  prodConnectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),
+  prodRepositoryUrl: z.string().url().optional().or(z.literal("")),
+  devDomainUrl: z.string().url().optional().or(z.literal("")),
+  devConnectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),
+  devRepositoryUrl: z.string().url().optional().or(z.literal(""))
+});
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_READ);
   if (auth.response) {
     return auth.response;
   }
 
-  const { systemId } = await context.params;
-  const detail = await getSystem({
+  const { projectId } = await context.params;
+  const detail = await getProject({
     workspaceId: auth.session.workspaceId,
-    systemId
+    projectId
   });
 
   if (!detail) {
@@ -45,22 +47,29 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_UPDATE);
   if (auth.response) {
     return auth.response;
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = createSystemSchema.partial().safeParse(body);
+  const parsed = updateProjectBodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
-  const { systemId } = await context.params;
-  const updated = await updateSystem({
+  const { projectId } = await context.params;
+  const updated = await updateProject({
     workspaceId: auth.session.workspaceId,
-    systemId,
-    input: normalizeSystemInput(parsed.data)
+    projectId,
+    input: {
+      ...parsed.data,
+      description: parsed.data.description || undefined,
+      prodDomainUrl: parsed.data.prodDomainUrl || undefined,
+      prodRepositoryUrl: parsed.data.prodRepositoryUrl || undefined,
+      devDomainUrl: parsed.data.devDomainUrl || undefined,
+      devRepositoryUrl: parsed.data.devRepositoryUrl || undefined
+    }
   });
 
   if (!updated) {
@@ -71,15 +80,15 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.SYSTEM_DELETE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_DELETE);
   if (auth.response) {
     return auth.response;
   }
 
-  const { systemId } = await context.params;
-  const deleted = await deleteSystem({
+  const { projectId } = await context.params;
+  const deleted = await deleteProject({
     workspaceId: auth.session.workspaceId,
-    systemId
+    projectId
   });
 
   if (!deleted) {

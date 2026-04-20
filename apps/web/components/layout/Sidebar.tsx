@@ -45,7 +45,7 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/wiki/graph",            label: "위키 그래프",   icon: GitFork },
   { href: "/wiki/ingest/manual",    label: "위키 수동수집", icon: FilePlus },
   { href: "/knowledge",             label: "Knowledge",     icon: BookOpen },
-  { href: "/systems",               label: "시스템",        icon: Server },
+  { href: "/projects",              label: "프로젝트",      icon: Server },
   { href: "/architecture",          label: "아키텍처",      icon: Network },
   { href: "/infra",                 label: "인프라",        icon: HardDrive },
   { href: "/add-dev",               label: "추가개발",      icon: ClipboardList },

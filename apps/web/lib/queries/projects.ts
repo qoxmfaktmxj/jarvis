@@ -1,5 +1,5 @@
 import { db } from "@jarvis/db/client";
-import { project, systemAccess } from "@jarvis/db/schema";
+import { company, project, projectAccess, user } from "@jarvis/db/schema";
 import {
   createEnvSecretResolver,
   isSecretRef,
@@ -9,14 +9,26 @@ import {
   canAccessProjectAccessEntry,
   canResolveProjectSecrets
 } from "@jarvis/auth/rbac";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, isNotNull, or } from "drizzle-orm";
 
-type SystemsDb = typeof db;
-type SystemRow = typeof project.$inferSelect;
-type SystemAccessRow = typeof systemAccess.$inferSelect;
+type ProjectsDb = typeof db;
+type ProjectAccessRow = typeof projectAccess.$inferSelect;
 
-export interface PaginatedSystems {
-  data: SystemRow[];
+export interface ProjectTableRow {
+  id: string;
+  companyCode: string | null;
+  companyName: string | null;
+  name: string;
+  prodDomainUrl: string | null;
+  devDomainUrl: string | null;
+  status: string;
+  sensitivity: string;
+  ownerName: string | null;
+  updatedAt: Date;
+}
+
+export interface PaginatedProjects {
+  data: ProjectTableRow[];
   pagination: {
     page: number;
     pageSize: number;
@@ -46,37 +58,40 @@ export interface ResolvedAccessEntry {
   vpnFileRef: ResolvedSecretField;
 }
 
-type ListSystemsParams = {
+type ListProjectsParams = {
   workspaceId: string;
-  // category and environment were removed from the project schema (P1-A).
-  // TODO(P3-A): remove these from all callers once the file is renamed to projects.ts
-  category?: string;
-  environment?: string;
   status?: string;
+  connectType?: "IP" | "VPN" | "VDI" | "RE";
+  hasDev?: boolean;
   q?: string;
   page?: number;
   pageSize?: number;
-  database?: SystemsDb;
+  database?: ProjectsDb;
 };
 
-type CreateSystemInput = {
+type CreateProjectInput = {
+  companyId: string;
   name: string;
-  // TODO(P3-A): category and environment no longer exist on project table; remove these from callers
-  category?: string;
-  environment?: string;
   description?: string;
-  techStack?: string;
-  repositoryUrl?: string;
-  dashboardUrl?: string;
-  sensitivity?:
-    | "PUBLIC"
-    | "INTERNAL"
-    | "RESTRICTED"
-    | "SECRET_REF_ONLY";
+  sensitivity?: "PUBLIC" | "INTERNAL" | "RESTRICTED" | "SECRET_REF_ONLY";
   status?: "active" | "deprecated" | "decommissioned";
+  prodDomainUrl?: string;
+  prodConnectType?: "IP" | "VPN" | "VDI" | "RE";
+  prodRepositoryUrl?: string;
+  prodDbDsn?: string;
+  prodSrcPath?: string;
+  prodClassPath?: string;
+  prodMemo?: string;
+  devDomainUrl?: string;
+  devConnectType?: "IP" | "VPN" | "VDI" | "RE";
+  devRepositoryUrl?: string;
+  devDbDsn?: string;
+  devSrcPath?: string;
+  devClassPath?: string;
+  devMemo?: string;
 };
 
-type CreateSystemAccessInput = {
+type CreateProjectAccessInput = {
   accessType: "db" | "ssh" | "vpn" | "web" | "api";
   label: string;
   host?: string;
@@ -87,6 +102,7 @@ type CreateSystemAccessInput = {
   vpnFileRef?: string;
   notes?: string;
   requiredRole?: "VIEWER" | "DEVELOPER" | "MANAGER" | "ADMIN";
+  envType?: "prod" | "dev";
 };
 
 function normalizeOptionalString(value?: string | null) {
@@ -97,16 +113,16 @@ function normalizeOptionalString(value?: string | null) {
   return value;
 }
 
-export async function listSystems({
+export async function listProjects({
   workspaceId,
-  // category and environment are dropped from the project schema (P1-A); ignored here
-  // TODO(P3-A): remove params from callers
   status,
+  connectType,
+  hasDev,
   q,
   page = 1,
   pageSize = 20,
   database = db
-}: ListSystemsParams): Promise<PaginatedSystems> {
+}: ListProjectsParams): Promise<PaginatedProjects> {
   const safePage = Math.max(1, page);
   const safePageSize = Math.min(100, Math.max(1, pageSize));
   const conditions = [eq(project.workspaceId, workspaceId)];
@@ -114,17 +130,42 @@ export async function listSystems({
   if (status) {
     conditions.push(eq(project.status, status));
   }
+  if (connectType) {
+    conditions.push(
+      or(
+        eq(project.prodConnectType, connectType),
+        eq(project.devConnectType, connectType)
+      )!
+    );
+  }
+  if (hasDev === true) {
+    conditions.push(isNotNull(project.devDomainUrl));
+  }
   if (q) {
     conditions.push(or(ilike(project.name, `%${q}%`), ilike(project.description, `%${q}%`))!);
   }
 
   const where = and(...conditions);
+
   const [rows, totalRows] = await Promise.all([
     database
-      .select()
+      .select({
+        id: project.id,
+        name: project.name,
+        prodDomainUrl: project.prodDomainUrl,
+        devDomainUrl: project.devDomainUrl,
+        status: project.status,
+        sensitivity: project.sensitivity,
+        updatedAt: project.updatedAt,
+        companyCode: company.code,
+        companyName: company.name,
+        ownerName: user.name
+      })
       .from(project)
+      .leftJoin(company, eq(project.companyId, company.id))
+      .leftJoin(user, eq(project.ownerId, user.id))
       .where(where)
-      .orderBy(desc(project.createdAt))
+      .orderBy(desc(project.updatedAt))
       .limit(safePageSize)
       .offset((safePage - 1) * safePageSize),
     database.select({ total: count() }).from(project).where(where)
@@ -143,7 +184,7 @@ export async function listSystems({
   };
 }
 
-export async function createSystem({
+export async function createProject({
   workspaceId,
   userId,
   input,
@@ -151,58 +192,68 @@ export async function createSystem({
 }: {
   workspaceId: string;
   userId: string;
-  input: CreateSystemInput;
-  database?: SystemsDb;
+  input: CreateProjectInput;
+  database?: ProjectsDb;
 }) {
-  // NOTE: category and environment are not in the project schema (P1-A). Silently ignored.
   const [created] = await database
     .insert(project)
     .values({
       workspaceId,
-      // companyId is required on the project table; callers must supply it via a separate mechanism.
-      // TODO(P3-A): update CreateSystemInput to include companyId and pass it here
-      companyId: "00000000-0000-0000-0000-000000000000",
+      companyId: input.companyId,
       ownerId: userId,
       name: input.name,
       description: normalizeOptionalString(input.description),
       sensitivity: input.sensitivity ?? "INTERNAL",
-      status: input.status ?? "active"
+      status: input.status ?? "active",
+      prodDomainUrl: normalizeOptionalString(input.prodDomainUrl),
+      prodConnectType: normalizeOptionalString(input.prodConnectType),
+      prodRepositoryUrl: normalizeOptionalString(input.prodRepositoryUrl),
+      prodDbDsn: normalizeOptionalString(input.prodDbDsn),
+      prodSrcPath: normalizeOptionalString(input.prodSrcPath),
+      prodClassPath: normalizeOptionalString(input.prodClassPath),
+      prodMemo: normalizeOptionalString(input.prodMemo),
+      devDomainUrl: normalizeOptionalString(input.devDomainUrl),
+      devConnectType: normalizeOptionalString(input.devConnectType),
+      devRepositoryUrl: normalizeOptionalString(input.devRepositoryUrl),
+      devDbDsn: normalizeOptionalString(input.devDbDsn),
+      devSrcPath: normalizeOptionalString(input.devSrcPath),
+      devClassPath: normalizeOptionalString(input.devClassPath),
+      devMemo: normalizeOptionalString(input.devMemo)
     })
     .returning();
 
   return created;
 }
 
-export async function getSystem({
+export async function getProject({
   workspaceId,
-  systemId,
+  projectId,
   database = db
 }: {
   workspaceId: string;
-  systemId: string;
-  database?: SystemsDb;
+  projectId: string;
+  database?: ProjectsDb;
 }) {
   const [row] = await database
     .select()
     .from(project)
-    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
+    .where(and(eq(project.id, projectId), eq(project.workspaceId, workspaceId)))
     .limit(1);
 
   return row ?? null;
 }
 
-export async function updateSystem({
+export async function updateProject({
   workspaceId,
-  systemId,
+  projectId,
   input,
   database = db
 }: {
   workspaceId: string;
-  systemId: string;
-  input: Partial<CreateSystemInput>;
-  database?: SystemsDb;
+  projectId: string;
+  input: Partial<CreateProjectInput>;
+  database?: ProjectsDb;
 }) {
-  // NOTE: category and environment are not in the project schema (P1-A). Silently ignored.
   const [updated] = await database
     .update(project)
     .set({
@@ -212,26 +263,68 @@ export async function updateSystem({
         : {}),
       ...(input.sensitivity !== undefined ? { sensitivity: input.sensitivity } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.prodDomainUrl !== undefined
+        ? { prodDomainUrl: normalizeOptionalString(input.prodDomainUrl) }
+        : {}),
+      ...(input.prodConnectType !== undefined
+        ? { prodConnectType: normalizeOptionalString(input.prodConnectType) }
+        : {}),
+      ...(input.prodRepositoryUrl !== undefined
+        ? { prodRepositoryUrl: normalizeOptionalString(input.prodRepositoryUrl) }
+        : {}),
+      ...(input.prodDbDsn !== undefined
+        ? { prodDbDsn: normalizeOptionalString(input.prodDbDsn) }
+        : {}),
+      ...(input.prodSrcPath !== undefined
+        ? { prodSrcPath: normalizeOptionalString(input.prodSrcPath) }
+        : {}),
+      ...(input.prodClassPath !== undefined
+        ? { prodClassPath: normalizeOptionalString(input.prodClassPath) }
+        : {}),
+      ...(input.prodMemo !== undefined
+        ? { prodMemo: normalizeOptionalString(input.prodMemo) }
+        : {}),
+      ...(input.devDomainUrl !== undefined
+        ? { devDomainUrl: normalizeOptionalString(input.devDomainUrl) }
+        : {}),
+      ...(input.devConnectType !== undefined
+        ? { devConnectType: normalizeOptionalString(input.devConnectType) }
+        : {}),
+      ...(input.devRepositoryUrl !== undefined
+        ? { devRepositoryUrl: normalizeOptionalString(input.devRepositoryUrl) }
+        : {}),
+      ...(input.devDbDsn !== undefined
+        ? { devDbDsn: normalizeOptionalString(input.devDbDsn) }
+        : {}),
+      ...(input.devSrcPath !== undefined
+        ? { devSrcPath: normalizeOptionalString(input.devSrcPath) }
+        : {}),
+      ...(input.devClassPath !== undefined
+        ? { devClassPath: normalizeOptionalString(input.devClassPath) }
+        : {}),
+      ...(input.devMemo !== undefined
+        ? { devMemo: normalizeOptionalString(input.devMemo) }
+        : {}),
       updatedAt: new Date()
     })
-    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
+    .where(and(eq(project.id, projectId), eq(project.workspaceId, workspaceId)))
     .returning();
 
   return updated ?? null;
 }
 
-export async function deleteSystem({
+export async function deleteProject({
   workspaceId,
-  systemId,
+  projectId,
   database = db
 }: {
   workspaceId: string;
-  systemId: string;
-  database?: SystemsDb;
+  projectId: string;
+  database?: ProjectsDb;
 }) {
   const [deleted] = await database
     .delete(project)
-    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
+    .where(and(eq(project.id, projectId), eq(project.workspaceId, workspaceId)))
     .returning({ id: project.id });
 
   return deleted ?? null;
@@ -278,45 +371,45 @@ async function resolveSecretField(
   }
 }
 
-export async function listSystemAccessEntries({
+export async function listProjectAccessEntries({
   workspaceId,
-  systemId,
+  projectId,
   sessionRoles,
   sessionPermissions,
   database = db,
   resolver = createEnvSecretResolver()
 }: {
   workspaceId: string;
-  systemId: string;
+  projectId: string;
   sessionRoles: string[];
   sessionPermissions: string[];
-  database?: SystemsDb;
+  database?: ProjectsDb;
   resolver?: SecretResolver;
 }): Promise<ResolvedAccessEntry[] | null> {
-  const sys = await getSystem({ workspaceId, systemId, database });
-  if (!sys) {
+  const proj = await getProject({ workspaceId, projectId, database });
+  if (!proj) {
     return null;
   }
 
   const rows = await database
     .select()
-    .from(systemAccess)
+    .from(projectAccess)
     .where(
-      and(eq(systemAccess.systemId, systemId), eq(systemAccess.workspaceId, workspaceId))
+      and(eq(projectAccess.projectId, projectId), eq(projectAccess.workspaceId, workspaceId))
     )
-    .orderBy(systemAccess.sortOrder);
+    .orderBy(projectAccess.sortOrder);
 
-  const visibleRows = rows.filter((row: SystemAccessRow) =>
+  const visibleRows = rows.filter((row: ProjectAccessRow) =>
     canAccessProjectAccessEntry(sessionRoles, row.requiredRole)
   );
 
   const allowResolve = canResolveProjectSecrets(
     sessionPermissions,
-    sys.sensitivity
+    proj.sensitivity
   );
 
   return Promise.all(
-    visibleRows.map(async (row: SystemAccessRow) => ({
+    visibleRows.map(async (row: ProjectAccessRow) => ({
       id: row.id,
       accessType: row.accessType,
       label: row.label,
@@ -337,27 +430,28 @@ export async function listSystemAccessEntries({
   );
 }
 
-export async function createSystemAccess({
+export async function createProjectAccess({
   workspaceId,
-  systemId,
+  projectId,
   input,
   database = db
 }: {
   workspaceId: string;
-  systemId: string;
-  input: CreateSystemAccessInput;
-  database?: SystemsDb;
+  projectId: string;
+  input: CreateProjectAccessInput;
+  database?: ProjectsDb;
 }) {
-  const sys = await getSystem({ workspaceId, systemId, database });
-  if (!sys) {
+  const proj = await getProject({ workspaceId, projectId, database });
+  if (!proj) {
     return null;
   }
 
   const [created] = await database
-    .insert(systemAccess)
+    .insert(projectAccess)
     .values({
       workspaceId,
-      systemId,
+      projectId,
+      envType: input.envType ?? "prod",
       accessType: input.accessType,
       label: input.label,
       host: normalizeOptionalString(input.host),
@@ -374,27 +468,27 @@ export async function createSystemAccess({
   return created;
 }
 
-export async function deleteSystemAccess({
+export async function deleteProjectAccess({
   workspaceId,
-  systemId,
+  projectId,
   accessId,
   database = db
 }: {
   workspaceId: string;
-  systemId: string;
+  projectId: string;
   accessId: string;
-  database?: SystemsDb;
+  database?: ProjectsDb;
 }) {
   const [deleted] = await database
-    .delete(systemAccess)
+    .delete(projectAccess)
     .where(
       and(
-        eq(systemAccess.id, accessId),
-        eq(systemAccess.systemId, systemId),
-        eq(systemAccess.workspaceId, workspaceId)
+        eq(projectAccess.id, accessId),
+        eq(projectAccess.projectId, projectId),
+        eq(projectAccess.workspaceId, workspaceId)
       )
     )
-    .returning({ id: systemAccess.id });
+    .returning({ id: projectAccess.id });
 
   return deleted ?? null;
 }
