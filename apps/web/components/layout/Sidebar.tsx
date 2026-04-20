@@ -15,12 +15,15 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  ClipboardList,
   FolderKanban,
   LayoutDashboard,
   Library,
   MessageSquare,
+  Network,
   Search,
   Server,
+  Share2,
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
@@ -34,9 +37,12 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/ask",        label: "AI 질문",   icon: MessageSquare, badge: "AI" },
   { href: "/search",     label: "검색",       icon: Search },
   { href: "/wiki",       label: "위키",       icon: Library },
+  { href: "/wiki/graph", label: "Wiki 그래프", icon: Share2 },
+  { href: "/architecture", label: "아키텍처",  icon: Network },
   { href: "/knowledge",  label: "Knowledge", icon: BookOpen },
   { href: "/projects",   label: "프로젝트",  icon: FolderKanban },
   { href: "/systems",    label: "시스템",    icon: Server },
+  { href: "/add-dev",    label: "추가개발",  icon: ClipboardList },
   { href: "/attendance", label: "근태등록",  icon: Calendar },
 ];
 
