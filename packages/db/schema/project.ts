@@ -55,21 +55,18 @@ export const projectRelations = relations(project, ({ one, many }) => ({
   company: one(company, { fields: [project.companyId], references: [company.id] }),
   owner: one(user, { fields: [project.ownerId], references: [user.id] }),
   knowledgePage: one(knowledgePage, { fields: [project.knowledgePageId], references: [knowledgePage.id] }),
-  accessEntries: many(systemAccess),
-  // NOTE: accessEntries relation will be updated in P2-A (project_access rename)
+  accessEntries: many(projectAccess),
 }));
 
-// NOTE: systemAccess table remains unchanged in this Phase (P1-A).
-// P2-A will rename system_access -> project_access and update this file.
-// FK reference updated to project.id since system table was renamed.
-export const systemAccess = pgTable("system_access", {
+export const projectAccess = pgTable("project_access", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspace.id),
-  systemId: uuid("system_id")
+  projectId: uuid("project_id")
     .notNull()
     .references(() => project.id, { onDelete: "cascade" }),
+  envType: varchar("env_type", { length: 10 }).notNull(),
   accessType: varchar("access_type", { length: 50 }).notNull(),
   label: varchar("label", { length: 200 }).notNull(),
   host: varchar("host", { length: 500 }),
@@ -83,8 +80,15 @@ export const systemAccess = pgTable("system_access", {
   sortOrder: integer("sort_order").default(0).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
-
-export const systemAccessRelations = relations(systemAccess, ({ one }) => ({
-  project: one(project, { fields: [systemAccess.systemId], references: [project.id] }),
+}, (t) => ({
+  projectIdx: index("idx_project_access_project").on(t.projectId),
 }));
+
+export const projectAccessRelations = relations(projectAccess, ({ one }) => ({
+  project: one(project, { fields: [projectAccess.projectId], references: [project.id] }),
+}));
+
+/** @deprecated alias kept for P2-A transition; callers will be migrated to `projectAccess` in P3-A */
+export const systemAccess = projectAccess;
+/** @deprecated */
+export const systemAccessRelations = projectAccessRelations;
