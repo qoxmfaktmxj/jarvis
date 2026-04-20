@@ -119,7 +119,7 @@ Files (1)         FILES_WRITE
 | 역할 | 권한 개수 | 핵심 특이점 |
 |------|----------|-------------|
 | ADMIN | 34 (전부) | `Object.values(PERMISSIONS)` |
-| MANAGER | 22 | Knowledge read/create/update/review, Project read/create/update, System read/create/update, Attendance admin, Notice read/create/update, Graph full, Additional Dev full, Files write |
+| MANAGER | 23 | Knowledge read/create/update/review, Project read/create/update, System read/create/update, Attendance read/admin, User read, Notice read/create/update, Graph full, Additional Dev full, Files write |
 | DEVELOPER | 16 | **KNOWLEDGE_REVIEW 의도적 제외** (→ wiki_page_index RESTRICTED 차단), **SYSTEM_ACCESS_SECRET 명시적 포함**, Additional Dev read/update만 |
 | HR | 일부 | Knowledge read, User read, Attendance admin, Notice full, Graph read |
 | VIEWER | 일부 | read-only 전반 (Knowledge/Project/System/Attendance/Graph/Notice/Additional Dev) |
@@ -339,7 +339,7 @@ await db.transaction(async (tx) => {
 - `packages/db/drizzle.config.ts` — drizzle-kit 설정
 - `packages/db/seed/dev.ts` — 시드 데이터 예시
 - `packages/shared/validation/` — 도메인별 Zod 스키마
-- `packages/shared/constants/permissions.ts` — 42 권한 + 6 역할 매핑
+- `packages/shared/constants/permissions.ts` — 34 권한 + 5 역할 매핑
 - `packages/auth/rbac.ts` — 권한/민감도 헬퍼
 - `packages/auth/session.ts` — `requireSession`, `requirePermission`, `getSession`
 - `scripts/check-schema-drift.mjs` — drift 검증(`--hook|--precommit|--ci`)
