@@ -184,17 +184,36 @@ export async function deleteAdditionalDev({
   return deleted ?? null;
 }
 
+async function assertAddDevInWorkspace(
+  database: typeof db,
+  addDevId: string,
+  workspaceId: string,
+): Promise<void> {
+  const [row] = await database
+    .select({ id: additionalDevelopment.id })
+    .from(additionalDevelopment)
+    .where(and(
+      eq(additionalDevelopment.id, addDevId),
+      eq(additionalDevelopment.workspaceId, workspaceId),
+    ))
+    .limit(1);
+  if (!row) throw new Error('additional_development not found in workspace');
+}
+
 export async function upsertEffort({
   addDevId,
+  workspaceId,
   yearMonth,
   effort,
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   yearMonth: string;
   effort: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   await database
     .insert(additionalDevelopmentEffort)
     .values({ addDevId, yearMonth, effort })
@@ -209,11 +228,14 @@ export async function upsertEffort({
 
 export async function listEfforts({
   addDevId,
+  workspaceId,
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   return database
     .select()
     .from(additionalDevelopmentEffort)
@@ -222,15 +244,18 @@ export async function listEfforts({
 
 export async function upsertRevenue({
   addDevId,
+  workspaceId,
   yearMonth,
   amount,
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   yearMonth: string;
   amount: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   await database
     .insert(additionalDevelopmentRevenue)
     .values({ addDevId, yearMonth, amount })
@@ -245,11 +270,14 @@ export async function upsertRevenue({
 
 export async function listRevenues({
   addDevId,
+  workspaceId,
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   return database
     .select()
     .from(additionalDevelopmentRevenue)
@@ -258,6 +286,7 @@ export async function listRevenues({
 
 export async function addStaff({
   addDevId,
+  workspaceId,
   userId,
   role,
   startDate,
@@ -265,12 +294,14 @@ export async function addStaff({
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   userId?: string;
   role?: string;
   startDate?: string;
   endDate?: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   const [created] = await database
     .insert(additionalDevelopmentStaff)
     .values({ addDevId, userId, role, startDate, endDate })
@@ -280,11 +311,14 @@ export async function addStaff({
 
 export async function listStaff({
   addDevId,
+  workspaceId,
   database = db,
 }: {
   addDevId: string;
+  workspaceId: string;
   database?: typeof db;
 }) {
+  await assertAddDevInWorkspace(database, addDevId, workspaceId);
   return database
     .select()
     .from(additionalDevelopmentStaff)

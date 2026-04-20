@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  const data = await listEfforts({ addDevId: id });
+  const data = await listEfforts({ addDevId: id, workspaceId: auth.session.workspaceId });
 
   return NextResponse.json({ data });
 }
@@ -35,6 +35,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   await upsertEffort({
     addDevId: id,
+    workspaceId: auth.session.workspaceId,
     yearMonth: parsed.data.yearMonth,
     effort: parsed.data.effort,
   });

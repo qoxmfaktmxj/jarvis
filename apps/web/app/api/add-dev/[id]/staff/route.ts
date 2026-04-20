@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const { id } = await context.params;
-  const data = await listStaff({ addDevId: id });
+  const data = await listStaff({ addDevId: id, workspaceId: auth.session.workspaceId });
 
   return NextResponse.json({ data });
 }
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   const { id } = await context.params;
   const created = await addStaff({
     addDevId: id,
+    workspaceId: auth.session.workspaceId,
     ...parsed.data,
   });
 
