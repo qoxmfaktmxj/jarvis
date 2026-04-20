@@ -15,6 +15,7 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   Calendar,
+  ClipboardList,
   LayoutDashboard,
   Library,
   MessageSquare,
@@ -35,6 +36,7 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/wiki",       label: "위키",       icon: Library },
   { href: "/knowledge",  label: "Knowledge", icon: BookOpen },
   { href: "/systems",    label: "시스템",    icon: Server },
+  { href: "/add-dev",   label: "추가개발",  icon: ClipboardList },
   { href: "/attendance", label: "근태등록",  icon: Calendar },
 ];
 
