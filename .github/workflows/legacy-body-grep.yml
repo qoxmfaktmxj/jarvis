@@ -18,8 +18,18 @@ jobs:
       - name: Grep for legacy body field access
         shell: bash
         run: |
+          # Exclude the guard implementation itself and its tests — those files
+          # *document* and *enforce* the ban, so they legitimately mention the
+          # forbidden identifiers in comments and test-case names.
           set +e
-          matches=$(grep -rnE 'wiki_sources\.body|wiki_concepts\.body' packages/ apps/ 2>/dev/null)
+          matches=$(grep -rnE 'wiki_sources\.body|wiki_concepts\.body' \
+            --exclude-dir='guards' \
+            --exclude-dir='__tests__' \
+            --exclude-dir='node_modules' \
+            --exclude-dir='.turbo' \
+            --exclude-dir='.next' \
+            --exclude-dir='dist' \
+            packages/ apps/ 2>/dev/null)
           status=$?
           set -e
 
