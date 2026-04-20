@@ -1,11 +1,18 @@
-import 'dotenv/config';
-import { db } from '../client.js';
-import { workspace, organization } from '../schema/tenant.js';
-import { user, role, userRole } from '../schema/user.js';
-import { project, projectTask } from '../schema/project.js';
-import { system, systemAccess } from '../schema/system.js';
-import { knowledgePage, knowledgePageVersion, knowledgeClaim } from '../schema/knowledge.js';
-import { menuItem } from '../schema/menu.js';
+import { config as loadEnv } from 'dotenv';
+import path from 'node:path';
+import url from 'node:url';
+
+const here = path.dirname(url.fileURLToPath(import.meta.url));
+loadEnv({ path: path.resolve(here, '../../../.env') });
+loadEnv();
+
+const { db } = await import('../client.js');
+const { workspace, organization } = await import('../schema/tenant.js');
+const { user, role, userRole } = await import('../schema/user.js');
+const { project, projectTask } = await import('../schema/project.js');
+const { system, systemAccess } = await import('../schema/system.js');
+const { knowledgePage, knowledgePageVersion, knowledgeClaim } = await import('../schema/knowledge.js');
+const { menuItem } = await import('../schema/menu.js');
 
 async function seed() {
   console.log('[seed] Starting dev seed...');

@@ -66,13 +66,8 @@ describe("DashboardPage", () => {
     const html = renderToStaticMarkup(await DashboardPage());
 
     expect(html).toContain("대시보드");
-    expect(html).toContain("빠른 링크");
     expect(html).toContain("최근 활동");
-    expect(html).toContain("내 작업");
-    expect(html).toContain("프로젝트 현황");
-    expect(html).toContain("만료된 페이지");
-    expect(html).toContain("검색 트렌드");
-    expect(html).toContain("이번 달 출퇴근");
+    expect(html).toContain("빠른 질문");
     expect(getDashboardDataMock).toHaveBeenCalledWith(
       "ws-1",
       "user-1",

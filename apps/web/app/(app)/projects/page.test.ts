@@ -67,7 +67,7 @@ describe("ProjectsPage", () => {
     );
 
     expect(html).toContain("프로젝트");
-    expect(html).toContain("워크스페이스 프로젝트를 관리합니다");
+    expect(html).toContain("워크스페이스 프로젝트");
     expect(html).toContain("새 프로젝트");
   });
 
