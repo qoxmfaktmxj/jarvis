@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@jarvis/db/client';
-import { user, organization, userRole, role } from '@jarvis/db/schema';
+import {
+  user, organization, userRole, role,
+  codeGroup, codeItem,
+} from '@jarvis/db/schema';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import {
@@ -10,22 +13,50 @@ import {
 
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
+const statusEnum = z.enum(['active', 'inactive', 'locked']);
+
 const createUserSchema = z.object({
-  employeeId: z.string().min(1).max(50),
-  name:       z.string().min(1).max(200),
-  email:      z.string().email().optional(),
-  orgId:      z.string().uuid().optional(),
-  roleCode:   z.enum(['ADMIN', 'MANAGER', 'DEVELOPER', 'HR', 'VIEWER']).default('VIEWER'),
+  employeeId:   z.string().min(1).max(50),
+  name:         z.string().min(1).max(200),
+  email:        z.string().email().optional(),
+  orgId:        z.string().uuid().optional(),
+  position:     z.string().max(100).optional(),
+  jobTitle:     z.string().max(50).optional(),
+  isOutsourced: z.boolean().optional().default(false),
+  roleCode:     z.enum(['ADMIN', 'MANAGER', 'DEVELOPER', 'HR', 'VIEWER']).default('VIEWER'),
 });
 
 const updateUserSchema = z.object({
-  id:        z.string().uuid(),
-  name:      z.string().min(1).max(200).optional(),
-  email:     z.string().email().optional(),
-  orgId:     z.string().uuid().nullable().optional(),
-  isActive:  z.boolean().optional(),
-  roleCodes: z.array(z.enum(['ADMIN', 'MANAGER', 'DEVELOPER', 'HR', 'VIEWER'])).optional(),
+  id:           z.string().uuid(),
+  name:         z.string().min(1).max(200).optional(),
+  email:        z.string().email().optional(),
+  orgId:        z.string().uuid().nullable().optional(),
+  status:       statusEnum.optional(),
+  position:     z.string().max(100).nullable().optional(),
+  jobTitle:     z.string().max(50).nullable().optional(),
+  isOutsourced: z.boolean().optional(),
+  roleCodes:    z.array(z.enum(['ADMIN','MANAGER','DEVELOPER','HR','VIEWER'])).optional(),
 });
+
+async function validateCodeRef(
+  workspaceId: string,
+  groupCode: 'POSITION' | 'JOB_TITLE',
+  value: string | null | undefined,
+): Promise<boolean> {
+  if (value === null || value === undefined || value === '') return true;
+  const rows = await db
+    .select({ code: codeItem.code })
+    .from(codeItem)
+    .innerJoin(codeGroup, eq(codeItem.groupId, codeGroup.id))
+    .where(and(
+      eq(codeGroup.workspaceId, workspaceId),
+      eq(codeGroup.code, groupCode),
+      eq(codeItem.code, value),
+      eq(codeItem.isActive, true),
+    ))
+    .limit(1);
+  return rows.length > 0;
+}
 
 // ── GET /api/admin/users ──────────────────────────────────────────────────────
 
@@ -35,15 +66,14 @@ export async function GET(req: NextRequest) {
   const { session } = auth;
 
   const { searchParams } = req.nextUrl;
-  const page          = Math.max(1, Number(searchParams.get('page')  ?? '1'));
-  const limit         = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? '20')));
-  const offset        = (page - 1) * limit;
-  const q             = searchParams.get('q');
-  const orgId         = searchParams.get('orgId');
-  const isActiveParam = searchParams.get('isActive');
+  const page   = Math.max(1, Number(searchParams.get('page')  ?? '1'));
+  const limit  = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? '20')));
+  const offset = (page - 1) * limit;
+  const q      = searchParams.get('q');
+  const orgId  = searchParams.get('orgId');
+  const statusParam = searchParams.get('status');
 
   const conditions = [eq(user.workspaceId, session.workspaceId)];
-
   if (q) {
     conditions.push(
       or(
@@ -54,26 +84,32 @@ export async function GET(req: NextRequest) {
     );
   }
   if (orgId) conditions.push(eq(user.orgId, orgId));
-  if (isActiveParam !== null) conditions.push(eq(user.isActive, isActiveParam === 'true'));
+  if (statusParam && statusParam !== 'all') {
+    const parsed = statusEnum.safeParse(statusParam);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
+    conditions.push(eq(user.status, parsed.data));
+  }
 
   const where = and(...conditions);
 
   const [rows, totalRows] = await Promise.all([
     db
       .select({
-        id:         user.id,
-        employeeId: user.employeeId,
-        name:       user.name,
-        email:      user.email,
-        isActive:   user.isActive,
-        createdAt:  user.createdAt,
-        orgId:      user.orgId,
-        orgName:    organization.name,
-        roles:      sql<string[]>`
-          coalesce(
-            array_agg(${role.code}) filter (where ${role.code} is not null),
-            '{}'
-          )
+        id:           user.id,
+        employeeId:   user.employeeId,
+        name:         user.name,
+        email:        user.email,
+        status:       user.status,
+        position:     user.position,
+        jobTitle:     user.jobTitle,
+        isOutsourced: user.isOutsourced,
+        createdAt:    user.createdAt,
+        orgId:        user.orgId,
+        orgName:      organization.name,
+        roles:        sql<string[]>`
+          coalesce(array_agg(${role.code}) filter (where ${role.code} is not null), '{}')
         `,
       })
       .from(user)
@@ -107,14 +143,20 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { roleCode, ...userData } = parsed.data;
+  const { roleCode, position, jobTitle, ...rest } = parsed.data;
+
+  if (position !== undefined && !(await validateCodeRef(session.workspaceId, 'POSITION', position))) {
+    return NextResponse.json({ error: 'Invalid position code' }, { status: 400 });
+  }
+  if (jobTitle !== undefined && !(await validateCodeRef(session.workspaceId, 'JOB_TITLE', jobTitle))) {
+    return NextResponse.json({ error: 'Invalid jobTitle code' }, { status: 400 });
+  }
 
   return await db.transaction(async (tx) => {
-    // Check duplicate employeeId within workspace
     const existing = await tx
       .select({ id: user.id })
       .from(user)
-      .where(and(eq(user.workspaceId, session.workspaceId), eq(user.employeeId, userData.employeeId)))
+      .where(and(eq(user.workspaceId, session.workspaceId), eq(user.employeeId, rest.employeeId)))
       .limit(1);
 
     if (existing.length > 0) {
@@ -123,14 +165,18 @@ export async function POST(req: NextRequest) {
 
     const inserted = await tx
       .insert(user)
-      .values({ ...userData, workspaceId: session.workspaceId })
+      .values({
+        ...rest,
+        position: position ?? null,
+        jobTitle: jobTitle ?? null,
+        workspaceId: session.workspaceId,
+      })
       .returning();
     const newUser = inserted[0];
     if (!newUser) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
     }
 
-    // Find or fallback to VIEWER role
     const roleRow = await tx
       .select({ id: role.id })
       .from(role)
@@ -138,10 +184,7 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (roleRow.length > 0 && roleRow[0]) {
-      await tx.insert(userRole).values({
-        userId: newUser.id,
-        roleId: roleRow[0].id,
-      });
+      await tx.insert(userRole).values({ userId: newUser.id, roleId: roleRow[0].id });
     }
 
     return NextResponse.json(newUser, { status: 201 });
@@ -160,12 +203,24 @@ export async function PUT(req: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { id, roleCodes, ...updateData } = parsed.data;
+  const { id, roleCodes, position, jobTitle, ...updateData } = parsed.data;
+
+  if (position !== undefined && position !== null && !(await validateCodeRef(session.workspaceId, 'POSITION', position))) {
+    return NextResponse.json({ error: 'Invalid position code' }, { status: 400 });
+  }
+  if (jobTitle !== undefined && jobTitle !== null && !(await validateCodeRef(session.workspaceId, 'JOB_TITLE', jobTitle))) {
+    return NextResponse.json({ error: 'Invalid jobTitle code' }, { status: 400 });
+  }
 
   return await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(user)
-      .set({ ...updateData, updatedAt: new Date() })
+      .set({
+        ...updateData,
+        ...(position !== undefined ? { position } : {}),
+        ...(jobTitle !== undefined ? { jobTitle } : {}),
+        updatedAt: new Date(),
+      })
       .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
       .returning();
 
@@ -174,19 +229,14 @@ export async function PUT(req: NextRequest) {
     }
 
     if (roleCodes !== undefined) {
-      // Replace all roles
       await tx.delete(userRole).where(eq(userRole.userId, id));
-
       if (roleCodes.length > 0) {
         const roleRows = await tx
           .select({ id: role.id, code: role.code })
           .from(role)
           .where(and(eq(role.workspaceId, session.workspaceId), inArray(role.code, roleCodes)));
-
         if (roleRows.length > 0) {
-          await tx.insert(userRole).values(
-            roleRows.map((r) => ({ userId: id, roleId: r.id })),
-          );
+          await tx.insert(userRole).values(roleRows.map((r) => ({ userId: id, roleId: r.id })));
         }
       }
     }
@@ -206,10 +256,9 @@ export async function DELETE(req: NextRequest) {
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  // Soft delete — deactivate only
   const [updated] = await db
     .update(user)
-    .set({ isActive: false, updatedAt: new Date() })
+    .set({ status: 'inactive', updatedAt: new Date() })
     .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
     .returning({ id: user.id });
 
