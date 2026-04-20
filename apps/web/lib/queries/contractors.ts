@@ -6,7 +6,7 @@ import {
   organization
 } from "@jarvis/db/schema";
 import {
-  and, asc, count, desc, eq, gte, ilike, inArray, lte, or, sql
+  and, asc, desc, eq, gte, ilike, inArray, lte, or, sql
 } from "drizzle-orm";
 import {
   computeGeneratedLeaveHours,
@@ -15,6 +15,11 @@ import {
 } from "@jarvis/shared/leave-compute";
 
 type DbLike = typeof db;
+type DbOrTx = DbLike | Parameters<Parameters<DbLike["transaction"]>[0]>[0];
+
+function escapeLike(input: string): string {
+  return input.replace(/[\\%_]/g, "\\$&");
+}
 
 // ─── Types ─────────────────────────────────────────
 export interface ContractorTableRow {
@@ -38,13 +43,14 @@ type ListContractorsParams = {
   q?: string;
   status?: "active" | "expired" | "terminated";
   orgId?: string;
+  userIdFilter?: string;
   page?: number;
   pageSize?: number;
-  database?: DbLike;
+  database?: DbOrTx;
 };
 
 export async function listContractors({
-  workspaceId, q, status = "active", orgId,
+  workspaceId, q, status = "active", orgId, userIdFilter,
   page = 1, pageSize = 50, database = db
 }: ListContractorsParams) {
   const safePage = Math.max(1, page);
@@ -53,8 +59,12 @@ export async function listContractors({
     eq(user.workspaceId, workspaceId),
     eq(user.employmentType, "contractor")
   ];
-  if (q) conds.push(or(ilike(user.name, `%${q}%`), ilike(user.employeeId, `%${q}%`))!);
+  if (q) {
+    const escaped = escapeLike(q);
+    conds.push(or(ilike(user.name, `%${escaped}%`), ilike(user.employeeId, `%${escaped}%`))!);
+  }
   if (orgId) conds.push(eq(user.orgId, orgId));
+  if (userIdFilter) conds.push(eq(user.id, userIdFilter));
 
   // When status filter is set, also add it to WHERE so users with no matching
   // contract do not appear in the result (leftJoin alone would show them with null contract).
@@ -103,7 +113,15 @@ export async function listContractors({
     for (const r of usedRows) usedMap.set(r.contractId, Number(r.used));
   }
 
-  const [totals] = await database.select({ total: count() }).from(user).where(and(...conds));
+  // count 쿼리에 contract 상태 JOIN 포함 (I-9)
+  const [totals] = await database
+    .select({ total: sql<number>`count(distinct ${user.id})` })
+    .from(user)
+    .leftJoin(contractorContract, and(
+      eq(contractorContract.userId, user.id),
+      contractJoinCond
+    ))
+    .where(and(...conds));
   const total = Number(totals?.total ?? 0);
 
   const data: ContractorTableRow[] = rows.map(r => {
@@ -139,7 +157,7 @@ export async function listContractors({
 // ─── getContractorById ──────────────────────────
 export async function getContractorById({
   workspaceId, userId, database = db
-}: { workspaceId: string; userId: string; database?: DbLike }) {
+}: { workspaceId: string; userId: string; database?: DbOrTx }) {
   const [u] = await database.select().from(user)
     .where(and(eq(user.id, userId), eq(user.workspaceId, workspaceId)));
   if (!u) return null;
@@ -150,7 +168,13 @@ export async function getContractorById({
   const leaves = activeContract
     ? await listLeaveRequests({ workspaceId, userId, database })
     : [];
-  return { user: u, contracts, activeContract, leaves };
+  let summary = null;
+  if (activeContract) {
+    const remaining = await computeRemainingHours({ contractId: activeContract.id, database });
+    const issued = Number(activeContract.generatedLeaveHours) + Number(activeContract.additionalLeaveHours);
+    summary = { issuedHours: issued, usedHours: issued - remaining, remainingHours: remaining };
+  }
+  return { user: u, contracts, activeContract, leaves, summary };
 }
 
 // ─── createContractor ────────────────────────────
@@ -170,7 +194,7 @@ type CreateContractorInput = {
 
 export async function createContractor({
   workspaceId, input, actorId, database = db
-}: { workspaceId: string; input: CreateContractorInput; actorId: string; database?: DbLike }) {
+}: { workspaceId: string; input: CreateContractorInput; actorId: string; database?: DbOrTx }) {
   return database.transaction(async (tx) => {
     const [createdUser] = await tx.insert(user).values({
       workspaceId,
@@ -216,7 +240,7 @@ export async function updateContract({
     enterCd: string | null; startDate: string; endDate: string;
     generatedLeaveHours: number; additionalLeaveHours: number; note: string | null;
   }>;
-  database?: DbLike;
+  database?: DbOrTx;
 }) {
   const values: Record<string, unknown> = { updatedAt: new Date() };
   if (patch.enterCd !== undefined) values.enterCd = patch.enterCd;
@@ -235,7 +259,7 @@ export async function updateContract({
 // ─── computeRemainingHours ────────────────────────
 export async function computeRemainingHours({
   contractId, database = db
-}: { contractId: string; database?: DbLike }) {
+}: { contractId: string; database?: DbOrTx }) {
   const [c] = await database.select().from(contractorContract).where(eq(contractorContract.id, contractId));
   if (!c) return 0;
   const [sumRow] = await database
@@ -255,15 +279,15 @@ export async function renewContract({
 }: {
   workspaceId: string; prevContractId: string;
   input: { userId: string; startDate: Date; endDate: Date; note?: string };
-  database?: DbLike;
+  database?: DbOrTx;
 }) {
-  return database.transaction(async (tx) => {
+  return (database as DbLike).transaction(async (tx) => {
     const [prev] = await tx.select().from(contractorContract)
       .where(and(eq(contractorContract.id, prevContractId), eq(contractorContract.workspaceId, workspaceId)));
     if (!prev) throw new Error("prev contract not found");
     if (prev.status !== "active") throw new Error("prev contract must be active");
 
-    const remaining = await computeRemainingHours({ contractId: prev.id, database: tx as unknown as DbLike });
+    const remaining = await computeRemainingHours({ contractId: prev.id, database: tx });
     const carryOver = Math.max(0, remaining);
 
     await tx.update(contractorContract)
@@ -292,7 +316,7 @@ export async function renewContract({
 // ─── terminateContract ────────────────────────────
 export async function terminateContract({
   workspaceId, contractId, database = db
-}: { workspaceId: string; contractId: string; database?: DbLike }) {
+}: { workspaceId: string; contractId: string; database?: DbOrTx }) {
   const [updated] = await database.update(contractorContract)
     .set({ status: "terminated", updatedAt: new Date() })
     .where(and(
@@ -314,13 +338,21 @@ type CreateLeaveInput = {
   reason?: string;
 };
 
+/**
+ * leave request 생성. 자동 승인(status='approved').
+ *
+ * NOTE: 잔여 시간 초과 시 서버 측 강제 차단 **없음**.
+ * 스펙 §Q10 결정 "C안 — 누구나 허용 + 경고" 준수.
+ * UI는 미리보기로 "신청 후 잔여 -N시간" 경고를 보여주되 신청 자체는 허용.
+ * 마이너스 잔여는 `computeRemainingHours` 결과로 노출되며, 관리자 감사 대상.
+ */
 export async function createLeaveRequest({
   workspaceId, userId, input, actorId, holidays, database = db
 }: {
   workspaceId: string; userId: string;
   input: CreateLeaveInput; actorId: string;
   holidays: Set<string>;
-  database?: DbLike;
+  database?: DbOrTx;
 }) {
   const [contract] = await database.select().from(contractorContract).where(and(
     eq(contractorContract.workspaceId, workspaceId),
@@ -366,7 +398,7 @@ export async function updateLeaveRequest({
 }: {
   workspaceId: string; id: string;
   patch: LeavePatch; holidays: Set<string>;
-  database?: DbLike;
+  database?: DbOrTx;
 }) {
   const [existing] = await database.select().from(leaveRequest)
     .where(and(eq(leaveRequest.id, id), eq(leaveRequest.workspaceId, workspaceId)));
@@ -395,7 +427,7 @@ export async function updateLeaveRequest({
 
 export async function cancelLeaveRequest({
   workspaceId, id, database = db
-}: { workspaceId: string; id: string; database?: DbLike }) {
+}: { workspaceId: string; id: string; database?: DbOrTx }) {
   const [updated] = await database.update(leaveRequest)
     .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
     .where(and(
@@ -409,7 +441,7 @@ export async function cancelLeaveRequest({
 
 export async function deleteLeaveRequest({
   workspaceId, id, database = db
-}: { workspaceId: string; id: string; database?: DbLike }) {
+}: { workspaceId: string; id: string; database?: DbOrTx }) {
   const [deleted] = await database.delete(leaveRequest)
     .where(and(eq(leaveRequest.id, id), eq(leaveRequest.workspaceId, workspaceId)))
     .returning({ id: leaveRequest.id });
@@ -420,7 +452,7 @@ export async function listLeaveRequests({
   workspaceId, userId, from, to, status = "approved", database = db
 }: {
   workspaceId: string; userId?: string; from?: string; to?: string;
-  status?: "approved" | "cancelled"; database?: DbLike;
+  status?: "approved" | "cancelled"; database?: DbOrTx;
 }) {
   const conds = [eq(leaveRequest.workspaceId, workspaceId), eq(leaveRequest.status, status)];
   if (userId) conds.push(eq(leaveRequest.userId, userId));
