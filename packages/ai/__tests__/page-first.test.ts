@@ -64,7 +64,7 @@ vi.mock("../logger.js", () => ({
   withRequestId: vi.fn(),
 }));
 
-import { lexicalShortlist } from "../page-first/shortlist.js";
+import { legacyLexicalShortlist as lexicalShortlist } from "../page-first/shortlist.js";
 import { expandOneHop } from "../page-first/expand.js";
 import { readTopPages } from "../page-first/read-pages.js";
 import { synthesizePageFirstAnswer } from "../page-first/synthesize.js";

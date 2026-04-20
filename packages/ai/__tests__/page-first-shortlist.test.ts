@@ -47,7 +47,7 @@ vi.mock("../logger.js", () => ({
   withRequestId: vi.fn(),
 }));
 
-import { lexicalShortlist } from "../page-first/shortlist.js";
+import { legacyLexicalShortlist as lexicalShortlist } from "../page-first/shortlist.js";
 import { db } from "@jarvis/db/client";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
