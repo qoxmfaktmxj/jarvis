@@ -29,26 +29,52 @@
       "wikiReviewQueue": "위키 리뷰 큐"
     },
     "Users": {
-      "title": "사용자",
-      "description": "워크스페이스 멤버, 역할, 조직을 관리합니다.",
-      "searchPlaceholder": "이름, 사번, 이메일로 검색...",
-      "addUser": "+ 사용자 추가",
+      "title": "사용자 관리",
+      "description": "사내 사용자와 권한을 관리합니다.",
+      "searchPlaceholder": "사번·이름·이메일 검색",
+      "addUser": "추가",
       "columns": {
         "employeeId": "사번",
         "name": "이름",
         "email": "이메일",
-        "organization": "조직",
+        "organization": "소속",
+        "position": "직위",
+        "jobTitle": "직책",
         "roles": "역할",
         "status": "상태",
-        "actions": "작업"
+        "actions": "액션"
       },
       "status": {
         "active": "활성",
-        "inactive": "비활성"
+        "inactive": "비활성",
+        "locked": "잠금",
+        "outsourced": "외주"
+      },
+      "filter": {
+        "statusAll": "전체"
       },
       "actions": {
-        "edit": "수정",
-        "deactivate": "비활성화"
+        "edit": "편집",
+        "deactivate": "비활성화",
+        "lock": "잠금",
+        "unlock": "잠금해제",
+        "resetPassword": "비번 초기화",
+        "export": "CSV 다운로드"
+      },
+      "form": {
+        "position": "직위",
+        "jobTitle": "직책",
+        "isOutsourced": "외주인력",
+        "status": "상태",
+        "selectPosition": "직위 선택",
+        "selectJobTitle": "직책 선택",
+        "noPosition": "선택 안 함",
+        "noJobTitle": "선택 안 함"
+      },
+      "toast": {
+        "passwordResetStub": "비밀번호 초기화 요청됨 (스텁 — 인증 시스템 연동 대기)",
+        "lockChanged": "상태가 변경되었습니다",
+        "exportStarted": "다운로드 중…"
       }
     },
     "Audit": {
