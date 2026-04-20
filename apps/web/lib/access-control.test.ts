@@ -3,8 +3,8 @@ import type { JarvisSession } from "@jarvis/auth/types";
 import {
   buildLegacyKnowledgeSensitivitySqlFilter,
   canAccessKnowledgeSensitivity,
-  canAccessSystemAccessEntry,
-  canResolveSystemSecrets
+  canAccessProjectAccessEntry,
+  canResolveProjectSecrets
 } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
@@ -48,13 +48,13 @@ describe("knowledge sensitivity access", () => {
 describe("system access controls", () => {
   it("does not resolve secrets for read-only users", () => {
     expect(
-      canResolveSystemSecrets([PERMISSIONS.SYSTEM_READ], "INTERNAL")
+      canResolveProjectSecrets([PERMISSIONS.PROJECT_READ], "INTERNAL")
     ).toBe(false);
   });
 
   it("applies requiredRole as a minimum role threshold", () => {
-    expect(canAccessSystemAccessEntry(["VIEWER"], "DEVELOPER")).toBe(false);
-    expect(canAccessSystemAccessEntry(["MANAGER"], "DEVELOPER")).toBe(true);
-    expect(canAccessSystemAccessEntry(["ADMIN"], "ADMIN")).toBe(true);
+    expect(canAccessProjectAccessEntry(["VIEWER"], "DEVELOPER")).toBe(false);
+    expect(canAccessProjectAccessEntry(["MANAGER"], "DEVELOPER")).toBe(true);
+    expect(canAccessProjectAccessEntry(["ADMIN"], "ADMIN")).toBe(true);
   });
 });

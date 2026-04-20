@@ -14,14 +14,21 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
-  Calendar,
-  FolderKanban,
+  CalendarX,
+  ClipboardList,
+  FilePlus,
+  GitFork,
+  HardDrive,
   LayoutDashboard,
   Library,
+  Megaphone,
   MessageSquare,
+  Network,
   Search,
   Server,
   ShieldCheck,
+  User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { Capy } from "./Capy";
@@ -30,20 +37,35 @@ import { useSidebar } from "./uiPrefs";
 type NavItem = { href: string; label: string; icon: LucideIcon; badge?: string };
 
 const NAV: ReadonlyArray<NavItem> = [
-  { href: "/dashboard",  label: "대시보드",  icon: LayoutDashboard },
-  { href: "/ask",        label: "AI 질문",   icon: MessageSquare, badge: "AI" },
-  { href: "/search",     label: "검색",       icon: Search },
-  { href: "/wiki",       label: "위키",       icon: Library },
-  { href: "/knowledge",  label: "Knowledge", icon: BookOpen },
-  { href: "/projects",   label: "프로젝트",  icon: FolderKanban },
-  { href: "/systems",    label: "시스템",    icon: Server },
-  { href: "/attendance", label: "근태등록",  icon: Calendar },
+  { href: "/dashboard",             label: "대시보드",      icon: LayoutDashboard },
+  { href: "/notices",               label: "공지사항",      icon: Megaphone },
+  { href: "/ask",                   label: "AI 질문",       icon: MessageSquare, badge: "AI" },
+  { href: "/search",                label: "검색",          icon: Search },
+  { href: "/wiki",                  label: "위키",          icon: Library },
+  { href: "/wiki/graph",            label: "위키 그래프",   icon: GitFork },
+  { href: "/wiki/ingest/manual",    label: "위키 수동수집", icon: FilePlus },
+  { href: "/knowledge",             label: "Knowledge",     icon: BookOpen },
+  { href: "/projects",              label: "프로젝트",      icon: Server },
+  { href: "/architecture",          label: "아키텍처",      icon: Network },
+  { href: "/infra",                 label: "인프라",        icon: HardDrive },
+  { href: "/add-dev",               label: "추가개발",      icon: ClipboardList },
+  { href: "/contractors",           label: "외주인력관리",  icon: Users },
+  { href: "/holidays",              label: "공휴일 관리",   icon: CalendarX },
+  { href: "/profile",               label: "프로필",        icon: User },
 ];
 
 const ADMIN: NavItem = { href: "/admin", label: "Admin", icon: ShieldCheck };
 
+// Hrefs that must match exactly to prevent parent from lighting up when a
+// more specific sub-route nav item is also in the sidebar (e.g. /wiki vs
+// /wiki/graph).
+const EXACT_MATCH_HREFS: ReadonlySet<string> = new Set([
+  "/dashboard",
+  "/wiki",
+]);
+
 function isActive(pathname: string, href: string): boolean {
-  if (href === "/dashboard") return pathname === "/dashboard";
+  if (EXACT_MATCH_HREFS.has(href)) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

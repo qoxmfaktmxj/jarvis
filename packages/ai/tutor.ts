@@ -88,7 +88,6 @@ function getTutorPrompt(mode: TutorMode): string {
 // Onboarding topics — 자동 추천용
 // ---------------------------------------------------------------------------
 export const ONBOARDING_TOPICS = [
-  { id: 'attendance', label: '출퇴근/근태', keywords: ['출퇴근', '근태', '출근', '퇴근', '비콘'] },
   { id: 'leave', label: '휴가/연차', keywords: ['휴가', '연차', '반차', '병가'] },
   { id: 'hr-system', label: '이수HR 사용법', keywords: ['이수HR', '이수hr', '급여', '명세서'] },
   { id: 'expense', label: '경비/출장', keywords: ['경비', '출장', '법인카드', '유류비'] },

@@ -133,7 +133,7 @@ describe("canViewSensitivity -- edge cases", () => {
 
   it("session without KNOWLEDGE_READ -> false for all sensitivities", () => {
     const session = makeSession("VIEWER", {
-      permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ATTENDANCE_READ],
+      permissions: [PERMISSIONS.NOTICE_READ, PERMISSIONS.FILES_WRITE],
     });
     for (const sensitivity of SENSITIVITIES) {
       expect(canViewSensitivity(session, sensitivity)).toBe(false);
@@ -177,7 +177,7 @@ describe("canViewSensitivity -- edge cases", () => {
 
   it("SYSTEM_ACCESS_SECRET without KNOWLEDGE_READ -> false (base access required)", () => {
     const session = makeSession("VIEWER", {
-      permissions: [PERMISSIONS.SYSTEM_ACCESS_SECRET],
+      permissions: [PERMISSIONS.PROJECT_ACCESS_SECRET],
     });
     expect(canViewSensitivity(session, "SECRET_REF_ONLY")).toBe(false);
   });
@@ -338,7 +338,7 @@ describe("SSR guard integration -- evalPageAccess", () => {
       expect(
         evalPageAccess(session, {
           ...DEFAULT_PARAMS,
-          requiredPermission: PERMISSIONS.SYSTEM_ACCESS_SECRET,
+          requiredPermission: PERMISSIONS.PROJECT_ACCESS_SECRET,
         }),
       ).toBe("ok");
     });
@@ -348,7 +348,7 @@ describe("SSR guard integration -- evalPageAccess", () => {
       expect(
         evalPageAccess(session, {
           ...DEFAULT_PARAMS,
-          requiredPermission: PERMISSIONS.SYSTEM_ACCESS_SECRET,
+          requiredPermission: PERMISSIONS.PROJECT_ACCESS_SECRET,
         }),
       ).toBe("ok");
     });
@@ -358,7 +358,7 @@ describe("SSR guard integration -- evalPageAccess", () => {
       expect(
         evalPageAccess(session, {
           ...DEFAULT_PARAMS,
-          requiredPermission: PERMISSIONS.SYSTEM_ACCESS_SECRET,
+          requiredPermission: PERMISSIONS.PROJECT_ACCESS_SECRET,
         }),
       ).toBe("forbidden");
     });

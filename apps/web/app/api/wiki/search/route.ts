@@ -68,7 +68,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     if (perms.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
       allowedSensitivities.push("RESTRICTED");
     }
-    if (perms.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)) {
+    if (perms.includes(PERMISSIONS.PROJECT_ACCESS_SECRET)) {
       allowedSensitivities.push("SECRET_REF_ONLY");
     }
   }

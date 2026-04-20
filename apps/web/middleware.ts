@@ -17,6 +17,20 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const requestId = ensureRequestId(request);
 
+  if (pathname.startsWith("/systems")) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/systems/, "/projects");
+    return withRequestId(NextResponse.redirect(url, 301), requestId);
+  }
+
+  // /attendance/* -> /contractors (legacy route)
+  if (pathname === "/attendance" || pathname.startsWith("/attendance/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/contractors";  // collapse subpaths since old subroutes are gone
+    url.search = request.nextUrl.search;  // preserve query if any
+    return withRequestId(NextResponse.redirect(url, 301), requestId);
+  }
+
   if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
     return withRequestId(NextResponse.next(), requestId);
   }

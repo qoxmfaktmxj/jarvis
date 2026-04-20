@@ -19,7 +19,6 @@ export async function validateMigration(
     'workspace', 'organization', '"user"', 'role', 'user_role',
     'menu_item', 'code_group', 'code_item',
     'company', 'project', 'project_task', 'project_inquiry', 'project_staff',
-    'attendance', 'out_manage', 'out_manage_detail',
     'system', 'system_access',
     'knowledge_page', 'knowledge_page_version',
     'audit_log',
@@ -58,15 +57,6 @@ export async function validateMigration(
   }
 
   const orphanAttendance = await pgPool.query(
-    `SELECT COUNT(*) AS cnt FROM attendance
-     WHERE user_id NOT IN (SELECT id FROM "user")`,
-  );
-  if (Number(orphanAttendance.rows[0].cnt) > 0) {
-    warnings.push(`${orphanAttendance.rows[0].cnt} orphaned attendance rows (missing user)`);
-  } else {
-    passed.push('attendance FK: all user references resolve');
-  }
-
   // ── SECURITY: No plain-text credentials in system_access ────────────────────
   // Any non-null, non-empty value that does not start with vault:// is a violation.
   const plainUsernames = await pgPool.query(

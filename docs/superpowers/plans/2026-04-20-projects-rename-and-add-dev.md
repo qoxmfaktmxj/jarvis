@@ -167,6 +167,33 @@ ALTER INDEX IF EXISTS "idx_system_knowledge_page" RENAME TO "idx_project_knowled
 DELETE FROM "project";  -- dev seed 4건 (P0 drop 이후 남아있는 system seed 데이터) 제거
 ALTER TABLE "project" ADD CONSTRAINT "project_workspace_company_unique" UNIQUE ("workspace_id", "company_id");
 ALTER TABLE "project" ALTER COLUMN "company_id" SET NOT NULL;
+
+-- 7. graph_scope_type enum cleanup (carried over from P0 code review [I-1])
+-- Strategy: swap 'project' (legacy, dead) → dropped; 'system' → 'project' (rename to match new domain)
+-- Order matters because enum ops require no-rows referencing the value being dropped.
+UPDATE "graph_snapshot" SET "scope_type" = 'workspace' WHERE "scope_type"::text = 'project';
+-- In PG 17+, ALTER TYPE ... DROP VALUE exists. For earlier versions, use the type-swap pattern:
+ALTER TYPE "graph_scope_type" RENAME TO "graph_scope_type_old";
+CREATE TYPE "graph_scope_type" AS ENUM ('attachment', 'project', 'workspace');
+ALTER TABLE "graph_snapshot"
+  ALTER COLUMN "scope_type" TYPE "graph_scope_type"
+  USING (
+    CASE "scope_type"::text
+      WHEN 'system' THEN 'project'
+      WHEN 'project' THEN 'workspace'  -- safety: already UPDATE'd above
+      ELSE "scope_type"::text
+    END
+  )::"graph_scope_type";
+DROP TYPE "graph_scope_type_old";
+```
+
+Also update `packages/db/schema/graph.ts` enum declaration to match:
+```ts
+export const graphScopeTypeEnum = pgEnum('graph_scope_type', [
+  'attachment',
+  'project',      // was 'system' — now means TSMT001 project inventory
+  'workspace',
+]);
 ```
 
 - [ ] **Step 2: 스키마 파일 리네임 + 내용 업데이트**

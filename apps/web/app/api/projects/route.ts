@@ -1,15 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { createProjectSchema } from "@jarvis/shared/validation/project";
-import { requireApiSession } from "@/lib/server/api-auth";
+import { z } from "zod";
 import { createProject, listProjects } from "@/lib/queries/projects";
+import { requireApiSession } from "@/lib/server/api-auth";
 
 const listProjectsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  status: z.enum(["active", "on-hold", "completed", "archived"]).optional(),
+  pageSize: z.coerce.number().int().min(1).max(100).default(50),
+  connectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),
+  hasDev: z.coerce.boolean().optional(),
+  status: z.enum(["active", "deprecated", "decommissioned"]).optional(),
   q: z.string().trim().min(1).optional()
+});
+
+const createProjectBodySchema = z.object({
+  companyId: z.string().uuid(),
+  name: z.string().min(1).max(300),
+  description: z.string().max(4000).optional().or(z.literal("")),
+  sensitivity: z.enum(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]).optional(),
+  status: z.enum(["active", "deprecated", "decommissioned"]).optional(),
+  prodDomainUrl: z.string().url().optional().or(z.literal("")),
+  prodConnectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),
+  prodRepositoryUrl: z.string().url().optional().or(z.literal("")),
+  prodDbDsn: z.string().max(500).optional().or(z.literal("")),
+  prodSrcPath: z.string().optional().or(z.literal("")),
+  prodClassPath: z.string().optional().or(z.literal("")),
+  prodMemo: z.string().max(4000).optional().or(z.literal("")),
+  devDomainUrl: z.string().url().optional().or(z.literal("")),
+  devConnectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),
+  devRepositoryUrl: z.string().url().optional().or(z.literal("")),
+  devDbDsn: z.string().max(500).optional().or(z.literal("")),
+  devSrcPath: z.string().optional().or(z.literal("")),
+  devClassPath: z.string().optional().or(z.literal("")),
+  devMemo: z.string().max(4000).optional().or(z.literal(""))
 });
 
 export async function GET(request: NextRequest) {
@@ -21,7 +44,6 @@ export async function GET(request: NextRequest) {
   const parsed = listProjectsQuerySchema.safeParse(
     Object.fromEntries(request.nextUrl.searchParams)
   );
-
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
@@ -40,16 +62,31 @@ export async function POST(request: NextRequest) {
     return auth.response;
   }
 
-  const body = await request.json();
-  const parsed = createProjectSchema.safeParse(body);
+  const body = await request.json().catch(() => null);
+  const parsed = createProjectBodySchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const created = await createProject({
     workspaceId: auth.session.workspaceId,
     userId: auth.session.userId,
-    input: parsed.data
+    input: {
+      ...parsed.data,
+      description: parsed.data.description || undefined,
+      prodDomainUrl: parsed.data.prodDomainUrl || undefined,
+      prodRepositoryUrl: parsed.data.prodRepositoryUrl || undefined,
+      prodDbDsn: parsed.data.prodDbDsn || undefined,
+      prodSrcPath: parsed.data.prodSrcPath || undefined,
+      prodClassPath: parsed.data.prodClassPath || undefined,
+      prodMemo: parsed.data.prodMemo || undefined,
+      devDomainUrl: parsed.data.devDomainUrl || undefined,
+      devRepositoryUrl: parsed.data.devRepositoryUrl || undefined,
+      devDbDsn: parsed.data.devDbDsn || undefined,
+      devSrcPath: parsed.data.devSrcPath || undefined,
+      devClassPath: parsed.data.devClassPath || undefined,
+      devMemo: parsed.data.devMemo || undefined
+    }
   });
 
   return NextResponse.json({ data: created }, { status: 201 });

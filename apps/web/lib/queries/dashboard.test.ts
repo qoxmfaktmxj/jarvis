@@ -34,19 +34,6 @@ vi.mock("@jarvis/db/schema", () => ({
     createdAt: "audit.createdAt",
     workspaceId: "audit.workspaceId"
   },
-  projectTask: {
-    id: "task.id",
-    title: "task.title",
-    status: "task.status",
-    dueDate: "task.dueDate",
-    projectId: "task.projectId",
-    workspaceId: "task.workspaceId",
-    assigneeId: "task.assigneeId"
-  },
-  project: {
-    status: "project.status",
-    workspaceId: "project.workspaceId"
-  },
   wikiPageIndex: {
     id: "wiki.id",
     path: "wiki.path",
@@ -65,12 +52,6 @@ vi.mock("@jarvis/db/schema", () => ({
     count: "search.count",
     period: "search.period",
     workspaceId: "search.workspaceId"
-  },
-  attendance: {
-    status: "attendance.status",
-    attendDate: "attendance.attendDate",
-    workspaceId: "attendance.workspaceId",
-    userId: "attendance.userId"
   }
 }));
 
@@ -85,9 +66,6 @@ vi.mock("drizzle-orm", () => ({
   lt: vi.fn((column: unknown, value: unknown) => ({ column, op: "lt", value })),
   ne: vi.fn((column: unknown, value: unknown) => ({ column, value })),
   or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
-  count: vi.fn(() => "count(*)"),
-  gte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
-  lte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     strings: Array.from(strings),
     values
@@ -96,8 +74,6 @@ vi.mock("drizzle-orm", () => ({
 
 import { db } from "@jarvis/db/client";
 import {
-  buildAttendanceSummary,
-  buildProjectStats,
   getDashboardData,
   getQuickLinks,
   getSearchPeriodStart,
@@ -177,38 +153,6 @@ describe("dashboard queries", () => {
       }
     ]);
     expect(chain.limit).not.toHaveBeenCalled();
-  });
-
-  it("builds project stats from grouped rows", () => {
-    expect(
-      buildProjectStats([
-        { status: "active", count: 3 },
-        { status: "planning", count: 1 },
-        { status: null, count: 2 }
-      ])
-    ).toEqual({
-      total: 6,
-      byStatus: {
-        active: 3,
-        planning: 1,
-        unknown: 2
-      }
-    });
-  });
-
-  it("builds attendance summary from grouped rows", () => {
-    expect(
-      buildAttendanceSummary([
-        { status: "present", count: 18 },
-        { status: "late", count: 2 },
-        { status: "absent", count: 1 }
-      ])
-    ).toEqual({
-      totalDays: 21,
-      presentDays: 18,
-      lateDays: 2,
-      absentDays: 1
-    });
   });
 
   it("calculates the current search period start as a monday", () => {
@@ -327,30 +271,16 @@ describe("dashboard queries", () => {
       getQuickLinks: vi.fn().mockResolvedValue([]),
       getRecentActivity: vi.fn().mockResolvedValue([]),
       getMyTasks: vi.fn().mockResolvedValue([]),
-      getProjectStats: vi.fn().mockResolvedValue({ total: 0, byStatus: {} }),
       getStalePages: stalePagesLoader,
-      getSearchTrends: vi.fn().mockResolvedValue([]),
-      getAttendanceSummary: vi.fn().mockResolvedValue({
-        totalDays: 0,
-        presentDays: 0,
-        lateDays: 0,
-        absentDays: 0
-      })
+      getSearchTrends: vi.fn().mockResolvedValue([])
     });
 
     expect(result).toEqual({
       quickLinks: [],
       recentActivity: [],
       myTasks: [],
-      projectStats: { total: 0, byStatus: {} },
       stalePages: [],
-      searchTrends: [],
-      attendanceSummary: {
-        totalDays: 0,
-        presentDays: 0,
-        lateDays: 0,
-        absentDays: 0
-      }
+      searchTrends: []
     });
     expect(stalePagesLoader).toHaveBeenCalledWith("ws-1", ["knowledge:read"]);
   });

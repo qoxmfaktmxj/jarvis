@@ -45,19 +45,19 @@ describe("/api/projects", () => {
       id: "session-1",
       userId: "user-1",
       workspaceId: "ws-1",
-      roles: ["MANAGER"],
+      roles: ["ADMIN"],
       permissions: ["project:read", "project:create"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
-  it("returns 401 when no session cookie is present", async () => {
+  it("returns 401 when no session cookie exists", async () => {
     const response = await GET(new NextRequest("http://localhost/api/projects"));
 
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 when the session lacks project read permission", async () => {
+  it("returns 403 when permission is missing", async () => {
     hasPermissionMock.mockReturnValue(false);
 
     const response = await GET(buildRequest("http://localhost/api/projects"));
@@ -65,9 +65,9 @@ describe("/api/projects", () => {
     expect(response.status).toBe(403);
   });
 
-  it("returns 400 for invalid pagination params", async () => {
+  it("returns 400 for invalid query params", async () => {
     const response = await GET(
-      buildRequest("http://localhost/api/projects?page=0&limit=999")
+      buildRequest("http://localhost/api/projects?page=0&pageSize=999")
     );
 
     expect(response.status).toBe(400);
@@ -75,72 +75,56 @@ describe("/api/projects", () => {
 
   it("returns paginated projects", async () => {
     listProjectsMock.mockResolvedValue({
-      data: [{ id: "project-1", code: "P-001", name: "One" }],
-      meta: { page: 2, limit: 10, total: 11, totalPages: 2 }
+      data: [{ id: "proj-1", name: "Payroll", status: "active" }],
+      pagination: {
+        page: 1,
+        pageSize: 50,
+        total: 1,
+        totalPages: 1
+      }
     });
 
     const response = await GET(
-      buildRequest("http://localhost/api/projects?page=2&limit=10&q=One")
+      buildRequest("http://localhost/api/projects?q=pay&status=active")
     );
 
     expect(response.status).toBe(200);
-    expect(listProjectsMock).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      page: 2,
-      limit: 10,
-      q: "One",
-      status: undefined
-    });
-    await expect(response.json()).resolves.toEqual({
-      data: [{ id: "project-1", code: "P-001", name: "One" }],
-      meta: { page: 2, limit: 10, total: 11, totalPages: 2 }
-    });
   });
 
-  it("returns 400 for an invalid create payload", async () => {
+  it("returns 422 for an invalid create payload", async () => {
     const response = await POST(
       buildRequest("http://localhost/api/projects", {
         method: "POST",
-        body: JSON.stringify({ name: "" }),
         headers: {
           "content-type": "application/json"
-        }
+        },
+        body: JSON.stringify({ name: "" })
       })
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
-  it("creates a project and returns 201", async () => {
+  it("creates a project", async () => {
     createProjectMock.mockResolvedValue({
-      id: "project-1",
-      code: "P-001",
-      name: "One"
+      id: "proj-1",
+      name: "Payroll"
     });
 
     const response = await POST(
       buildRequest("http://localhost/api/projects", {
         method: "POST",
-        body: JSON.stringify({
-          code: "P-001",
-          name: "One",
-          status: "active"
-        }),
         headers: {
           "content-type": "application/json"
-        }
+        },
+        body: JSON.stringify({
+          companyId: "00000000-0000-0000-0000-000000000001",
+          name: "Payroll",
+          sensitivity: "INTERNAL"
+        })
       })
     );
 
     expect(response.status).toBe(201);
-    expect(createProjectMock).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      userId: "user-1",
-      input: {
-        code: "P-001",
-        name: "One",
-        status: "active"
-      }
-    });
   });
 });

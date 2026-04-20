@@ -7,7 +7,7 @@ const {
   notFoundMock,
   getSessionMock,
   hasPermissionMock,
-  getProjectDetailMock
+  getProjectMock
 } = vi.hoisted(() => ({
   headersMock: vi.fn(),
   redirectMock: vi.fn((location: string) => {
@@ -18,7 +18,7 @@ const {
   }),
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  getProjectDetailMock: vi.fn()
+  getProjectMock: vi.fn()
 }));
 
 vi.mock("next/headers", () => ({
@@ -39,7 +39,7 @@ vi.mock("@jarvis/auth/rbac", () => ({
 }));
 
 vi.mock("@/lib/queries/projects", () => ({
-  getProjectDetail: getProjectDetailMock
+  getProject: getProjectMock
 }));
 
 import ProjectOverviewPage from "./page";
@@ -51,43 +51,36 @@ describe("ProjectOverviewPage", () => {
     getSessionMock.mockResolvedValue({
       id: "session-1",
       workspaceId: "ws-1",
-      roles: ["MANAGER"],
-      permissions: ["project:read"]
+      permissions: ["project:read", "project:update"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
-  it("renders the project summary", async () => {
-    getProjectDetailMock.mockResolvedValue({
-      id: "project-1",
-      code: "P-001",
-      name: "One",
+  it("renders the project overview", async () => {
+    getProjectMock.mockResolvedValue({
+      id: "proj-1",
+      name: "Payroll",
       status: "active",
-      description: "Project description",
-      taskCount: 2,
-      staffCount: 1,
-      inquiryCount: 3
+      sensitivity: "INTERNAL",
+      description: "Handles payroll",
+      prodDomainUrl: "https://payroll.example.com",
+      devDomainUrl: null,
+      createdAt: new Date("2026-04-07T09:00:00.000Z")
     });
 
     const html = renderToStaticMarkup(
-      await ProjectOverviewPage({
-        params: Promise.resolve({ projectId: "project-1" })
-      })
+      await ProjectOverviewPage({ params: Promise.resolve({ projectId: "proj-1" }) })
     );
 
-    expect(html).toContain("Project description");
-    expect(html).toContain("P-001");
-    expect(html).toContain("작업");
-    expect(html).toContain("문의");
+    expect(html).toContain("Handles payroll");
+    expect(html).toContain("https://payroll.example.com");
   });
 
-  it("throws notFound when the project does not exist", async () => {
-    getProjectDetailMock.mockResolvedValue(null);
+  it("throws notFound when the project is missing", async () => {
+    getProjectMock.mockResolvedValue(null);
 
     await expect(
-      ProjectOverviewPage({
-        params: Promise.resolve({ projectId: "project-1" })
-      })
+      ProjectOverviewPage({ params: Promise.resolve({ projectId: "proj-1" }) })
     ).rejects.toThrowError("notFound");
   });
 });

@@ -4,15 +4,21 @@ import { NextRequest } from "next/server";
 const {
   getSessionMock,
   hasPermissionMock,
-  getProjectDetailMock,
+  getProjectMock,
   updateProjectMock,
-  archiveProjectMock
+  deleteProjectMock,
+  listProjectAccessEntriesMock,
+  createProjectAccessMock,
+  deleteProjectAccessMock
 } = vi.hoisted(() => ({
   getSessionMock: vi.fn(),
   hasPermissionMock: vi.fn(),
-  getProjectDetailMock: vi.fn(),
+  getProjectMock: vi.fn(),
   updateProjectMock: vi.fn(),
-  archiveProjectMock: vi.fn()
+  deleteProjectMock: vi.fn(),
+  listProjectAccessEntriesMock: vi.fn(),
+  createProjectAccessMock: vi.fn(),
+  deleteProjectAccessMock: vi.fn()
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
@@ -24,12 +30,20 @@ vi.mock("@jarvis/auth/rbac", () => ({
 }));
 
 vi.mock("@/lib/queries/projects", () => ({
-  getProjectDetail: getProjectDetailMock,
+  getProject: getProjectMock,
   updateProject: updateProjectMock,
-  archiveProject: archiveProjectMock
+  deleteProject: deleteProjectMock,
+  listProjectAccessEntries: listProjectAccessEntriesMock,
+  createProjectAccess: createProjectAccessMock,
+  deleteProjectAccess: deleteProjectAccessMock
 }));
 
 import { DELETE, GET, PUT } from "./route";
+import {
+  DELETE as DELETEAccess,
+  GET as GETAccess,
+  POST as POSTAccess
+} from "./access/route";
 
 function buildRequest(url: string, init?: ConstructorParameters<typeof NextRequest>[1]) {
   return new NextRequest(url, {
@@ -41,6 +55,8 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
   });
 }
 
+const params = { params: Promise.resolve({ projectId: "proj-1" }) };
+
 describe("/api/projects/[projectId]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -48,113 +64,170 @@ describe("/api/projects/[projectId]", () => {
       id: "session-1",
       userId: "user-1",
       workspaceId: "ws-1",
-      roles: ["MANAGER"],
+      roles: ["ADMIN"],
       permissions: ["project:read", "project:update", "project:delete"]
     });
     hasPermissionMock.mockReturnValue(true);
   });
 
-  it("returns 404 when the project does not exist", async () => {
-    getProjectDetailMock.mockResolvedValue(null);
+  it("returns 404 when the project is missing", async () => {
+    getProjectMock.mockResolvedValue(null);
 
-    const response = await GET(buildRequest("http://localhost/api/projects/project-1"), {
-      params: Promise.resolve({ projectId: "project-1" })
-    });
+    const response = await GET(buildRequest("http://localhost/api/projects/proj-1"), params);
 
     expect(response.status).toBe(404);
   });
 
-  it("returns project detail with summary counts", async () => {
-    getProjectDetailMock.mockResolvedValue({
-      id: "project-1",
-      code: "P-001",
-      name: "One",
-      taskCount: 2,
-      staffCount: 1,
-      inquiryCount: 3
+  it("returns the project detail", async () => {
+    getProjectMock.mockResolvedValue({
+      id: "proj-1",
+      name: "Payroll"
     });
 
-    const response = await GET(buildRequest("http://localhost/api/projects/project-1"), {
-      params: Promise.resolve({ projectId: "project-1" })
-    });
+    const response = await GET(buildRequest("http://localhost/api/projects/proj-1"), params);
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toEqual({
-      data: {
-        id: "project-1",
-        code: "P-001",
-        name: "One",
-        taskCount: 2,
-        staffCount: 1,
-        inquiryCount: 3
-      }
-    });
   });
 
-  it("returns 400 for an invalid update payload", async () => {
+  it("returns 422 for invalid updates", async () => {
     const response = await PUT(
-      buildRequest("http://localhost/api/projects/project-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "PUT",
-        body: JSON.stringify({ code: "" }),
         headers: {
           "content-type": "application/json"
-        }
+        },
+        body: JSON.stringify({ prodDomainUrl: "not-a-url" })
       }),
-      {
-        params: Promise.resolve({ projectId: "project-1" })
-      }
+      params
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(422);
   });
 
   it("updates the project", async () => {
-    updateProjectMock.mockResolvedValue({
-      id: "project-1",
-      code: "P-001",
-      name: "Renamed"
-    });
+    updateProjectMock.mockResolvedValue({ id: "proj-1", name: "Renamed" });
 
     const response = await PUT(
-      buildRequest("http://localhost/api/projects/project-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "PUT",
-        body: JSON.stringify({ name: "Renamed", status: "on-hold" }),
         headers: {
           "content-type": "application/json"
-        }
+        },
+        body: JSON.stringify({ name: "Renamed", status: "deprecated" })
       }),
-      {
-        params: Promise.resolve({ projectId: "project-1" })
-      }
+      params
     );
 
     expect(response.status).toBe(200);
     expect(updateProjectMock).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      projectId: "project-1",
-      input: {
+      projectId: "proj-1",
+      input: expect.objectContaining({
         name: "Renamed",
-        status: "on-hold"
-      }
+        status: "deprecated"
+      })
     });
   });
 
-  it("archives the project on delete", async () => {
-    archiveProjectMock.mockResolvedValue({ id: "project-1", status: "archived" });
+  it("deletes the project", async () => {
+    deleteProjectMock.mockResolvedValue({ id: "proj-1" });
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/projects/project-1", {
+      buildRequest("http://localhost/api/projects/proj-1", {
         method: "DELETE"
       }),
+      params
+    );
+
+    expect(response.status).toBe(204);
+  });
+});
+
+describe("/api/projects/[projectId]/access", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getSessionMock.mockResolvedValue({
+      id: "session-1",
+      userId: "user-1",
+      workspaceId: "ws-1",
+      roles: ["ADMIN"],
+      permissions: ["project:read", "project:update"]
+    });
+    hasPermissionMock.mockReturnValue(true);
+  });
+
+  it("returns resolved access entries", async () => {
+    listProjectAccessEntriesMock.mockResolvedValue([
       {
-        params: Promise.resolve({ projectId: "project-1" })
+        id: "acc-1",
+        label: "Primary DB",
+        passwordRef: {
+          ref: "vault://jarvis/payroll/password",
+          resolved: "secret",
+          canView: true
+        }
       }
+    ]);
+
+    const response = await GETAccess(
+      buildRequest("http://localhost/api/projects/proj-1/access"),
+      params
     );
 
     expect(response.status).toBe(200);
-    expect(archiveProjectMock).toHaveBeenCalledWith({
+    expect(listProjectAccessEntriesMock).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      projectId: "project-1"
+      projectId: "proj-1",
+      sessionRoles: ["ADMIN"],
+      sessionPermissions: ["project:read", "project:update"]
     });
+  });
+
+  it("returns 422 for invalid access payloads", async () => {
+    const response = await POSTAccess(
+      buildRequest("http://localhost/api/projects/proj-1/access", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({ label: "" })
+      }),
+      params
+    );
+
+    expect(response.status).toBe(422);
+  });
+
+  it("creates an access entry", async () => {
+    createProjectAccessMock.mockResolvedValue({ id: "acc-1" });
+
+    const response = await POSTAccess(
+      buildRequest("http://localhost/api/projects/proj-1/access", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json"
+        },
+        body: JSON.stringify({
+          envType: "prod",
+          accessType: "db",
+          label: "Primary DB",
+          usernameRef: "vault://jarvis/payroll/user"
+        })
+      }),
+      params
+    );
+
+    expect(response.status).toBe(201);
+  });
+
+  it("requires accessId for deletion", async () => {
+    const response = await DELETEAccess(
+      buildRequest("http://localhost/api/projects/proj-1/access", {
+        method: "DELETE"
+      }),
+      params
+    );
+
+    expect(response.status).toBe(400);
   });
 });

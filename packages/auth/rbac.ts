@@ -19,7 +19,7 @@ const WIKI_SENSITIVITIES = [
   "SECRET_REF_ONLY"
 ] as const;
 
-const SYSTEM_ROLE_ORDER = {
+const PROJECT_ROLE_ORDER = {
   VIEWER: 0,
   DEVELOPER: 1,
   MANAGER: 2,
@@ -110,24 +110,24 @@ export function getAllowedWikiSensitivityValues(
   if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
     allowed.push("RESTRICTED");
   }
-  if (permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)) {
+  if (permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET)) {
     allowed.push("SECRET_REF_ONLY");
   }
 
   return allowed;
 }
 
-export function canResolveSystemSecrets(
+export function canResolveProjectSecrets(
   permissions: string[],
   _sensitivity: string | null | undefined
 ): boolean {
   return (
     permissions.includes(PERMISSIONS.ADMIN_ALL) ||
-    permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)
+    permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET)
   );
 }
 
-export function canAccessSystemAccessEntry(
+export function canAccessProjectAccessEntry(
   roles: string[],
   requiredRole: string | null | undefined
 ): boolean {
@@ -136,13 +136,13 @@ export function canAccessSystemAccessEntry(
   }
 
   const requiredRank =
-    SYSTEM_ROLE_ORDER[requiredRole as keyof typeof SYSTEM_ROLE_ORDER];
+    PROJECT_ROLE_ORDER[requiredRole as keyof typeof PROJECT_ROLE_ORDER];
   if (requiredRank === undefined) {
     return false;
   }
 
   const highestRank = roles.reduce((maxRank, role) => {
-    const rank = SYSTEM_ROLE_ORDER[role as keyof typeof SYSTEM_ROLE_ORDER];
+    const rank = PROJECT_ROLE_ORDER[role as keyof typeof PROJECT_ROLE_ORDER];
     return rank === undefined ? maxRank : Math.max(maxRank, rank);
   }, -1);
 
@@ -209,7 +209,7 @@ export function buildGraphSnapshotSensitivitySqlFragment(
  *   - ADMIN_ALL → 전체 4값
  *   - KNOWLEDGE_READ → PUBLIC, INTERNAL
  *   - KNOWLEDGE_REVIEW → +RESTRICTED
- *   - SYSTEM_ACCESS_SECRET → +SECRET_REF_ONLY
+ *   - PROJECT_ACCESS_SECRET → +SECRET_REF_ONLY
  *   - 위 어디에도 해당 없음 → []
  */
 export function resolveAllowedWikiSensitivities(permissions: string[]): string[] {
@@ -221,7 +221,7 @@ export function resolveAllowedWikiSensitivities(permissions: string[]): string[]
   }
   const out: string[] = ["PUBLIC", "INTERNAL"];
   if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) out.push("RESTRICTED");
-  if (permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET)) out.push("SECRET_REF_ONLY");
+  if (permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET)) out.push("SECRET_REF_ONLY");
   return out;
 }
 
@@ -255,6 +255,21 @@ export function buildWikiSensitivitySqlFilter(
   return `AND ${col} IN (${quoted})`;
 }
 
+export function canManageContractors(session: JarvisSession): boolean {
+  return hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
+}
+
+export function canAccessContractorData(
+  session: JarvisSession,
+  targetUserId: string
+): boolean {
+  if (canManageContractors(session)) return true;
+  return (
+    hasPermission(session, PERMISSIONS.CONTRACTOR_READ) &&
+    session.userId === targetUserId
+  );
+}
+
 /**
  * @deprecated legacy 권한 모델, wiki surface에서 사용 금지.
  * wiki_page_index 경로에서는 `resolveAllowedWikiSensitivities` 또는 `canViewSensitivity`를 사용.
@@ -271,14 +286,14 @@ export function legacyCanAccessSensitivity(
   }
   if (sensitivity === "RESTRICTED") {
     return (
-      session.permissions.includes(PERMISSIONS.SYSTEM_READ) ||
-      session.permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
+      session.permissions.includes(PERMISSIONS.PROJECT_READ) ||
+      session.permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET) ||
       session.permissions.includes(PERMISSIONS.ADMIN_ALL)
     );
   }
   // SECRET_REF_ONLY
   return (
-    session.permissions.includes(PERMISSIONS.SYSTEM_ACCESS_SECRET) ||
+    session.permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET) ||
     session.permissions.includes(PERMISSIONS.ADMIN_ALL)
   );
 }

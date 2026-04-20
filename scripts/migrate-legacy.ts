@@ -14,7 +14,6 @@ import { migrateUsers } from './migrate/users';
 import { migrateMenuCodes } from './migrate/menu-codes';
 import { migrateCompanies } from './migrate/companies';
 import { migrateProjects } from './migrate/projects';
-import { migrateAttendance } from './migrate/attendance';
 import { migrateSystems } from './migrate/systems';
 import { migrateKnowledge } from './migrate/knowledge';
 import { migrateAuditLogs } from './migrate/audit-logs';
@@ -73,10 +72,7 @@ async function main(): Promise<void> {
     console.log('\n[5/9] projects, tasks, inquiries, staff');
     await migrateProjects(oracle, pgPool, idMap, opts);
 
-    console.log('\n[6/9] attendance');
-    await migrateAttendance(oracle, pgPool, idMap, opts);
-
-    console.log('\n[7/9] systems (credential → secret_ref)');
+    console.log('\n[6/9] systems (credential → secret_ref)');
     await migrateSystems(oracle, pgPool, idMap, opts);
 
     console.log('\n[8/9] knowledge pages');

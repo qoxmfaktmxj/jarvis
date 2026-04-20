@@ -38,7 +38,8 @@ vi.mock("@/lib/queries/projects", () => ({
 }));
 
 vi.mock("@/components/project/ProjectTable", () => ({
-  ProjectTable: ({ total }: { total: number }) => `<div>table:${total}</div>`
+  ProjectTable: ({ data }: { data: { name: string }[] }) =>
+    `<table>${data.map((r) => `<tr>${r.name}</tr>`).join("")}</table>`
 }));
 
 import ProjectsPage from "./page";
@@ -50,32 +51,26 @@ describe("ProjectsPage", () => {
     getSessionMock.mockResolvedValue({
       id: "session-1",
       workspaceId: "ws-1",
-      name: "Kim",
-      roles: ["MANAGER"],
       permissions: ["project:read", "project:create"]
     });
     hasPermissionMock.mockReturnValue(true);
     listProjectsMock.mockResolvedValue({
-      data: [],
-      meta: { page: 1, limit: 20, total: 4, totalPages: 1 }
+      data: [{ id: "proj-1", name: "Payroll" }],
+      pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 }
     });
   });
 
-  it("renders the projects heading and total count", async () => {
-    const html = renderToStaticMarkup(
-      await ProjectsPage({ searchParams: Promise.resolve({}) })
-    );
+  it("renders the projects registry", async () => {
+    const html = renderToStaticMarkup(await ProjectsPage({ searchParams: Promise.resolve({}) }));
 
-    expect(html).toContain("프로젝트");
-    expect(html).toContain("워크스페이스 프로젝트");
-    expect(html).toContain("새 프로젝트");
+    expect(html).toContain("Payroll");
   });
 
-  it("redirects to dashboard when the session lacks permission", async () => {
+  it("redirects when permission is missing", async () => {
     hasPermissionMock.mockReturnValue(false);
 
-    await expect(
-      ProjectsPage({ searchParams: Promise.resolve({}) })
-    ).rejects.toThrowError("redirect:/dashboard");
+    await expect(ProjectsPage({ searchParams: Promise.resolve({}) })).rejects.toThrowError(
+      "redirect:/dashboard"
+    );
   });
 });

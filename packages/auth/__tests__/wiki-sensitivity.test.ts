@@ -19,8 +19,8 @@ import {
  *
  * ROLE_PERMISSIONS (packages/shared/constants/permissions.ts) 기준:
  *   - ADMIN:     ADMIN_ALL (+전체)
- *   - MANAGER:   KNOWLEDGE_READ + KNOWLEDGE_UPDATE + KNOWLEDGE_REVIEW (SYSTEM_ACCESS_SECRET 없음)
- *   - DEVELOPER: KNOWLEDGE_READ + KNOWLEDGE_UPDATE + SYSTEM_ACCESS_SECRET (KNOWLEDGE_REVIEW 없음)
+ *   - MANAGER:   KNOWLEDGE_READ + KNOWLEDGE_UPDATE + KNOWLEDGE_REVIEW (PROJECT_ACCESS_SECRET 없음)
+ *   - DEVELOPER: KNOWLEDGE_READ + KNOWLEDGE_UPDATE + PROJECT_ACCESS_SECRET (KNOWLEDGE_REVIEW 없음)
  *   - VIEWER:    KNOWLEDGE_READ 만
  */
 
@@ -147,9 +147,9 @@ describe("buildWikiSensitivitySqlFilter — permission level single-cases", () =
     expect(frag).toBe("AND 1 = 0");
   });
 
-  it("SYSTEM_ACCESS_SECRET alone (no READ): AND 1 = 0 (KNOWLEDGE_READ required as gate)", () => {
+  it("PROJECT_ACCESS_SECRET alone (no READ): AND 1 = 0 (KNOWLEDGE_READ required as gate)", () => {
     const frag = buildWikiSensitivitySqlFilter([
-      PERMISSIONS.SYSTEM_ACCESS_SECRET
+      PERMISSIONS.PROJECT_ACCESS_SECRET
     ]);
     expect(frag).toBe("AND 1 = 0");
   });
@@ -164,21 +164,21 @@ describe("buildWikiSensitivitySqlFilter — permission level single-cases", () =
     );
   });
 
-  it("READ + SYSTEM_ACCESS_SECRET: PUBLIC, INTERNAL, SECRET_REF_ONLY", () => {
+  it("READ + PROJECT_ACCESS_SECRET: PUBLIC, INTERNAL, SECRET_REF_ONLY", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET
+      PERMISSIONS.PROJECT_ACCESS_SECRET
     ]);
     expect(frag).toBe(
       "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'SECRET_REF_ONLY')"
     );
   });
 
-  it("READ + REVIEW + SYSTEM_ACCESS_SECRET: all four", () => {
+  it("READ + REVIEW + PROJECT_ACCESS_SECRET: all four", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
       PERMISSIONS.KNOWLEDGE_REVIEW,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET
+      PERMISSIONS.PROJECT_ACCESS_SECRET
     ]);
     expect(frag).toBe(
       "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY')"
@@ -189,11 +189,11 @@ describe("buildWikiSensitivitySqlFilter — permission level single-cases", () =
     expect(buildWikiSensitivitySqlFilter([])).toBe("AND 1 = 0");
   });
 
-  it("unrelated permissions only (PROJECT_READ, ATTENDANCE_READ): AND 1 = 0", () => {
+  it("unrelated permissions only (NOTICE_READ, FILES_WRITE): AND 1 = 0", () => {
     expect(
       buildWikiSensitivitySqlFilter([
-        PERMISSIONS.PROJECT_READ,
-        PERMISSIONS.ATTENDANCE_READ
+        PERMISSIONS.NOTICE_READ,
+        PERMISSIONS.FILES_WRITE
       ])
     ).toBe("AND 1 = 0");
   });
@@ -245,7 +245,7 @@ describe("buildWikiSensitivitySqlFilter — options.column", () => {
       [
         PERMISSIONS.KNOWLEDGE_READ,
         PERMISSIONS.KNOWLEDGE_REVIEW,
-        PERMISSIONS.SYSTEM_ACCESS_SECRET
+        PERMISSIONS.PROJECT_ACCESS_SECRET
       ],
       { column: "wpi.sensitivity" }
     );

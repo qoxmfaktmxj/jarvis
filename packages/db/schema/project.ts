@@ -1,13 +1,16 @@
 import {
-  date,
+  index,
+  integer,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { company } from "./company.js";
+import { knowledgePage } from "./knowledge.js";
 import { user } from "./user.js";
 import { workspace } from "./tenant.js";
 
@@ -16,78 +19,72 @@ export const project = pgTable("project", {
   workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspace.id),
-  code: varchar("code", { length: 50 }).notNull(),
+  companyId: uuid("company_id")
+    .notNull()
+    .references(() => company.id),
   name: varchar("name", { length: 300 }).notNull(),
   description: text("description"),
-  clientCompanyId: uuid("client_company_id").references(() => company.id),
+  sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
   status: varchar("status", { length: 30 }).default("active").notNull(),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  createdBy: uuid("created_by").references(() => user.id),
+  ownerId: uuid("owner_id").references(() => user.id),
+  knowledgePageId: uuid("knowledge_page_id").references(() => knowledgePage.id),
+  // 운영
+  prodDomainUrl: varchar("prod_domain_url", { length: 500 }),
+  prodConnectType: varchar("prod_connect_type", { length: 20 }),
+  prodRepositoryUrl: varchar("prod_repository_url", { length: 500 }),
+  prodDbDsn: varchar("prod_db_dsn", { length: 500 }),
+  prodSrcPath: text("prod_src_path"),
+  prodClassPath: text("prod_class_path"),
+  prodMemo: text("prod_memo"),
+  // 개발
+  devDomainUrl: varchar("dev_domain_url", { length: 500 }),
+  devConnectType: varchar("dev_connect_type", { length: 20 }),
+  devRepositoryUrl: varchar("dev_repository_url", { length: 500 }),
+  devDbDsn: varchar("dev_db_dsn", { length: 500 }),
+  devSrcPath: text("dev_src_path"),
+  devClassPath: text("dev_class_path"),
+  devMemo: text("dev_memo"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
-
-export const projectTask = pgTable("project_task", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => project.id, { onDelete: "cascade" }),
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspace.id),
-  title: varchar("title", { length: 500 }).notNull(),
-  content: text("content"),
-  status: varchar("status", { length: 30 }).default("todo").notNull(),
-  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
-  dueDate: date("due_date"),
-  assigneeId: uuid("assignee_id").references(() => user.id),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
-
-export const projectInquiry = pgTable("project_inquiry", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspace.id),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => project.id, { onDelete: "cascade" }),
-  authorId: uuid("author_id").references(() => user.id),
-  title: varchar("title", { length: 500 }).notNull(),
-  content: text("content"),
-  priority: varchar("priority", { length: 20 }).default("medium").notNull(),
-  status: varchar("status", { length: 30 }).default("open").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
-
-export const projectStaff = pgTable("project_staff", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspace.id),
-  projectId: uuid("project_id")
-    .notNull()
-    .references(() => project.id, { onDelete: "cascade" }),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => user.id),
-  role: varchar("role", { length: 100 }),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
-});
-
-export const projectRelations = relations(project, ({ many }) => ({
-  tasks: many(projectTask),
-  inquiries: many(projectInquiry),
-  staff: many(projectStaff)
+}, (t) => ({
+  knowledgePageIdx: index("idx_project_knowledge_page").on(t.knowledgePageId),
+  workspaceCompanyUnique: uniqueIndex("project_workspace_company_unique").on(t.workspaceId, t.companyId),
 }));
 
-export const projectTaskRelations = relations(projectTask, ({ one }) => ({
-  project: one(project, { fields: [projectTask.projectId], references: [project.id] }),
-  assignee: one(user, { fields: [projectTask.assigneeId], references: [user.id] })
+export const projectRelations = relations(project, ({ one, many }) => ({
+  company: one(company, { fields: [project.companyId], references: [company.id] }),
+  owner: one(user, { fields: [project.ownerId], references: [user.id] }),
+  knowledgePage: one(knowledgePage, { fields: [project.knowledgePageId], references: [knowledgePage.id] }),
+  accessEntries: many(projectAccess),
 }));
+
+export const projectAccess = pgTable("project_access", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => workspace.id),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => project.id, { onDelete: "cascade" }),
+  envType: varchar("env_type", { length: 10 }).notNull(),
+  accessType: varchar("access_type", { length: 50 }).notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  host: varchar("host", { length: 500 }),
+  port: integer("port"),
+  usernameRef: varchar("username_ref", { length: 500 }),
+  passwordRef: varchar("password_ref", { length: 500 }),
+  connectionStringRef: varchar("connection_string_ref", { length: 500 }),
+  vpnFileRef: varchar("vpn_file_ref", { length: 500 }),
+  notes: text("notes"),
+  requiredRole: varchar("required_role", { length: 50 }).default("DEVELOPER").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
+}, (t) => ({
+  projectIdx: index("idx_project_access_project").on(t.projectId),
+}));
+
+export const projectAccessRelations = relations(projectAccess, ({ one }) => ({
+  project: one(project, { fields: [projectAccess.projectId], references: [project.id] }),
+}));
+

@@ -1,26 +1,19 @@
 import { db } from "@jarvis/db/client";
 import {
   auditLog,
-  attendance,
   menuItem,
   popularSearch,
-  project,
-  projectTask,
   wikiPageIndex
 } from "@jarvis/db/schema";
 import {
   and,
   asc,
-  count,
   desc,
   eq,
-  gte,
   inArray,
   isNotNull,
   isNull,
   lt,
-  lte,
-  ne,
   or,
   sql
 } from "drizzle-orm";
@@ -44,17 +37,13 @@ export interface AuditLogEntry {
   createdAt: Date;
 }
 
+/** @deprecated project domain removed in P0 — kept for DashboardData shape compat */
 export interface TaskSummary {
   id: string;
   title: string;
   status: string;
   dueDate: string | null;
   projectId: string;
-}
-
-export interface ProjectStats {
-  total: number;
-  byStatus: Record<string, number>;
 }
 
 type StaleKnowledgePageRow = {
@@ -80,68 +69,23 @@ export interface TrendItem {
   count: number;
 }
 
-export interface AttendanceSummary {
-  totalDays: number;
-  presentDays: number;
-  lateDays: number;
-  absentDays: number;
-}
-
 export interface DashboardData {
   quickLinks: MenuItem[];
   recentActivity: AuditLogEntry[];
   myTasks: TaskSummary[];
-  projectStats: ProjectStats;
   stalePages: StalePage[];
   searchTrends: TrendItem[];
-  attendanceSummary: AttendanceSummary;
 }
 
 type DashboardDb = typeof db;
 
-type ProjectStatusCount = {
-  status: string | null;
-  count: number | string;
-};
-
-type AttendanceStatusCount = {
-  status: string | null;
-  count: number | string;
-};
-
-export function buildProjectStats(rows: ProjectStatusCount[]): ProjectStats {
-  const byStatus: Record<string, number> = {};
-  let total = 0;
-
-  for (const row of rows) {
-    const key = row.status ?? "unknown";
-    const value = Number(row.count);
-    byStatus[key] = value;
-    total += value;
-  }
-
-  return { total, byStatus };
-}
-
-export function buildAttendanceSummary(
-  rows: AttendanceStatusCount[]
-): AttendanceSummary {
-  const totals: Record<string, number> = {};
-  let totalDays = 0;
-
-  for (const row of rows) {
-    const key = row.status ?? "unknown";
-    const value = Number(row.count);
-    totals[key] = value;
-    totalDays += value;
-  }
-
-  return {
-    totalDays,
-    presentDays: totals["present"] ?? 0,
-    lateDays: totals["late"] ?? 0,
-    absentDays: totals["absent"] ?? 0
-  };
+/** @deprecated project domain removed in P0 */
+export async function getMyTasks(
+  _workspaceId: string,
+  _userId: string,
+  _database: DashboardDb = db
+): Promise<TaskSummary[]> {
+  return [];
 }
 
 export function getSearchPeriodStart(now: Date = new Date()): string {
@@ -232,46 +176,6 @@ export async function getRecentActivity(
     .limit(10) as Promise<AuditLogEntry[]>;
 }
 
-export async function getMyTasks(
-  workspaceId: string,
-  userId: string,
-  database: DashboardDb = db
-): Promise<TaskSummary[]> {
-  return database
-    .select({
-      id: projectTask.id,
-      title: projectTask.title,
-      status: projectTask.status,
-      dueDate: projectTask.dueDate,
-      projectId: projectTask.projectId
-    })
-    .from(projectTask)
-    .where(
-      and(
-        eq(projectTask.workspaceId, workspaceId),
-        eq(projectTask.assigneeId, userId),
-        ne(projectTask.status, "done")
-      )
-    )
-    .orderBy(asc(projectTask.dueDate))
-    .limit(10) as Promise<TaskSummary[]>;
-}
-
-export async function getProjectStats(
-  workspaceId: string,
-  database: DashboardDb = db
-): Promise<ProjectStats> {
-  const rows = await database
-    .select({
-      status: project.status,
-      count: count()
-    })
-    .from(project)
-    .where(eq(project.workspaceId, workspaceId))
-    .groupBy(project.status);
-
-  return buildProjectStats(rows);
-}
 
 export async function getStalePages(
   workspaceId: string,
@@ -359,56 +263,20 @@ export async function getSearchTrends(
     .limit(10) as Promise<TrendItem[]>;
 }
 
-export async function getAttendanceSummary(
-  workspaceId: string,
-  userId: string,
-  now: Date = new Date(),
-  database: DashboardDb = db
-): Promise<AttendanceSummary> {
-  const startOfMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-  );
-  const endOfMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)
-  );
-
-  const rows = await database
-    .select({
-      status: attendance.status,
-      count: count()
-    })
-    .from(attendance)
-    .where(
-      and(
-        eq(attendance.workspaceId, workspaceId),
-        eq(attendance.userId, userId),
-        gte(attendance.attendDate, startOfMonth.toISOString().slice(0, 10)),
-        lte(attendance.attendDate, endOfMonth.toISOString().slice(0, 10))
-      )
-    )
-    .groupBy(attendance.status);
-
-  return buildAttendanceSummary(rows);
-}
-
 export type DashboardLoaders = {
   getQuickLinks: typeof getQuickLinks;
   getRecentActivity: typeof getRecentActivity;
   getMyTasks: typeof getMyTasks;
-  getProjectStats: typeof getProjectStats;
   getStalePages: typeof getStalePages;
   getSearchTrends: typeof getSearchTrends;
-  getAttendanceSummary: typeof getAttendanceSummary;
 };
 
 const dashboardLoaders: DashboardLoaders = {
   getQuickLinks,
   getRecentActivity,
   getMyTasks,
-  getProjectStats,
   getStalePages,
-  getSearchTrends,
-  getAttendanceSummary
+  getSearchTrends
 };
 
 export async function getDashboardData(
@@ -424,27 +292,21 @@ export async function getDashboardData(
     quickLinks,
     recentActivity,
     myTasks,
-    projectStats,
     stalePages,
-    searchTrends,
-    attendanceSummary
+    searchTrends
   ] = await Promise.all([
     api.getQuickLinks(workspaceId, userRoles),
     api.getRecentActivity(workspaceId),
     api.getMyTasks(workspaceId, userId),
-    api.getProjectStats(workspaceId),
     api.getStalePages(workspaceId, userPermissions),
-    api.getSearchTrends(workspaceId),
-    api.getAttendanceSummary(workspaceId, userId)
+    api.getSearchTrends(workspaceId)
   ]);
 
   return {
     quickLinks,
     recentActivity,
     myTasks,
-    projectStats,
     stalePages,
-    searchTrends,
-    attendanceSummary
+    searchTrends
   };
 }

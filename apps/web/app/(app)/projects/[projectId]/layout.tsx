@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectTabs } from "@/components/project/ProjectTabs";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { getProjectById } from "@/lib/queries/projects";
+import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function ProjectDetailLayout({
 }) {
   const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/projects");
   const { projectId } = await params;
-  const project = await getProjectById({
+  const project = await getProject({
     workspaceId: session.workspaceId,
     projectId
   });
@@ -30,8 +30,8 @@ export default async function ProjectDetailLayout({
       <PageHeader
         eyebrow="Project"
         title={project.name}
-        description={project.code}
-        accent={project.code?.slice(0, 3).toUpperCase()}
+        description={project.description ?? undefined}
+        accent={project.name?.slice(0, 3).toUpperCase()}
       />
 
       <ProjectTabs projectId={projectId} />

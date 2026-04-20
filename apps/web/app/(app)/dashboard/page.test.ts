@@ -52,15 +52,8 @@ describe("DashboardPage", () => {
       quickLinks: [],
       recentActivity: [],
       myTasks: [],
-      projectStats: { total: 0, byStatus: {} },
       stalePages: [],
       searchTrends: [],
-      attendanceSummary: {
-        totalDays: 0,
-        presentDays: 0,
-        lateDays: 0,
-        absentDays: 0
-      }
     });
 
     const html = renderToStaticMarkup(await DashboardPage());
