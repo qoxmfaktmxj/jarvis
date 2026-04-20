@@ -56,19 +56,19 @@ export async function migrateUsers(
       const workspaceId = idMap.require('workspace', row.ENTER_CD);
       const orgKey = `${row.ENTER_CD}:${row.ORG_CD}`;
       const orgId = idMap.get('org', orgKey) ?? null;
-      const isActive = row.USE_YN === 'Y';
+      const status = row.USE_YN === 'Y' ? 'active' : 'inactive';
 
       if (!opts.isDryRun) {
         await pg.query(
-          `INSERT INTO "user" (id, workspace_id, employee_id, name, email, org_id, is_active, created_at, updated_at)
+          `INSERT INTO "user" (id, workspace_id, employee_id, name, email, org_id, status, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
            ON CONFLICT (workspace_id, employee_id) DO UPDATE
              SET name = EXCLUDED.name,
                  email = EXCLUDED.email,
                  org_id = EXCLUDED.org_id,
-                 is_active = EXCLUDED.is_active,
+                 status = EXCLUDED.status,
                  updated_at = NOW()`,
-          [newUserId, workspaceId, row.SABUN, row.USER_NM, row.EMAIL ?? null, orgId, isActive],
+          [newUserId, workspaceId, row.SABUN, row.USER_NM, row.EMAIL ?? null, orgId, status],
         );
 
         // user_role mapping
