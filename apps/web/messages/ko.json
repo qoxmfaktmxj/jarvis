@@ -2,7 +2,6 @@
   "Nav": {
     "dashboard": "대시보드",
     "projects": "프로젝트",
-    "systems": "시스템",
     "knowledge": "지식",
     "wiki": "위키",
     "notices": "공지사항",
@@ -302,7 +301,7 @@
       "save": "순서 저장"
     }
   },
-  "Systems": {
+  "Projects": {
     "title": "시스템",
     "description": "인프라 기록 및 접속 메타데이터를 관리합니다 (전체 {total}개)",
     "registerSystem": "시스템 등록",

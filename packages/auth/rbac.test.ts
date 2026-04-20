@@ -112,21 +112,21 @@ describe("buildWikiSensitivitySqlFilter (Phase-W3 T5)", () => {
     );
   });
 
-  it("READ + SYSTEM_ACCESS_SECRET: sees SECRET_REF_ONLY too (but not RESTRICTED)", () => {
+  it("READ + PROJECT_ACCESS_SECRET: sees SECRET_REF_ONLY too (but not RESTRICTED)", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET,
+      PERMISSIONS.PROJECT_ACCESS_SECRET,
     ]);
     expect(frag).toBe(
       "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'SECRET_REF_ONLY')",
     );
   });
 
-  it("READ + REVIEW + SYSTEM_ACCESS_SECRET: sees everything via union", () => {
+  it("READ + REVIEW + PROJECT_ACCESS_SECRET: sees everything via union", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
       PERMISSIONS.KNOWLEDGE_REVIEW,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET,
+      PERMISSIONS.PROJECT_ACCESS_SECRET,
     ]);
     expect(frag).toBe(
       "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY')",

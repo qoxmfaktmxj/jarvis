@@ -11,7 +11,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
  * buildWikiSensitivitySqlFilter 의 엄격 규약을 권한 단위로 확인한다:
  *   - PUBLIC, INTERNAL    → KNOWLEDGE_READ 필요
  *   - RESTRICTED          → KNOWLEDGE_REVIEW 필요 (KNOWLEDGE_UPDATE 단독으로는 불가)
- *   - SECRET_REF_ONLY     → SYSTEM_ACCESS_SECRET 필요
+ *   - SECRET_REF_ONLY     → PROJECT_ACCESS_SECRET 필요
  *   - ADMIN_ALL           → 전체 허용 (bypass)
  */
 
@@ -50,7 +50,7 @@ describe("RBAC WIKI_* permission rules", () => {
       expect(includesSensitivity(frag, "INTERNAL")).toBe(false);
     });
 
-    it("does NOT allow SECRET_REF_ONLY (no SYSTEM_ACCESS_SECRET)", () => {
+    it("does NOT allow SECRET_REF_ONLY (no PROJECT_ACCESS_SECRET)", () => {
       expect(includesSensitivity(frag, "SECRET_REF_ONLY")).toBe(false);
     });
 
@@ -91,7 +91,7 @@ describe("RBAC WIKI_* permission rules", () => {
       expect(includesSensitivity(frag, "RESTRICTED")).toBe(false);
     });
 
-    it("does NOT allow SECRET_REF_ONLY (SYSTEM_ACCESS_SECRET needed)", () => {
+    it("does NOT allow SECRET_REF_ONLY (PROJECT_ACCESS_SECRET needed)", () => {
       expect(includesSensitivity(frag, "SECRET_REF_ONLY")).toBe(false);
     });
   });
@@ -118,11 +118,11 @@ describe("RBAC WIKI_* permission rules", () => {
     });
   });
 
-  describe("SYSTEM_ACCESS_SECRET + KNOWLEDGE_READ (no REVIEW)", () => {
+  describe("PROJECT_ACCESS_SECRET + KNOWLEDGE_READ (no REVIEW)", () => {
     // DEVELOPER 역할의 핵심 조합. PUBLIC/INTERNAL/SECRET_REF_ONLY 허용, RESTRICTED 제외.
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET
+      PERMISSIONS.PROJECT_ACCESS_SECRET
     ]);
 
     it("allows PUBLIC", () => {
@@ -192,7 +192,7 @@ describe("wiki vs graph sensitivity filters — separation of concerns", () => {
       buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_REVIEW])
     ).toBe("AND 1 = 0");
     expect(
-      buildWikiSensitivitySqlFilter([PERMISSIONS.SYSTEM_ACCESS_SECRET])
+      buildWikiSensitivitySqlFilter([PERMISSIONS.PROJECT_ACCESS_SECRET])
     ).toBe("AND 1 = 0");
     // READ + REVIEW → PUBLIC, INTERNAL, RESTRICTED
     expect(
@@ -200,7 +200,7 @@ describe("wiki vs graph sensitivity filters — separation of concerns", () => {
     ).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED')");
     // READ + SECRET → PUBLIC, INTERNAL, SECRET_REF_ONLY
     expect(
-      buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.SYSTEM_ACCESS_SECRET])
+      buildWikiSensitivitySqlFilter([PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.PROJECT_ACCESS_SECRET])
     ).toBe("AND sensitivity IN ('PUBLIC', 'INTERNAL', 'SECRET_REF_ONLY')");
   });
 

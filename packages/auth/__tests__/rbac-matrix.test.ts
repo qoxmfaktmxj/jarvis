@@ -305,7 +305,7 @@ describe("RBAC matrix -- edge cases", () => {
     const frag = buildWikiSensitivitySqlFilter([
       PERMISSIONS.KNOWLEDGE_READ,
       PERMISSIONS.KNOWLEDGE_REVIEW,
-      PERMISSIONS.SYSTEM_ACCESS_SECRET,
+      PERMISSIONS.PROJECT_ACCESS_SECRET,
     ]);
     expect(frag).toBe(
       "AND sensitivity IN ('PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY')",
