@@ -174,7 +174,7 @@ describe("lexicalShortlist — sensitivity × permission × requiredPermission",
       workspaceId: WS,
       userPermissions: [
         PERMISSIONS.KNOWLEDGE_READ,
-        PERMISSIONS.SYSTEM_ACCESS_SECRET,
+        PERMISSIONS.PROJECT_ACCESS_SECRET,
       ],
       question: "시크릿",
     });

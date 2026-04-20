@@ -64,7 +64,7 @@ describe("listSystemAccessEntries", () => {
       workspaceId: "ws-1",
       systemId: "sys-1",
       sessionRoles: ["VIEWER"],
-      sessionPermissions: ["system:read"],
+      sessionPermissions: ["project:read"],
       database: database as never,
       resolver
     });

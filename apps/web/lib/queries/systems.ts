@@ -1,18 +1,18 @@
 import { db } from "@jarvis/db/client";
-import { system, systemAccess } from "@jarvis/db/schema";
+import { project, systemAccess } from "@jarvis/db/schema";
 import {
   createEnvSecretResolver,
   isSecretRef,
   type SecretResolver
 } from "@jarvis/secret";
 import {
-  canAccessSystemAccessEntry,
-  canResolveSystemSecrets
+  canAccessProjectAccessEntry,
+  canResolveProjectSecrets
 } from "@jarvis/auth/rbac";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
 type SystemsDb = typeof db;
-type SystemRow = typeof system.$inferSelect;
+type SystemRow = typeof project.$inferSelect;
 type SystemAccessRow = typeof systemAccess.$inferSelect;
 
 export interface PaginatedSystems {
@@ -48,6 +48,8 @@ export interface ResolvedAccessEntry {
 
 type ListSystemsParams = {
   workspaceId: string;
+  // category and environment were removed from the project schema (P1-A).
+  // TODO(P3-A): remove these from all callers once the file is renamed to projects.ts
   category?: string;
   environment?: string;
   status?: string;
@@ -59,8 +61,9 @@ type ListSystemsParams = {
 
 type CreateSystemInput = {
   name: string;
-  category?: "web" | "db" | "server" | "network" | "middleware";
-  environment?: "dev" | "staging" | "prod";
+  // TODO(P3-A): category and environment no longer exist on project table; remove these from callers
+  category?: string;
+  environment?: string;
   description?: string;
   techStack?: string;
   repositoryUrl?: string;
@@ -96,8 +99,8 @@ function normalizeOptionalString(value?: string | null) {
 
 export async function listSystems({
   workspaceId,
-  category,
-  environment,
+  // category and environment are dropped from the project schema (P1-A); ignored here
+  // TODO(P3-A): remove params from callers
   status,
   q,
   page = 1,
@@ -106,31 +109,25 @@ export async function listSystems({
 }: ListSystemsParams): Promise<PaginatedSystems> {
   const safePage = Math.max(1, page);
   const safePageSize = Math.min(100, Math.max(1, pageSize));
-  const conditions = [eq(system.workspaceId, workspaceId)];
+  const conditions = [eq(project.workspaceId, workspaceId)];
 
-  if (category) {
-    conditions.push(eq(system.category, category));
-  }
-  if (environment) {
-    conditions.push(eq(system.environment, environment));
-  }
   if (status) {
-    conditions.push(eq(system.status, status));
+    conditions.push(eq(project.status, status));
   }
   if (q) {
-    conditions.push(or(ilike(system.name, `%${q}%`), ilike(system.description, `%${q}%`))!);
+    conditions.push(or(ilike(project.name, `%${q}%`), ilike(project.description, `%${q}%`))!);
   }
 
   const where = and(...conditions);
   const [rows, totalRows] = await Promise.all([
     database
       .select()
-      .from(system)
+      .from(project)
       .where(where)
-      .orderBy(desc(system.createdAt))
+      .orderBy(desc(project.createdAt))
       .limit(safePageSize)
       .offset((safePage - 1) * safePageSize),
-    database.select({ total: count() }).from(system).where(where)
+    database.select({ total: count() }).from(project).where(where)
   ]);
 
   const total = Number(totalRows[0]?.total ?? 0);
@@ -157,18 +154,17 @@ export async function createSystem({
   input: CreateSystemInput;
   database?: SystemsDb;
 }) {
+  // NOTE: category and environment are not in the project schema (P1-A). Silently ignored.
   const [created] = await database
-    .insert(system)
+    .insert(project)
     .values({
       workspaceId,
+      // companyId is required on the project table; callers must supply it via a separate mechanism.
+      // TODO(P3-A): update CreateSystemInput to include companyId and pass it here
+      companyId: "00000000-0000-0000-0000-000000000000",
       ownerId: userId,
       name: input.name,
-      category: normalizeOptionalString(input.category),
-      environment: input.environment ?? "prod",
       description: normalizeOptionalString(input.description),
-      techStack: normalizeOptionalString(input.techStack),
-      repositoryUrl: normalizeOptionalString(input.repositoryUrl),
-      dashboardUrl: normalizeOptionalString(input.dashboardUrl),
       sensitivity: input.sensitivity ?? "INTERNAL",
       status: input.status ?? "active"
     })
@@ -188,8 +184,8 @@ export async function getSystem({
 }) {
   const [row] = await database
     .select()
-    .from(system)
-    .where(and(eq(system.id, systemId), eq(system.workspaceId, workspaceId)))
+    .from(project)
+    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
     .limit(1);
 
   return row ?? null;
@@ -206,31 +202,19 @@ export async function updateSystem({
   input: Partial<CreateSystemInput>;
   database?: SystemsDb;
 }) {
+  // NOTE: category and environment are not in the project schema (P1-A). Silently ignored.
   const [updated] = await database
-    .update(system)
+    .update(project)
     .set({
       ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(input.category !== undefined
-        ? { category: normalizeOptionalString(input.category) }
-        : {}),
-      ...(input.environment !== undefined ? { environment: input.environment } : {}),
       ...(input.description !== undefined
         ? { description: normalizeOptionalString(input.description) }
-        : {}),
-      ...(input.techStack !== undefined
-        ? { techStack: normalizeOptionalString(input.techStack) }
-        : {}),
-      ...(input.repositoryUrl !== undefined
-        ? { repositoryUrl: normalizeOptionalString(input.repositoryUrl) }
-        : {}),
-      ...(input.dashboardUrl !== undefined
-        ? { dashboardUrl: normalizeOptionalString(input.dashboardUrl) }
         : {}),
       ...(input.sensitivity !== undefined ? { sensitivity: input.sensitivity } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       updatedAt: new Date()
     })
-    .where(and(eq(system.id, systemId), eq(system.workspaceId, workspaceId)))
+    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
     .returning();
 
   return updated ?? null;
@@ -246,9 +230,9 @@ export async function deleteSystem({
   database?: SystemsDb;
 }) {
   const [deleted] = await database
-    .delete(system)
-    .where(and(eq(system.id, systemId), eq(system.workspaceId, workspaceId)))
-    .returning({ id: system.id });
+    .delete(project)
+    .where(and(eq(project.id, systemId), eq(project.workspaceId, workspaceId)))
+    .returning({ id: project.id });
 
   return deleted ?? null;
 }
@@ -323,10 +307,10 @@ export async function listSystemAccessEntries({
     .orderBy(systemAccess.sortOrder);
 
   const visibleRows = rows.filter((row: SystemAccessRow) =>
-    canAccessSystemAccessEntry(sessionRoles, row.requiredRole)
+    canAccessProjectAccessEntry(sessionRoles, row.requiredRole)
   );
 
-  const allowResolve = canResolveSystemSecrets(
+  const allowResolve = canResolveProjectSecrets(
     sessionPermissions,
     sys.sensitivity
   );
