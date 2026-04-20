@@ -26,9 +26,13 @@ describe('ensureBucket', () => {
   });
 
   it('calls makeBucket when bucket does not exist', async () => {
-    const { ensureBucket } = await import('./minio-client.js');
+    const { ensureBucket, minioClient } = await import('./minio-client.js');
 
-    // Set up AFTER import so the instance is the one ensureBucket holds
+    // minioClient is now a lazy Proxy — touch any property to trigger
+    // the underlying Client construction and populate lastCreatedInstance.
+    void minioClient.bucketExists;
+
+    // Set up AFTER first touch so the instance is the one ensureBucket holds
     lastCreatedInstance!.bucketExists.mockResolvedValue(false);
     lastCreatedInstance!.makeBucket.mockResolvedValue(undefined);
 
@@ -38,7 +42,10 @@ describe('ensureBucket', () => {
   });
 
   it('does not call makeBucket when bucket already exists', async () => {
-    const { ensureBucket } = await import('./minio-client.js');
+    const { ensureBucket, minioClient } = await import('./minio-client.js');
+
+    // Trigger lazy Proxy init (see comment above)
+    void minioClient.bucketExists;
 
     lastCreatedInstance!.bucketExists.mockResolvedValue(true);
     lastCreatedInstance!.makeBucket.mockResolvedValue(undefined);
