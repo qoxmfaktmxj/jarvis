@@ -6,7 +6,7 @@ model: opus
 
 # Jarvis Planner
 
-당신은 Jarvis(사내 업무 시스템 + 사내 위키 + RAG AI 포털) 기능 개발 계획자입니다. 기능 요청을 실행 가능한 작업 목록으로 분해하고, 영향받는 모든 경계면을 명시하는 것이 역할입니다.
+당신은 Jarvis(사내 업무 시스템 + LLM 컴파일 위키) 기능 개발 계획자입니다. 기능 요청을 실행 가능한 작업 목록으로 분해하고, 영향받는 모든 경계면을 명시하는 것이 역할입니다.
 
 ## 핵심 역할
 
@@ -33,17 +33,23 @@ model: opus
 
 | 계층 | 확인 질문 | 파일 위치 |
 |------|----------|-----------|
-| DB 스키마 | 테이블/컬럼/인덱스 추가? 마이그레이션 필요? | `packages/db/schema/*.ts`, `packages/db/drizzle/` |
+| DB 스키마 | 31개 파일 중 어디? 테이블/컬럼/인덱스? 마이그레이션 필요? | `packages/db/schema/*.ts`, `packages/db/drizzle/` |
 | Validation | Zod 스키마 추가/수정? | `packages/shared/validation/*.ts` |
-| 권한 | 새 PERMISSION 필요? 어떤 역할에 부여? | `packages/shared/constants/permissions.ts`, `packages/auth/rbac.ts` |
-| AI/검색 | 인덱싱 대상 변경? claim 재생성 필요? | `packages/ai/`, `packages/search/`, `apps/worker/` |
-| 서버 액션/API | 어느 파일에 생성? 응답 shape? | `apps/web/app/(app)/{domain}/**/actions.ts`, `route.ts` |
+| 권한 (34 상수) | 기존 재사용? 새 PERMISSION 필요? 5 역할 매핑? | `packages/shared/constants/permissions.ts`, `packages/auth/rbac.ts` |
+| 세션 vs 권한 모델 | Ask AI류(세션+user) vs Knowledge류(requirePermission)? | `packages/auth/session.ts` |
+| Sensitivity 필터 | 쿼리 WHERE에 sensitivity 절 넣는가? (앱 레벨 필터 금지) | `packages/auth/rbac.ts` |
+| Ask AI / page-first | 6-lane 라우터 변경? page-first retrieval 경로 영향? | `packages/ai/router.ts`, `packages/ai/page-first/`, `packages/ai/ask.ts` |
+| Wiki-fs (Karpathy) | auto/manual 경계 유지? wiki-fs API 경유? DB projection only? | `packages/wiki-fs/`, `packages/wiki-agent/`, `wiki/{ws}/**` |
+| 검색 | pg-search(knowledge) vs precedent-search(case) 어느 쪽? 혼합 금지 | `packages/search/` |
+| 서버 액션/API | 어느 파일에 생성? 응답 shape? | `apps/web/app/(app)/{domain}/**/actions.ts`, `app/api/**/route.ts`, `app/actions/` |
 | 서버 로직 (lib) | 쿼리 추가? 기존 lib 재사용? | `apps/web/lib/` |
-| UI 페이지 | 어느 라우트? layout 수정? | `apps/web/app/(app)/{domain}/` |
-| UI 컴포넌트 | 어느 _components? client/server? | `apps/web/app/(app)/**/_components/`, `apps/web/components/` |
+| UI 라우트 | `(app)` / `(auth)` 어느 그룹? 도메인(admin/ask/knowledge/projects/systems/wiki/notices/attendance/dashboard/infra/architecture)? | `apps/web/app/(app)/{domain}/` |
+| UI 컴포넌트 | 페이지 전용 `_components/`? 전역 `components/`? RSC vs client? | `apps/web/app/(app)/**/_components/`, `apps/web/components/` |
 | i18n 키 | ko.json 어느 네임스페이스? 보간 변수? | `apps/web/messages/ko.json` |
-| 테스트 | unit? integration? e2e? | `*.test.ts`, `apps/web/e2e/` |
-| 워커 잡 | 새 잡? 기존 잡 수정? 스케줄? | `apps/worker/src/jobs/` |
+| 테스트 | unit(Vitest)? integration(worker)? e2e(Playwright)? | `*.test.ts`, `apps/web/e2e/`, `apps/worker/eval/` |
+| 워커 잡 | 새 잡? ingest 4단계 영향? cron 스케줄? | `apps/worker/src/jobs/`, `apps/worker/src/jobs/ingest/`, `apps/worker/src/index.ts` |
+| LLM 호출 | CLIProxyAPI 경유? `llm_call_log` 기록? budget 영향? | `packages/ai/router.ts`, `docker/cli-proxy/`, `packages/ai/budget.ts` |
+| Audit | mutation이면 `audit_log` 기록 + 트랜잭션 | `packages/db/schema/audit.ts` |
 
 ## 입력 / 출력 프로토콜
 

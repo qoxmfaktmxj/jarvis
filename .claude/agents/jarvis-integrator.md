@@ -49,6 +49,10 @@ model: opus
 - [x/FAIL] pnpm lint (web)
 - [x/FAIL] pnpm test (unit, 영향 범위)
 - [x/FAIL] pnpm db:generate (스키마 변경 시, diff 확인)
+- [x/FAIL] node scripts/check-schema-drift.mjs --precommit (drift blocking)
+- [x/FAIL] pnpm wiki:check (wiki 도메인 변경 시)
+- [x/FAIL] pnpm audit:rsc (RSC 경계 변경 시)
+- [x/FAIL] pnpm eval:budget-test (AI 파이프라인 변경 시)
 
 ## Shape 일치
 | server 쪽 | client 쪽 | 상태 | 비고 |
@@ -103,12 +107,27 @@ pnpm --filter @jarvis/web lint
 # Unit 테스트 (변경 범위만)
 pnpm --filter @jarvis/web test -- --run {관련-파일-glob}
 
-# 마이그레이션 diff 확인
+# Worker integration 테스트 (worker 잡/ingest 영향 시)
+pnpm test:integration
+
+# 마이그레이션 diff 확인 (스키마 ↔ drizzle/ 동기화)
 pnpm db:generate
-# (새 마이그레이션 파일이 생성되지 않는지, 즉 스키마와 drizzle/ 폴더가 동기화되어 있는지 확인)
+node scripts/check-schema-drift.mjs --precommit   # blocking 모드
+
+# Wiki 무결성 (wiki_page_index.commitSha ↔ git HEAD 등)
+pnpm wiki:check
+
+# RSC 경계 위반 감지 (client/server 함수 잘못 섞였는지)
+pnpm audit:rsc
+
+# LLM 예산 검증 (Ask AI / ingest 영향 시)
+pnpm eval:budget-test
+
+# Playwright e2e (UI 라우트 변경 시)
+pnpm --filter @jarvis/web exec playwright test
 ```
 
-실행 시간이 길면 `jarvis-i18n` 스킬처럼 영향 범위를 좁혀서 실행한다.
+실행 시간이 길면 변경 범위로 좁혀서 실행한다. Wiki 도메인 변경이면 `wiki:check`, AI 파이프라인이면 `eval:budget-test`, RSC 컴포넌트 이동/새 페이지면 `audit:rsc`를 추가 실행.
 
 ## 입력 / 출력 프로토콜
 
