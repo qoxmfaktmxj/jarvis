@@ -18,14 +18,9 @@ export async function GET(request: NextRequest) {
   const isAdmin = auth.session.permissions.includes(PERMISSIONS.CONTRACTOR_ADMIN);
   const result = await listContractors({
     workspaceId: auth.session.workspaceId,
+    userIdFilter: isAdmin ? undefined : auth.session.userId,
     ...parsed.data
   });
-
-  if (!isAdmin) {
-    result.data = result.data.filter((r) => r.userId === auth.session.userId);
-    result.pagination.total = result.data.length;
-    result.pagination.totalPages = 1;
-  }
 
   return NextResponse.json(result);
 }
