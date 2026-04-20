@@ -50,12 +50,6 @@ export interface TaskSummary {
   projectId: string;
 }
 
-/** @deprecated project domain removed in P0 — kept for DashboardData shape compat */
-export interface ProjectStats {
-  total: number;
-  byStatus: Record<string, number>;
-}
-
 type StaleKnowledgePageRow = {
   id: string;
   title: string;
@@ -90,7 +84,6 @@ export interface DashboardData {
   quickLinks: MenuItem[];
   recentActivity: AuditLogEntry[];
   myTasks: TaskSummary[];
-  projectStats: ProjectStats;
   stalePages: StalePage[];
   searchTrends: TrendItem[];
   attendanceSummary: AttendanceSummary;
@@ -98,29 +91,10 @@ export interface DashboardData {
 
 type DashboardDb = typeof db;
 
-type ProjectStatusCount = {
-  status: string | null;
-  count: number | string;
-};
-
 type AttendanceStatusCount = {
   status: string | null;
   count: number | string;
 };
-
-export function buildProjectStats(rows: ProjectStatusCount[]): ProjectStats {
-  const byStatus: Record<string, number> = {};
-  let total = 0;
-
-  for (const row of rows) {
-    const key = row.status ?? "unknown";
-    const value = Number(row.count);
-    byStatus[key] = value;
-    total += value;
-  }
-
-  return { total, byStatus };
-}
 
 /** @deprecated project domain removed in P0 */
 export async function getMyTasks(
@@ -129,14 +103,6 @@ export async function getMyTasks(
   _database: DashboardDb = db
 ): Promise<TaskSummary[]> {
   return [];
-}
-
-/** @deprecated project domain removed in P0 */
-export async function getProjectStats(
-  _workspaceId: string,
-  _database: DashboardDb = db
-): Promise<ProjectStats> {
-  return { total: 0, byStatus: {} };
 }
 
 export function buildAttendanceSummary(
@@ -371,7 +337,6 @@ export type DashboardLoaders = {
   getQuickLinks: typeof getQuickLinks;
   getRecentActivity: typeof getRecentActivity;
   getMyTasks: typeof getMyTasks;
-  getProjectStats: typeof getProjectStats;
   getStalePages: typeof getStalePages;
   getSearchTrends: typeof getSearchTrends;
   getAttendanceSummary: typeof getAttendanceSummary;
@@ -381,7 +346,6 @@ const dashboardLoaders: DashboardLoaders = {
   getQuickLinks,
   getRecentActivity,
   getMyTasks,
-  getProjectStats,
   getStalePages,
   getSearchTrends,
   getAttendanceSummary
@@ -400,7 +364,6 @@ export async function getDashboardData(
     quickLinks,
     recentActivity,
     myTasks,
-    projectStats,
     stalePages,
     searchTrends,
     attendanceSummary
@@ -408,7 +371,6 @@ export async function getDashboardData(
     api.getQuickLinks(workspaceId, userRoles),
     api.getRecentActivity(workspaceId),
     api.getMyTasks(workspaceId, userId),
-    api.getProjectStats(workspaceId),
     api.getStalePages(workspaceId, userPermissions),
     api.getSearchTrends(workspaceId),
     api.getAttendanceSummary(workspaceId, userId)
@@ -418,7 +380,6 @@ export async function getDashboardData(
     quickLinks,
     recentActivity,
     myTasks,
-    projectStats,
     stalePages,
     searchTrends,
     attendanceSummary

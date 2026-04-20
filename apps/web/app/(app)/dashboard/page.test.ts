@@ -52,7 +52,6 @@ describe("DashboardPage", () => {
       quickLinks: [],
       recentActivity: [],
       myTasks: [],
-      projectStats: { total: 0, byStatus: {} },
       stalePages: [],
       searchTrends: [],
       attendanceSummary: {

@@ -84,7 +84,6 @@ vi.mock("drizzle-orm", () => ({
 import { db } from "@jarvis/db/client";
 import {
   buildAttendanceSummary,
-  buildProjectStats,
   getDashboardData,
   getQuickLinks,
   getSearchPeriodStart,
@@ -164,23 +163,6 @@ describe("dashboard queries", () => {
       }
     ]);
     expect(chain.limit).not.toHaveBeenCalled();
-  });
-
-  it("builds project stats from grouped rows", () => {
-    expect(
-      buildProjectStats([
-        { status: "active", count: 3 },
-        { status: "planning", count: 1 },
-        { status: null, count: 2 }
-      ])
-    ).toEqual({
-      total: 6,
-      byStatus: {
-        active: 3,
-        planning: 1,
-        unknown: 2
-      }
-    });
   });
 
   it("builds attendance summary from grouped rows", () => {
@@ -314,7 +296,6 @@ describe("dashboard queries", () => {
       getQuickLinks: vi.fn().mockResolvedValue([]),
       getRecentActivity: vi.fn().mockResolvedValue([]),
       getMyTasks: vi.fn().mockResolvedValue([]),
-      getProjectStats: vi.fn().mockResolvedValue({ total: 0, byStatus: {} }),
       getStalePages: stalePagesLoader,
       getSearchTrends: vi.fn().mockResolvedValue([]),
       getAttendanceSummary: vi.fn().mockResolvedValue({
@@ -329,7 +310,6 @@ describe("dashboard queries", () => {
       quickLinks: [],
       recentActivity: [],
       myTasks: [],
-      projectStats: { total: 0, byStatus: {} },
       stalePages: [],
       searchTrends: [],
       attendanceSummary: {

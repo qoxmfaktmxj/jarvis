@@ -265,11 +265,6 @@
       "title": "빠른 링크",
       "empty": "빠른 링크가 아직 없습니다."
     },
-    "ProjectStats": {
-      "title": "프로젝트 현황",
-      "description": "전체 추적 중인 프로젝트",
-      "empty": "프로젝트 데이터가 없습니다."
-    },
     "RecentActivity": {
       "title": "최근 활동",
       "empty": "최근 기록된 활동이 없습니다."
