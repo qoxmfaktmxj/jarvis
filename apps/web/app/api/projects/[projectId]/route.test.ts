@@ -208,6 +208,7 @@ describe("/api/projects/[projectId]/access", () => {
           "content-type": "application/json"
         },
         body: JSON.stringify({
+          envType: "prod",
           accessType: "db",
           label: "Primary DB",
           usernameRef: "vault://jarvis/payroll/user"

@@ -25,7 +25,7 @@ export function ProjectTable({ data }: { data: ProjectTableRow[] }) {
           <tr>
             <th className="px-3 py-2 text-left">회사코드</th>
             <th className="px-3 py-2 text-left">회사명</th>
-            <th className="px-3 py-2 text-left">시스템명</th>
+            <th className="px-3 py-2 text-left">프로젝트명</th>
             <th className="px-3 py-2 text-left">운영 URL</th>
             <th className="px-3 py-2 text-left">개발 URL</th>
             <th className="px-3 py-2 text-left">상태</th>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { createSystemAccessSchema } from "@jarvis/shared/validation/system";
+import { createProjectAccessSchema } from "@jarvis/shared/validation/project";
 import {
   createProjectAccess,
   deleteProjectAccess,
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = createSystemAccessSchema.safeParse(body);
+  const parsed = createProjectAccessSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }

@@ -1,45 +1,21 @@
 import { z } from "zod";
 
-export const createProjectSchema = z.object({
-  code: z.string().min(1).max(50),
-  name: z.string().min(1).max(300),
-  description: z.string().max(4000).optional().or(z.literal("")),
-  status: z.enum(["active", "on-hold", "completed", "archived"]).default("active"),
-  startDate: z.string().date().optional().or(z.literal("")),
-  endDate: z.string().date().optional().or(z.literal(""))
+export const projectAccessTypeSchema = z.enum(["db", "ssh", "vpn", "web", "api"]);
+export const projectEnvTypeSchema = z.enum(["prod", "dev"]);
+export const projectRoleSchema = z.enum(["VIEWER", "DEVELOPER", "MANAGER", "ADMIN"]);
+
+export const createProjectAccessSchema = z.object({
+  envType: projectEnvTypeSchema,
+  accessType: projectAccessTypeSchema,
+  label: z.string().min(1).max(200),
+  host: z.string().max(500).optional().or(z.literal("")),
+  port: z.coerce.number().int().min(1).max(65535).optional(),
+  usernameRef: z.string().max(500).optional().or(z.literal("")),
+  passwordRef: z.string().max(500).optional().or(z.literal("")),
+  connectionStringRef: z.string().max(500).optional().or(z.literal("")),
+  vpnFileRef: z.string().max(500).optional().or(z.literal("")),
+  notes: z.string().max(4000).optional().or(z.literal("")),
+  requiredRole: projectRoleSchema.optional()
 });
 
-export const createTaskSchema = z.object({
-  title: z.string().min(1).max(500),
-  content: z.string().max(4000).optional(),
-  status: z.enum(["todo", "in-progress", "review", "done"]).default("todo"),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-  dueDate: z.string().date().optional().or(z.literal("")),
-  assigneeId: z.string().uuid().optional().or(z.literal(""))
-});
-
-export const assignProjectStaffSchema = z.object({
-  userId: z.string().uuid(),
-  role: z.string().max(100).optional().or(z.literal("")),
-  startDate: z.string().date().optional().or(z.literal("")),
-  endDate: z.string().date().optional().or(z.literal(""))
-});
-
-export const createProjectInquirySchema = z.object({
-  title: z.string().min(1).max(500),
-  content: z.string().max(4000).optional().or(z.literal("")),
-  priority: z.enum(["low", "medium", "high", "urgent"]).default("medium")
-});
-
-export const updateProjectInquiryStatusSchema = z.object({
-  id: z.string().uuid(),
-  status: z.enum(["open", "in-progress", "resolved", "closed"])
-});
-
-export type CreateProject = z.infer<typeof createProjectSchema>;
-export type CreateTask = z.infer<typeof createTaskSchema>;
-export type AssignProjectStaff = z.infer<typeof assignProjectStaffSchema>;
-export type CreateProjectInquiry = z.infer<typeof createProjectInquirySchema>;
-export type UpdateProjectInquiryStatus = z.infer<
-  typeof updateProjectInquiryStatusSchema
->;
+export type CreateProjectAccess = z.infer<typeof createProjectAccessSchema>;

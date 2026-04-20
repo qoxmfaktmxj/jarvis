@@ -5,14 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { createSystemAccessSchema } from "@jarvis/shared/validation/system";
+import { createProjectAccessSchema } from "@jarvis/shared/validation/project";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type FormValues = z.input<typeof createSystemAccessSchema>;
+type FormValues = z.input<typeof createProjectAccessSchema>;
 
 const defaultValues: FormValues = {
+  envType: "prod",
   accessType: "db",
   label: "",
   host: "",
@@ -29,7 +30,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
   const router = useRouter();
   const [serverError, setServerError] = React.useState<string | null>(null);
   const form = useForm<FormValues>({
-    resolver: zodResolver(createSystemAccessSchema),
+    resolver: zodResolver(createProjectAccessSchema),
     defaultValues
   });
 
@@ -89,6 +90,17 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-sm font-medium text-surface-700">환경</span>
+          <select
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
+            {...register("envType")}
+          >
+            <option value="prod">prod</option>
+            <option value="dev">dev</option>
+          </select>
+        </label>
+
         <label className="space-y-2">
           <span className="text-sm font-medium text-surface-700">Type</span>
           <select
