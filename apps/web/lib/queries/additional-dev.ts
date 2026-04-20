@@ -4,6 +4,8 @@ import {
   additionalDevelopmentEffort,
   additionalDevelopmentRevenue,
   additionalDevelopmentStaff,
+  project,
+  user,
 } from "@jarvis/db/schema";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
 
@@ -128,6 +130,32 @@ export async function createAdditionalDev({
   input: CreateAdditionalDevInput;
   database?: typeof db;
 }) {
+  // Verify cross-tenant FKs before inserting.
+  const [p] = await database
+    .select({ id: project.id })
+    .from(project)
+    .where(and(eq(project.id, input.projectId), eq(project.workspaceId, workspaceId)))
+    .limit(1);
+  if (!p) throw new Error('projectId not in workspace');
+
+  if (input.pmId) {
+    const [pm] = await database
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.id, input.pmId), eq(user.workspaceId, workspaceId)))
+      .limit(1);
+    if (!pm) throw new Error('pmId not in workspace');
+  }
+
+  if (input.developerId) {
+    const [dev] = await database
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.id, input.developerId), eq(user.workspaceId, workspaceId)))
+      .limit(1);
+    if (!dev) throw new Error('developerId not in workspace');
+  }
+
   const [created] = await database
     .insert(additionalDevelopment)
     .values({
@@ -150,6 +178,34 @@ export async function updateAdditionalDev({
   input: Partial<CreateAdditionalDevInput>;
   database?: typeof db;
 }) {
+  // Verify cross-tenant FKs for any provided foreign key fields.
+  if (input.projectId) {
+    const [p] = await database
+      .select({ id: project.id })
+      .from(project)
+      .where(and(eq(project.id, input.projectId), eq(project.workspaceId, workspaceId)))
+      .limit(1);
+    if (!p) throw new Error('projectId not in workspace');
+  }
+
+  if (input.pmId) {
+    const [pm] = await database
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.id, input.pmId), eq(user.workspaceId, workspaceId)))
+      .limit(1);
+    if (!pm) throw new Error('pmId not in workspace');
+  }
+
+  if (input.developerId) {
+    const [dev] = await database
+      .select({ id: user.id })
+      .from(user)
+      .where(and(eq(user.id, input.developerId), eq(user.workspaceId, workspaceId)))
+      .limit(1);
+    if (!dev) throw new Error('developerId not in workspace');
+  }
+
   const [updated] = await database
     .update(additionalDevelopment)
     .set({ ...input, updatedAt: new Date() })
