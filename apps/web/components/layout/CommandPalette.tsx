@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   BookOpen,
-  Calendar,
   LayoutDashboard,
   Library,
   Megaphone,
@@ -53,7 +52,6 @@ const NAV_ITEMS: Item[] = [
   { id: "nav-knowledge",  section: "navigate", label: "지식 베이스", description: "FAQ · 용어집 · HR", icon: BookOpen,       href: "/knowledge",  keywords: ["kb", "faq", "glossary"] },
   { id: "nav-systems",    section: "navigate", label: "시스템",     description: "시스템 · 런북",      icon: Server,         href: "/systems",    keywords: ["system", "runbook"] },
   { id: "nav-notices",    section: "navigate", label: "공지",       description: "사내 공지사항",      icon: Megaphone,      href: "/notices",    keywords: ["notice", "공지"] },
-  { id: "nav-attendance", section: "navigate", label: "근태",       description: "출퇴근 · 외근",      icon: Calendar,       href: "/attendance", keywords: ["attendance", "근태"] },
   { id: "nav-infra",      section: "navigate", label: "인프라",     description: "인프라 맵",          icon: Network,        href: "/infra",      keywords: ["infra"] },
   { id: "nav-arch",       section: "navigate", label: "아키텍처",   description: "그래프 분석",        icon: Workflow,       href: "/architecture", keywords: ["architecture", "graph"] },
   { id: "nav-admin",      section: "navigate", label: "관리자",     description: "Admin 콘솔",         icon: ShieldCheck,    href: "/admin",      keywords: ["admin"] },
@@ -64,7 +62,6 @@ const ACTION_ITEMS: Item[] = [
   { id: "act-new-system",  section: "actions", label: "새 시스템 등록",    icon: Plus,      href: "/systems/new",  keywords: ["create", "new"] },
   { id: "act-new-notice",  section: "actions", label: "새 공지 작성",      icon: FileText,  href: "/notices/new",  keywords: ["create", "new"] },
   { id: "act-new-kb",      section: "actions", label: "새 KB 페이지",      icon: FileText,  href: "/knowledge/new", keywords: ["create", "new"] },
-  { id: "act-check-in",    section: "actions", label: "출근 체크인",       icon: Clock,     href: "/attendance",    keywords: ["check in", "출근"] },
   { id: "act-settings",    section: "actions", label: "설정",             icon: Settings,  href: "/profile",        keywords: ["settings"] },
 ];
 

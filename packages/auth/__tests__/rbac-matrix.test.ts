@@ -263,7 +263,7 @@ describe("wiki_commit_log access -- KNOWLEDGE_READ gate", () => {
   it("role without KNOWLEDGE_READ cannot access commit log", () => {
     // Fabricate a session with no relevant knowledge permissions
     const session = makeSession("VIEWER", {
-      permissions: [PERMISSIONS.ATTENDANCE_READ],
+      permissions: [PERMISSIONS.NOTICE_READ],
       roles: ["CUSTOM_NOACCESS"],
     });
     const can =
@@ -295,7 +295,7 @@ describe("RBAC matrix -- edge cases", () => {
   it("unrelated permissions only: AND 1 = 0", () => {
     expect(
       buildWikiSensitivitySqlFilter([
-        PERMISSIONS.ATTENDANCE_READ,
+        PERMISSIONS.FILES_WRITE,
         PERMISSIONS.NOTICE_READ,
       ]),
     ).toBe("AND 1 = 0");

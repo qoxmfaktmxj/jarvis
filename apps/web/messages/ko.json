@@ -7,7 +7,6 @@
     "notices": "공지사항",
     "search": "검색",
     "askAi": "AI 질문",
-    "attendance": "출퇴근",
     "admin": "관리자",
     "additionalDev": "추가개발"
   },
@@ -274,13 +273,6 @@
   "Dashboard": {
     "title": "대시보드",
     "welcome": "{name}님, 반갑습니다. 현재 워크스페이스 현황입니다.",
-    "Attendance": {
-      "title": "이번 달 출퇴근",
-      "present": "출근",
-      "late": "지각",
-      "absent": "결근",
-      "totalDays": "총 일수"
-    },
     "MyTasks": {
       "title": "내 작업",
       "empty": "담당 작업이 없습니다.",
@@ -363,17 +355,6 @@
     "tabs": {
       "addDev": "추가개발"
     }
-  },
-  "Attendance": {
-    "title": "출퇴근",
-    "description": "출퇴근 기록을 확인합니다.",
-    "todayFormat": "오늘, {date}",
-    "checkedIn": "{time}에 출근",
-    "monthlyOverview": "월간 현황",
-    "dailyRecords": "일별 기록",
-    "checkIn": "출근",
-    "checkOut": "퇴근",
-    "checkedOut": "{time}에 퇴근"
   },
   "Ask": {
     "title": "AI 질문",
@@ -461,20 +442,6 @@
       "error": "'{title}' 빌드 실패",
       "elapsed": "{seconds}초 경과"
     }
-  },
-  "OutManage": {
-    "title": "외근 관리",
-    "description": "외근 신청 및 승인을 관리합니다.",
-    "newRequest": "외근 신청",
-    "date": "날짜",
-    "type": "유형",
-    "purpose": "목적",
-    "detailTitle": "외근 상세"
-  },
-  "AttendanceCalendar": {
-    "checkIn": "출근",
-    "checkOut": "퇴근",
-    "duration": "근무 시간"
   },
   "Knowledge": {
     "deprecationBanner": "이 경로는 레거시입니다. 새 위키 뷰어로 이동해 주세요.",

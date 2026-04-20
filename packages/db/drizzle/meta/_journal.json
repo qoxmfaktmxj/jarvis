@@ -239,6 +239,13 @@
       "when": 1745395200000,
       "tag": "0033_admin_users_status",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1745481600000,
+      "tag": "0034_drop_attendance_and_out_manage",
+      "breakpoints": true
     }
   ]
 }

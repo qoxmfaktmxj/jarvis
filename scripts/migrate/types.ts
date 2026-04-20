@@ -139,42 +139,6 @@ export interface LegacyStaff {
   CHK_DATE: Date;
 }
 
-export interface LegacyAttendance {
-  ENTER_CD: string;
-  SEQ: number;
-  SABUN: string;
-  ATTEND_DATE: Date;
-  ATTEND_TYPE_CD: string;
-  IN_TIME: string | null;
-  OUT_TIME: string | null;
-  REASON: string | null;
-  CHK_ID: string;
-  CHK_DATE: Date;
-}
-
-export interface LegacyOutManage {
-  ENTER_CD: string;
-  SABUN: string;
-  OUT_TYPE_CD: string;
-  APPLY_START_DT: Date;
-  APPLY_END_DT: Date;
-  REASON: string | null;
-  STATUS_CD: string;
-  CHK_ID: string;
-  CHK_DATE: Date;
-}
-
-export interface LegacyOutManageTime {
-  ENTER_CD: string;
-  SABUN: string;
-  CHKDATE: Date;
-  START_TIME: string;
-  END_TIME: string;
-  OUT_TYPE_CD: string;
-  CHK_ID: string;
-  CHK_DATE: Date;
-}
-
 export interface LegacyInfraManage {
   ENTER_CD: string;
   SEQ: number;

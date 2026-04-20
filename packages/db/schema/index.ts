@@ -3,7 +3,6 @@ export * from "./user.js";
 export * from "./knowledge.js";
 export * from "./project.js";
 export * from "./company.js";
-export * from "./attendance.js";
 export * from "./file.js";
 export * from "./menu.js";
 export * from "./code.js";

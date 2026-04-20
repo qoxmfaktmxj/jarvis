@@ -14,14 +14,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
-  Calendar,
   ClipboardList,
   FilePlus,
   GitFork,
   HardDrive,
   LayoutDashboard,
   Library,
-  MapPin,
   Megaphone,
   MessageSquare,
   Network,
@@ -49,8 +47,6 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/architecture",          label: "아키텍처",      icon: Network },
   { href: "/infra",                 label: "인프라",        icon: HardDrive },
   { href: "/add-dev",               label: "추가개발",      icon: ClipboardList },
-  { href: "/attendance",            label: "근태등록",      icon: Calendar },
-  { href: "/attendance/out-manage", label: "외근관리",      icon: MapPin },
   { href: "/profile",               label: "프로필",        icon: User },
 ];
 
@@ -58,11 +54,10 @@ const ADMIN: NavItem = { href: "/admin", label: "Admin", icon: ShieldCheck };
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
 // more specific sub-route nav item is also in the sidebar (e.g. /wiki vs
-// /wiki/graph, /attendance vs /attendance/out-manage).
+// /wiki/graph).
 const EXACT_MATCH_HREFS: ReadonlySet<string> = new Set([
   "/dashboard",
   "/wiki",
-  "/attendance",
 ]);
 
 function isActive(pathname: string, href: string): boolean {

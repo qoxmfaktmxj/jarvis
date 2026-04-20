@@ -1,7 +1,6 @@
 import { db } from "@jarvis/db/client";
 import {
   auditLog,
-  attendance,
   menuItem,
   popularSearch,
   wikiPageIndex
@@ -9,15 +8,12 @@ import {
 import {
   and,
   asc,
-  count,
   desc,
   eq,
-  gte,
   inArray,
   isNotNull,
   isNull,
   lt,
-  lte,
   or,
   sql
 } from "drizzle-orm";
@@ -73,28 +69,15 @@ export interface TrendItem {
   count: number;
 }
 
-export interface AttendanceSummary {
-  totalDays: number;
-  presentDays: number;
-  lateDays: number;
-  absentDays: number;
-}
-
 export interface DashboardData {
   quickLinks: MenuItem[];
   recentActivity: AuditLogEntry[];
   myTasks: TaskSummary[];
   stalePages: StalePage[];
   searchTrends: TrendItem[];
-  attendanceSummary: AttendanceSummary;
 }
 
 type DashboardDb = typeof db;
-
-type AttendanceStatusCount = {
-  status: string | null;
-  count: number | string;
-};
 
 /** @deprecated project domain removed in P0 */
 export async function getMyTasks(
@@ -103,27 +86,6 @@ export async function getMyTasks(
   _database: DashboardDb = db
 ): Promise<TaskSummary[]> {
   return [];
-}
-
-export function buildAttendanceSummary(
-  rows: AttendanceStatusCount[]
-): AttendanceSummary {
-  const totals: Record<string, number> = {};
-  let totalDays = 0;
-
-  for (const row of rows) {
-    const key = row.status ?? "unknown";
-    const value = Number(row.count);
-    totals[key] = value;
-    totalDays += value;
-  }
-
-  return {
-    totalDays,
-    presentDays: totals["present"] ?? 0,
-    lateDays: totals["late"] ?? 0,
-    absentDays: totals["absent"] ?? 0
-  };
 }
 
 export function getSearchPeriodStart(now: Date = new Date()): string {
@@ -301,45 +263,12 @@ export async function getSearchTrends(
     .limit(10) as Promise<TrendItem[]>;
 }
 
-export async function getAttendanceSummary(
-  workspaceId: string,
-  userId: string,
-  now: Date = new Date(),
-  database: DashboardDb = db
-): Promise<AttendanceSummary> {
-  const startOfMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-  );
-  const endOfMonth = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)
-  );
-
-  const rows = await database
-    .select({
-      status: attendance.status,
-      count: count()
-    })
-    .from(attendance)
-    .where(
-      and(
-        eq(attendance.workspaceId, workspaceId),
-        eq(attendance.userId, userId),
-        gte(attendance.attendDate, startOfMonth.toISOString().slice(0, 10)),
-        lte(attendance.attendDate, endOfMonth.toISOString().slice(0, 10))
-      )
-    )
-    .groupBy(attendance.status);
-
-  return buildAttendanceSummary(rows);
-}
-
 export type DashboardLoaders = {
   getQuickLinks: typeof getQuickLinks;
   getRecentActivity: typeof getRecentActivity;
   getMyTasks: typeof getMyTasks;
   getStalePages: typeof getStalePages;
   getSearchTrends: typeof getSearchTrends;
-  getAttendanceSummary: typeof getAttendanceSummary;
 };
 
 const dashboardLoaders: DashboardLoaders = {
@@ -347,8 +276,7 @@ const dashboardLoaders: DashboardLoaders = {
   getRecentActivity,
   getMyTasks,
   getStalePages,
-  getSearchTrends,
-  getAttendanceSummary
+  getSearchTrends
 };
 
 export async function getDashboardData(
@@ -365,15 +293,13 @@ export async function getDashboardData(
     recentActivity,
     myTasks,
     stalePages,
-    searchTrends,
-    attendanceSummary
+    searchTrends
   ] = await Promise.all([
     api.getQuickLinks(workspaceId, userRoles),
     api.getRecentActivity(workspaceId),
     api.getMyTasks(workspaceId, userId),
     api.getStalePages(workspaceId, userPermissions),
-    api.getSearchTrends(workspaceId),
-    api.getAttendanceSummary(workspaceId, userId)
+    api.getSearchTrends(workspaceId)
   ]);
 
   return {
@@ -381,7 +307,6 @@ export async function getDashboardData(
     recentActivity,
     myTasks,
     stalePages,
-    searchTrends,
-    attendanceSummary
+    searchTrends
   };
 }

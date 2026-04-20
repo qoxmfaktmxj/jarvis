@@ -219,8 +219,6 @@ const SHOTS: Shot[] = [
     skipIf: (ids) => !ids.projectId,
   },
 
-  { name: 'attendance-01', url: () => '/attendance', needsLogin: true },
-  { name: 'attendance-02-out-manage', url: () => '/attendance/out-manage', needsLogin: true },
 
   { name: 'systems-01-list', url: () => '/systems', needsLogin: true },
   { name: 'systems-02-new', url: () => '/systems/new', needsLogin: true },

@@ -52,12 +52,6 @@ vi.mock("@jarvis/db/schema", () => ({
     count: "search.count",
     period: "search.period",
     workspaceId: "search.workspaceId"
-  },
-  attendance: {
-    status: "attendance.status",
-    attendDate: "attendance.attendDate",
-    workspaceId: "attendance.workspaceId",
-    userId: "attendance.userId"
   }
 }));
 
@@ -72,9 +66,6 @@ vi.mock("drizzle-orm", () => ({
   lt: vi.fn((column: unknown, value: unknown) => ({ column, op: "lt", value })),
   ne: vi.fn((column: unknown, value: unknown) => ({ column, value })),
   or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
-  count: vi.fn(() => "count(*)"),
-  gte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
-  lte: vi.fn((column: unknown, value: unknown) => ({ column, value })),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     strings: Array.from(strings),
     values
@@ -83,7 +74,6 @@ vi.mock("drizzle-orm", () => ({
 
 import { db } from "@jarvis/db/client";
 import {
-  buildAttendanceSummary,
   getDashboardData,
   getQuickLinks,
   getSearchPeriodStart,
@@ -163,21 +153,6 @@ describe("dashboard queries", () => {
       }
     ]);
     expect(chain.limit).not.toHaveBeenCalled();
-  });
-
-  it("builds attendance summary from grouped rows", () => {
-    expect(
-      buildAttendanceSummary([
-        { status: "present", count: 18 },
-        { status: "late", count: 2 },
-        { status: "absent", count: 1 }
-      ])
-    ).toEqual({
-      totalDays: 21,
-      presentDays: 18,
-      lateDays: 2,
-      absentDays: 1
-    });
   });
 
   it("calculates the current search period start as a monday", () => {
@@ -297,13 +272,7 @@ describe("dashboard queries", () => {
       getRecentActivity: vi.fn().mockResolvedValue([]),
       getMyTasks: vi.fn().mockResolvedValue([]),
       getStalePages: stalePagesLoader,
-      getSearchTrends: vi.fn().mockResolvedValue([]),
-      getAttendanceSummary: vi.fn().mockResolvedValue({
-        totalDays: 0,
-        presentDays: 0,
-        lateDays: 0,
-        absentDays: 0
-      })
+      getSearchTrends: vi.fn().mockResolvedValue([])
     });
 
     expect(result).toEqual({
@@ -311,13 +280,7 @@ describe("dashboard queries", () => {
       recentActivity: [],
       myTasks: [],
       stalePages: [],
-      searchTrends: [],
-      attendanceSummary: {
-        totalDays: 0,
-        presentDays: 0,
-        lateDays: 0,
-        absentDays: 0
-      }
+      searchTrends: []
     });
     expect(stalePagesLoader).toHaveBeenCalledWith("ws-1", ["knowledge:read"]);
   });
