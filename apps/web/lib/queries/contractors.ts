@@ -56,7 +56,13 @@ export async function listContractors({
   if (q) conds.push(or(ilike(user.name, `%${q}%`), ilike(user.employeeId, `%${q}%`))!);
   if (orgId) conds.push(eq(user.orgId, orgId));
 
-  const contractCond = eq(contractorContract.status, status);
+  // When status filter is set, also add it to WHERE so users with no matching
+  // contract do not appear in the result (leftJoin alone would show them with null contract).
+  const contractJoinCond = and(
+    eq(contractorContract.userId, user.id),
+    eq(contractorContract.status, status),
+  );
+  if (status) conds.push(eq(contractorContract.status, status));
 
   const rows = await database
     .select({
@@ -73,10 +79,7 @@ export async function listContractors({
       userUpdatedAt: user.updatedAt
     })
     .from(user)
-    .leftJoin(contractorContract, and(
-      eq(contractorContract.userId, user.id),
-      contractCond
-    ))
+    .leftJoin(contractorContract, contractJoinCond)
     .leftJoin(organization, eq(user.orgId, organization.id))
     .where(and(...conds))
     .orderBy(desc(contractorContract.startDate), asc(user.name))
