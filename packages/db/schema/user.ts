@@ -29,6 +29,10 @@ export const user = pgTable("user", {
   status: userStatusEnum("status").default("active").notNull(),
   isOutsourced: boolean("is_outsourced").default(false).notNull(),
   avatarUrl: varchar("avatar_url", { length: 500 }),
+  employmentType: varchar("employment_type", { length: 20 })
+    .default("internal")
+    .notNull(),
+  // 'internal' | 'contractor'
   preferences: jsonb("preferences")
     .$type<Record<string, unknown>>()
     .default({})
