@@ -60,6 +60,8 @@ export const wikiPageIndex = pgTable(
       .defaultNow()
       .notNull(),
     freshnessSlaDays: integer("freshness_sla_days"),
+    /** 120-200자 페이지 요약. wiki-reproject가 frontmatter.summary 또는 body 첫 문단에서 추출. */
+    snippet: varchar("snippet", { length: 200 }),
   },
   (t) => ({
     // 동일 workspace 내 동일 path 금지 (디스크 경로 == projection key)

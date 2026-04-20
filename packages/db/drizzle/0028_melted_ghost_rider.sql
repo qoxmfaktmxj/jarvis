@@ -1,0 +1,1 @@
+ALTER TABLE "wiki_page_index" ADD COLUMN "snippet" varchar(200);
