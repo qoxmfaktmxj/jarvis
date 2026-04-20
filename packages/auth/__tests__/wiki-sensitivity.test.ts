@@ -189,10 +189,10 @@ describe("buildWikiSensitivitySqlFilter — permission level single-cases", () =
     expect(buildWikiSensitivitySqlFilter([])).toBe("AND 1 = 0");
   });
 
-  it("unrelated permissions only (PROJECT_READ, ATTENDANCE_READ): AND 1 = 0", () => {
+  it("unrelated permissions only (NOTICE_READ, ATTENDANCE_READ): AND 1 = 0", () => {
     expect(
       buildWikiSensitivitySqlFilter([
-        PERMISSIONS.PROJECT_READ,
+        PERMISSIONS.NOTICE_READ,
         PERMISSIONS.ATTENDANCE_READ
       ])
     ).toBe("AND 1 = 0");

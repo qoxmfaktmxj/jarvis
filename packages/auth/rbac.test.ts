@@ -145,7 +145,7 @@ describe("buildWikiSensitivitySqlFilter (Phase-W3 T5)", () => {
 
   it("unrelated permissions only: returns AND 1 = 0", () => {
     const frag = buildWikiSensitivitySqlFilter([
-      PERMISSIONS.PROJECT_READ,
+      PERMISSIONS.NOTICE_READ,
       PERMISSIONS.ATTENDANCE_READ,
     ]);
     expect(frag).toBe("AND 1 = 0");
