@@ -3,24 +3,26 @@
 import { db } from '@jarvis/db/client';
 import { eq } from 'drizzle-orm';
 import { attachment } from '@jarvis/db/schema/file';
-// parallel worker renamed schema module system → project; alias locally to
-// keep domain-layer 'system' resourceType/scopeType strings unchanged here.
-import { project as system } from '@jarvis/db/schema/project';
+// schema module renamed system → project in migration 0030. Legacy attachment
+// rows may still have resource_type='system' pointing at project rows.
+import { project } from '@jarvis/db/schema/project';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
 
 /**
  * Origin resource descriptor — what we learned about the root resource
  * behind a given raw_source. `null` means no attachment row was found.
+ * 'system' is kept for legacy attachment rows; new rows use 'project'.
  */
 export type Origin =
   | null
   | { type: 'system'; sensitivity: string | null }
+  | { type: 'project'; sensitivity: string | null }
   | { type: 'knowledge'; sensitivity: string | null };
 
 export interface ResolvedLineage {
-  // Constrained to the enum values in `graph_scope_type` (migration 0004).
+  // Constrained to the enum values in `graph_scope_type` after migration 0030.
   // 'knowledge' is intentionally absent — knowledge attachments use scopeType='attachment'.
-  scopeType: 'attachment' | 'system' | 'workspace';
+  scopeType: 'attachment' | 'project' | 'workspace';
   scopeId: string;
   sensitivity: string;
 }
@@ -42,7 +44,6 @@ export function computeEffectiveSensitivity(origin: Origin): string {
 export async function resolveLineageFromRawSource(
   rawSourceId: string,
 ): Promise<ResolvedLineage> {
-  // Look up attachment by rawSourceId
   const [att] = await db
     .select({
       resourceType: attachment.resourceType,
@@ -62,13 +63,13 @@ export async function resolveLineageFromRawSource(
 
   let origin: Origin = null;
 
-  if (att.resourceType === 'system') {
+  if (att.resourceType === 'system' || att.resourceType === 'project') {
     const [row] = await db
-      .select({ sensitivity: system.sensitivity })
-      .from(system)
-      .where(eq(system.id, att.resourceId))
+      .select({ sensitivity: project.sensitivity })
+      .from(project)
+      .where(eq(project.id, att.resourceId))
       .limit(1);
-    if (row) origin = { type: 'system', sensitivity: row.sensitivity };
+    if (row) origin = { type: att.resourceType, sensitivity: row.sensitivity };
   } else if (att.resourceType === 'knowledge') {
     const [row] = await db
       .select({ sensitivity: knowledgePage.sensitivity })
@@ -87,7 +88,7 @@ export async function resolveLineageFromRawSource(
   }
 
   if (origin.type === 'knowledge') {
-    // `graph_scope_type` enum does not include 'knowledge' in P0.
+    // `graph_scope_type` enum does not include 'knowledge'.
     return {
       scopeType: 'attachment',
       scopeId: rawSourceId,
@@ -95,8 +96,10 @@ export async function resolveLineageFromRawSource(
     };
   }
 
+  // Both legacy 'system' origins and new 'project' origins map to scopeType='project'
+  // (graph_scope_type enum no longer includes 'system' after migration 0030).
   return {
-    scopeType: origin.type, // 'project' | 'system'
+    scopeType: 'project',
     scopeId: att.resourceId,
     sensitivity: computeEffectiveSensitivity(origin),
   };
