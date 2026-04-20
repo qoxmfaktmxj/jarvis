@@ -9,7 +9,6 @@ loadEnv();
 const { db } = await import('../client.js');
 const { workspace, organization } = await import('../schema/tenant.js');
 const { user, role, userRole } = await import('../schema/user.js');
-const { project, projectTask } = await import('../schema/project.js');
 const { system, systemAccess } = await import('../schema/system.js');
 const { knowledgePage, knowledgePageVersion, knowledgeClaim } = await import('../schema/knowledge.js');
 const { menuItem } = await import('../schema/menu.js');
@@ -66,38 +65,6 @@ async function seed() {
     { userId: aliceUser.id, roleId: managerRole.id },
     { userId: bobUser.id, roleId: viewerRole.id },
   ]);
-
-  // ---- Projects ----
-  const projects = await db
-    .insert(project)
-    .values([
-      { workspaceId: wsId, code: 'PORTAL', name: 'Portal Rewrite', description: 'Jarvis enterprise portal v2', status: 'active', createdBy: adminUser.id },
-      { workspaceId: wsId, code: 'AUTH', name: 'Auth Migration', description: 'Auth system improvements', status: 'active', createdBy: aliceUser.id },
-      { workspaceId: wsId, code: 'SEARCH', name: 'Search Upgrade', description: 'Improve PostgreSQL hybrid search relevance', status: 'planning', createdBy: bobUser.id },
-    ])
-    .returning();
-
-  console.log(`[seed] Created ${projects.length} projects`);
-
-  // ---- Tasks ----
-  const taskData = [
-    { projectId: projects[0]!.id, title: 'Setup monorepo', status: 'done', assigneeId: adminUser.id },
-    { projectId: projects[0]!.id, title: 'Implement auth', status: 'done', assigneeId: aliceUser.id },
-    { projectId: projects[0]!.id, title: 'Build dashboard', status: 'in_progress', assigneeId: aliceUser.id },
-    { projectId: projects[0]!.id, title: 'File upload', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[1]!.id, title: 'Login flow setup', status: 'in_progress', assigneeId: aliceUser.id },
-    { projectId: projects[1]!.id, title: 'User migration script', status: 'todo', assigneeId: adminUser.id },
-    { projectId: projects[2]!.id, title: 'Tune PostgreSQL ranking weights', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[2]!.id, title: 'Backfill knowledge embeddings', status: 'todo', assigneeId: bobUser.id },
-    { projectId: projects[2]!.id, title: 'Expand hybrid search filters', status: 'todo', assigneeId: aliceUser.id },
-    { projectId: projects[2]!.id, title: 'Polish search UI and explain mode', status: 'todo', assigneeId: bobUser.id },
-  ];
-
-  await db.insert(projectTask).values(
-    taskData.map((t) => ({ ...t, workspaceId: wsId })),
-  );
-
-  console.log(`[seed] Created ${taskData.length} tasks`);
 
   // ---- Systems ----
   const systems = await db
@@ -186,7 +153,6 @@ async function seed() {
   // ---- Menu Items ----
   await db.insert(menuItem).values([
     { workspaceId: wsId, label: 'Dashboard', routePath: '/dashboard', icon: 'LayoutDashboard', sortOrder: 1 },
-    { workspaceId: wsId, label: 'Projects', routePath: '/projects', icon: 'FolderKanban', sortOrder: 2 },
     { workspaceId: wsId, label: 'Systems', routePath: '/systems', icon: 'Server', sortOrder: 3 },
     { workspaceId: wsId, label: 'Knowledge', routePath: '/knowledge', icon: 'BookOpen', sortOrder: 4 },
     { workspaceId: wsId, label: 'Ask AI', routePath: '/ask', icon: 'Sparkles', sortOrder: 5 },

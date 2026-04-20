@@ -1,6 +1,5 @@
 export * from "./tenant.js";
 export * from "./user.js";
-export * from "./project.js";
 export * from "./knowledge.js";
 export * from "./system.js";
 export * from "./company.js";

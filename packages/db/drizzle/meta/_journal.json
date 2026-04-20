@@ -204,6 +204,13 @@
       "when": 1776663328278,
       "tag": "0028_melted_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1776666036859,
+      "tag": "0029_flat_dagger",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,6 @@
 import { db } from '@jarvis/db/client';
 import { eq } from 'drizzle-orm';
 import { attachment } from '@jarvis/db/schema/file';
-import { project } from '@jarvis/db/schema/project';
 import { system } from '@jarvis/db/schema/system';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
 
@@ -13,14 +12,13 @@ import { knowledgePage } from '@jarvis/db/schema/knowledge';
  */
 export type Origin =
   | null
-  | { type: 'project'; sensitivity: null }
   | { type: 'system'; sensitivity: string | null }
   | { type: 'knowledge'; sensitivity: string | null };
 
 export interface ResolvedLineage {
   // Constrained to the enum values in `graph_scope_type` (migration 0004).
   // 'knowledge' is intentionally absent — knowledge attachments use scopeType='attachment'.
-  scopeType: 'attachment' | 'project' | 'system' | 'workspace';
+  scopeType: 'attachment' | 'system' | 'workspace';
   scopeId: string;
   sensitivity: string;
 }
@@ -31,7 +29,6 @@ export interface ResolvedLineage {
  */
 export function computeEffectiveSensitivity(origin: Origin): string {
   if (!origin) return 'INTERNAL';
-  if (origin.type === 'project') return 'INTERNAL';
   return origin.sensitivity ?? 'INTERNAL';
 }
 
@@ -63,14 +60,7 @@ export async function resolveLineageFromRawSource(
 
   let origin: Origin = null;
 
-  if (att.resourceType === 'project') {
-    const [row] = await db
-      .select({ id: project.id })
-      .from(project)
-      .where(eq(project.id, att.resourceId))
-      .limit(1);
-    if (row) origin = { type: 'project', sensitivity: null };
-  } else if (att.resourceType === 'system') {
+  if (att.resourceType === 'system') {
     const [row] = await db
       .select({ sensitivity: system.sensitivity })
       .from(system)

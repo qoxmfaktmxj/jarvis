@@ -4,8 +4,6 @@ import {
   attendance,
   menuItem,
   popularSearch,
-  project,
-  projectTask,
   wikiPageIndex
 } from "@jarvis/db/schema";
 import {
@@ -20,7 +18,6 @@ import {
   isNull,
   lt,
   lte,
-  ne,
   or,
   sql
 } from "drizzle-orm";
@@ -44,6 +41,7 @@ export interface AuditLogEntry {
   createdAt: Date;
 }
 
+/** @deprecated project domain removed in P0 — kept for DashboardData shape compat */
 export interface TaskSummary {
   id: string;
   title: string;
@@ -52,6 +50,7 @@ export interface TaskSummary {
   projectId: string;
 }
 
+/** @deprecated project domain removed in P0 — kept for DashboardData shape compat */
 export interface ProjectStats {
   total: number;
   byStatus: Record<string, number>;
@@ -121,6 +120,23 @@ export function buildProjectStats(rows: ProjectStatusCount[]): ProjectStats {
   }
 
   return { total, byStatus };
+}
+
+/** @deprecated project domain removed in P0 */
+export async function getMyTasks(
+  _workspaceId: string,
+  _userId: string,
+  _database: DashboardDb = db
+): Promise<TaskSummary[]> {
+  return [];
+}
+
+/** @deprecated project domain removed in P0 */
+export async function getProjectStats(
+  _workspaceId: string,
+  _database: DashboardDb = db
+): Promise<ProjectStats> {
+  return { total: 0, byStatus: {} };
 }
 
 export function buildAttendanceSummary(
@@ -232,46 +248,6 @@ export async function getRecentActivity(
     .limit(10) as Promise<AuditLogEntry[]>;
 }
 
-export async function getMyTasks(
-  workspaceId: string,
-  userId: string,
-  database: DashboardDb = db
-): Promise<TaskSummary[]> {
-  return database
-    .select({
-      id: projectTask.id,
-      title: projectTask.title,
-      status: projectTask.status,
-      dueDate: projectTask.dueDate,
-      projectId: projectTask.projectId
-    })
-    .from(projectTask)
-    .where(
-      and(
-        eq(projectTask.workspaceId, workspaceId),
-        eq(projectTask.assigneeId, userId),
-        ne(projectTask.status, "done")
-      )
-    )
-    .orderBy(asc(projectTask.dueDate))
-    .limit(10) as Promise<TaskSummary[]>;
-}
-
-export async function getProjectStats(
-  workspaceId: string,
-  database: DashboardDb = db
-): Promise<ProjectStats> {
-  const rows = await database
-    .select({
-      status: project.status,
-      count: count()
-    })
-    .from(project)
-    .where(eq(project.workspaceId, workspaceId))
-    .groupBy(project.status);
-
-  return buildProjectStats(rows);
-}
 
 export async function getStalePages(
   workspaceId: string,

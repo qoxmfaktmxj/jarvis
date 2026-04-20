@@ -34,19 +34,6 @@ vi.mock("@jarvis/db/schema", () => ({
     createdAt: "audit.createdAt",
     workspaceId: "audit.workspaceId"
   },
-  projectTask: {
-    id: "task.id",
-    title: "task.title",
-    status: "task.status",
-    dueDate: "task.dueDate",
-    projectId: "task.projectId",
-    workspaceId: "task.workspaceId",
-    assigneeId: "task.assigneeId"
-  },
-  project: {
-    status: "project.status",
-    workspaceId: "project.workspaceId"
-  },
   wikiPageIndex: {
     id: "wiki.id",
     path: "wiki.path",

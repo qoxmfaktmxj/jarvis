@@ -112,7 +112,7 @@ describe("RBAC WIKI_* permission rules", () => {
     it("ADMIN_ALL mixed with unrelated permissions still bypasses", () => {
       const frag = buildWikiSensitivitySqlFilter([
         PERMISSIONS.ADMIN_ALL,
-        PERMISSIONS.PROJECT_READ
+        PERMISSIONS.ATTENDANCE_READ
       ]);
       expect(frag).toBe("");
     });

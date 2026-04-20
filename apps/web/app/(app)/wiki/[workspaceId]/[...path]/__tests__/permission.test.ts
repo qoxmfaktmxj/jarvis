@@ -133,7 +133,7 @@ describe("canViewSensitivity -- edge cases", () => {
 
   it("session without KNOWLEDGE_READ -> false for all sensitivities", () => {
     const session = makeSession("VIEWER", {
-      permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ATTENDANCE_READ],
+      permissions: [PERMISSIONS.ATTENDANCE_READ, PERMISSIONS.NOTICE_READ],
     });
     for (const sensitivity of SENSITIVITIES) {
       expect(canViewSensitivity(session, sensitivity)).toBe(false);
