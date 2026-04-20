@@ -31,11 +31,20 @@ import { atomicWrite } from "./writer.js";
 
 export class GitRepo {
   readonly repoPath: string;
-  private readonly git: SimpleGit;
+  // simpleGit validates `baseDir` existence eagerly in its constructor.
+  // Lazy-init lets callers do `new GitRepo(path)` before the directory
+  // exists (e.g., `createRepo()` needs to mkdir first, CI test setup
+  // materializes the workspace on first operation, etc.).
+  private _git: SimpleGit | null = null;
+  private get git(): SimpleGit {
+    if (this._git === null) {
+      this._git = simpleGit({ baseDir: this.repoPath });
+    }
+    return this._git;
+  }
 
   constructor(repoPath: string) {
     this.repoPath = path.resolve(repoPath);
-    this.git = simpleGit({ baseDir: this.repoPath });
   }
 
   /**
