@@ -96,6 +96,13 @@ docs/guidebook/images/
 # Infra export (TSMT001) — contains plaintext credentials, NEVER commit
 TSMT001.sql
 data/infra/
+data/tsvd999.json
+
+# Add-dev source xls (contains client project details) — local only
+/추가개발/
+
+# Misc local artifacts
+/3.1_취업규칙.pdf
 
 # Root-level ad-hoc captures and task archives
 /*.png
