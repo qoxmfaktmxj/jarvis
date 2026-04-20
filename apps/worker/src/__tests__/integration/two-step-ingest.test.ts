@@ -85,7 +85,12 @@ describe.skipIf(!DB_AVAILABLE)('two-step ingest integration', () => {
         ),
       );
 
-    if (process.env['OPENAI_API_KEY'] === 'dummy-key-for-test') {
+    // Real OpenAI keys begin with 'sk-'. CI uses 'dummy-for-tests' and
+    // local dev may use 'dummy-key-for-test' — treat anything without
+    // the 'sk-' prefix as a dummy key (LLM failure expected).
+    const isRealKey =
+      process.env['OPENAI_API_KEY']?.startsWith('sk-') ?? false;
+    if (!isRealKey) {
       // LLM fails -> no page created; this is the expected graceful-degradation path
       expect(pages.length).toBe(0);
     } else {

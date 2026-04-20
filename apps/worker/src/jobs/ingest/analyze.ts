@@ -119,11 +119,17 @@ async function shortlistCandidates(
   // Build OR-of-ILIKEs over title using parameterized inputs.
   const titleConds = keywords.map((kw) => ilike(wikiPageIndex.title, `%${kw}%`));
   // aliases match — frontmatter->aliases is jsonb array.
-  // Use `?|` operator with a text[] built via drizzle parameter binding
-  // (no sql.raw of user data → no SQL injection surface).
-  // `jsonb ?| text[]` checks if ANY of the array's keys exist as top-level
-  // elements of the JSONB array, which matches our alias semantics.
-  const aliasCond = sql`${wikiPageIndex.frontmatter} -> 'aliases' ?| ${keywords}::text[]`;
+  // Use `?|` operator with a text[] built via drizzle parameter binding.
+  // IMPORTANT: emit `ARRAY[$1,$2,$3]::text[]` explicitly — if we let
+  // drizzle interpolate the JS array directly it generates `($1,$2)::text[]`
+  // which Postgres parses as a record literal and fails with
+  // `cannot cast type record to text[]`.
+  // No `sql.raw` of user data → no SQL injection surface.
+  const aliasArray = sql.join(
+    keywords.map((kw) => sql`${kw}`),
+    sql`, `,
+  );
+  const aliasCond = sql`${wikiPageIndex.frontmatter} -> 'aliases' ?| ARRAY[${aliasArray}]::text[]`;
   const rows = await db
     .select({
       path: wikiPageIndex.path,
