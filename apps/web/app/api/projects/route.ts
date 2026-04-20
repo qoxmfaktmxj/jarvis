@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { z } from "zod";
+import { asc, eq } from "drizzle-orm";
+import { db } from "@jarvis/db/client";
+import { company } from "@jarvis/db/schema";
 import { createProject, listProjects } from "@/lib/queries/projects";
 import { requireApiSession } from "@/lib/server/api-auth";
 
@@ -14,7 +17,7 @@ const listProjectsQuerySchema = z.object({
 });
 
 const createProjectBodySchema = z.object({
-  companyId: z.string().uuid(),
+  companyId: z.string().uuid().optional(),
   name: z.string().min(1).max(300),
   description: z.string().max(4000).optional().or(z.literal("")),
   sensitivity: z.enum(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]).optional(),
@@ -68,11 +71,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
+  let companyId = parsed.data.companyId;
+  if (!companyId) {
+    // Derive from session workspace — pick first active company.
+    const [firstCompany] = await db
+      .select({ id: company.id })
+      .from(company)
+      .where(eq(company.workspaceId, auth.session.workspaceId))
+      .orderBy(asc(company.createdAt))
+      .limit(1);
+    if (!firstCompany) {
+      return NextResponse.json(
+        { error: 'No company in workspace — create one first via /admin/companies' },
+        { status: 400 },
+      );
+    }
+    companyId = firstCompany.id;
+  }
+
   const created = await createProject({
     workspaceId: auth.session.workspaceId,
     userId: auth.session.userId,
     input: {
       ...parsed.data,
+      companyId,
       description: parsed.data.description || undefined,
       prodDomainUrl: parsed.data.prodDomainUrl || undefined,
       prodRepositoryUrl: parsed.data.prodRepositoryUrl || undefined,
