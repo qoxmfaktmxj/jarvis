@@ -85,7 +85,12 @@ describe.skipIf(!DB_AVAILABLE)('two-step ingest integration', () => {
         ),
       );
 
-    if (process.env['OPENAI_API_KEY'] === 'dummy-key-for-test') {
+    // Normalize "LLM unavailable" detection: any missing or dummy-prefixed
+    // key takes the graceful-degradation path. (CI workflows use
+    // `dummy-for-tests`; earlier local convention was `dummy-key-for-test`.)
+    const llmKey = process.env['OPENAI_API_KEY'];
+    const llmUnavailable = !llmKey || llmKey.startsWith('dummy');
+    if (llmUnavailable) {
       // LLM fails -> no page created; this is the expected graceful-degradation path
       expect(pages.length).toBe(0);
     } else {
