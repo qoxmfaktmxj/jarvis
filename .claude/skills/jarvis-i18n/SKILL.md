@@ -7,6 +7,8 @@ description: Jarvis 프로젝트의 한국어 i18n(next-intl + apps/web/messages
 
 Jarvis는 `next-intl`을 사용하며 `apps/web/messages/ko.json` 단일 파일로 한국어만 관리한다 (현재 멀티 로케일 없음). 이 스킬은 번역 키 추가·검증의 반복 오류를 막기 위한 참조다.
 
+> **참고:** `apps/web/messages/en.json`이 리포에 존재하나 **실질적으로 비어 있음**이며 `apps/web/i18n/request.ts`가 `locale = 'ko'`로 하드코딩되어 있어 로딩되지 않는다. 멀티 로케일을 실제로 활성화하려면 별도 설계 결정이 필요하다. 현재는 `ko.json`만 수정/검증 대상으로 본다.
+
 ## 절대 원칙
 
 1. **UI의 한국어 텍스트는 하드코딩 금지.** 모든 문자열은 `t("Namespace.key")` 호출을 거친다.
