@@ -255,6 +255,21 @@ export function buildWikiSensitivitySqlFilter(
   return `AND ${col} IN (${quoted})`;
 }
 
+export function canManageContractors(session: JarvisSession): boolean {
+  return hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
+}
+
+export function canAccessContractorData(
+  session: JarvisSession,
+  targetUserId: string
+): boolean {
+  if (canManageContractors(session)) return true;
+  return (
+    hasPermission(session, PERMISSIONS.CONTRACTOR_READ) &&
+    session.userId === targetUserId
+  );
+}
+
 /**
  * @deprecated legacy 권한 모델, wiki surface에서 사용 금지.
  * wiki_page_index 경로에서는 `resolveAllowedWikiSensitivities` 또는 `canViewSensitivity`를 사용.

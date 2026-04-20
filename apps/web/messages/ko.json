@@ -8,7 +8,9 @@
     "search": "검색",
     "askAi": "AI 질문",
     "admin": "관리자",
-    "additionalDev": "추가개발"
+    "additionalDev": "추가개발",
+    "contractors": "외주인력관리",
+    "holidays": "공휴일 관리"
   },
   "Admin": {
     "nav": {
@@ -667,5 +669,48 @@
       "vendorContactNote": "업체담당자",
       "remark": "비고"
     }
+  },
+  "Contractors": {
+    "title": "외주인력관리",
+    "subtitle": "외주인력 계약·연차·일정을 관리합니다.",
+    "tabs": { "roster": "인력·연차", "schedule": "일정 달력" },
+    "columns": {
+      "employeeId": "사번", "name": "성명", "org": "조직",
+      "contractPeriod": "계약기간",
+      "issuedHours": "발행(시간)", "usedHours": "사용(시간)", "remainingHours": "잔여",
+      "status": "상태", "updatedAt": "업데이트"
+    },
+    "types": {
+      "day_off": "월차", "half_am": "오전반차", "half_pm": "오후반차",
+      "hourly": "시간차", "sick": "병가", "public": "공가"
+    },
+    "status": {
+      "active": "진행중", "expired": "만료", "terminated": "해지",
+      "approved": "승인", "cancelled": "취소"
+    },
+    "actions": {
+      "addContractor": "새 외주인력", "addLeave": "+ 근태 추가",
+      "edit": "수정", "delete": "삭제",
+      "renewContract": "계약 갱신", "terminateContract": "계약 종료"
+    },
+    "messages": {
+      "appliedToast": "{type} {hours}시간 신청됨",
+      "undo": "실행취소",
+      "insufficientWarning": "잔여 시간 부족 — 신청 후 잔여 {remaining}시간",
+      "hoursBreakdown": "{totalDays}일 중 휴일 {holidayDays}일 제외 → 실효 {effectiveDays}일({hours}시간)"
+    },
+    "summary": {
+      "remaining": "잔여 {days}일 ({hours}시간)"
+    },
+    "errors": {
+      "noActiveContract": "활성 계약이 없어 근태를 신청할 수 없습니다. 담당자에게 문의하세요.",
+      "noPermission": "해당 작업 권한이 없습니다."
+    }
+  },
+  "Holidays": {
+    "title": "공휴일 관리",
+    "subtitle": "토/일은 자동 처리되며, 법정 공휴일·대체휴일만 등록하세요.",
+    "columns": { "date": "날짜", "name": "이름", "note": "비고" },
+    "actions": { "add": "+ 공휴일 추가", "edit": "수정", "delete": "삭제" }
   }
 }
