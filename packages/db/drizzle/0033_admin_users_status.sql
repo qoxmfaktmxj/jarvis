@@ -25,6 +25,12 @@ CREATE INDEX IF NOT EXISTS "user_workspace_status_idx" ON "user" ("workspace_id"
 -- Remove legacy is_active column
 ALTER TABLE "user" DROP COLUMN IF EXISTS "is_active";
 
+-- Unique constraints required for idempotent seed (ON CONFLICT targets these).
+CREATE UNIQUE INDEX IF NOT EXISTS "code_group_ws_code_uniq"
+  ON "code_group" ("workspace_id", "code");
+CREATE UNIQUE INDEX IF NOT EXISTS "code_item_group_code_uniq"
+  ON "code_item" ("group_id", "code");
+
 -- Seed POSITION and JOB_TITLE group codes for every existing workspace.
 WITH workspaces AS (
   SELECT id AS workspace_id FROM workspace
@@ -37,7 +43,7 @@ seeded_groups AS (
     ('POSITION',  '직위'),
     ('JOB_TITLE', '직책')
   ) AS g(code, name)
-  ON CONFLICT DO NOTHING
+  ON CONFLICT ("workspace_id", "code") DO NOTHING
   RETURNING id, workspace_id, code
 ),
 all_groups AS (
@@ -56,4 +62,4 @@ JOIN (VALUES
   ('JOB_TITLE', 'PART_LEAD',  '파트장', 20),
   ('JOB_TITLE', 'MEMBER',     '팀원', 30)
 ) AS i(group_code, code, name, sort_order) ON i.group_code = g.code
-ON CONFLICT DO NOTHING;
+ON CONFLICT ("group_id", "code") DO NOTHING;
