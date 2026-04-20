@@ -20,7 +20,6 @@ import {
   MessageSquare,
   Network,
   Search,
-  Server,
   Share2,
   ShieldCheck,
   type LucideIcon,
@@ -38,7 +37,6 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/wiki/graph", label: "Wiki 그래프", icon: Share2 },
   { href: "/architecture", label: "아키텍처", icon: Network },
   { href: "/knowledge",  label: "Knowledge", icon: BookOpen },
-  { href: "/systems",    label: "시스템",    icon: Server },
   { href: "/attendance", label: "근태등록",  icon: Calendar },
 ];
 

@@ -222,39 +222,6 @@ const SHOTS: Shot[] = [
   { name: 'attendance-01', url: () => '/attendance', needsLogin: true },
   { name: 'attendance-02-out-manage', url: () => '/attendance/out-manage', needsLogin: true },
 
-  { name: 'systems-01-list', url: () => '/systems', needsLogin: true },
-  { name: 'systems-02-new', url: () => '/systems/new', needsLogin: true },
-  {
-    name: 'systems-03-detail',
-    url: (ids) => `/systems/${ids.systemId}`,
-    needsLogin: true,
-    skipIf: (ids) => !ids.systemId,
-  },
-  {
-    name: 'systems-04-edit',
-    url: (ids) => `/systems/${ids.systemId}/edit`,
-    needsLogin: true,
-    skipIf: (ids) => !ids.systemId,
-  },
-  {
-    name: 'systems-05-access',
-    url: (ids) => `/systems/${ids.systemId}/access`,
-    needsLogin: true,
-    skipIf: (ids) => !ids.systemId,
-  },
-  {
-    name: 'systems-06-deploy',
-    url: (ids) => `/systems/${ids.systemId}/deploy`,
-    needsLogin: true,
-    skipIf: (ids) => !ids.systemId,
-  },
-  {
-    name: 'systems-07-runbook',
-    url: (ids) => `/systems/${ids.systemId}/runbook`,
-    needsLogin: true,
-    skipIf: (ids) => !ids.systemId,
-  },
-
   { name: 'admin-01-audit', url: () => '/admin/audit', needsLogin: true },
   { name: 'admin-02-codes', url: () => '/admin/codes', needsLogin: true },
   { name: 'admin-03-companies', url: () => '/admin/companies', needsLogin: true },

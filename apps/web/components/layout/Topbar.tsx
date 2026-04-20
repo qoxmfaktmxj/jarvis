@@ -22,7 +22,6 @@ const ROUTE_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["/wiki",         "위키"],
   ["/knowledge",    "Knowledge Base"],
   ["/projects",     "프로젝트"],
-  ["/systems",      "시스템"],
   ["/attendance",   "근태등록"],
   ["/admin",        "관리자"],
   ["/notices",      "공지"],
