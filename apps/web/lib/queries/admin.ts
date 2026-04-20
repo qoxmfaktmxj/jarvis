@@ -9,12 +9,17 @@ import type { PaginatedResponse } from '@jarvis/shared/types/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export type UserStatus = 'active' | 'inactive' | 'locked';
+
 export type UserWithOrg = {
   id: string;
   employeeId: string;
   name: string;
   email: string | null;
-  isActive: boolean;
+  status: UserStatus;
+  position: string | null;
+  jobTitle: string | null;
+  isOutsourced: boolean;
   createdAt: Date;
   orgId: string | null;
   orgName: string | null;
@@ -69,7 +74,7 @@ export type SearchAnalytics = {
 export type UserFilters = {
   q?: string;
   orgId?: string;
-  isActive?: boolean;
+  status?: UserStatus | 'all';
   page?: number;
   limit?: number;
 };
@@ -78,7 +83,7 @@ export async function getUsers(
   workspaceId: string,
   filters: UserFilters = {},
 ): Promise<PaginatedResponse<UserWithOrg>> {
-  const { q, orgId, isActive, page = 1, limit = 20 } = filters;
+  const { q, orgId, status, page = 1, limit = 20 } = filters;
   const offset = (page - 1) * limit;
 
   const conditions = [eq(user.workspaceId, workspaceId)];
@@ -88,22 +93,25 @@ export async function getUsers(
     );
   }
   if (orgId !== undefined) conditions.push(eq(user.orgId, orgId));
-  if (isActive !== undefined) conditions.push(eq(user.isActive, isActive));
+  if (status && status !== 'all') conditions.push(eq(user.status, status));
 
   const where = and(...conditions);
 
   const [rows, totalRows] = await Promise.all([
     db
       .select({
-        id:         user.id,
-        employeeId: user.employeeId,
-        name:       user.name,
-        email:      user.email,
-        isActive:   user.isActive,
-        createdAt:  user.createdAt,
-        orgId:      user.orgId,
-        orgName:    organization.name,
-        roles:      sql<string[]>`
+        id:           user.id,
+        employeeId:   user.employeeId,
+        name:         user.name,
+        email:        user.email,
+        status:       user.status,
+        position:     user.position,
+        jobTitle:     user.jobTitle,
+        isOutsourced: user.isOutsourced,
+        createdAt:    user.createdAt,
+        orgId:        user.orgId,
+        orgName:      organization.name,
+        roles:        sql<string[]>`
           coalesce(array_agg(${role.code}) filter (where ${role.code} is not null), '{}')
         `,
       })
@@ -179,6 +187,30 @@ export async function getCodeGroups(workspaceId: string): Promise<CodeGroup[]> {
     ...g,
     items: items.filter((i) => i.groupId === g.id),
   })) as CodeGroup[];
+}
+
+export type CodeOption = { code: string; label: string };
+
+export async function getCodesByGroup(
+  workspaceId: string,
+  groupCode: 'POSITION' | 'JOB_TITLE',
+): Promise<CodeOption[]> {
+  const rows = await db
+    .select({
+      code: codeItem.code,
+      label: codeItem.name,
+      sortOrder: codeItem.sortOrder,
+    })
+    .from(codeItem)
+    .innerJoin(codeGroup, eq(codeItem.groupId, codeGroup.id))
+    .where(and(
+      eq(codeGroup.workspaceId, workspaceId),
+      eq(codeGroup.code, groupCode),
+      eq(codeItem.isActive, true),
+    ))
+    .orderBy(asc(codeItem.sortOrder));
+
+  return rows.map((r) => ({ code: r.code, label: r.label }));
 }
 
 // ── Audit logs ────────────────────────────────────────────────────────────────
