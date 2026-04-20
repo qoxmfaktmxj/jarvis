@@ -56,7 +56,6 @@ export async function validateMigration(
     passed.push('project_staff FK: all user references resolve');
   }
 
-  const orphanAttendance = await pgPool.query(
   // ── SECURITY: No plain-text credentials in system_access ────────────────────
   // Any non-null, non-empty value that does not start with vault:// is a violation.
   const plainUsernames = await pgPool.query(
