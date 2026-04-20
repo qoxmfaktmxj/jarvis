@@ -1,18 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-
-type ProjectTableRow = {
-  id: string;
-  companyCode: string | null;
-  companyName: string | null;
-  name: string;
-  prodDomainUrl: string | null;
-  devDomainUrl: string | null;
-  status: string;
-  sensitivity: string;
-  ownerName: string | null;
-  updatedAt: Date;
-};
+import type { ProjectTableRow } from "@/lib/queries/projects";
 
 export function ProjectTable({ data }: { data: ProjectTableRow[] }) {
   if (data.length === 0) {

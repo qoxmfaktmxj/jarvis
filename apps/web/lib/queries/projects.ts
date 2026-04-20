@@ -102,7 +102,7 @@ type CreateProjectAccessInput = {
   vpnFileRef?: string;
   notes?: string;
   requiredRole?: "VIEWER" | "DEVELOPER" | "MANAGER" | "ADMIN";
-  envType?: "prod" | "dev";
+  envType: "prod" | "dev";
 };
 
 function normalizeOptionalString(value?: string | null) {
@@ -451,7 +451,7 @@ export async function createProjectAccess({
     .values({
       workspaceId,
       projectId,
-      envType: input.envType ?? "prod",
+      envType: input.envType,
       accessType: input.accessType,
       label: input.label,
       host: normalizeOptionalString(input.host),
