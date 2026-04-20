@@ -34,6 +34,9 @@ ALTER TABLE "project" ADD CONSTRAINT "project_workspace_company_unique" UNIQUE (
 UPDATE "graph_snapshot" SET "scope_type" = 'workspace' WHERE "scope_type"::text = 'project';--> statement-breakpoint
 ALTER TYPE "graph_scope_type" RENAME TO "graph_scope_type_old";--> statement-breakpoint
 CREATE TYPE "graph_scope_type" AS ENUM ('attachment', 'project', 'workspace');--> statement-breakpoint
+-- Drop the default before changing the column type; PG refuses to auto-cast
+-- a default literal across enum rewrites. Default is re-applied after the cast.
+ALTER TABLE "graph_snapshot" ALTER COLUMN "scope_type" DROP DEFAULT;--> statement-breakpoint
 ALTER TABLE "graph_snapshot"
   ALTER COLUMN "scope_type" TYPE "graph_scope_type"
   USING (
@@ -43,4 +46,5 @@ ALTER TABLE "graph_snapshot"
       ELSE "scope_type"::text
     END
   )::"graph_scope_type";--> statement-breakpoint
+ALTER TABLE "graph_snapshot" ALTER COLUMN "scope_type" SET DEFAULT 'workspace';--> statement-breakpoint
 DROP TYPE "graph_scope_type_old";
