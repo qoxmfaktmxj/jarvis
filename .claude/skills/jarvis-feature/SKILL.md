@@ -1,11 +1,11 @@
 ---
 name: jarvis-feature
-description: Jarvis(사내 업무 시스템 + 사내 위키 + RAG 포털) 기능 개발 전체 워크플로우 오케스트레이터. jarvis-planner → jarvis-builder → jarvis-integrator 3인 팀으로 풀스택 기능을 구현한다. 새 기능 추가, 기존 기능 수정, 버그 수정, 리팩토링, 스키마 변경, 페이지 추가, 번역 추가, 권한 변경 등 Jarvis 프로젝트의 모든 구현 작업에 반드시 이 스킬을 사용하라. "이거 구현해줘", "기능 추가해줘", "수정해줘", "다시 실행", "재실행", "업데이트", "보완", "이전 결과 기반으로 개선" 같은 표현에서도 트리거된다.
+description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키) 기능 개발 전체 워크플로우 오케스트레이터. jarvis-planner → jarvis-builder → jarvis-integrator 3인 팀으로 풀스택 기능을 구현한다. 새 기능 추가, 기존 기능 수정, 버그 수정, 리팩토링, 스키마 변경, 페이지 추가, 번역 추가, 권한 변경 등 Jarvis 프로젝트의 모든 구현 작업에 반드시 이 스킬을 사용하라. "이거 구현해줘", "기능 추가해줘", "수정해줘", "다시 실행", "재실행", "업데이트", "보완", "이전 결과 기반으로 개선" 같은 표현에서도 트리거된다.
 ---
 
 # Jarvis Feature Orchestrator
 
-Jarvis 프로젝트의 기능 개발을 `jarvis-planner` → `jarvis-builder` → `jarvis-integrator` 3인 에이전트 팀으로 실행하는 오케스트레이터. 경량 하네스이며, 3인 팀 모두 `.claude/agents/` 정의를 따른다.
+Jarvis(사내 업무 시스템 + LLM 컴파일 위키) 기능 개발을 `jarvis-planner` → `jarvis-builder` → `jarvis-integrator` 3인 에이전트 팀으로 실행하는 오케스트레이터. 경량 하네스이며, 3인 팀 모두 `.claude/agents/` 정의를 따른다.
 
 ## 언제 이 스킬을 사용하는가
 
@@ -77,7 +77,7 @@ TaskCreate(
   - 영향도 체크리스트 전 계층 기입
   - 빌더 작업 순서 명시
   - 통합 검증자 체크포인트 포함
-  참조 스킬: jarvis-architecture, jarvis-db-patterns, jarvis-i18n
+  참조 스킬: jarvis-architecture (필수 진입점), jarvis-db-patterns (DB/권한 변경 시), jarvis-wiki-feature (wiki 도메인 시), jarvis-i18n (UI 문자열 시)
   """
 )
 ```
@@ -134,10 +134,15 @@ TaskCreate(
   - pnpm --filter @jarvis/web type-check
   - pnpm --filter @jarvis/web lint
   - 관련 unit test
+  - node scripts/check-schema-drift.mjs --precommit (스키마 변경 시)
+  - pnpm wiki:check (wiki 도메인 변경 시)
+  - pnpm audit:rsc (RSC 컴포넌트 이동/추가 시)
+  - pnpm eval:budget-test (AI 파이프라인 변경 시)
   필수 교차 비교:
   - server action shape ↔ 클라이언트 훅
   - i18n 키 + 보간 변수
-  - 권한 / sensitivity 누락
+  - 권한 / sensitivity 누락 (Ask AI는 세션 기반, 나머지는 requirePermission)
+  - Wiki 경계: auto/manual 위반, wiki-fs 우회, DB body 쓰기, raw chunk RAG
   """
 )
 ```
