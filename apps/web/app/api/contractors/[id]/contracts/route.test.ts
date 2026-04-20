@@ -60,57 +60,57 @@ describe("/api/contractors/[id]/contracts POST (renew)", () => {
 
   it("returns 401 when no session cookie", async () => {
     const response = await POST(
-      new NextRequest("http://localhost/api/contractors/uid-1/contracts", {
+      new NextRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "POST"
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(401);
   });
 
   it("returns 422 for invalid body", async () => {
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/contracts", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ startDate: "not-a-date" })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(422);
   });
 
   it("returns 404 when no active contract", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       activeContract: null
     });
 
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/contracts", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ startDate: "2025-01-01", endDate: "2025-12-31" })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(404);
   });
 
   it("renews contract and returns 201", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       activeContract: { id: "contract-1", status: "active" }
     });
     renewContractMock.mockResolvedValue({ id: "contract-2", status: "active" });
 
     const response = await POST(
-      buildRequest("http://localhost/api/contractors/uid-1/contracts", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ startDate: "2025-01-01", endDate: "2025-12-31" })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(201);
   });
@@ -125,35 +125,35 @@ describe("/api/contractors/[id]/contracts PATCH (update)", () => {
 
   it("returns 404 when no active contract", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       activeContract: null
     });
 
     const response = await PATCH(
-      buildRequest("http://localhost/api/contractors/uid-1/contracts", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ additionalLeaveHours: 8 })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(404);
   });
 
   it("updates contract and returns 200", async () => {
     getContractorByIdMock.mockResolvedValue({
-      user: { id: "uid-1" },
+      user: { id: "00000000-0000-0000-0000-000000000001" },
       activeContract: { id: "contract-1", status: "active" }
     });
     updateContractMock.mockResolvedValue({ id: "contract-1", additionalLeaveHours: "8" });
 
     const response = await PATCH(
-      buildRequest("http://localhost/api/contractors/uid-1/contracts", {
+      buildRequest("http://localhost/api/contractors/00000000-0000-0000-0000-000000000001/contracts", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ additionalLeaveHours: 8 })
       }),
-      ctx("uid-1")
+      ctx("00000000-0000-0000-0000-000000000001")
     );
     expect(response.status).toBe(200);
   });

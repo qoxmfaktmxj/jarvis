@@ -38,7 +38,7 @@ function buildRequest(url: string, init?: ConstructorParameters<typeof NextReque
   });
 }
 
-const params = { params: Promise.resolve({ id: "h-1" }) };
+const params = { params: Promise.resolve({ id: "00000000-0000-0000-0000-000000000010" }) };
 
 describe("/api/holidays/[id]", () => {
   beforeEach(() => {
@@ -55,13 +55,13 @@ describe("/api/holidays/[id]", () => {
 
   it("returns 200 on successful PATCH", async () => {
     updateHolidayMock.mockResolvedValue({
-      id: "h-1",
+      id: "00000000-0000-0000-0000-000000000010",
       date: "2025-01-01",
       name: "New Year Updated"
     });
 
     const response = await PATCH(
-      buildRequest("http://localhost/api/holidays/h-1", {
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000010", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "New Year Updated" })
@@ -78,12 +78,12 @@ describe("/api/holidays/[id]", () => {
     updateHolidayMock.mockResolvedValue(null);
 
     const response = await PATCH(
-      buildRequest("http://localhost/api/holidays/h-999", {
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000999", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "Ghost" })
       }),
-      { params: Promise.resolve({ id: "h-999" }) }
+      { params: Promise.resolve({ id: "00000000-0000-0000-0000-000000000999" }) }
     );
 
     expect(response.status).toBe(404);
@@ -91,7 +91,7 @@ describe("/api/holidays/[id]", () => {
 
   it("returns 400 for invalid PATCH body", async () => {
     const response = await PATCH(
-      buildRequest("http://localhost/api/holidays/h-1", {
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000010", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ date: "not-a-date" })
@@ -103,10 +103,10 @@ describe("/api/holidays/[id]", () => {
   });
 
   it("returns 200 on successful DELETE", async () => {
-    deleteHolidayMock.mockResolvedValue({ id: "h-1" });
+    deleteHolidayMock.mockResolvedValue({ id: "00000000-0000-0000-0000-000000000010" });
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/holidays/h-1", { method: "DELETE" }),
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000010", { method: "DELETE" }),
       params
     );
 
@@ -119,8 +119,8 @@ describe("/api/holidays/[id]", () => {
     deleteHolidayMock.mockResolvedValue(null);
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/holidays/h-999", { method: "DELETE" }),
-      { params: Promise.resolve({ id: "h-999" }) }
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000999", { method: "DELETE" }),
+      { params: Promise.resolve({ id: "00000000-0000-0000-0000-000000000999" }) }
     );
 
     expect(response.status).toBe(404);
@@ -130,7 +130,7 @@ describe("/api/holidays/[id]", () => {
     hasPermissionMock.mockReturnValue(false);
 
     const response = await DELETE(
-      buildRequest("http://localhost/api/holidays/h-1", { method: "DELETE" }),
+      buildRequest("http://localhost/api/holidays/00000000-0000-0000-0000-000000000010", { method: "DELETE" }),
       params
     );
 

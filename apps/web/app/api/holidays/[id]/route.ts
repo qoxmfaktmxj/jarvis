@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { updateHoliday, deleteHoliday } from "@/lib/queries/holidays";
 import { requireApiSession } from "@/lib/server/api-auth";
+import { isValidUuid } from "@jarvis/shared/validation";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -19,6 +20,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (auth.response) return auth.response;
 
   const { id } = await context.params;
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
   const body = await request.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
@@ -35,6 +39,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if (auth.response) return auth.response;
 
   const { id } = await context.params;
+  if (!isValidUuid(id)) {
+    return NextResponse.json({ error: "invalid_id" }, { status: 400 });
+  }
   const deleted = await deleteHoliday({ workspaceId: auth.session.workspaceId, id });
   if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json({ ok: true });
