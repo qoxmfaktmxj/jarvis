@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
+  CalendarX,
   ClipboardList,
   FilePlus,
   GitFork,
@@ -27,6 +28,7 @@ import {
   Server,
   ShieldCheck,
   User,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { Capy } from "./Capy";
@@ -47,6 +49,8 @@ const NAV: ReadonlyArray<NavItem> = [
   { href: "/architecture",          label: "아키텍처",      icon: Network },
   { href: "/infra",                 label: "인프라",        icon: HardDrive },
   { href: "/add-dev",               label: "추가개발",      icon: ClipboardList },
+  { href: "/contractors",           label: "외주인력관리",  icon: Users },
+  { href: "/holidays",              label: "공휴일 관리",   icon: CalendarX },
   { href: "/profile",               label: "프로필",        icon: User },
 ];
 
