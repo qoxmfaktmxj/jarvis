@@ -24,6 +24,7 @@ type Detail = {
   } | null;
   contracts: unknown[];
   leaves: LeaveRow[];
+  summary: { issuedHours: number; usedHours: number; remainingHours: number } | null;
 };
 
 export function ContractorDrawer({
@@ -53,15 +54,9 @@ export function ContractorDrawer({
     return <aside style={{ padding: 16 }}>로딩…</aside>;
   }
 
-  const issued = detail.activeContract
-    ? Number(detail.activeContract.generatedLeaveHours) +
-      Number(detail.activeContract.additionalLeaveHours)
-    : 0;
-  const used = detail.leaves.reduce(
-    (s: number, l: LeaveRow) => s + Number(l.hours || 0),
-    0
-  );
-  const remaining = issued - used;
+  const issued = detail.summary?.issuedHours ?? 0;
+  const used = detail.summary?.usedHours ?? 0;
+  const remaining = detail.summary?.remainingHours ?? 0;
   const days = Math.floor(remaining / 8);
 
   return (
@@ -210,7 +205,7 @@ export function ContractorDrawer({
                   fontSize: 11
                 }}
               >
-                {t(`types.${l.type}` as Parameters<typeof t>[0])}
+                {t(`types.${l.type as "day_off" | "half_am" | "half_pm" | "hourly" | "sick" | "public"}`)}
               </span>
               <span>{Number(l.hours)}h</span>
               {isAdmin && (
