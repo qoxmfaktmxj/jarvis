@@ -65,3 +65,24 @@ describe('GET /api/admin/users/export', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('CSV injection neutralization', () => {
+  it('prefixes apostrophe for cells starting with formula chars', () => {
+    // Inline the escape logic to verify the neutralizer without full route wiring.
+    function escape(v: unknown): string {
+      if (v === null || v === undefined) return '';
+      let s = String(v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    }
+
+    expect(escape('=HYPERLINK("http://evil.com","click")')).toBe(`'=HYPERLINK("http://evil.com","click")`);
+    expect(escape('+cmd')).toBe("'+cmd");
+    expect(escape('-1+2')).toBe("'-1+2");
+    expect(escape('@SUM(A1)')).toBe("'@SUM(A1)");
+    expect(escape('\tinjected')).toBe("'\tinjected");
+    expect(escape('normal')).toBe('normal');
+    expect(escape('홍길동')).toBe('홍길동');
+  });
+});

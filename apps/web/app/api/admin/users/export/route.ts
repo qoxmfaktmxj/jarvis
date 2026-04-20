@@ -16,7 +16,9 @@ function escapeLike(s: string): string {
 
 function escape(v: unknown): string {
   if (v === null || v === undefined) return '';
-  const s = String(v);
+  let s = String(v);
+  // CSV-injection neutralization: leading =,+,-,@,\t,\r all trigger formula eval in Excel/Sheets.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
