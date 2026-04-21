@@ -5,10 +5,6 @@ import { jarvisSessionSchema, type JarvisSession } from "./types.js";
 
 const SESSION_TTL_SEC = 60 * 60 * 8;
 
-function newExpiry(): Date {
-  return new Date(Date.now() + SESSION_TTL_SEC * 1000);
-}
-
 /**
  * Validate a JSONB session blob. Returns the typed session on success,
  * or null if the shape doesn't match (treat as corrupt/stale → caller
