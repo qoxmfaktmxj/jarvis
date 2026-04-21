@@ -3,18 +3,16 @@ import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth/rbac";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { resolveSessionId } from "@/lib/session-cookie";
 
 type ApiAuthResult =
   | { session: JarvisSession; response?: never }
   | { session?: never; response: NextResponse };
 
 function resolveRequestSessionId(request: NextRequest) {
-  return (
-    request.headers.get("x-session-id") ??
-    request.cookies.get("sessionId")?.value ??
-    request.cookies.get("jarvis_session")?.value ??
-    null
-  );
+  const fromHeader = request.headers.get("x-session-id");
+  if (fromHeader && fromHeader.length > 0) return fromHeader;
+  return resolveSessionId(request.cookies);
 }
 
 export async function requireApiSession(
