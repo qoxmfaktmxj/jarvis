@@ -25,7 +25,7 @@ export async function createSession(session: JarvisSession): Promise<void> {
     // JarvisSession (typed object) → Record<string, unknown> (DB schema type).
     // Structurally compatible but TS needs the widening; the cast is safe.
     data: session as unknown as Record<string, unknown>,
-    expiresAt: newExpiry(),
+    expiresAt: new Date(session.expiresAt),
   });
 }
 
@@ -78,16 +78,17 @@ export async function refreshSession(sessionId: string): Promise<void> {
     return;
   }
 
+  const extended = new Date(Date.now() + SESSION_TTL_SEC * 1000);
   const session: JarvisSession = {
     ...existing,
-    expiresAt: Date.now() + SESSION_TTL_SEC * 1000,
+    expiresAt: extended.getTime(),
   };
 
   await db
     .update(userSession)
     .set({
       data: session as unknown as Record<string, unknown>,
-      expiresAt: newExpiry(),
+      expiresAt: extended,
     })
     .where(eq(userSession.id, sessionId));
 }

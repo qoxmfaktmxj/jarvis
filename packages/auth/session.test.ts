@@ -54,6 +54,21 @@ describe("session (PG-backed)", () => {
     expect(arg.expiresAt).toBeInstanceOf(Date);
   });
 
+  it("createSession persists session.expiresAt to DB expires_at column", async () => {
+    const values = vi.fn().mockResolvedValue(undefined);
+    dbMock.insert.mockReturnValue({ values });
+
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const customExpiry = Date.now() + thirtyDaysMs;
+    const s = makeSession({ expiresAt: customExpiry });
+
+    await createSession(s);
+
+    const arg = values.mock.calls[0]![0];
+    expect(arg.expiresAt).toBeInstanceOf(Date);
+    expect((arg.expiresAt as Date).getTime()).toBe(customExpiry);
+  });
+
   it("getSession returns null for empty id", async () => {
     const result = await getSession("");
     expect(result).toBeNull();
