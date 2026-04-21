@@ -1,6 +1,12 @@
 import { vi } from "vitest";
 import koMessages from "./messages/ko.json";
 
+// Provide minimum env vars required by lib/env.ts so tests that invoke
+// server handlers (which call env()) do not throw ZodError on missing fields.
+process.env["OPENAI_API_KEY"] ??= "sk-test-placeholder";
+process.env["NEXT_PUBLIC_APP_URL"] ??= "http://localhost:3010";
+process.env["WIKI_REPO_ROOT"] ??= "/tmp/jarvis-test";
+
 // Returns undefined if the key path is not found
 function resolve(obj: Record<string, unknown>, path: string): string | undefined {
   const parts = path.split(".");

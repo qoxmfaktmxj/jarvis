@@ -4,14 +4,12 @@
 // environments without OPENAI_API_KEY — the client is only built on the first
 // call, which only happens when FEATURE_SEARCH_HYBRID=true.
 import OpenAI from 'openai';
+import { env } from '@/lib/env';
 
 let cachedClient: OpenAI | null = null;
 function getClient(): OpenAI {
   if (!cachedClient) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error('[search] OPENAI_API_KEY is required for hybrid search');
-    }
+    const apiKey = env().OPENAI_API_KEY;
     cachedClient = new OpenAI({ apiKey });
   }
   return cachedClient;
