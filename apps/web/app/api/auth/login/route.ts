@@ -6,10 +6,11 @@ import { db } from "@jarvis/db/client";
 import { role, user, userRole } from "@jarvis/db/schema";
 import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { findTempDevAccount } from "@/lib/auth/dev-accounts";
+import { env } from "@/lib/env";
 
 // Development-only login endpoint. Blocked in production.
 export async function POST(request: NextRequest) {
-  if (process.env["NODE_ENV"] === "production") {
+  if (env().NODE_ENV === "production") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
