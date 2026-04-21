@@ -4,6 +4,7 @@ import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { User, Lock, CircleAlert, ArrowRight } from 'lucide-react';
 import { LoadingOverlay } from '@/components/layout/LoadingOverlay';
+import { safeRedirectPath } from './_lib/safe-redirect';
 import { ShaderBackground, SHADER_ACCENTS } from './_components/ShaderBackground';
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -44,7 +45,7 @@ function LoginContent() {
         return;
       }
 
-      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+      const safeRedirect = safeRedirectPath(redirectTo, '/dashboard');
       window.location.assign(safeRedirect);
     } catch {
       setLoginError('로그인 요청 중 오류가 발생했습니다.');
