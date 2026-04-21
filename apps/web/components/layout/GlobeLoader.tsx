@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 type GlobeLoaderProps = {
   size?: number;
   className?: string;
-  tone?: "brand" | "lime" | "muted" | "inverse";
+  tone?: "brand" | "lime" | "muted" | "inverse" | "warm" | "ocean";
   label?: string;
 };
 
@@ -47,6 +47,18 @@ const TONES: Record<NonNullable<GlobeLoaderProps["tone"]>, {
     grid: "oklch(0.85 0.060 260 / 0.5)",
     ring: "oklch(0.87 0.100 134)",
     glow: "oklch(0.93 0.030 260 / 0.35)",
+  },
+  warm: {
+    land: "oklch(0.55 0.180 35)",
+    grid: "oklch(0.70 0.170 35 / 0.35)",
+    ring: "oklch(0.65 0.200 50)",
+    glow: "oklch(0.70 0.170 35 / 0.25)",
+  },
+  ocean: {
+    land: "oklch(0.55 0.130 220)",
+    grid: "oklch(0.72 0.120 220 / 0.35)",
+    ring: "oklch(0.75 0.140 205)",
+    glow: "oklch(0.72 0.120 220 / 0.25)",
   },
 };
 
