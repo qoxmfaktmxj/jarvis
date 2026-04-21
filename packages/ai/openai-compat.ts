@@ -1,9 +1,10 @@
 // packages/ai/openai-compat.ts
 // Model-agnostic token limit param helper.
 //
-// OpenAI reasoning models (gpt-5.x, o1, o3, o4) require `max_completion_tokens`
-// and reject `max_tokens` with 400. Older models (gpt-4, gpt-3.5) only accept
-// `max_tokens`. Some transitional models accept both.
+// OpenAI reasoning 계열(gpt-5.x 포함)은 `max_completion_tokens`를 요구하고
+// `max_tokens`를 400으로 거부한다. 구형 Chat Completions 모델은 `max_tokens`
+// 만 받는다. 일부 전환기 모델은 둘 다 받는다. (허용 모델 목록:
+// docs/policies/llm-models.md)
 //
 // Strategy: try `max_completion_tokens` first, and on a 400 that mentions
 // `max_tokens`, fall back to `max_tokens`. Result is cached per model to avoid
