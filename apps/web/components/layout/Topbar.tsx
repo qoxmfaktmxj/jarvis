@@ -14,20 +14,7 @@ import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
 import { TweaksPanel } from "./TweaksPanel";
 import { setTheme, useTheme } from "./uiPrefs";
-
-const ROUTE_LABELS: ReadonlyArray<readonly [string, string]> = [
-  ["/dashboard",    "대시보드"],
-  ["/ask",          "AI 질문"],
-  ["/search",       "검색"],
-  ["/wiki",         "위키"],
-  ["/knowledge",    "Knowledge Base"],
-  ["/projects",     "프로젝트"],
-  ["/systems",      "시스템"],
-  ["/admin",        "관리자"],
-  ["/notices",      "공지"],
-  ["/infra",        "인프라"],
-  ["/architecture", "아키텍처"],
-];
+import { ROUTE_LABELS } from "@/lib/routes";
 
 function routeLabel(pathname: string): string {
   for (const [prefix, label] of ROUTE_LABELS) {
