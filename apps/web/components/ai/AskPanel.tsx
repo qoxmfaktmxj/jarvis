@@ -300,8 +300,8 @@ export function AskPanel({
                       {isStreaming && !answer ? (
                         <div className="flex items-center gap-3 py-1">
                           <GlobeLoader
-                            size={64}
-                            tone="brand"
+                            size={40}
+                            tone="ocean"
                             label={tThinking("documentReview")}
                           />
                         </div>
