@@ -27,4 +27,12 @@ describe("middleware request-id injection", () => {
     const res = middleware(req);
     expect(res.headers.get("x-request-id")).toBe("req-existing-1");
   });
+
+  it("accepts legacy jarvis_session cookie without redirecting to /login", () => {
+    const req = new NextRequest(new URL("http://localhost/dashboard"));
+    req.cookies.set("jarvis_session", "legacy-session");
+    const res = middleware(req);
+    expect(res.headers.get("location")).toBeNull();
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+  });
 });

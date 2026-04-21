@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveSessionId } from "./lib/session-cookie";
 
 const PUBLIC_PATHS = ["/login", "/callback", "/api/auth", "/capybara"];
 
@@ -39,7 +40,7 @@ export function middleware(request: NextRequest) {
     return withRequestId(NextResponse.next(), requestId);
   }
 
-  const sessionId = request.cookies.get("sessionId")?.value;
+  const sessionId = resolveSessionId(request.cookies);
 
   if (!sessionId) {
     const loginUrl = new URL("/login", request.url);
