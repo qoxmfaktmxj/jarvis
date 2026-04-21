@@ -72,16 +72,15 @@ export function CommandPalette() {
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const bySection = useMemo(() => {
-    const groups: Record<"navigate" | "actions" | "recent", PaletteItem[]> = {
+    const groups: Record<"navigate" | "actions", PaletteItem[]> = {
       navigate: [],
       actions: [],
-      recent: [],
     };
     filtered.forEach((it) => groups[it.section].push(it));
     return groups;
   }, [filtered]);
 
-  const flat = useMemo(() => [...bySection.navigate, ...bySection.actions, ...bySection.recent], [bySection]);
+  const flat = useMemo(() => [...bySection.navigate, ...bySection.actions], [bySection]);
 
   const run = (it: PaletteItem) => {
     if (it.href) router.push(it.href);
