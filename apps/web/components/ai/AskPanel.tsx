@@ -74,6 +74,7 @@ export function AskPanel({
   const { isStreaming, answer, sources, error, question, lane, feedbackSent, conversationId: hookConversationId, ask, reset, sendFeedback } = useAskAI();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pendingNavRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (initialQuestion && initialQuestion.trim()) {
@@ -87,14 +88,24 @@ export function AskPanel({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [answer]);
 
-  // SSE conversation 이벤트로 새 conversationId를 수신했을 때 URL 갱신.
+  // SSE conversation 이벤트 수신 시 activeConversationId 즉시 갱신 (다음 메시지 전송에 필요).
+  // router.replace는 스트리밍 완료 후 별도 effect에서 처리 — 진행 중에 navigate하면
+  // Server Component가 새 AskPanel 인스턴스를 마운트해 스트리밍 상태가 소멸됨.
   useEffect(() => {
     if (hookConversationId && hookConversationId !== activeConversationId) {
       setActiveConversationId(hookConversationId);
-      router.replace(`/ask/${hookConversationId}`, { scroll: false });
+      pendingNavRef.current = hookConversationId;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hookConversationId]);
+
+  // 스트리밍 완료 후 URL을 새 conversationId로 교체.
+  useEffect(() => {
+    if (!isStreaming && pendingNavRef.current) {
+      router.replace(`/ask/${pendingNavRef.current}`, { scroll: false });
+      pendingNavRef.current = null;
+    }
+  }, [isStreaming, router]);
 
   // history 이동은 "새 질문이 들어오는 시점"에만 한다.
   // 답변 완료 직후 live 블록을 없애면 피드백 버튼이 즉시 사라지므로,
