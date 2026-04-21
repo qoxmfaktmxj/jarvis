@@ -39,7 +39,7 @@ export default async function DashboardPage() {
         stamp={`W${week}`}
         kicker="Dashboard"
         title="대시보드"
-        subtitle={`${session.name}님, 반갑습니다. 이번 주 워크스페이스 스냅샷입니다.`}
+        subtitle={`${session.name || "사용자"}님, 반갑습니다. 이번 주 워크스페이스 스냅샷입니다.`}
         actions={
           <button
             type="button"
