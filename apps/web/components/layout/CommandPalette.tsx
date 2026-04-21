@@ -10,60 +10,22 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  BookOpen,
-  LayoutDashboard,
-  Library,
-  Megaphone,
-  MessageSquare,
-  Network,
-  Search,
-  Server,
-  Settings,
-  ShieldCheck,
-  UserCircle,
-  Workflow,
-  Plus,
-  FileText,
-  Clock,
-  type LucideIcon,
-} from "lucide-react";
+import { Search } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { NAV_ITEMS, ACTION_ITEMS, type NavItem, type ActionItem } from "@/lib/routes";
 
-type Item = {
-  id: string;
-  label: string;
-  description?: string;
-  kbd?: string;
-  icon: LucideIcon;
-  href?: string;
-  action?: () => void;
-  section: "navigate" | "actions" | "recent";
-  keywords?: string[];
+type PaletteItem = (NavItem | ActionItem) & {
+  section: "navigate" | "actions";
 };
 
-const NAV_ITEMS: Item[] = [
-  { id: "nav-dashboard",  section: "navigate", label: "대시보드",   description: "홈 · 이번 주 요약",  icon: LayoutDashboard, href: "/dashboard",  keywords: ["dashboard", "home", "홈"] },
-  { id: "nav-ask",        section: "navigate", label: "Ask AI",     description: "AI에게 질문",        icon: MessageSquare,  href: "/ask",        keywords: ["ai", "chat", "질문"] },
-  { id: "nav-search",     section: "navigate", label: "검색",       description: "전체 리소스 검색",  icon: Search,         href: "/search",     keywords: ["search", "find"] },
-  { id: "nav-wiki",       section: "navigate", label: "위키",       description: "워크스페이스 지식",  icon: Library,        href: "/wiki",       keywords: ["wiki", "knowledge"] },
-  { id: "nav-knowledge",  section: "navigate", label: "지식 베이스", description: "FAQ · 용어집 · HR", icon: BookOpen,       href: "/knowledge",  keywords: ["kb", "faq", "glossary"] },
-  { id: "nav-systems",    section: "navigate", label: "시스템",     description: "시스템 · 런북",      icon: Server,         href: "/systems",    keywords: ["system", "runbook"] },
-  { id: "nav-notices",    section: "navigate", label: "공지",       description: "사내 공지사항",      icon: Megaphone,      href: "/notices",    keywords: ["notice", "공지"] },
-  { id: "nav-infra",      section: "navigate", label: "인프라",     description: "인프라 맵",          icon: Network,        href: "/infra",      keywords: ["infra"] },
-  { id: "nav-arch",       section: "navigate", label: "아키텍처",   description: "그래프 분석",        icon: Workflow,       href: "/architecture", keywords: ["architecture", "graph"] },
-  { id: "nav-admin",      section: "navigate", label: "관리자",     description: "Admin 콘솔",         icon: ShieldCheck,    href: "/admin",      keywords: ["admin"] },
-  { id: "nav-profile",    section: "navigate", label: "내 프로필",  description: "계정 설정",          icon: UserCircle,     href: "/profile",    keywords: ["profile", "me"] },
-];
-
-const ACTION_ITEMS: Item[] = [
-  { id: "act-new-system",  section: "actions", label: "새 시스템 등록",    icon: Plus,      href: "/systems/new",  keywords: ["create", "new"] },
-  { id: "act-new-notice",  section: "actions", label: "새 공지 작성",      icon: FileText,  href: "/notices/new",  keywords: ["create", "new"] },
-  { id: "act-new-kb",      section: "actions", label: "새 KB 페이지",      icon: FileText,  href: "/knowledge/new", keywords: ["create", "new"] },
-  { id: "act-settings",    section: "actions", label: "설정",             icon: Settings,  href: "/profile",        keywords: ["settings"] },
-];
+function toPaletteItems(): PaletteItem[] {
+  return [
+    ...NAV_ITEMS.map((n) => ({ ...n, section: "navigate" as const })),
+    ...ACTION_ITEMS.map((a) => ({ ...a, section: "actions" as const })),
+  ];
+}
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
@@ -96,7 +58,7 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  const items = useMemo(() => [...NAV_ITEMS, ...ACTION_ITEMS], []);
+  const items = useMemo(() => toPaletteItems(), []);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
@@ -110,15 +72,18 @@ export function CommandPalette() {
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const bySection = useMemo(() => {
-    const groups: Record<Item["section"], Item[]> = { navigate: [], actions: [], recent: [] };
+    const groups: Record<"navigate" | "actions" | "recent", PaletteItem[]> = {
+      navigate: [],
+      actions: [],
+      recent: [],
+    };
     filtered.forEach((it) => groups[it.section].push(it));
     return groups;
   }, [filtered]);
 
   const flat = useMemo(() => [...bySection.navigate, ...bySection.actions, ...bySection.recent], [bySection]);
 
-  const run = (it: Item) => {
-    if (it.action) it.action();
+  const run = (it: PaletteItem) => {
     if (it.href) router.push(it.href);
     setOpen(false);
   };
