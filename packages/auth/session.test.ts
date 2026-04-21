@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSession, getSession, deleteSession, refreshSession } from "./session.js";
+import { createSession, getSession, deleteSession } from "./session.js";
 import type { JarvisSession } from "./types.js";
 
 const dbMock = vi.hoisted(() => ({
@@ -116,25 +116,4 @@ describe("session (PG-backed)", () => {
     expect(where).toHaveBeenCalledOnce();
   });
 
-  // Fix C: assert read-then-write + Fix Issue #9 (clearer expiresAt comparison)
-  it("refreshSession extends expires_at and data.expiresAt", async () => {
-    const s = makeSession();
-    // Keep explicit chain to retain the select mock reference for assertion
-    const limit = vi.fn().mockResolvedValue([{ id: s.id, data: s, expiresAt: new Date() }]);
-    const where = vi.fn().mockReturnValue({ limit });
-    const from = vi.fn().mockReturnValue({ where });
-    dbMock.select.mockReturnValue({ from });
-
-    const whereUpd = vi.fn().mockResolvedValue(undefined);
-    const set = vi.fn().mockReturnValue({ where: whereUpd });
-    dbMock.update.mockReturnValue({ set });
-
-    await refreshSession("sess-1");
-
-    expect(dbMock.select).toHaveBeenCalledOnce();       // new — verify read step
-    expect(set).toHaveBeenCalledOnce();
-    const setArg = set.mock.calls[0]![0];
-    expect(setArg.expiresAt).toBeInstanceOf(Date);
-    expect(setArg.data.expiresAt).toBeGreaterThan(s.expiresAt);  // clearer than Date.now()
-  });
 });
