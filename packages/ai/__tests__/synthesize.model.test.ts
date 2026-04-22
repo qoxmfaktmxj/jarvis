@@ -23,7 +23,9 @@ vi.mock("@jarvis/wiki-fs", () => ({
 }));
 
 const { createChatMock, logLlmCallMock } = vi.hoisted(() => ({
-  createChatMock: vi.fn(async () => {
+  createChatMock: vi.fn<
+    (openai: unknown, model: string, params: unknown, limit: number) => Promise<AsyncGenerator<unknown>>
+  >(async () => {
     async function* gen() {
       yield { choices: [{ delta: { content: "answer" } }] };
       yield { choices: [{ delta: {} }], usage: { prompt_tokens: 10, completion_tokens: 5 } };
