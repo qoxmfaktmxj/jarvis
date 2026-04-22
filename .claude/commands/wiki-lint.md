@@ -90,7 +90,7 @@ argument-hint: "[workspaceId?]  (생략 시 세션 기본 workspace)"
 wiki/{workspaceId}/_system/lint-report-{YYYY-MM-DD}.md
 ```
 
-- 날짜는 **UTC 기준 YYYY-MM-DD** (Jarvis convention 확인. 차이가 있으면 integrator가 바로잡음).
+- 날짜는 **UTC 기준 YYYY-MM-DD** (Jarvis convention 확인. 차이가 있으면 리뷰 단계에서 바로잡음).
 - 파일은 **auto** 영역. `packages/wiki-fs` + single-writer 큐 경유해서 commit.
 - commit message: `[lint] {YYYY-MM-DD} — {총 issue 수}개 이슈 플래그`.
 - `log.md`에 `## [YYYY-MM-DD] lint | {총 issue 수}개` append.

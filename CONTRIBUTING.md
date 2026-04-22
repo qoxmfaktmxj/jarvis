@@ -8,7 +8,7 @@ Jarvis에 기여하려는 새 개발자를 위한 온보딩 가이드입니다. 
 
 ## 1. 프로젝트 개요
 
-**Jarvis = 사내 업무 시스템 + 사내 위키 + RAG AI 포털 통합 플랫폼.**
+**Jarvis = 사내 업무 시스템 + LLM 컴파일 위키 통합 플랫폼.**
 
 - **정체성**: 검색 포털이 아닙니다. [Karpathy의 LLM Wiki 구상](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)을 엔터프라이즈 멀티테넌트 환경으로 확장한 **지식 컴파일·북키핑 자동화 플랫폼**입니다.
 - **핵심 철학 (Karpathy-first)**:
@@ -87,26 +87,34 @@ pnpm dev
 
 ---
 
-## 4. 3인 에이전트 하네스 (Claude Code)
+## 4. 하네스 (Claude Code · Codex CLI 공통)
 
-Jarvis는 풀스택 기능을 3인 에이전트 팀으로 구현합니다. Claude Code에서 `jarvis-feature` 스킬을 호출하면 자동으로 오케스트레이션됩니다.
+2026-04-22 기준, Jarvis 하네스는 **도메인 지식만** 담당하고 개발 방법론(계획·TDD·리뷰·검증·디버깅)은 **`superpowers` 플러그인에 위임**합니다. 방법론 자체를 다시 만들지 않고 업스트림 업데이트 혜택을 그대로 받습니다.
 
-```
-사용자 요청
-  → jarvis-planner    (_workspace/01_planner_{slug}.md 계획 산출)
-  → jarvis-builder    (_workspace/02_builder_progress.md 실제 코드 변경)
-  → jarvis-integrator (검증 + 타입체크 + 린트 + 테스트)
-```
+### 구성
 
-### 흐름 요약
+- **진입점 스킬:** [`jarvis-feature`](.claude/skills/jarvis-feature/SKILL.md) — superpowers 워크플로우에 Jarvis 도메인 컨텍스트를 주입하는 얇은 오케스트레이터
+- **도메인 스킬 4개 (방법론 각 단계에 컨텍스트로 주입):**
+  - [`jarvis-architecture`](.claude/skills/jarvis-architecture/SKILL.md) — 모노레포 구조 · 영향도 체크리스트(17계층) · 파일 변경 순서(20단계) · 검증 게이트 명령
+  - [`jarvis-db-patterns`](.claude/skills/jarvis-db-patterns/SKILL.md) — 31 스키마 · 34 권한 · 5 역할 · sensitivity · server action 두 패턴 · 경계면 교차 비교 체크리스트
+  - [`jarvis-i18n`](.claude/skills/jarvis-i18n/SKILL.md) — ko.json · 보간 변수 · 경계면 검증
+  - [`jarvis-wiki-feature`](.claude/skills/jarvis-wiki-feature/SKILL.md) — Karpathy 4원칙 · ingest 4단계 · wiki-fs/wiki-agent 경계
+- **방법론 (위임 대상):** `superpowers:brainstorming` · `writing-plans` · `subagent-driven-development` · `executing-plans` · `test-driven-development` · `verification-before-completion` · `requesting-code-review` · `receiving-code-review` · `systematic-debugging` · `dispatching-parallel-agents` · `using-git-worktrees` · `finishing-a-development-branch`
 
-1. **planner**: 요청을 파일 단위 계획으로 쪼갭니다. 스키마·권한·i18n 키·파일 경로를 명시합니다.
-2. **builder**: 계획을 따라 Drizzle 스키마 → 마이그레이션 → 서버 로직 → UI → i18n 순으로 구현합니다.
-3. **integrator**: `pnpm type-check`, `pnpm lint`, 단위 테스트, schema-drift 검증을 돌립니다.
+### 작업 흐름
 
-위키 도메인 작업은 추가로 [`jarvis-wiki-feature`](.claude/skills/jarvis-wiki-feature/SKILL.md) 스킬을 병행 참조합니다.
+1. **도메인 컨텍스트 로드** — 관련 Jarvis 스킬 Read (거의 항상 `jarvis-architecture`는 필요)
+2. **요구 명료화** (애매할 때) — `superpowers:brainstorming`
+3. **계획 작성** — `superpowers:writing-plans` + `jarvis-architecture`의 영향도 체크리스트
+4. **구현 + 리뷰** — `superpowers:subagent-driven-development` (implementer는 TDD + 파일 변경 순서, spec-reviewer는 경계면 교차 비교)
+5. **완료 전 검증** — `superpowers:verification-before-completion` + `jarvis-architecture`의 검증 게이트 명령 (변경 범위에 맞는 것만: type-check/lint/test/schema-drift/wiki:check/audit:rsc/eval:budget-test)
+6. **브랜치 마감·PR** — `superpowers:finishing-a-development-branch`
 
 단일 파일 1~2줄 수정이나 단순 질문은 하네스를 거치지 않고 직접 응답합니다.
+
+### Codex CLI 사용자
+
+Codex CLI에도 동일한 원칙을 적용합니다. `/plugins` → `superpowers` 검색 → Install Plugin. 상세 지시문은 [`AGENTS.md`](AGENTS.md) 참조.
 
 ---
 

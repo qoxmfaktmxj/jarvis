@@ -242,9 +242,9 @@ wiki/{workspaceId}/
 ├─ scripts/
 │  └─ check-schema-drift.mjs       # Claude Code hook / CI / pre-commit 공용
 ├─ .claude/
-│  ├─ agents/                      # jarvis-planner/builder/integrator
+│  ├─ agents/                      # (비어 있음 — 2026-04-22 방법론을 superpowers 플러그인으로 위임)
 │  ├─ commands/                    # wiki-ingest, wiki-query, wiki-lint, wiki-graph (Phase-W1)
-│  └─ skills/                      # jarvis-feature 외 스킬
+│  └─ skills/                      # jarvis-feature(얇은 진입점) + jarvis-architecture/db-patterns/i18n/wiki-feature(도메인 레퍼런스)
 ├─ WIKI-AGENTS.md                  # 지식 하네스 (이 파일의 상위)
 ├─ CLAUDE.md / AGENTS.md           # 코드 하네스 (Claude Code / Codex)
 ├─ package.json, pnpm-workspace.yaml, turbo.json, tsconfig.json
@@ -468,7 +468,7 @@ Jarvis에는 두 개의 하네스가 있습니다.
 
 | 하네스 | 규정 파일 | 역할 |
 |--------|-----------|------|
-| **코드 하네스** | [`CLAUDE.md`](CLAUDE.md), [`AGENTS.md`](AGENTS.md) | 기능 구현 (planner → builder → integrator 3단계) |
+| **코드 하네스** | [`CLAUDE.md`](CLAUDE.md), [`AGENTS.md`](AGENTS.md) | 기능 구현 (방법론은 superpowers 플러그인에 위임 + 도메인 스킬 4개 — 2026-04-22 재편) |
 | **지식 하네스** | [`WIKI-AGENTS.md`](WIKI-AGENTS.md) | LLM이 위키를 운영하는 규약 (4 오퍼레이션·auto/manual·single-writer·RBAC) |
 
 **슬래시 커맨드 (Phase-W1에서 이식):**

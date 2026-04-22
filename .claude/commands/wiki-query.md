@@ -90,7 +90,7 @@ DB 쿼리 시점에 다음을 강제 적용:
 
 ## 절대 금지 (raw chunk retrieval 금지)
 
-다음 경로는 **이 커맨드에서 절대 호출하지 말 것**. 발견 시 integrator가 실패로 간주.
+다음 경로는 **이 커맨드에서 절대 호출하지 말 것**. 발견 시 리뷰 단계(superpowers:subagent-driven-development의 spec-reviewer)에서 실패로 간주.
 
 | 금지 대상 | 사유 |
 |-----------|------|

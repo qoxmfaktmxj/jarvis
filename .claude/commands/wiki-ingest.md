@@ -124,7 +124,7 @@ argument-hint: "{raw_source_id}  (예: 01HXXXXXXXXXXXXXXXXXXXXXX — DB raw_sour
 5. **모순 플래그** — `contradictions[]`는 버리지 말고 review_queue로.
 6. **페이지 1급 시민** — chunk가 아닌 페이지를 생산·수정한다. `document_chunks` 쓰기 금지.
 7. **auto/manual 분리** — `wiki/{workspaceId}/manual/**`은 절대 수정 대상에 포함시키지 말 것.
-8. **관측** — `llm_call_log`에 op=`wiki.ingest.analyze`, `wiki.ingest.generate` 기록. 미기록은 integrator가 실패로 간주.
+8. **관측** — `llm_call_log`에 op=`wiki.ingest.analyze`, `wiki.ingest.generate` 기록. 미기록은 리뷰 단계(superpowers:subagent-driven-development의 spec-reviewer)에서 실패로 간주.
 
 이 중 하나라도 깨지면 해당 ingest 시도를 **실패로 간주하고 `ingest_dlq`로 이동**한다. 사용자에게 구체적인 위반 항목을 보고.
 
