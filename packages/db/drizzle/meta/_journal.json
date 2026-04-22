@@ -253,6 +253,13 @@
       "when": 1745568000000,
       "tag": "0035_contractor_management_init",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1745654400000,
+      "tag": "0036_drop_ask_mode",
+      "breakpoints": true
     }
   ]
 }

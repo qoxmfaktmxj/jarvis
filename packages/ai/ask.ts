@@ -308,9 +308,11 @@ export function assembleContext(
 }
 
 // ---------------------------------------------------------------------------
-// SYSTEM_PROMPT — 4개 소스 종류 지원, Simple/Expert 모드 분기
+// SYSTEM_PROMPT — 4개 소스 종류 지원
+// (2026-04-21: Simple/Expert 모드 토글 제거 — 단일 프롬프트로 통일.
+//  응답 스타일은 모델 자체의 성능으로 결정, 세부 선택은 모델 selector로 대체.)
 // ---------------------------------------------------------------------------
-const SYSTEM_PROMPT_BASE = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
+export const SYSTEM_PROMPT = `You are Jarvis, an internal knowledge assistant for an enterprise portal.
 Answer ONLY based on the provided <context>. Do not use outside knowledge.
 
 Sources inside <context> come in four kinds:
@@ -325,27 +327,6 @@ Citation rules:
 3. text > graph > case > directory in authority order for conflicting information.
 4. If <context> doesn't answer the question, say so explicitly and suggest searching the knowledge base or contacting the relevant team.
 5. Use the same language as the user's question (Korean preferred).`;
-
-const SIMPLE_SUFFIX = `
-Response style: SIMPLE mode
-- Answer in 2-3 short sentences maximum.
-- Lead with the direct answer, then one supporting detail.
-- If a directory link exists, show it as a clickable action: "→ [시스템명] 바로가기".
-- Skip detailed explanations, cases, and graph context unless directly asked.
-- Prioritize: answer → link → team contact.`;
-
-const EXPERT_SUFFIX = `
-Response style: EXPERT mode
-- Provide a thorough, detailed answer with full context.
-- Include relevant case patterns (증상→원인→조치→결과) when available.
-- Reference graph/structural context for architecture or dependency questions.
-- Show all relevant directory links and forms.
-- Explain the reasoning and cite all supporting sources.
-- Structure with clear sections when the answer is complex.`;
-
-function getSystemPrompt(mode: import('./types.js').AskMode = 'simple'): string {
-  return SYSTEM_PROMPT_BASE + (mode === 'expert' ? EXPERT_SUFFIX : SIMPLE_SUFFIX);
-}
 
 // ---------------------------------------------------------------------------
 // generateAnswer — OpenAI 스트리밍 생성
@@ -362,7 +343,7 @@ export async function* generateAnswer(
   graphSources: GraphSourceRef[],
   caseSources: CaseSourceRef[],
   dirSources: DirectorySourceRef[],
-  mode: import('./types.js').AskMode = 'simple',
+  model: string = ASK_MODEL,
   meta: AskMeta = { workspaceId: '00000000-0000-0000-0000-000000000000', requestId: null },
 ): AsyncGenerator<SSEEvent> {
   let tokensIn = 0;
@@ -390,7 +371,7 @@ export async function* generateAnswer(
     await assertBudget(meta.workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(meta.workspaceId, ASK_MODEL, meta.requestId, ASK_OP);
+      await recordBlocked(meta.workspaceId, model, meta.requestId, ASK_OP);
       yield { type: 'error', message: 'daily budget exceeded' };
       return;
     }
@@ -403,12 +384,12 @@ export async function* generateAnswer(
       Record<string, unknown>
     >(
       getAskClient(),
-      ASK_MODEL,
+      model,
       {
         stream: true,
         stream_options: { include_usage: true },
         messages: [
-          { role: 'system', content: getSystemPrompt(mode) },
+          { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: `${context}\n\nQuestion: ${question}` },
         ],
       },
@@ -433,11 +414,11 @@ export async function* generateAnswer(
       op: ASK_OP,
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
-      model: ASK_MODEL,
+      model,
       promptVersion: PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
-      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      costUsd: computeCostUsd(model, tokensIn, tokensOut),
       durationMs: Date.now() - startedAt,
       status: 'ok',
       blockedBy: null,
@@ -449,11 +430,11 @@ export async function* generateAnswer(
       op: ASK_OP,
       workspaceId: meta.workspaceId,
       requestId: meta.requestId,
-      model: ASK_MODEL,
+      model,
       promptVersion: PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
-      costUsd: computeCostUsd(ASK_MODEL, tokensIn, tokensOut),
+      costUsd: computeCostUsd(model, tokensIn, tokensOut),
       durationMs: Date.now() - startedAt,
       status: 'error',
       blockedBy: null,
@@ -501,12 +482,15 @@ export async function* askAI(
     query.sensitivityScope ??
     `workspace:${workspaceId}|level:internal|graph:0`;
 
+  // 요청별 모델 오버라이드 — undefined면 env default (ASK_MODEL).
+  const resolvedModel = query.model ?? ASK_MODEL;
+
   const cacheKey = makeCacheKey({
     promptVersion: PROMPT_VERSION,
     workspaceId,
     sensitivityScope,
     input: question,
-    model: process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini',
+    model: resolvedModel,
   });
 
   // Budget gate applies even on cache hit — a workspace over budget should not
@@ -515,7 +499,7 @@ export async function* askAI(
     await assertBudget(workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(workspaceId, process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini', query.requestId ?? null, ASK_OP);
+      await recordBlocked(workspaceId, resolvedModel, query.requestId ?? null, ASK_OP);
       yield { type: 'error', message: 'daily budget exceeded' };
       yield { type: 'done', totalTokens: 0 };
       return;
@@ -666,7 +650,7 @@ export async function* askAI(
     weightedGraph,
     caseSources,
     dirSources,
-    query.mode ?? 'simple',
+    resolvedModel,
     { workspaceId, requestId: query.requestId ?? null },
   )) {
     collectedEvents.push(evt);

@@ -131,7 +131,8 @@ export interface RetrievedClaim {
   hybridScore: number;
 }
 
-export type AskMode = 'simple' | 'expert';
+/** 메시지별 모델 오버라이드. undefined면 env fallback(`ASK_AI_MODEL` 또는 `gpt-5.4-mini`). */
+export type AskModel = 'gpt-5.4' | 'gpt-5.4-mini';
 
 export interface AskQuery {
   question: string;
@@ -141,7 +142,7 @@ export interface AskQuery {
   userPermissions: string[];
   snapshotId?: string;          // explicit graph scope
   userCompany?: string;         // 사용자 소속 고객사 (case 검색 부스팅)
-  mode?: AskMode;               // simple: 간결 답변, expert: 상세 답변 (default: simple)
+  model?: AskModel;             // 메시지별 모델 선택. undefined면 env default.
   requestId?: string | null;    // x-request-id 헤더에서 주입된 요청 추적 ID
   sensitivityScope?: string;    // RBAC-derived cache scope (e.g. 'workspace:X|level:internal')
 }
