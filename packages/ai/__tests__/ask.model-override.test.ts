@@ -172,7 +172,7 @@ describe('askAI() query.model override', () => {
   it('recordBlocked uses resolved model when budget exceeded', async () => {
     // Force budget gate to throw.
     const { BudgetExceededError } = await import('../budget.js');
-    assertBudgetMock.mockRejectedValueOnce(new BudgetExceededError('limit'));
+    assertBudgetMock.mockRejectedValueOnce(new BudgetExceededError('ws-test', 100, 50));
 
     const { askAI } = await import('../ask.js');
     await drain(askAI({ ...baseQuery, model: 'gpt-5.4' }));

@@ -1,6 +1,6 @@
 ---
 name: jarvis-architecture
-description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키)의 모노레포 구조·기술 스택·모듈 경계·핵심 파이프라인(page-first retrieval, 6-lane router, wiki-fs SSoT)을 정리한 아키텍처 레퍼런스. Jarvis 프로젝트에서 기능을 추가·수정하거나, 어느 패키지·어느 라우트에 코드를 넣을지 결정하거나, Ask AI/위키/권한/워커 잡 맥락이 필요할 때 반드시 이 스킬을 먼저 로드하라. jarvis-planner, jarvis-builder, jarvis-integrator 모두 진입점으로 사용한다. "구조 알려줘", "어디에 넣지", "아키텍처 맥락" 같은 표현에서도 트리거된다.
+description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키)의 모노레포 구조·기술 스택·모듈 경계·핵심 파이프라인(page-first retrieval, 6-lane router, wiki-fs SSoT) + 영향도 체크리스트(17계층) · 파일 변경 순서(20단계) · 검증 게이트 명령을 정리한 아키텍처 레퍼런스. Jarvis 기능 작업의 사실상 진입점이며, `jarvis-feature` 오케스트레이터와 superpowers 워크플로우(writing-plans / subagent-driven-development / verification-before-completion) 모두 이 스킬의 섹션들을 컨텍스트로 주입한다. Jarvis 프로젝트에서 기능을 추가·수정하거나, 어느 패키지·어느 라우트에 코드를 넣을지 결정하거나, Ask AI/위키/권한/워커 잡 맥락이 필요할 때 반드시 이 스킬을 먼저 로드하라. "구조 알려줘", "어디에 넣지", "아키텍처 맥락" 같은 표현에서도 트리거된다.
 ---
 
 # Jarvis Architecture Reference
@@ -294,6 +294,78 @@ pnpm eval:budget-test                             # LLM budget 검증
 - **`knowledge_page` vs `wiki_page_index`** — 전자는 레거시 Knowledge 도메인, 후자는 Karpathy wiki-fs projection. 현재 이행 중이라 두 테이블이 공존
 - **`review_request` vs `review_queue` vs `wiki_review_queue`** — knowledge 수동 리뷰 / PII·Secret 큐 / wiki 도메인 전용 큐 (3개 모두 다른 책임)
 - **Drizzle 마이그레이션** — 수동으로 `drizzle/*.sql` 편집 금지, 반드시 `pnpm db:generate`
+
+## 영향도 체크리스트 (계획 단계)
+
+기능 작업 계획을 짤 때 아래 모든 계층을 빠짐없이 확인한다. superpowers:writing-plans 실행 시 plan 문서에 각 계층의 변경 여부(해당 없음도 명시)를 반드시 포함한다.
+
+| 계층 | 확인 질문 | 파일 위치 |
+|------|----------|-----------|
+| DB 스키마 | 31개 파일 중 어디? 테이블/컬럼/인덱스? 마이그레이션 필요? | `packages/db/schema/*.ts`, `packages/db/drizzle/` |
+| Validation | Zod 스키마 추가/수정? | `packages/shared/validation/*.ts` |
+| 권한 (34 상수) | 기존 재사용? 새 PERMISSION 필요? 5 역할 매핑? | `packages/shared/constants/permissions.ts`, `packages/auth/rbac.ts` |
+| 세션 vs 권한 모델 | Ask AI류(세션+user) vs Knowledge류(requirePermission)? | `packages/auth/session.ts` |
+| Sensitivity 필터 | 쿼리 WHERE에 sensitivity 절 넣는가? (앱 레벨 필터 금지) | `packages/auth/rbac.ts` |
+| Ask AI / page-first | 6-lane 라우터 변경? page-first retrieval 경로 영향? | `packages/ai/router.ts`, `packages/ai/page-first/`, `packages/ai/ask.ts` |
+| Wiki-fs (Karpathy) | auto/manual 경계 유지? wiki-fs API 경유? DB projection only? | `packages/wiki-fs/`, `packages/wiki-agent/`, `wiki/{ws}/**` |
+| 검색 | pg-search(knowledge) vs precedent-search(case) 어느 쪽? 혼합 금지 | `packages/search/` |
+| 서버 액션/API | 어느 파일에 생성? 응답 shape? | `apps/web/app/(app)/{domain}/**/actions.ts`, `app/api/**/route.ts`, `app/actions/` |
+| 서버 로직 (lib) | 쿼리 추가? 기존 lib 재사용? | `apps/web/lib/` |
+| UI 라우트 | `(app)` / `(auth)` 어느 그룹? 도메인? | `apps/web/app/(app)/{domain}/` |
+| UI 컴포넌트 | 페이지 전용 `_components/`? 전역 `components/`? RSC vs client? | `apps/web/app/(app)/**/_components/`, `apps/web/components/` |
+| i18n 키 | ko.json 어느 네임스페이스? 보간 변수? | `apps/web/messages/ko.json` |
+| 테스트 | unit(Vitest)? integration(worker)? e2e(Playwright)? | `*.test.ts`, `apps/web/e2e/`, `apps/worker/eval/` |
+| 워커 잡 | 새 잡? ingest 4단계 영향? cron 스케줄? | `apps/worker/src/jobs/`, `apps/worker/src/jobs/ingest/`, `apps/worker/src/index.ts` |
+| LLM 호출 | CLIProxyAPI 경유? `llm_call_log` 기록? budget 영향? | `packages/ai/router.ts`, `docker/cli-proxy/`, `packages/ai/budget.ts` |
+| Audit | mutation이면 `audit_log` 기록 + 트랜잭션 | `packages/db/schema/audit.ts` |
+
+## 파일 변경 순서 (구현 의존성)
+
+한 기능이 여러 계층을 건드릴 때는 아래 순서를 따른다. superpowers:subagent-driven-development의 implementer 서브에이전트가 task를 쪼갤 때 이 순서를 지키도록 plan 단계에서 명시.
+
+```
+ 1. packages/db/schema/*.ts                 (스키마)
+ 2. pnpm db:generate                        (마이그레이션 생성)
+ 3. packages/shared/validation/*.ts         (Zod 입출력 스키마)
+ 4. packages/shared/constants/permissions.ts (권한 상수 + ROLE_PERMISSIONS 매핑)
+ 5. packages/auth/rbac.ts, session.ts       (권한/세션 헬퍼 — 필요 시만)
+ 6. packages/secret/*                        (SecretRef — 필요 시)
+ 7. packages/wiki-fs/src/**                 (디스크 I/O + git) ← stateful
+ 8. packages/wiki-agent/src/**              (LLM prompt/parser) ← stateless
+ 9. packages/ai/**                          (router, page-first, ask, tutor, 6 contexts)
+10. packages/search/**                      (FTS/trigram/precedent 독립)
+11. apps/web/lib/**                         (웹 전용 쿼리/헬퍼)
+12. apps/web/app/actions/**                 (도메인 횡단 server action)
+13. apps/web/app/(app)/**/actions.ts        (도메인별 server action)
+14. apps/web/app/api/**/route.ts            (REST endpoint — 필요 시)
+15. apps/web/app/(app)/**/page.tsx          (Server Component)
+16. apps/web/app/(app)/**/_components/*.tsx (Client Component)
+17. apps/web/messages/ko.json               (i18n — 배치 처리)
+18. apps/worker/src/jobs/ingest/*.ts        (ingest 4단계 — 필요 시)
+19. apps/worker/src/jobs/*.ts + index.ts    (기타 워커 잡 + 스케줄 등록)
+20. 테스트 파일 (*.test.ts, e2e/*.spec.ts, worker/eval/)
+```
+
+**i18n은 반드시 마지막 배치.** 모든 UI를 완성한 뒤 필요한 키를 한 번에 추가해야 누락이 없다.
+
+**stateful/stateless 경계:** `wiki-fs`는 디스크·git 부작용만, `wiki-agent`는 프롬프트·파서만. 둘을 섞지 말 것(`jarvis-wiki-feature` 스킬 3.1/3.2 참조).
+
+## 검증 게이트 명령 (완료 전 필수 실행)
+
+superpowers:verification-before-completion 실행 시, Jarvis 도메인 변경에는 아래 게이트를 함께 통과시킨다. "언제 필수인지"를 함께 명시 — 변경 범위 밖의 게이트까지 모두 돌릴 필요는 없다.
+
+| 명령 | 언제 필수 | 게이트 성격 |
+|------|----------|-----------|
+| `pnpm --filter @jarvis/web type-check` | 모든 web 변경 | 타입 안전성 |
+| `pnpm --filter @jarvis/web lint` | 모든 web 변경 | 린트 |
+| `pnpm test` (범위 좁혀) | 해당 범위 unit 테스트가 있으면 | TDD red-green 확인 |
+| `pnpm db:generate` + `node scripts/check-schema-drift.mjs --precommit` | 스키마 변경 시 | 마이그레이션·drift 블로킹 |
+| `pnpm wiki:check` | `packages/wiki-fs/**`, `packages/wiki-agent/**`, `apps/worker/src/jobs/ingest/**`, `wiki_*` 테이블, `wiki/**` 중 하나라도 변경 | wiki-fs ↔ DB projection(`commitSha` 등) 무결성 |
+| `pnpm audit:rsc` | RSC/client 컴포넌트 이동·추가, `use server`/`use client` 경계 변경 | RSC boundary 위반 감지 |
+| `pnpm eval:budget-test` | `packages/ai/**`, `apps/worker/src/jobs/ingest/**`, 프롬프트/LLM 호출 경로 변경 | LLM 예산 regression |
+| `pnpm --filter @jarvis/web exec playwright test` | UI 라우트/인증 플로우 변경 | e2e (시간 소요 큼, PR 직전에만) |
+
+**일반 원칙:** 변경 범위가 좁으면 해당 게이트만 실행. 범위가 wiki + ai + RSC를 넘나들면 여러 게이트를 병렬로. 게이트 하나라도 실패하면 "완료" 주장을 철회하고 근본 원인을 해결한다(우회 금지).
 
 ## 상태 / 진행 중 이슈
 

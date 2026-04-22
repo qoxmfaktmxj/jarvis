@@ -124,9 +124,9 @@ t("authorLine", { name: page.author, time: formatTime(page.createdAt) })
 4. **컴포넌트에서 `t()` 호출**
 5. **빌드/타입체크 실행**: `pnpm --filter @jarvis/web type-check` + 개발 서버에서 해당 화면 접속
 
-## 경계면 검증 (integrator용)
+## 경계면 검증 (리뷰 단계 / spec-reviewer용)
 
-새 기능 구현 후 반드시 확인:
+superpowers:subagent-driven-development의 spec-reviewer 또는 superpowers:requesting-code-review 실행 시 아래를 반드시 확인:
 
 ### 1. 컴포넌트 → ko.json 정방향
 모든 `t("...")`, `useTranslations("...")`, `getTranslations("...")` 호출이 ko.json의 실제 경로와 일치하는가?
