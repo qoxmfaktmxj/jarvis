@@ -1,6 +1,6 @@
 ---
 name: jarvis-db-patterns
-description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(34 권한, 5 역할)·sensitivity·Zod validation·트랜잭션 패턴 레퍼런스. Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한/민감도 필터 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. jarvis-planner, jarvis-builder가 DB/권한/validation 변경을 다룰 때 트리거된다. "스키마 추가", "컬럼", "권한", "민감도", "마이그레이션", "Zod", "server action" 표현에서도.
+description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(34 권한, 5 역할)·sensitivity·Zod validation·트랜잭션 패턴 레퍼런스 + 경계면 교차 비교 체크리스트(shape/권한/sensitivity/nullable/마이그레이션/i18n). Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한/민감도 필터 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. superpowers:writing-plans가 계획을 작성하거나 superpowers:subagent-driven-development의 spec-reviewer가 경계면 검증을 수행할 때도 이 스킬의 섹션을 컨텍스트로 주입한다. "스키마 추가", "컬럼", "권한", "민감도", "마이그레이션", "Zod", "server action" 표현에서도 트리거된다.
 ---
 
 # Jarvis DB · RBAC · Validation Patterns
@@ -333,7 +333,127 @@ await db.transaction(async (tx) => {
 | precedent_case를 knowledge 검색과 혼합 | 벡터 공간 오염 | `packages/search/precedent-search.ts` 전용 |
 | timestamp에 timezone 누락 | 시간 불일치 | `{ withTimezone: true }` |
 
-## 9. 참고 파일
+## 9. 경계면 교차 비교 체크리스트 (리뷰 단계)
+
+superpowers:requesting-code-review / superpowers:subagent-driven-development의 spec-reviewer가 Jarvis DB 계층 변경을 검증할 때 반드시 확인할 체크리스트. "파일이 존재하는가"가 아니라 "양쪽이 같은 shape을 기대하는가"를 검사한다 — 타입체커만으로는 잡히지 않는 silent bug를 잡기 위함.
+
+### 9.1 Server action shape ↔ 클라이언트 훅
+
+server action의 **반환 타입**과 클라이언트에서 구조분해하는 **필드명**이 1:1로 일치해야 한다. `undefined` vs `null`도 구분한다.
+
+| server 쪽 | client 쪽 | 검증 |
+|-----------|-----------|------|
+| `pinPage()` returns `{ ok: boolean; pinnedAt: string \| null }` | `PinButton.tsx` destructures `{ ok, pinnedAt }` | 양쪽 파일 동시 Read → 필드명/nullable 일치 |
+| Zod `pinPageOutput` schema | 클라이언트가 기대하는 prop 타입 | schema와 prop 타입이 같은 source of truth를 공유하는지 |
+
+검증 방법: server action 파일과 그 결과를 소비하는 client component를 **동시에 Read한 뒤 비교**. 한쪽만 읽으면 경계면 버그를 놓친다.
+
+### 9.2 권한 상수 ↔ server action 호출
+
+계획 단계에서 결정한 RBAC(예: `KNOWLEDGE_UPDATE` 필요)과 실제 코드의 `requirePermission(PERMISSIONS.X)` 호출이 정확히 맞아야 한다. 타입체커가 잡아주지 않는 silent bug.
+
+| 계획 | 구현 | 검증 |
+|------|------|------|
+| "이 action은 `KNOWLEDGE_UPDATE` 필요" | `requirePermission(PERMISSIONS.KNOWLEDGE_UPDATE)` 첫 줄 호출 | 계획 문서와 실제 코드 대조 |
+| Ask AI 계열 | `requireSession` (권한 아님) + `workspaceId + userId` 이중 필터 | 잘못 `requirePermission`을 쓰면 과다 권한 |
+
+server action 파일의 **첫 번째 await 호출**을 반드시 확인한다. 권한 체크가 누락되면 P0 이슈.
+
+### 9.3 sensitivity 필터 ↔ 조회 쿼리
+
+`sensitivity` 컬럼을 가진 엔티티(`knowledge_page`, `wiki_page_index`, `system`, `graph_snapshot`, `precedent_case`, `raw_source`, `notice`)의 조회는 **쿼리 WHERE 절**에 sensitivity 필터가 있어야 한다.
+
+| 조회 | sensitivity 필터 | 검증 |
+|------|------------------|------|
+| `listKnowledgePages` | `canAccessKnowledgeSensitivity(...)` 또는 `buildLegacyKnowledgeSensitivitySqlFilter(...)` 쿼리에 포함 | `.filter(...)` 같은 애플리케이션 레벨 필터 있으면 실패 |
+| `SELECT * FROM knowledge_page WHERE workspaceId = ...` | sensitivity 절 없음 | **위험 신호**, 즉시 반려 |
+
+`rows.filter(...)` 같은 앱 레벨 필터는 count/pagination을 무너뜨리고 RESTRICTED 누수를 일으킨다. 발견 즉시 P0.
+
+### 9.4 Drizzle nullable ↔ validation/UI null 처리
+
+스키마가 nullable로 선언한 컬럼은 validation(Zod `.nullable()`)과 UI(옵셔널 렌더링) 양쪽에서 null을 명시적으로 다뤄야 한다.
+
+| Drizzle | Zod | UI |
+|---------|-----|-----|
+| `pinnedAt: timestamp(...).nullable()` | `pinnedAt: z.string().datetime().nullable()` | `pinnedAt ? <Tag>{...}</Tag> : null` |
+
+한 쪽만 nullable이면 런타임 에러 가능.
+
+### 9.5 마이그레이션 ↔ 스키마 파일
+
+`pnpm db:generate` 실행 후 `drizzle/NNNN_*.sql`이 스키마 파일 변경과 일치하는지 diff 확인. `node scripts/check-schema-drift.mjs --precommit`으로 blocking 검증.
+
+| 상태 | 의미 |
+|------|------|
+| `exit 0` | 스키마 ↔ drizzle/ 동기화됨 |
+| `exit 1` | drift 존재 → `pnpm db:generate` 재실행 또는 스키마 수정 |
+
+### 9.6 i18n 보간 변수 교차 비교
+
+DB 변경이 UI 문자열(예: "{count}건 선택됨")에 영향 주면 i18n 키·보간 변수 일치 확인은 `jarvis-i18n` 스킬 "경계면 검증" 섹션 따라 수행.
+
+### 9.7 리뷰 수행 원칙 — 리뷰어는 수정하지 않는다
+
+spec-reviewer는 **발견만** 하고 수정은 implementer에게 되돌린다. 이유:
+
+- 책임 분리: reviewer가 코드를 직접 고치면 다음 리뷰를 누가 수행할지 경계가 흐려진다
+- 학습 기회: implementer가 같은 실수를 반복하지 않게 되돌림으로 신호를 준다
+- 감사 추적: "누가 무엇을 고쳤는가"가 명확하려면 한 역할만 쓰기를 담당
+
+예외: 명백한 타이포 1자 수정처럼 reviewer가 고쳐도 손해가 없는 경우. 판단이 애매하면 implementer에게 넘긴다. superpowers:subagent-driven-development의 기본 루프("implementer fixes → reviewer re-reviews")와 부합한다.
+
+### 9.8 리뷰 보고서 표 템플릿
+
+spec-reviewer는 결과를 산문이 아니라 아래 5개 표로 구조화해 보고한다. 체크리스트가 아닌 "채워지지 않은 표"는 검증 누락 신호다.
+
+```markdown
+## 자동화 통과 여부
+- [x/FAIL] pnpm --filter @jarvis/web type-check
+- [x/FAIL] pnpm --filter @jarvis/web lint
+- [x/FAIL] pnpm test (영향 범위)
+- [x/FAIL] node scripts/check-schema-drift.mjs --precommit (스키마 변경 시)
+- [x/FAIL] pnpm wiki:check (wiki 도메인 변경 시)
+- [x/FAIL] pnpm audit:rsc (RSC 경계 변경 시)
+- [x/FAIL] pnpm eval:budget-test (AI 파이프라인 변경 시)
+
+## Shape 일치
+| server 쪽 | client 쪽 | 상태 | 비고 |
+|-----------|-----------|------|------|
+| `pinPage()` returns `{ ok, pinnedAt: string \| null }` | `PinButton.tsx` destructures `{ ok, pinnedAt }` | OK | — |
+
+## i18n 키·보간 변수 일치
+| ko.json 경로 | 사용처 | 보간 변수 | 상태 |
+|-------------|--------|-----------|------|
+| `Knowledge.Detail.pin` | `PinButton.tsx:23` | 없음 | OK |
+
+## 권한 검증
+| server action | 필요 권한 | 실제 코드 | 상태 |
+|--------------|-----------|-----------|------|
+| `pinPage` | `KNOWLEDGE_UPDATE` | `requirePermission(PERMISSIONS.KNOWLEDGE_UPDATE)` | OK |
+
+## sensitivity 필터 검증
+| 조회 | sensitivity 필터 | 상태 |
+|------|------------------|------|
+| `listKnowledgePages` | `canAccessKnowledgeSensitivity(...)` 쿼리에 포함 | OK |
+```
+
+Wiki 도메인이 포함된 PR에서는 아래 표도 추가:
+
+```markdown
+## Wiki 경계 검증
+| 항목 | 상태 |
+|------|------|
+| auto/ 경로에 사람 편집 UI 노출 안 함 (viewer only) | |
+| manual/ 경로에 LLM 출력 직접 쓰기 안 함 (review-queue 경유) | |
+| wiki-fs API 경유 (fs.writeFile / child_process.exec('git') 직접 호출 없음) | |
+| wiki_page_index projection 테이블에 본문 쓰기 없음 | |
+| raw chunk RAG 패턴 사용 없음 (page-first만) | |
+```
+
+**빈 셀이 있으면** 해당 항목이 검증되지 않은 것 — spec-reviewer는 빈 셀을 남기지 말고 모든 셀을 OK 또는 FAIL로 채워야 한다.
+
+## 10. 참고 파일
 
 - `packages/db/schema/index.ts` — 모든 도메인 export 진입점
 - `packages/db/drizzle.config.ts` — drizzle-kit 설정

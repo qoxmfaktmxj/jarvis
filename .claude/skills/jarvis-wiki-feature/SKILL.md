@@ -5,7 +5,7 @@ description: Jarvis 위키 도메인(wiki-fs / wiki-agent / ingest 4단계 / pag
 
 # Jarvis Wiki Feature Skill
 
-위키 도메인 기능 작업 시 참조하는 보조 스킬. `jarvis-feature` 오케스트레이터 안에서 planner/builder/integrator가 위키 레이어를 건드릴 때 이 문서를 반드시 Read한다.
+위키 도메인 기능 작업 시 참조하는 보조 스킬. `jarvis-feature` 오케스트레이터가 위키 레이어를 건드리는 기능을 처리할 때(superpowers:writing-plans 계획 작성, subagent-driven-development의 implementer/spec-reviewer/code-quality-reviewer 루프) 이 문서를 반드시 컨텍스트로 주입한다.
 
 ## 1. Karpathy 원칙 (절대 위반 금지)
 
