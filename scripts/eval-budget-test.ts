@@ -26,7 +26,7 @@ async function main() {
   let ok = 0;
   for (let i = 0; i < 5; i++) {
     const events = await drain(
-      generateAnswer('ping?', '<context/>', [], [], [], [], 'simple', {
+      generateAnswer('ping?', '<context/>', [], [], [], [], undefined, {
         workspaceId: WS,
         requestId: `eval-${i}`,
       }) as AsyncGenerator<{ type: string; message?: string }>,

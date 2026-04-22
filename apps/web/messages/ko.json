@@ -366,6 +366,14 @@
     "thinking": {
       "documentReview": "문서 검토 중…"
     },
+    "model": {
+      "label": "모델",
+      "mini": "Mini",
+      "full": "Full",
+      "miniHint": "빠름 · 기본",
+      "fullHint": "정밀 · 약 10배 비용",
+      "tooltip": "메시지별로 모델을 바꿀 수 있습니다"
+    },
     "sidebar": {
       "title": "ASK",
       "newConversation": "새 대화",

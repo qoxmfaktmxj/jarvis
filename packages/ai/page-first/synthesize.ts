@@ -108,12 +108,15 @@ export interface SynthesizeOptions {
   workspaceId: string;
   requestId: string | null;
   sensitivityScope?: string;
+  /** 메시지별 모델 오버라이드. undefined면 env default(`SYNTH_MODEL`). */
+  model?: string;
 }
 
 export async function* synthesizePageFirstAnswer(
   opts: SynthesizeOptions,
 ): AsyncGenerator<SSEEvent> {
   const { question, pages, workspaceId, requestId } = opts;
+  const model = opts.model ?? SYNTH_MODEL;
   const startedAt = Date.now();
 
   // Build the source refs up front so they're emitted even if the LLM fails.
@@ -136,7 +139,7 @@ export async function* synthesizePageFirstAnswer(
     await assertBudget(workspaceId);
   } catch (err) {
     if (err instanceof BudgetExceededError) {
-      await recordBlocked(workspaceId, SYNTH_MODEL, requestId, PAGE_FIRST_SYNTH_OP);
+      await recordBlocked(workspaceId, model, requestId, PAGE_FIRST_SYNTH_OP);
       yield { type: "error", message: "daily budget exceeded" };
       return;
     }
@@ -158,7 +161,7 @@ export async function* synthesizePageFirstAnswer(
       op: PAGE_FIRST_SYNTH_OP,
       workspaceId,
       requestId,
-      model: SYNTH_MODEL,
+      model,
       promptVersion: PAGE_FIRST_PROMPT_VERSION,
       inputTokens: 0,
       outputTokens: 0,
@@ -188,7 +191,7 @@ export async function* synthesizePageFirstAnswer(
       Record<string, unknown>
     >(
       openai,
-      SYNTH_MODEL,
+      model,
       {
         stream: true,
         stream_options: { include_usage: true },
@@ -227,11 +230,11 @@ export async function* synthesizePageFirstAnswer(
       op: PAGE_FIRST_SYNTH_OP,
       workspaceId,
       requestId,
-      model: SYNTH_MODEL,
+      model,
       promptVersion: PAGE_FIRST_PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
-      costUsd: computeCostUsd(SYNTH_MODEL, tokensIn, tokensOut),
+      costUsd: computeCostUsd(model, tokensIn, tokensOut),
       durationMs: Date.now() - startedAt,
       status: "ok",
       blockedBy: null,
@@ -245,11 +248,11 @@ export async function* synthesizePageFirstAnswer(
       op: PAGE_FIRST_SYNTH_OP,
       workspaceId,
       requestId,
-      model: SYNTH_MODEL,
+      model,
       promptVersion: PAGE_FIRST_PROMPT_VERSION,
       inputTokens: tokensIn,
       outputTokens: tokensOut,
-      costUsd: computeCostUsd(SYNTH_MODEL, tokensIn, tokensOut),
+      costUsd: computeCostUsd(model, tokensIn, tokensOut),
       durationMs: Date.now() - startedAt,
       status: "error",
       blockedBy: null,

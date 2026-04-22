@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BotMessageSquare, GraduationCap, Loader2, RotateCcw, Send, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
-import type { AskMode, SourceRef } from "@jarvis/ai/types";
+import { BotMessageSquare, Loader2, RotateCcw, Send, Sparkles, ThumbsDown, ThumbsUp, Zap } from "lucide-react";
+import type { SourceRef } from "@jarvis/ai/types";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +14,16 @@ import { GlobeLoader } from "@/components/layout/GlobeLoader";
 import { AnswerCard } from "./AnswerCard";
 import { ClaimBadge } from "./ClaimBadge";
 import { SourceRefCard } from "./SourceRefCard";
+
+type AskModel = "gpt-5.4-mini" | "gpt-5.4";
+const ASK_MODEL_STORAGE_KEY = "jarvis.ask.model";
+const ASK_MODEL_DEFAULT: AskModel = "gpt-5.4-mini";
+
+function readStoredModel(): AskModel {
+  if (typeof window === "undefined") return ASK_MODEL_DEFAULT;
+  const stored = window.localStorage.getItem(ASK_MODEL_STORAGE_KEY);
+  return stored === "gpt-5.4" || stored === "gpt-5.4-mini" ? stored : ASK_MODEL_DEFAULT;
+}
 
 export interface HistoryEntry {
   question: string;
@@ -66,9 +76,17 @@ export function AskPanel({
 }: AskPanelProps) {
   const router = useRouter();
   const tThinking = useTranslations("Ask.thinking");
+  const tModel = useTranslations("Ask.model");
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
-  const [askMode, setAskMode] = useState<AskMode>('simple');
+  // 모델 선택은 localStorage에 기억. initializer로 읽어 hydration 경고 방지.
+  const [selectedModel, setSelectedModelState] = useState<AskModel>(readStoredModel);
+  const setSelectedModel = useCallback((next: AskModel) => {
+    setSelectedModelState(next);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(ASK_MODEL_STORAGE_KEY, next);
+    }
+  }, []);
   const [history, setHistory] = useState<HistoryEntry[]>(initialMessages);
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>(initialConversationId);
   const { isStreaming, answer, sources, error, question, lane, feedbackSent, conversationId: hookConversationId, ask, reset, sendFeedback } = useAskAI();
@@ -125,7 +143,7 @@ export function AskPanel({
 
     ask(trimmed, {
       snapshotId: activeScope?.id,
-      mode: askMode,
+      model: selectedModel,
       conversationId: activeConversationId,
     });
   }
@@ -152,28 +170,42 @@ export function AskPanel({
 
   const composer = (
     <div className="space-y-2.5">
-      {/* Scope / mode chips — compact hairline row */}
+      {/* Scope / model chips — compact hairline row */}
       <div className="flex items-center gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => setAskMode(askMode === 'simple' ? 'expert' : 'simple')}
-          className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
-            askMode === 'expert'
-              ? 'border-isu-300 bg-isu-50 text-isu-700'
-              : 'border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50'
-          }`}
-          title={askMode === 'expert' ? '전문가 모드 — 기술 세부까지' : '일반 모드 — 요약 위주'}
+        <div
+          role="group"
+          aria-label={tModel("label")}
+          className="inline-flex items-center gap-1"
         >
-          {askMode === 'expert' ? (
-            <>
-              <GraduationCap className="h-3 w-3" aria-hidden /> Expert
-            </>
-          ) : (
-            <>
-              <Zap className="h-3 w-3" aria-hidden /> Simple
-            </>
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={() => setSelectedModel("gpt-5.4-mini")}
+            aria-pressed={selectedModel === "gpt-5.4-mini"}
+            aria-label={`${tModel("label")}: ${tModel("mini")}`}
+            title={tModel("miniHint")}
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
+              selectedModel === "gpt-5.4-mini"
+                ? "border-isu-300 bg-isu-50 text-isu-700"
+                : "border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50"
+            }`}
+          >
+            <Zap className="h-3 w-3" aria-hidden /> {tModel("mini")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedModel("gpt-5.4")}
+            aria-pressed={selectedModel === "gpt-5.4"}
+            aria-label={`${tModel("label")}: ${tModel("full")}`}
+            title={tModel("fullHint")}
+            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
+              selectedModel === "gpt-5.4"
+                ? "border-isu-300 bg-isu-50 text-isu-700"
+                : "border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50"
+            }`}
+          >
+            <Sparkles className="h-3 w-3" aria-hidden /> {tModel("full")}
+          </button>
+        </div>
 
         {activeScope ? (
           <span className="inline-flex items-center gap-1.5 rounded-md border border-surface-200 bg-card px-2 py-1 text-surface-700">
@@ -312,7 +344,7 @@ export function AskPanel({
                         <div className="flex items-center gap-3 py-1">
                           <GlobeLoader
                             size={40}
-                            tone="lime"
+                            tone="ocean"
                             label={tThinking("documentReview")}
                           />
                         </div>

@@ -2,6 +2,14 @@
   "Ask": {
     "thinking": {
       "documentReview": "Reviewing documents…"
+    },
+    "model": {
+      "label": "Model",
+      "mini": "Mini",
+      "full": "Full",
+      "miniHint": "Fast · default",
+      "fullHint": "Precise · ~10× cost",
+      "tooltip": "You can switch models per message"
     }
   },
   "WikiGraph": {

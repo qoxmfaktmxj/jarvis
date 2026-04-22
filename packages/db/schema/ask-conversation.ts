@@ -26,7 +26,6 @@ export const askConversation = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 200 }).notNull(),
-    askMode: varchar("ask_mode", { length: 10 }).default("simple"),
     snapshotId: uuid("snapshot_id"),
     messageCount: integer("message_count").default(0).notNull(),
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }),

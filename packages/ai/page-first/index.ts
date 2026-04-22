@@ -55,6 +55,9 @@ export async function* pageFirstAsk(
     query.sensitivityScope ??
     `workspace:${workspaceId}|level:internal|graph:0`;
 
+  // 메시지별 모델 오버라이드 — undefined면 env default(PAGE_FIRST_MODEL).
+  const resolvedModel = query.model ?? PAGE_FIRST_MODEL;
+
   // 1. Budget gate BEFORE anything (incl. cache hit) — same policy as askAI.
   try {
     await assertBudget(workspaceId);
@@ -62,7 +65,7 @@ export async function* pageFirstAsk(
     if (err instanceof BudgetExceededError) {
       await recordBlocked(
         workspaceId,
-        PAGE_FIRST_MODEL,
+        resolvedModel,
         requestId ?? null,
         PAGE_FIRST_SYNTH_OP,
       );
@@ -76,6 +79,7 @@ export async function* pageFirstAsk(
   // 2. Cache key — include op so we never collide with legacy askAI.
   //    permissionFingerprint ensures users with different ACLs never share
   //    a cached response (P0 fix: cache key ACL isolation).
+  //    model 필드는 mini/full 선택값을 반영해 캐시 격리를 보장한다.
   const permFingerprint = [...(userPermissions ?? [])].sort().join(",");
   const cacheKey = makeCacheKey({
     promptVersion: PAGE_FIRST_PROMPT_VERSION,
@@ -83,7 +87,7 @@ export async function* pageFirstAsk(
     sensitivityScope,
     permissionFingerprint: permFingerprint,
     input: question,
-    model: PAGE_FIRST_MODEL,
+    model: resolvedModel,
     op: PAGE_FIRST_SYNTH_OP,
   });
 
@@ -246,6 +250,7 @@ export async function* pageFirstAsk(
     workspaceId,
     requestId: requestId ?? null,
     sensitivityScope,
+    model: resolvedModel,
   })) {
     collected.push(evt);
     yield evt;

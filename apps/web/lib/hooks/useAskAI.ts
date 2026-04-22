@@ -16,7 +16,7 @@ export interface AskAIState {
 }
 
 export interface UseAskAIReturn extends AskAIState {
-  ask: (question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert'; conversationId?: string }) => void;
+  ask: (question: string, opts?: { snapshotId?: string; model?: 'gpt-5.4' | 'gpt-5.4-mini'; conversationId?: string }) => void;
   reset: () => void;
   sendFeedback: (rating: 'up' | 'down', comment?: string) => Promise<void>;
 }
@@ -46,7 +46,7 @@ export function useAskAI(): UseAskAIReturn {
     setState(initialState);
   }, []);
 
-  const ask = useCallback((question: string, opts?: { snapshotId?: string; mode?: 'simple' | 'expert'; conversationId?: string }) => {
+  const ask = useCallback((question: string, opts?: { snapshotId?: string; model?: 'gpt-5.4' | 'gpt-5.4-mini'; conversationId?: string }) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
@@ -71,7 +71,7 @@ export function useAskAI(): UseAskAIReturn {
           body: JSON.stringify({
             question,
             snapshotId: opts?.snapshotId,
-            mode: opts?.mode,
+            model: opts?.model,
             conversationId: opts?.conversationId,
           }),
           signal: controller.signal,

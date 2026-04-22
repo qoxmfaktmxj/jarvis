@@ -29,7 +29,7 @@ describe("ask budget integration", () => {
       [],
       [],
       [],
-      "simple",
+      "gpt-5.4-mini",
       { workspaceId: WS, requestId: "req-it-1" },
     )) {
       events.push(ev.type);

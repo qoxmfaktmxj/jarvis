@@ -14,7 +14,7 @@ import { evictOldConversations } from '@/app/(app)/ask/actions';
 const bodySchema = z.object({
   question: z.string().min(1).max(2000),
   snapshotId: z.string().uuid().optional(),
-  mode: z.enum(['simple', 'expert']).optional(),
+  model: z.enum(['gpt-5.4', 'gpt-5.4-mini']).optional(),
   conversationId: z.string().uuid().optional(),
 });
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   let body: {
     question: string;
     snapshotId?: string;
-    mode?: 'simple' | 'expert';
+    model?: 'gpt-5.4' | 'gpt-5.4-mini';
     conversationId?: string;
   };
   try {
@@ -147,7 +147,6 @@ export async function POST(request: NextRequest) {
         workspaceId: session.workspaceId,
         userId: session.userId,
         title: deriveTitle(body.question),
-        askMode: body.mode ?? 'simple',
         snapshotId: body.snapshotId ?? null,
         messageCount: 0,
         lastMessageAt: now,
@@ -198,7 +197,7 @@ export async function POST(request: NextRequest) {
           userRoles: session.roles ?? [],
           userPermissions: permissions,
           snapshotId: body.snapshotId,
-          mode: body.mode,
+          model: body.model,
           sensitivityScope: deriveSensitivityScope(session.workspaceId, permissions),
         });
 

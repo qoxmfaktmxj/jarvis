@@ -42,7 +42,6 @@ export interface GetConversationsResult {
   conversations: {
     id: string;
     title: string;
-    askMode: string | null;
     messageCount: number;
     lastMessageAt: string | null; // ISO string
     createdAt: string;            // ISO string
@@ -58,7 +57,6 @@ export async function getConversations(): Promise<GetConversationsResult> {
       .select({
         id: askConversation.id,
         title: askConversation.title,
-        askMode: askConversation.askMode,
         messageCount: askConversation.messageCount,
         lastMessageAt: askConversation.lastMessageAt,
         createdAt: askConversation.createdAt,
@@ -86,7 +84,6 @@ export async function getConversations(): Promise<GetConversationsResult> {
     conversations: rows.map((r) => ({
       id: r.id,
       title: r.title,
-      askMode: r.askMode,
       messageCount: r.messageCount,
       lastMessageAt: r.lastMessageAt?.toISOString() ?? null,
       createdAt: r.createdAt.toISOString(),

@@ -46,7 +46,7 @@ describe("ask logs llm_call_log row", () => {
       [],
       [],
       [],
-      "simple",
+      "gpt-5.4-mini",
       {
         workspaceId: "00000000-0000-0000-0000-000000000001",
         requestId: "req-test-1",
