@@ -197,6 +197,29 @@ wiki/{workspaceId}/
 
 **pgvector는 유지되나 비활성화.** 읽기·쓰기 경로는 전부 feature flag로 차단되며, 2~3 릴리스 안정 후 DROP 마이그레이션 예정입니다 ([§9](#9-환경변수-가이드) `FEATURE_RAW_CHUNK_QUERY=false`).
 
+### 6.5 LLM 모델 정책 (FIXED)
+
+**SSoT:** [`docs/policies/llm-models.md`](docs/policies/llm-models.md). 이 표와 다른 내용이 있으면 정책 문서가 이긴다. 변경 시 정책 문서 + `scripts/check-llm-models.mjs` + README 동시 업데이트 필수.
+
+| 용도 | 모델 | 비고 |
+|------|------|------|
+| 생성·reasoning (무거움) | `gpt-5.4` | CLIProxy 경유 → OpenAI `gpt-5` |
+| 생성·라우팅·ingest·lint (기본) | `gpt-5.4-mini` | CLIProxy 경유 → OpenAI `gpt-5-codex-mini` |
+| 임베딩 | `text-embedding-3-small` (1536d) | DB HNSW 인덱스와 계약됨. 변경 시 전량 재임베딩 |
+
+**금지:**
+- OpenAI `gpt-4*` / `gpt-3*` / `o1`·`o3`·`o4` / `text-embedding-ada-002` / `text-embedding-3-large`
+- Anthropic `claude-*` — **서비스 런타임 금지.** Claude Code / Codex CLI 같은 **개발 도구 한정**
+- 로컬 모델 — Ollama (`bge-m3`, `nomic-embed`), llama.cpp, HuggingFace GGUF (`embeddinggemma`, `Qwen-Embedding`) 등
+
+**자동 집행:** `scripts/check-llm-models.mjs`가 Claude Code PostToolUse hook(advisory) + pre-commit(blocking) + CI(blocking)에서 `.env` · `apps/**` · `packages/**` · `scripts/**` · `infra/**`를 스캔. 금지 리터럴 발견 시 exit 1.
+
+```bash
+node scripts/check-llm-models.mjs             # 수동 스캔 (drift 있으면 exit 1)
+node scripts/check-llm-models.mjs --ci        # CI 모드
+node scripts/check-llm-models.mjs --precommit # pre-commit 모드
+```
+
 ---
 
 ## 7. 디렉터리 구조
