@@ -79,8 +79,12 @@ export function AskPanel({
   const tModel = useTranslations("Ask.model");
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
-  // 모델 선택은 localStorage에 기억. initializer로 읽어 hydration 경고 방지.
-  const [selectedModel, setSelectedModelState] = useState<AskModel>(readStoredModel);
+  // 모델 선택은 localStorage에 기억. SSR/CSR 일관성을 위해 mount 후 반영.
+  const [selectedModel, setSelectedModelState] = useState<AskModel>(ASK_MODEL_DEFAULT);
+  useEffect(() => {
+    const stored = readStoredModel();
+    if (stored !== ASK_MODEL_DEFAULT) setSelectedModelState(stored);
+  }, []);
   const setSelectedModel = useCallback((next: AskModel) => {
     setSelectedModelState(next);
     if (typeof window !== "undefined") {

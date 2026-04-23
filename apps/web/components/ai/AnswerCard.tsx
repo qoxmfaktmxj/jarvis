@@ -306,21 +306,23 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
 // ---------------------------------------------------------------------------
 // Section: 위키 페이지 (page-first) — hairline rows
 // ---------------------------------------------------------------------------
+// Confidence threshold matches ConfidenceInline's "보통 신뢰도" floor:
+// medium (>=0.65) and high (>=0.85) sources are surfaced; low (<0.65) hidden.
+const WIKI_PAGE_MIN_CONFIDENCE = 0.65;
+
 function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
-  if (sources.length === 0) return null;
+  const visible = sources.filter((s) => s.confidence >= WIKI_PAGE_MIN_CONFIDENCE);
+  if (visible.length === 0) return null;
   return (
     <div>
-      <SectionHeader icon={FileText} label="위키 페이지" count={sources.length} />
+      <SectionHeader icon={FileText} label="위키 페이지" count={visible.length} />
       <ul className="divide-y divide-surface-100">
-        {sources.map((s, i) => (
+        {visible.map((s, i) => (
           <li key={`${s.pageId}-${i}`}>
             <Link
               href={`/wiki/default/${encodeURIComponent(s.slug)}`}
               className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-surface-50 -mx-2 px-2 rounded-md"
             >
-              <span className="text-display text-[10px] font-semibold tabular-nums text-surface-400">
-                {s.citation}
-              </span>
               <span className="flex-1 min-w-0">
                 <span className="block truncate text-sm text-surface-800 group-hover:text-isu-700">
                   {s.title}
