@@ -14,21 +14,39 @@ import { GlobeLoader } from "@/components/layout/GlobeLoader";
 import { AnswerCard } from "./AnswerCard";
 import { ClaimBadge } from "./ClaimBadge";
 import { SourceRefCard } from "./SourceRefCard";
+import { AskModelPopover, type AskModelOption } from "./AskModelPopover";
+import { AskContextGauge } from "./AskContextGauge";
+import { getModelContextWindow } from "@/lib/ai/model-windows";
+import { getConversationTokenUsageAction } from "@/app/(app)/ask/actions";
 
 type AskModel = "gpt-5.4-mini" | "gpt-5.4";
 const ASK_MODEL_STORAGE_KEY = "jarvis.ask.model";
 const ASK_MODEL_DEFAULT: AskModel = "gpt-5.4-mini";
 
+const ASK_MODEL_OPTIONS: AskModelOption[] = [
+  { value: "gpt-5.4-mini", label: "Mini", description: "빠름 · 기본", icon: Zap },
+  { value: "gpt-5.4", label: "Full", description: "정밀 · 약 10배 비용", icon: Sparkles },
+];
+
+function isAskModel(v: string): v is AskModel {
+  return v === "gpt-5.4" || v === "gpt-5.4-mini";
+}
+
 function readStoredModel(): AskModel {
   if (typeof window === "undefined") return ASK_MODEL_DEFAULT;
   const stored = window.localStorage.getItem(ASK_MODEL_STORAGE_KEY);
-  return stored === "gpt-5.4" || stored === "gpt-5.4-mini" ? stored : ASK_MODEL_DEFAULT;
+  return isAskModel(stored ?? "") ? (stored as AskModel) : ASK_MODEL_DEFAULT;
 }
 
 export interface HistoryEntry {
   question: string;
   answer: string;
   sources: SourceRef[];
+}
+
+export interface InitialTokenUsage {
+  usedTokens: number;
+  messageCount: number;
 }
 
 interface AskPanelProps {
@@ -41,6 +59,8 @@ interface AskPanelProps {
   initialMessages?: HistoryEntry[];
   /** session workspaceId — Wiki source link 생성에 사용. */
   workspaceId: string;
+  /** 기존 대화 복원 시 서버에서 미리 집계한 누적 토큰. 없으면 0. */
+  initialTokenUsage?: InitialTokenUsage | null;
 }
 
 function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
@@ -73,10 +93,10 @@ export function AskPanel({
   conversationId: initialConversationId,
   initialMessages = [],
   workspaceId,
+  initialTokenUsage = null,
 }: AskPanelProps) {
   const router = useRouter();
   const tThinking = useTranslations("Ask.thinking");
-  const tModel = useTranslations("Ask.model");
   const [input, setInput] = useState(initialQuestion);
   const [activeScope, setActiveScope] = useState<{ id: string; title: string } | null>(initialScope);
   // 모델 선택은 localStorage에 기억. SSR/CSR 일관성을 위해 mount 후 반영.
@@ -85,12 +105,16 @@ export function AskPanel({
     const stored = readStoredModel();
     if (stored !== ASK_MODEL_DEFAULT) setSelectedModelState(stored);
   }, []);
-  const setSelectedModel = useCallback((next: AskModel) => {
+  const setSelectedModel = useCallback((next: string) => {
+    if (!isAskModel(next)) return;
     setSelectedModelState(next);
     if (typeof window !== "undefined") {
       window.localStorage.setItem(ASK_MODEL_STORAGE_KEY, next);
     }
   }, []);
+  const [usedTokens, setUsedTokens] = useState<number>(
+    initialTokenUsage?.usedTokens ?? 0,
+  );
   const [history, setHistory] = useState<HistoryEntry[]>(initialMessages);
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>(initialConversationId);
   const { isStreaming, answer, sources, error, question, lane, feedbackSent, conversationId: hookConversationId, ask, reset, sendFeedback } = useAskAI();
@@ -129,6 +153,22 @@ export function AskPanel({
     }
   }, [isStreaming, router]);
 
+  // 스트리밍 완료 후 누적 토큰 사용량 재조회 (toolbar context gauge).
+  useEffect(() => {
+    if (isStreaming || !answer || !activeConversationId) return;
+    let cancelled = false;
+    getConversationTokenUsageAction(activeConversationId)
+      .then((r) => {
+        if (!cancelled) setUsedTokens(r.usedTokens);
+      })
+      .catch(() => {
+        // 게이지는 장식적 정보이므로 실패 시 기존 값 유지
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isStreaming, answer, activeConversationId]);
+
   // history 이동은 "새 질문이 들어오는 시점"에만 한다.
   // 답변 완료 직후 live 블록을 없애면 피드백 버튼이 즉시 사라지므로,
   // 다음 질문을 보낼 때까지 live 블록(+ 피드백 버튼)을 유지한다.
@@ -164,6 +204,7 @@ export function AskPanel({
     setInput("");
     setHistory([]);
     setActiveConversationId(undefined);
+    setUsedTokens(0);
     textareaRef.current?.focus();
     // 새 대화로 전환 — URL도 /ask 로 복귀
     router.push("/ask");
@@ -172,44 +213,31 @@ export function AskPanel({
   const hasConversation = history.length > 0 || isStreaming || answer || !!error;
   const featuredPrompts = popularQuestions.slice(0, 3);
 
+  const totalWindow = getModelContextWindow(selectedModel);
+  const showGauge = Boolean(activeConversationId) || usedTokens > 0;
+
   const composer = (
-    <div className="space-y-2.5">
-      {/* Scope / model chips — compact hairline row */}
-      <div className="flex items-center gap-2 text-xs">
-        <div
-          role="group"
-          aria-label={tModel("label")}
-          className="inline-flex items-center gap-1"
-        >
-          <button
-            type="button"
-            onClick={() => setSelectedModel("gpt-5.4-mini")}
-            aria-pressed={selectedModel === "gpt-5.4-mini"}
-            aria-label={`${tModel("label")}: ${tModel("mini")}`}
-            title={tModel("miniHint")}
-            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
-              selectedModel === "gpt-5.4-mini"
-                ? "border-isu-300 bg-isu-50 text-isu-700"
-                : "border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50"
-            }`}
-          >
-            <Zap className="h-3 w-3" aria-hidden /> {tModel("mini")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedModel("gpt-5.4")}
-            aria-pressed={selectedModel === "gpt-5.4"}
-            aria-label={`${tModel("label")}: ${tModel("full")}`}
-            title={tModel("fullHint")}
-            className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-medium transition-colors duration-150 ${
-              selectedModel === "gpt-5.4"
-                ? "border-isu-300 bg-isu-50 text-isu-700"
-                : "border-surface-200 bg-card text-surface-700 hover:border-surface-300 hover:bg-surface-50"
-            }`}
-          >
-            <Sparkles className="h-3 w-3" aria-hidden /> {tModel("full")}
-          </button>
-        </div>
+    <div className="space-y-2">
+      {/* Composer — hairline textarea only */}
+      <div className="relative rounded-xl border border-surface-200 bg-card transition-colors duration-150 focus-within:border-isu-300 focus-within:ring-1 focus-within:ring-isu-200">
+        <Textarea
+          ref={textareaRef}
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="무엇이든 물어보세요…"
+          className="min-h-[72px] max-h-[240px] resize-none border-0 bg-transparent px-3 py-2.5 text-sm leading-relaxed shadow-none focus-visible:ring-0"
+          disabled={isStreaming}
+        />
+      </div>
+
+      {/* Toolbar — below composer, Claude Desktop 스타일 */}
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <AskModelPopover
+          value={selectedModel}
+          onChange={setSelectedModel}
+          options={ASK_MODEL_OPTIONS}
+        />
 
         {activeScope ? (
           <span className="inline-flex items-center gap-1.5 rounded-md border border-surface-200 bg-card px-2 py-1 text-surface-700">
@@ -217,7 +245,7 @@ export function AskPanel({
             <span className="text-display text-[10px] font-semibold uppercase tracking-wide text-surface-400">
               Graph
             </span>
-            <span className="max-w-[180px] truncate">{activeScope.title}</span>
+            <span className="max-w-[160px] truncate">{activeScope.title}</span>
             <button
               type="button"
               onClick={() => setActiveScope(null)}
@@ -229,23 +257,18 @@ export function AskPanel({
           </span>
         ) : null}
 
-        <span className="ml-auto text-[11px] text-surface-400">
+        {showGauge ? (
+          <AskContextGauge
+            usedTokens={usedTokens}
+            totalWindow={totalWindow}
+          />
+        ) : null}
+
+        <span className="ml-auto hidden text-[11px] text-surface-400 sm:inline">
           Enter 전송 · Shift+Enter 줄바꿈
         </span>
-      </div>
 
-      {/* Composer — hairline, flush textarea */}
-      <div className="relative flex items-end gap-2 rounded-xl border border-surface-200 bg-card p-2.5 transition-colors duration-150 focus-within:border-isu-300 focus-within:ring-1 focus-within:ring-isu-200">
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="무엇이든 물어보세요…"
-          className="min-h-[72px] max-h-[240px] resize-none border-0 bg-transparent px-1.5 py-1 text-sm leading-relaxed shadow-none focus-visible:ring-0"
-          disabled={isStreaming}
-        />
-        <div className="flex shrink-0 items-center gap-1 pb-0.5">
+        <div className="flex items-center gap-1">
           {hasConversation && (
             <Button
               variant="ghost"
@@ -272,10 +295,6 @@ export function AskPanel({
           </Button>
         </div>
       </div>
-
-      <p className="text-center text-[11px] text-surface-400">
-        Jarvis는 지식 베이스에 등록된 내용만 근거로 답합니다.
-      </p>
     </div>
   );
 

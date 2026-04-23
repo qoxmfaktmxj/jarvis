@@ -7,6 +7,10 @@ import { db } from "@jarvis/db/client";
 import { askConversation, askMessage } from "@jarvis/db/schema";
 import { and, asc, count, desc, eq, inArray, ne } from "drizzle-orm";
 import { MAX_CONVERSATIONS_PER_USER } from "@jarvis/shared/constants/ask";
+import {
+  getConversationTokenUsage,
+  type ConversationTokenUsage,
+} from "@/lib/queries/ask-context-usage";
 
 // ---------------------------------------------------------------------------
 // Session resolver (profile.ts 패턴 재사용)
@@ -263,4 +267,33 @@ export async function evictOldConversations(
       .delete(askConversation)
       .where(inArray(askConversation.id, oldest.map((r) => r.id)));
   }
+}
+
+// ---------------------------------------------------------------------------
+// getConversationTokenUsageAction — Ask Panel toolbar context gauge 전용.
+// 소유권 확인 후 ask_message.totalTokens SUM 반환.
+// ---------------------------------------------------------------------------
+
+export async function getConversationTokenUsageAction(
+  conversationId: string,
+): Promise<ConversationTokenUsage> {
+  const session = await requireSession();
+
+  const [owned] = await db
+    .select({ id: askConversation.id })
+    .from(askConversation)
+    .where(
+      and(
+        eq(askConversation.id, conversationId),
+        eq(askConversation.workspaceId, session.workspaceId),
+        eq(askConversation.userId, session.userId),
+      ),
+    )
+    .limit(1);
+
+  if (!owned) {
+    return { conversationId, usedTokens: 0, messageCount: 0 };
+  }
+
+  return getConversationTokenUsage(conversationId);
 }
