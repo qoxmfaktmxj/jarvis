@@ -39,7 +39,15 @@ export function LoungeChat({
   useEffect(() => {
     const es = new EventSource("/api/chat/stream");
     es.addEventListener("message", (ev) => {
-      const row = JSON.parse(ev.data) as ChatMessageRow;
+      const raw = JSON.parse(ev.data) as Omit<ChatMessageRow, "createdAt" | "deletedAt"> & {
+        createdAt: string;
+        deletedAt: string | null;
+      };
+      const row: ChatMessageRow = {
+        ...raw,
+        createdAt: new Date(raw.createdAt),
+        deletedAt: raw.deletedAt ? new Date(raw.deletedAt) : null
+      };
       setMessages((prev) =>
         prev.some((m) => m.id === row.id)
           ? prev
