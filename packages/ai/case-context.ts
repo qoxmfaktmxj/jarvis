@@ -6,7 +6,7 @@ import { db } from '@jarvis/db/client';
 import { precedentCase } from '@jarvis/db/schema/case';
 import { eq, and, sql, or, ilike, notInArray, type SQL } from 'drizzle-orm';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { generateEmbedding } from './embed.js';
+// Phase-Harness (2026-04-23): generateEmbedding 제거. 벡터 검색은 keywordFallback 으로 대체.
 import type { CaseSourceRef } from './types.js';
 
 export interface RetrievedCase {
@@ -74,93 +74,18 @@ export async function retrieveRelevantCases(
   const {
     topK = 5,
     companyFilter,
-    userCompany,
-    companyBoost = 0.15,
+    // userCompany / companyBoost: Phase-Harness 이전에는 벡터 점수 + soft-boost
+    // 조합에 사용됐으나 벡터 검색 제거로 현재는 keywordFallback 결과만 리턴.
+    // 시그니처 호환을 위해 옵션은 유지하되 내부에서는 미사용.
     includeNonDigest = false,
     userPermissions = [],
   } = options;
-  const sensitivityCondition = caseSensitivityCondition(userPermissions);
-
-  // 1. 임베딩이 없는 경우(사례 없음 또는 임베딩 미적재)를 대비한 개수 확인
-  const countConditions = [
-    eq(precedentCase.workspaceId, workspaceId),
-    sql`${precedentCase.embedding} IS NOT NULL`,
-  ];
-  if (sensitivityCondition) countConditions.push(sensitivityCondition);
-
-  const countResult = await db
-    .select({ cnt: sql<number>`count(*)` })
-    .from(precedentCase)
-    .where(and(...countConditions));
-
-  const hasEmbeddings = Number(countResult[0]?.cnt ?? 0) > 0;
-
-  if (!hasEmbeddings) {
-    // 임베딩 미적재 → 키워드 기반 폴백
-    return keywordFallback(question, workspaceId, topK, companyFilter, includeNonDigest, userPermissions);
-  }
-
-  // 2. 쿼리 임베딩 생성
-  const embedding = await generateEmbedding(question);
-  const embeddingLiteral = `[${embedding.join(',')}]`;
-
-  // 3. 벡터 similarity 검색
-  const conditions = [
-    eq(precedentCase.workspaceId, workspaceId),
-    sql`${precedentCase.embedding} IS NOT NULL`,
-  ];
-
-  if (!includeNonDigest) {
-    conditions.push(eq(precedentCase.isDigest, true));
-  }
-  if (sensitivityCondition) {
-    conditions.push(sensitivityCondition);
-  }
-  if (companyFilter) {
-    conditions.push(eq(precedentCase.requestCompany, companyFilter));
-  }
-
-  const rows = await db
-    .select({
-      id: precedentCase.id,
-      title: precedentCase.title,
-      symptom: precedentCase.symptom,
-      cause: precedentCase.cause,
-      action: precedentCase.action,
-      result: precedentCase.result,
-      requestCompany: precedentCase.requestCompany,
-      clusterId: precedentCase.clusterId,
-      clusterLabel: precedentCase.clusterLabel,
-      isDigest: precedentCase.isDigest,
-      higherCategory: precedentCase.higherCategory,
-      lowerCategory: precedentCase.lowerCategory,
-      vectorSim: sql<number>`1 - (${precedentCase.embedding} <=> ${embeddingLiteral}::vector)`,
-    })
-    .from(precedentCase)
-    .where(and(...conditions))
-    .orderBy(sql`${precedentCase.embedding} <=> ${embeddingLiteral}::vector`)
-    .limit(topK * 2); // 후처리용 여분
-
-  // 4. 하이브리드 점수 계산 (벡터 0.7 + isDigest 보너스 0.15 + 고객사 부스트 0.15)
-  const scored: RetrievedCase[] = rows.map((row) => {
-    const sim = Number(row.vectorSim);
-    const digestBonus = row.isDigest ? 0.15 : 0;
-    const companyBonusVal =
-      userCompany && row.requestCompany === userCompany ? companyBoost : 0;
-    return {
-      ...row,
-      vectorSim: sim,
-      hybridScore: sim * 0.7 + digestBonus + companyBonusVal,
-    };
-  });
-
-  scored.sort((a, b) => b.hybridScore - a.hybridScore);
-  const top = scored.slice(0, topK);
-
-  return {
-    cases: top,
-    xml: buildCaseXml(top),
-  };
+  // Phase-Harness (2026-04-23): precedent_case.embedding 컬럼이 migration 0037 로
+  // 드롭되었기 때문에 벡터 similarity 검색 경로가 제거되었다. 모든 쿼리는
+  // keywordFallback (BM25 유사: title/symptom/category ILIKE) 로 처리된다.
+  // 향후 Phase F 에서 pg_trgm 기반 검색으로 업그레이드하거나, ask-agent
+  // 내부에 wiki-grep 에 흡수될 수 있다.
+  return keywordFallback(question, workspaceId, topK, companyFilter, includeNonDigest, userPermissions);
 }
 
 // ---------------------------------------------------------------------------

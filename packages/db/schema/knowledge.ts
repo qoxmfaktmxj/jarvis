@@ -17,12 +17,6 @@ import { relations, sql } from "drizzle-orm";
 import { user } from "./user.js";
 import { workspace } from "./tenant.js";
 
-const vector = customType<{ data: number[]; driverData: string }>({
-  dataType: () => "vector(1536)",
-  fromDriver: (value: string) => value.slice(1, -1).split(",").map(Number),
-  toDriver: (value: number[]) => `[${value.join(",")}]`
-});
-
 const tsvectorType = customType<{ data: string }>({
   dataType: () => "tsvector"
 });
@@ -47,10 +41,8 @@ export const knowledgePage = pgTable("knowledge_page", {
   sourceType: varchar("source_type", { length: 50 }),
   sourceKey: varchar("source_key", { length: 1000 }),
   searchVector: tsvectorType("search_vector"),
-  // Phase-W5 T2: page-level OpenAI text-embedding-3-small 1536d vector.
-  // One embedding per page (Karpathy "compiled page = unit"; no chunks).
-  embedding: vector("embedding"),
-  lastEmbeddedAt: timestamp("last_embedded_at", { withTimezone: true }),
+  // Phase-Harness (2026-04-23): embedding / last_embedded_at 제거.
+  // tool-use agent 가 wiki-fs 를 직접 탐색하므로 벡터 불필요. migration 0037 참조.
 
   // 4-surface 지식 모델 (2026-04-13)
   // surface: 지식 표면 종류
@@ -110,7 +102,7 @@ export const knowledgeClaim = pgTable("knowledge_claim", {
   claimText: text("claim_text").notNull(),
   sourceRefId: uuid("source_ref_id"),
   confidence: numeric("confidence", { precision: 3, scale: 2 }),
-  embedding: vector("embedding"),
+  // Phase-Harness (2026-04-23): embedding 컬럼 제거. migration 0037 참조.
   verified: boolean("verified").default(false).notNull(),
   verifiedBy: uuid("verified_by").references(() => user.id),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

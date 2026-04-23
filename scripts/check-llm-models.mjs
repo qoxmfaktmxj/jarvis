@@ -7,12 +7,13 @@
  *
  * 허용 모델:
  *   - OpenAI 생성:   gpt-5.4, gpt-5.4-mini
- *   - OpenAI 임베딩: text-embedding-3-small (1536d)
  *   - CLIProxy 내부: gpt-5, gpt-5-codex, gpt-5-codex-mini, gpt-5-pro
  *                    (infra/cliproxy/config.yaml 매핑 전용)
  *
  * 금지 모델:
- *   - OpenAI: gpt-4*, gpt-3*, o1/o3/o4, text-embedding-ada-002, text-embedding-3-large
+ *   - OpenAI 생성: gpt-4*, gpt-3*, o1/o3/o4
+ *   - OpenAI 임베딩 전체 금지 (2026-04-23 Harness-first 전환):
+ *       text-embedding-3-small, text-embedding-3-large, text-embedding-ada-*
  *   - Anthropic: claude-* (서비스 런타임에서 금지)
  *   - 로컬:   ollama, bge-m3, nomic-embed, embeddinggemma, Qwen-Embedding, llama.cpp
  *
@@ -65,7 +66,8 @@ const FORBIDDEN = [
   { pattern: /\bbge-(?:m3|small|base|large)\b/gi, reason: "BGE 로컬 임베딩 (금지)" },
   { pattern: /\bembeddinggemma\b/gi, reason: "embeddinggemma 로컬 임베딩 (금지)" },
   { pattern: /\btext-embedding-ada(?:-\d+)?\b/gi, reason: "text-embedding-ada-* (허용 안 됨)" },
-  { pattern: /\btext-embedding-3-large\b/gi, reason: "text-embedding-3-large (허용 안 됨, 3-small만)" },
+  { pattern: /\btext-embedding-3-large\b/gi, reason: "text-embedding-3-large (Harness-first 전환 후 embedding 전면 금지)" },
+  { pattern: /\btext-embedding-3-small\b/gi, reason: "text-embedding-3-small (2026-04-23 Harness-first 전환 후 FORBIDDEN)" },
 ];
 
 // ============================================================================
@@ -183,7 +185,7 @@ function scanFile(filePath) {
 function printViolations(violations, header) {
   console.error(header);
   console.error(
-    `   ${violations.length}건. 허용: gpt-5.4, gpt-5.4-mini, text-embedding-3-small (1536d)`,
+    `   ${violations.length}건. 허용: gpt-5.4, gpt-5.4-mini (embedding 전체 금지)`,
   );
   console.error(`   상세 정책: docs/policies/llm-models.md\n`);
   const byFile = new Map();
@@ -223,7 +225,7 @@ if (HOOK_MODE) {
       process.stderr.write(`      L${v.line}: ${v.match} — ${v.reason}\n`);
     }
     process.stderr.write(
-      `    허용 모델: gpt-5.4, gpt-5.4-mini, text-embedding-3-small\n` +
+      `    허용 모델: gpt-5.4, gpt-5.4-mini (embedding 전체 금지 — Harness-first)\n` +
         `    상세: docs/policies/llm-models.md\n`,
     );
   }
@@ -245,7 +247,7 @@ for (const file of files) {
 if (allViolations.length === 0) {
   console.log("✅ LLM 모델 정책 위반 없음.");
   console.log(`   스캔 파일: ${files.length}개`);
-  console.log("   허용: gpt-5.4, gpt-5.4-mini, text-embedding-3-small (1536d)");
+  console.log("   허용: gpt-5.4, gpt-5.4-mini (embedding 전체 금지 — Harness-first)");
   process.exit(0);
 }
 

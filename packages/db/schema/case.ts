@@ -3,7 +3,6 @@
 
 import {
   boolean,
-  customType,
   integer,
   jsonb,
   numeric,
@@ -20,12 +19,8 @@ import { workspace } from "./tenant.js";
 import { user } from "./user.js";
 import { knowledgePage } from "./knowledge.js";
 
-// knowledge.ts와 동일한 pgvector customType (1536d)
-const vector = customType<{ data: number[]; driverData: string }>({
-  dataType: () => "vector(1536)",
-  fromDriver: (value: string) => value.slice(1, -1).split(",").map(Number),
-  toDriver: (value: number[]) => `[${value.join(",")}]`,
-});
+// Phase-Harness (2026-04-23): embedding 컬럼 제거로 pgvector customType 불필요.
+// migration 0037 참조.
 
 // ---------------------------------------------------------------------------
 // precedent_case: 개별 문의/사례 row (TSVD999 레코드 1건 = 1 row)
@@ -77,8 +72,7 @@ export const precedentCase = pgTable(
 
     // --- Jarvis 메타 ---
     sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
-    // symptom + cause + action 합성 벡터 (semantic search)
-    embedding: vector("embedding"),
+    // Phase-Harness (2026-04-23): embedding 컬럼 제거. migration 0037 참조.
     tags: jsonb("tags").$type<string[]>().default([]).notNull(),
 
     createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),
