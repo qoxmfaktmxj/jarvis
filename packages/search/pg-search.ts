@@ -1,8 +1,13 @@
 // packages/search/pg-search.ts
+//
+// Phase-Harness (2026-04-23): 벡터 검색(Lane A hybrid) 전면 폐지.
+// knowledge_page.embedding 컬럼이 migration 0037 로 드롭되어 벡터 경로는
+// 더 이상 존재하지 않는다. FTS(tsvector) + pg_trgm fallback 만 남는다.
+// 기존 `mergeByRRF`, `assertValidEmbedding`, `runVectorSearch`, `embedQuery`
+// 옵션 등은 전부 제거.
 import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
-import { featureSearchHybrid } from '@jarvis/db/feature-flags';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
 import type { SearchQuery, SearchResult, SearchHit, ResourceType } from './types.js';
@@ -17,71 +22,19 @@ import { FallbackChain } from './fallback-chain.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
-/**
- * Reciprocal Rank Fusion: combine two ranked hit lists into one.
- *   score(doc) = Σ over lists of 1 / (k + rank_in_list).
- * k=60 is the classic RRF constant. The merged list is sorted by combined
- * score and truncated to `limit`. Exported for unit testing.
- */
-export const RRF_K = 60;
-export function mergeByRRF(a: SearchHit[], b: SearchHit[], limit: number): SearchHit[] {
-  const scores = new Map<string, { hit: SearchHit; score: number }>();
-  const visit = (list: SearchHit[]) => {
-    list.forEach((hit, idx) => {
-      const add = 1 / (RRF_K + idx + 1);
-      const prev = scores.get(hit.id);
-      if (prev) {
-        prev.score += add;
-        // Prefer the hit with richer fields (vectorSim present etc.)
-        if ((hit.vectorSim ?? 0) > (prev.hit.vectorSim ?? 0)) prev.hit = hit;
-      } else {
-        scores.set(hit.id, { hit, score: add });
-      }
-    });
-  };
-  visit(a);
-  visit(b);
-  return Array.from(scores.values())
-    .sort((x, y) => y.score - x.score)
-    .slice(0, limit)
-    .map(({ hit, score }) => ({ ...hit, hybridScore: score }));
-}
-
-/**
- * Phase-W5: reject non-finite values or wrong dimensionality before passing
- * the vector into SQL. Prevents silent Postgres parse errors and cheap DoS via
- * malformed embeddings.
- */
-export function assertValidEmbedding(v: number[], expectedDim = 1536): void {
-  if (!Array.isArray(v) || v.length !== expectedDim) {
-    throw new Error(`[search] embedding must be length ${expectedDim}, got ${v?.length ?? 'n/a'}`);
-  }
-  for (const x of v) {
-    if (!Number.isFinite(x)) {
-      throw new Error('[search] embedding contains non-finite value (NaN/Infinity)');
-    }
-  }
-}
-
 export interface PgSearchAdapterOptions {
-  /**
-   * Phase-W5: pre-computes the query vector for Lane A hybrid search.
-   * If omitted or the `FEATURE_SEARCH_HYBRID` flag is off, the vector lane
-   * is skipped and `search()` falls back to FTS + trgm only.
-   */
-  embedQuery?: (text: string) => Promise<number[]>;
+  // Phase-Harness (2026-04-23): embedQuery 옵션 제거. 벡터 경로 자체가 없다.
+  // 인터페이스는 빈 shape 로 유지해 하위 호환성(빈 객체 전달) 만 지원.
 }
 
 export class PgSearchAdapter implements SearchAdapter {
   private readonly fallbackChain: FallbackChain;
-  private readonly embedQuery?: (text: string) => Promise<number[]>;
 
-  constructor(opts: PgSearchAdapterOptions = {}) {
+  constructor(_opts: PgSearchAdapterOptions = {}) {
     this.fallbackChain = new FallbackChain(
       (q) => this.runFtsSearch(q),
       (q) => this.runTrgmSearch(q),
     );
-    this.embedQuery = opts.embedQuery;
   }
 
   // -----------------------------------------------------------------------
@@ -104,39 +57,12 @@ export class PgSearchAdapter implements SearchAdapter {
     // 3. Build enriched query with expanded term
     const enrichedQuery: SearchQuery = { ...query, q: expandedTerm };
 
-    // 4. Run main FTS search; if empty trigger fallback chain
+    // 4. Run main FTS search; if empty trigger fallback chain.
+    // Phase-Harness (2026-04-23): 벡터 lane 제거. FTS + trgm fallback 만.
     const ftsResult = await this.runFtsSearch(enrichedQuery, { limit, offset, parsed });
 
-    // 4b. Phase-W5: when FEATURE_SEARCH_HYBRID is on and embedQuery is wired,
-    //     also run the vector lane and RRF-merge the two ranked lists.
-    let vectorResult: SearchResult | null = null;
-    if (featureSearchHybrid() && this.embedQuery) {
-      try {
-        const qvec = await this.embedQuery(term);
-        vectorResult = await this.runVectorSearch(enrichedQuery, qvec, { limit, offset });
-      } catch (err) {
-        // Vector failures must not break search — degrade to FTS-only.
-        console.warn('[search] vector lane failed, falling back to FTS only:', err);
-        vectorResult = null;
-      }
-    }
-
     let result: SearchResult;
-    if (vectorResult && (ftsResult.hits.length > 0 || vectorResult.hits.length > 0)) {
-      const merged = mergeByRRF(ftsResult.hits, vectorResult.hits, limit);
-      // Total: use the larger of the two underlying totals so pagination
-      // does not under-report the population. Union cardinality is unknowable
-      // without a cross-lane COUNT DISTINCT, so the larger is a safe lower
-      // bound on "how many results could the user browse to."
-      result = {
-        hits: merged,
-        total: Math.max(ftsResult.total, vectorResult.total),
-        facets: { byPageType: {}, bySensitivity: {} },
-        suggestions: [],
-        query: enrichedQuery.q,
-        durationMs: Date.now() - startMs,
-      };
-    } else if (ftsResult.hits.length > 0) {
+    if (ftsResult.hits.length > 0) {
       result = ftsResult;
     } else {
       result = await this.fallbackChain.run(enrichedQuery);
@@ -377,86 +303,6 @@ export class PgSearchAdapter implements SearchAdapter {
       trgmSim: row.trgm_sim,
       freshness: this.computeFreshness(row.updated_at),
       hybridScore: computeHybridScore(0, row.trgm_sim, daysSince(row.updated_at)),
-      url: `/knowledge/${row.id}`,
-    }));
-
-    return {
-      hits,
-      total,
-      facets: { byPageType: {}, bySensitivity: {} },
-      suggestions: [],
-      query: query.q,
-      durationMs: Date.now() - startMs,
-    };
-  }
-
-  // -----------------------------------------------------------------------
-  // Public: runVectorSearch — DEPRECATED (2026-04-23 Harness-first).
-  // knowledge_page.embedding 이 migration 0037 로 드롭되어 실제로는 호출
-  // 시점에 빈 결과만 반환하거나 DB 에러를 낸다. Phase F 에서 이 메서드와
-  // 호출처 (route.ts, ask.ts 등) 를 일괄 삭제한다.
-  // -----------------------------------------------------------------------
-
-  async runVectorSearch(
-    query: SearchQuery,
-    queryVector: number[],
-    opts?: { limit?: number; offset?: number },
-  ): Promise<SearchResult> {
-    const startMs = Date.now();
-    const limit = opts?.limit ?? DEFAULT_LIMIT;
-    const offset = opts?.offset ?? 0;
-
-    assertValidEmbedding(queryVector);
-
-    const secretFilter = this.buildSecretFilter(query.userPermissions);
-    const extraFilters = this.buildExtraFilters(query);
-    const literal = `[${queryVector.join(',')}]`;
-
-    const rows = await db.execute<{
-      id: string;
-      title: string;
-      page_type: string;
-      sensitivity: string;
-      updated_at: Date;
-      vector_sim: number;
-      headline: string;
-      total_count: string;
-    }>(sql`
-      SELECT
-        id,
-        title,
-        page_type,
-        sensitivity,
-        updated_at,
-        1 - (embedding <=> ${literal}::vector)        AS vector_sim,
-        left(coalesce(summary, ''), 300)              AS headline,
-        COUNT(*) OVER ()::text                        AS total_count
-      FROM knowledge_page
-      WHERE
-        workspace_id = ${query.workspaceId}::uuid
-        AND publish_status != 'deleted'
-        AND embedding IS NOT NULL
-        ${sql.raw(secretFilter)}
-        ${sql.raw(extraFilters)}
-      ORDER BY embedding <=> ${literal}::vector
-      LIMIT ${limit} OFFSET ${offset}
-    `);
-
-    const first = rows.rows[0];
-    const total = first ? parseInt(first.total_count, 10) : 0;
-    const hits: SearchHit[] = rows.rows.map((row) => ({
-      id: row.id,
-      resourceType: 'knowledge' as ResourceType,
-      title: row.title,
-      headline: sanitizeHeadline(row.headline ?? ''),
-      pageType: row.page_type,
-      sensitivity: row.sensitivity,
-      updatedAt: row.updated_at.toISOString(),
-      ftsRank: 0,
-      trgmSim: 0,
-      vectorSim: row.vector_sim,
-      freshness: this.computeFreshness(row.updated_at),
-      hybridScore: row.vector_sim,
       url: `/knowledge/${row.id}`,
     }));
 
