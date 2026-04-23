@@ -1,6 +1,6 @@
 {
-  "id": "92f00998-9542-4f67-950e-561c99c99a2c",
-  "prevId": "df8820c1-04e9-4a14-b64a-b9cf28741358",
+  "id": "06b4883a-b9ba-45f7-88dc-e3214df07c8f",
+  "prevId": "b3c4e926-bbe3-427f-95d6-ce9e04561d9d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -368,11 +368,39 @@
           "primaryKey": false,
           "notNull": false
         },
+        "job_title": {
+          "name": "job_title",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "user_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "is_outsourced": {
+          "name": "is_outsourced",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "avatar_url": {
           "name": "avatar_url",
           "type": "varchar(500)",
           "primaryKey": false,
           "notNull": false
+        },
+        "employment_type": {
+          "name": "employment_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'internal'"
         },
         "preferences": {
           "name": "preferences",
@@ -394,34 +422,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "job_title": {
-          "name": "job_title",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_outsourced": {
-          "name": "is_outsourced",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "status": {
-          "name": "status",
-          "type": "user_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'active'::user_status"
-        },
-        "employment_type": {
-          "name": "employment_type",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'internal'"
         }
       },
       "indexes": {},
@@ -1120,6 +1120,427 @@
             "id"
           ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.project": {
+      "name": "project",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sensitivity": {
+          "name": "sensitivity",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INTERNAL'"
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'active'"
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "knowledge_page_id": {
+          "name": "knowledge_page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_domain_url": {
+          "name": "prod_domain_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_connect_type": {
+          "name": "prod_connect_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_repository_url": {
+          "name": "prod_repository_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_db_dsn": {
+          "name": "prod_db_dsn",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_src_path": {
+          "name": "prod_src_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_class_path": {
+          "name": "prod_class_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "prod_memo": {
+          "name": "prod_memo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_domain_url": {
+          "name": "dev_domain_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_connect_type": {
+          "name": "dev_connect_type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_repository_url": {
+          "name": "dev_repository_url",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_db_dsn": {
+          "name": "dev_db_dsn",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_src_path": {
+          "name": "dev_src_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_class_path": {
+          "name": "dev_class_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dev_memo": {
+          "name": "dev_memo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_project_knowledge_page": {
+          "name": "idx_project_knowledge_page",
+          "columns": [
+            {
+              "expression": "knowledge_page_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_workspace_company_unique": {
+          "name": "project_workspace_company_unique",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_workspace_id_workspace_id_fk": {
+          "name": "project_workspace_id_workspace_id_fk",
+          "tableFrom": "project",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "project_company_id_company_id_fk": {
+          "name": "project_company_id_company_id_fk",
+          "tableFrom": "project",
+          "tableTo": "company",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "project_owner_id_user_id_fk": {
+          "name": "project_owner_id_user_id_fk",
+          "tableFrom": "project",
+          "tableTo": "user",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "project_knowledge_page_id_knowledge_page_id_fk": {
+          "name": "project_knowledge_page_id_knowledge_page_id_fk",
+          "tableFrom": "project",
+          "tableTo": "knowledge_page",
+          "columnsFrom": [
+            "knowledge_page_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.project_access": {
+      "name": "project_access",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "env_type": {
+          "name": "env_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_type": {
+          "name": "access_type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "host": {
+          "name": "host",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "port": {
+          "name": "port",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "username_ref": {
+          "name": "username_ref",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_ref": {
+          "name": "password_ref",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "connection_string_ref": {
+          "name": "connection_string_ref",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vpn_file_ref": {
+          "name": "vpn_file_ref",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "required_role": {
+          "name": "required_role",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DEVELOPER'"
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_project_access_project": {
+          "name": "idx_project_access_project",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_access_workspace_id_workspace_id_fk": {
+          "name": "project_access_workspace_id_workspace_id_fk",
+          "tableFrom": "project_access",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "project_access_project_id_project_id_fk": {
+          "name": "project_access_project_id_project_id_fk",
+          "tableFrom": "project_access",
+          "tableTo": "project",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -5382,13 +5803,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "ask_mode": {
-          "name": "ask_mode",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'simple'"
-        },
         "snapshot_id": {
           "name": "snapshot_id",
           "type": "uuid",
@@ -5686,415 +6100,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.project": {
-      "name": "project",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(300)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "owner_id": {
-          "name": "owner_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sensitivity": {
-          "name": "sensitivity",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'INTERNAL'"
-        },
-        "status": {
-          "name": "status",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'active'"
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "knowledge_page_id": {
-          "name": "knowledge_page_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "prod_domain_url": {
-          "name": "prod_domain_url",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_connect_type": {
-          "name": "prod_connect_type",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_repository_url": {
-          "name": "prod_repository_url",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_db_dsn": {
-          "name": "prod_db_dsn",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_src_path": {
-          "name": "prod_src_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_class_path": {
-          "name": "prod_class_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "prod_memo": {
-          "name": "prod_memo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_domain_url": {
-          "name": "dev_domain_url",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_connect_type": {
-          "name": "dev_connect_type",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_repository_url": {
-          "name": "dev_repository_url",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_db_dsn": {
-          "name": "dev_db_dsn",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_src_path": {
-          "name": "dev_src_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_class_path": {
-          "name": "dev_class_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "dev_memo": {
-          "name": "dev_memo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "idx_project_knowledge_page": {
-          "name": "idx_project_knowledge_page",
-          "columns": [
-            {
-              "expression": "knowledge_page_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "project_workspace_id_workspace_id_fk": {
-          "name": "project_workspace_id_workspace_id_fk",
-          "tableFrom": "project",
-          "tableTo": "workspace",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "project_company_id_company_id_fk": {
-          "name": "project_company_id_company_id_fk",
-          "tableFrom": "project",
-          "tableTo": "company",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "project_owner_id_user_id_fk": {
-          "name": "project_owner_id_user_id_fk",
-          "tableFrom": "project",
-          "tableTo": "user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "project_knowledge_page_id_knowledge_page_id_fk": {
-          "name": "project_knowledge_page_id_knowledge_page_id_fk",
-          "tableFrom": "project",
-          "tableTo": "knowledge_page",
-          "columnsFrom": [
-            "knowledge_page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "project_workspace_company_unique": {
-          "name": "project_workspace_company_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "workspace_id",
-            "company_id"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.project_access": {
-      "name": "project_access",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "access_type": {
-          "name": "access_type",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "label": {
-          "name": "label",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "host": {
-          "name": "host",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "port": {
-          "name": "port",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "username_ref": {
-          "name": "username_ref",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "password_ref": {
-          "name": "password_ref",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "connection_string_ref": {
-          "name": "connection_string_ref",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "vpn_file_ref": {
-          "name": "vpn_file_ref",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "required_role": {
-          "name": "required_role",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'DEVELOPER'"
-        },
-        "sort_order": {
-          "name": "sort_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "env_type": {
-          "name": "env_type",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "idx_project_access_project": {
-          "name": "idx_project_access_project",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "project_access_workspace_id_workspace_id_fk": {
-          "name": "project_access_workspace_id_workspace_id_fk",
-          "tableFrom": "project_access",
-          "tableTo": "workspace",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "project_access_project_id_project_id_fk": {
-          "name": "project_access_project_id_project_id_fk",
-          "tableFrom": "project_access",
-          "tableTo": "project",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.additional_development": {
       "name": "additional_development",
       "schema": "",
@@ -6330,7 +6335,6 @@
           "name": "additional_development_workspace_id_workspace_id_fk",
           "tableFrom": "additional_development",
           "tableTo": "workspace",
-          "schemaTo": "public",
           "columnsFrom": [
             "workspace_id"
           ],
@@ -6344,7 +6348,6 @@
           "name": "additional_development_project_id_project_id_fk",
           "tableFrom": "additional_development",
           "tableTo": "project",
-          "schemaTo": "public",
           "columnsFrom": [
             "project_id"
           ],
@@ -6358,7 +6361,6 @@
           "name": "additional_development_pm_id_user_id_fk",
           "tableFrom": "additional_development",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "pm_id"
           ],
@@ -6372,7 +6374,6 @@
           "name": "additional_development_developer_id_user_id_fk",
           "tableFrom": "additional_development",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "developer_id"
           ],
@@ -6443,11 +6444,10 @@
         }
       },
       "foreignKeys": {
-        "additional_development_effort_add_dev_id_fk": {
-          "name": "additional_development_effort_add_dev_id_fk",
+        "additional_development_effort_add_dev_id_additional_development_id_fk": {
+          "name": "additional_development_effort_add_dev_id_additional_development_id_fk",
           "tableFrom": "additional_development_effort",
           "tableTo": "additional_development",
-          "schemaTo": "public",
           "columnsFrom": [
             "add_dev_id"
           ],
@@ -6518,11 +6518,10 @@
         }
       },
       "foreignKeys": {
-        "additional_development_revenue_add_dev_id_fk": {
-          "name": "additional_development_revenue_add_dev_id_fk",
+        "additional_development_revenue_add_dev_id_additional_development_id_fk": {
+          "name": "additional_development_revenue_add_dev_id_additional_development_id_fk",
           "tableFrom": "additional_development_revenue",
           "tableTo": "additional_development",
-          "schemaTo": "public",
           "columnsFrom": [
             "add_dev_id"
           ],
@@ -6583,11 +6582,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "additional_development_staff_add_dev_id_fk": {
-          "name": "additional_development_staff_add_dev_id_fk",
+        "additional_development_staff_add_dev_id_additional_development_id_fk": {
+          "name": "additional_development_staff_add_dev_id_additional_development_id_fk",
           "tableFrom": "additional_development_staff",
           "tableTo": "additional_development",
-          "schemaTo": "public",
           "columnsFrom": [
             "add_dev_id"
           ],
@@ -6597,11 +6595,10 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "additional_development_staff_user_id_fk": {
-          "name": "additional_development_staff_user_id_fk",
+        "additional_development_staff_user_id_user_id_fk": {
+          "name": "additional_development_staff_user_id_user_id_fk",
           "tableFrom": "additional_development_staff",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -6711,7 +6708,10 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "idx_contract_status": {
           "name": "idx_contract_status",
@@ -6723,26 +6723,10 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false
-        },
-        "idx_contract_one_active": {
-          "name": "idx_contract_one_active",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "status = 'active'"
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6750,7 +6734,6 @@
           "name": "contractor_contract_workspace_id_workspace_id_fk",
           "tableFrom": "contractor_contract",
           "tableTo": "workspace",
-          "schemaTo": "public",
           "columnsFrom": [
             "workspace_id"
           ],
@@ -6764,7 +6747,6 @@
           "name": "contractor_contract_user_id_user_id_fk",
           "tableFrom": "contractor_contract",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -6776,7 +6758,107 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.holiday": {
+      "name": "holiday",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_holiday_date": {
+          "name": "idx_holiday_date",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "holiday_workspace_id_workspace_id_fk": {
+          "name": "holiday_workspace_id_workspace_id_fk",
+          "tableFrom": "holiday",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "holiday_workspace_date_unique": {
+          "name": "holiday_workspace_date_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "workspace_id",
+            "date"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
     "public.leave_request": {
       "name": "leave_request",
@@ -6894,7 +6976,10 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "idx_leave_contract": {
           "name": "idx_leave_contract",
@@ -6906,7 +6991,10 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "idx_leave_date": {
           "name": "idx_leave_date",
@@ -6924,7 +7012,10 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -6932,7 +7023,6 @@
           "name": "leave_request_workspace_id_workspace_id_fk",
           "tableFrom": "leave_request",
           "tableTo": "workspace",
-          "schemaTo": "public",
           "columnsFrom": [
             "workspace_id"
           ],
@@ -6946,7 +7036,6 @@
           "name": "leave_request_user_id_user_id_fk",
           "tableFrom": "leave_request",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "user_id"
           ],
@@ -6960,7 +7049,6 @@
           "name": "leave_request_contract_id_contractor_contract_id_fk",
           "tableFrom": "leave_request",
           "tableTo": "contractor_contract",
-          "schemaTo": "public",
           "columnsFrom": [
             "contract_id"
           ],
@@ -6974,7 +7062,6 @@
           "name": "leave_request_created_by_user_id_fk",
           "tableFrom": "leave_request",
           "tableTo": "user",
-          "schemaTo": "public",
           "columnsFrom": [
             "created_by"
           ],
@@ -6986,10 +7073,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     },
-    "public.holiday": {
-      "name": "holiday",
+    "public.chat_message": {
+      "name": "chat_message",
       "schema": "",
       "columns": {
         "id": {
@@ -7005,21 +7095,21 @@
           "primaryKey": false,
           "notNull": true
         },
-        "date": {
-          "name": "date",
-          "type": "date",
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "note": {
-          "name": "note",
+        "body": {
+          "name": "body",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -7029,18 +7119,11 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "holiday_workspace_date_unique": {
-          "name": "holiday_workspace_date_unique",
+        "idx_chat_msg_ws_created": {
+          "name": "idx_chat_msg_ws_created",
           "columns": [
             {
               "expression": "workspace_id",
@@ -7049,35 +7132,38 @@
               "nulls": "last"
             },
             {
-              "expression": "date",
+              "expression": "created_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true
-        },
-        "idx_holiday_date": {
-          "name": "idx_holiday_date",
-          "columns": [
-            {
-              "expression": "date",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
-        "holiday_workspace_id_workspace_id_fk": {
-          "name": "holiday_workspace_id_workspace_id_fk",
-          "tableFrom": "holiday",
+        "chat_message_workspace_id_workspace_id_fk": {
+          "name": "chat_message_workspace_id_workspace_id_fk",
+          "tableFrom": "chat_message",
           "tableTo": "workspace",
-          "schemaTo": "public",
           "columnsFrom": [
             "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chat_message_user_id_user_id_fk": {
+          "name": "chat_message_user_id_user_id_fk",
+          "tableFrom": "chat_message",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -7087,10 +7173,101 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {}
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.chat_reaction": {
+      "name": "chat_reaction",
+      "schema": "",
+      "columns": {
+        "message_id": {
+          "name": "message_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emoji": {
+          "name": "emoji",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "chat_reaction_message_id_chat_message_id_fk": {
+          "name": "chat_reaction_message_id_chat_message_id_fk",
+          "tableFrom": "chat_reaction",
+          "tableTo": "chat_message",
+          "columnsFrom": [
+            "message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "chat_reaction_user_id_user_id_fk": {
+          "name": "chat_reaction_user_id_user_id_fk",
+          "tableFrom": "chat_reaction",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "chat_reaction_message_id_user_id_emoji_pk": {
+          "name": "chat_reaction_message_id_user_id_emoji_pk",
+          "columns": [
+            "message_id",
+            "user_id",
+            "emoji"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chat_reaction_emoji_chk": {
+          "name": "chat_reaction_emoji_chk",
+          "value": "emoji IN ('👍','❤️','🎉','😂','🙏')"
+        }
+      },
+      "isRLSEnabled": false
     }
   },
   "enums": {
+    "public.user_status": {
+      "name": "user_status",
+      "schema": "public",
+      "values": [
+        "active",
+        "inactive",
+        "locked"
+      ]
+    },
     "public.build_status": {
       "name": "build_status",
       "schema": "public",
@@ -7116,15 +7293,6 @@
       "values": [
         "PUBLIC",
         "INTERNAL"
-      ]
-    },
-    "public.user_status": {
-      "name": "user_status",
-      "schema": "public",
-      "values": [
-        "active",
-        "inactive",
-        "locked"
       ]
     }
   },

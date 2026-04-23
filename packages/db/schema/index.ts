@@ -28,3 +28,4 @@ export * from "./user-session.js";
 export * from "./embed-cache.js";
 export * from "./additional-development.js";
 export * from "./contractor.js";
+export * from "./chat.js";

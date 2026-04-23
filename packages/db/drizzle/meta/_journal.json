@@ -260,6 +260,13 @@
       "when": 1745654400000,
       "tag": "0036_drop_ask_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1776941484652,
+      "tag": "0037_flowery_outlaw_kid",
+      "breakpoints": true
     }
   ]
 }

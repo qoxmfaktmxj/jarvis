@@ -6357,7 +6357,12 @@
         "idx_project_access_project": {
           "name": "idx_project_access_project",
           "columns": [
-            "project_id"
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false,
           "concurrently": false,

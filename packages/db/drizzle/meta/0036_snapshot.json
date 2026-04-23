@@ -1,6 +1,6 @@
 {
-  "id": "92f00998-9542-4f67-950e-561c99c99a2c",
-  "prevId": "df8820c1-04e9-4a14-b64a-b9cf28741358",
+  "id": "b3c4e926-bbe3-427f-95d6-ce9e04561d9d",
+  "prevId": "92f00998-9542-4f67-950e-561c99c99a2c",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -5381,13 +5381,6 @@
           "type": "varchar(200)",
           "primaryKey": false,
           "notNull": true
-        },
-        "ask_mode": {
-          "name": "ask_mode",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'simple'"
         },
         "snapshot_id": {
           "name": "snapshot_id",
