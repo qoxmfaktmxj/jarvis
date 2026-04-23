@@ -14,6 +14,7 @@ import { searchLog } from "@jarvis/db/schema";
 import { graphSnapshot } from "@jarvis/db/schema/graph";
 import type { SourceRef } from "@jarvis/ai/types";
 import { AskPanel } from "@/components/ai/AskPanel";
+import { getConversationTokenUsage } from "@/lib/queries/ask-context-usage";
 
 /** 대화 메시지를 AskPanel의 HistoryEntry 형태로 변환 */
 interface HistoryEntry {
@@ -155,6 +156,7 @@ export default async function ConversationPage({ params }: Props) {
   }
 
   const popularQuestions = await getPopularQuestions(session.workspaceId);
+  const initialTokenUsage = await getConversationTokenUsage(conversationId);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-5 px-6 pb-4 pt-6">
@@ -176,6 +178,10 @@ export default async function ConversationPage({ params }: Props) {
           conversationId={conversationId}
           initialMessages={initialMessages}
           workspaceId={session.workspaceId}
+          initialTokenUsage={{
+            usedTokens: initialTokenUsage.usedTokens,
+            messageCount: initialTokenUsage.messageCount,
+          }}
         />
       </Suspense>
     </div>
