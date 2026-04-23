@@ -83,4 +83,13 @@ describe('PrecedentSearchAdapter (Phase-Harness: BM25/trigram)', () => {
     const res = await adapter.suggest();
     expect(res).toEqual([]);
   });
+
+  it('escapes LIKE wildcards in the query before building %...% pattern', async () => {
+    mockDb.execute.mockResolvedValueOnce({ rows: [] });
+    await adapter.search({ ...baseQuery, q: '50% off' });
+    const rendered = JSON.stringify(mockDb.execute.mock.calls[0]![0]);
+    // %, _, \\ 는 escape 되어 '\%' 형태로 파라미터에 들어가야 한다.
+    // (JSON stringify 시 backslash 는 한 번 더 escape 되므로 "\\\\%" 로 나타남)
+    expect(rendered).toContain('50\\\\% off');
+  });
 });

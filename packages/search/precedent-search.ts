@@ -19,6 +19,16 @@ import type { SearchQuery, SearchResult, SearchHit } from './types.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
+/**
+ * Escape LIKE/ILIKE 메타문자(`%`, `_`, `\`) — 사용자 입력을 리터럴 매칭으로
+ * 만들어 `%abc` 같은 쿼리가 전체 행을 긁어가지 않게 한다. drizzle `sql`
+ * template literal 은 parameter binding 을 해주지만 `%${q}%` 안의 `%` 는
+ * 여전히 ILIKE 와일드카드로 해석되므로 문자열 조립 전에 escape 가 필요하다.
+ */
+function escapeLike(s: string): string {
+  return s.replace(/[%_\\]/g, '\\$&');
+}
+
 export interface PrecedentSearchAdapterOptions {
   // Phase-Harness 이후 옵션 없음. 하위 호환을 위해 빈 shape 유지.
 }
@@ -36,6 +46,10 @@ export class PrecedentSearchAdapter implements SearchAdapter {
 
     // BM25-like 근사: title + symptom + cluster_label 에 pg_trgm similarity 사용.
     // precedent_case 는 search_vector 컬럼이 없어 FTS 대신 trigram 유사도로 대체.
+    //
+    // 인덱스: migration 0039 가 title/symptom/cluster_label 에 GIN
+    // (gin_trgm_ops) 인덱스를 만들어 둠. 따라서 similarity() / ILIKE 모두
+    // 인덱스로 가속된다.
     const q = query.q.trim();
     if (q.length === 0) {
       return {
@@ -47,6 +61,10 @@ export class PrecedentSearchAdapter implements SearchAdapter {
         durationMs: Date.now() - startMs,
       };
     }
+
+    // ILIKE 매칭에는 메타문자 escape 된 패턴을 사용 (P2 fix).
+    // similarity() 함수는 와일드카드 의미가 없으므로 원본 q 를 그대로 사용.
+    const likePattern = `%${escapeLike(q)}%`;
 
     const rows = await db.execute<{
       id: string;
@@ -72,9 +90,9 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       FROM precedent_case
       WHERE workspace_id = ${query.workspaceId}::uuid
         AND (
-          title ILIKE ${'%' + q + '%'}
-          OR symptom ILIKE ${'%' + q + '%'}
-          OR cluster_label ILIKE ${'%' + q + '%'}
+          title ILIKE ${likePattern}
+          OR symptom ILIKE ${likePattern}
+          OR cluster_label ILIKE ${likePattern}
         )
         ${sql.raw(secretFilter)}
       ORDER BY trgm_sim DESC, updated_at DESC
