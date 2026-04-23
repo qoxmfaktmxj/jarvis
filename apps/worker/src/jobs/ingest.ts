@@ -19,8 +19,7 @@ import {
   redactPII,
   type Sensitivity,
 } from '../lib/pii-redactor.js';
-// @legacy-rag — claim 임베딩용 (legacyTwoStepIngest 내부 사용). Phase-W4에서 삭제 예정.
-import { generateEmbedding } from '@jarvis/ai/embed';
+// Phase-Harness (2026-04-23): embedding 제거. generateEmbedding import 삭제.
 import { callChatWithFallback } from '@jarvis/ai/breaker';
 import { analyze } from './ingest/analyze.js';
 import { generate } from './ingest/generate.js';
@@ -188,21 +187,19 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
   );
 
   const claims = (synthesis.claims ?? []).slice(0, 5);
-  // Sequential to avoid rate-limit bursts; each claim is short so latency is low
+  // Phase-Harness (2026-04-23): claim embedding 제거. text 만 저장.
   for (let idx = 0; idx < claims.length; idx++) {
     const claimText = claims[idx]!;
     try {
-      const embedding = await generateEmbedding(claimText);
       await db.insert(knowledgeClaim).values({
         pageId: page.id,
         claimText: claimText.slice(0, 1000),
-        embedding,
         claimSource: 'generated',
         sortOrder: idx,
       });
     } catch (claimErr) {
       // per-claim failure is non-fatal — partial claims still written
-      console.warn(`[ingest] claim embed/insert failed idx=${idx} rawSourceId=${rawSourceId}: ${String(claimErr)}`);
+      console.warn(`[ingest] claim insert failed idx=${idx} rawSourceId=${rawSourceId}: ${String(claimErr)}`);
     }
   }
 

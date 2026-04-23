@@ -6,7 +6,7 @@ initSentry();
 import 'dotenv/config';
 import { boss } from './lib/boss.js';
 import { ingestHandler } from './jobs/ingest.js';
-import { embedHandler } from './jobs/embed.js';
+// Phase-Harness (2026-04-23): embedHandler 제거. embed 파이프라인 폐지.
 import { compileHandler } from './jobs/compile.js';
 import { graphifyBuildHandler } from './jobs/graphify-build.js';
 import { staleCheckHandler } from './jobs/stale-check.js';
@@ -36,12 +36,12 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'embed', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup']) {
+  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup']) {
     await boss.createQueue(q);
   }
 
   await boss.work('ingest', { batchSize: 5 }, ingestHandler);
-  await boss.work('embed', { batchSize: 3 }, embedHandler);
+  // Phase-Harness (2026-04-23): embed queue/worker 제거.
   await boss.work('compile', { batchSize: 3 }, compileHandler);
   await boss.work('graphify-build', { batchSize: 1 }, graphifyBuildHandler);
 
@@ -54,7 +54,7 @@ async function main() {
   await boss.schedule('cleanup', '0 0 1 * *', {});
   await boss.work('cleanup', cleanupHandler);
 
-  // 6시간마다 만료 세션·embed_cache 청소 (Redis → PG 이전 후 추가)
+  // 6시간마다 만료 세션 청소 (Phase-Harness 이후 embed_cache 제거로 세션만)
   await boss.schedule('cache-cleanup', '0 */6 * * *', {});
   await boss.work('cache-cleanup', cacheCleanupHandler);
 
@@ -75,7 +75,6 @@ async function main() {
   // Periodic queue gauge (size/lag) for observability.
   const QUEUE_NAMES = [
     'ingest',
-    'embed',
     'compile',
     'graphify-build',
     'check-freshness',

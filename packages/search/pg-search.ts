@@ -391,10 +391,10 @@ export class PgSearchAdapter implements SearchAdapter {
   }
 
   // -----------------------------------------------------------------------
-  // Public: runVectorSearch — HNSW cosine-distance search against
-  // knowledge_page.embedding (Lane A; OpenAI text-embedding-3-small space).
-  // Callers supply the pre-computed query vector. This method never reads
-  // Lane B (precedent_case) — isolated per packages/search/README.md.
+  // Public: runVectorSearch — DEPRECATED (2026-04-23 Harness-first).
+  // knowledge_page.embedding 이 migration 0037 로 드롭되어 실제로는 호출
+  // 시점에 빈 결과만 반환하거나 DB 에러를 낸다. Phase F 에서 이 메서드와
+  // 호출처 (route.ts, ask.ts 등) 를 일괄 삭제한다.
   // -----------------------------------------------------------------------
 
   async runVectorSearch(

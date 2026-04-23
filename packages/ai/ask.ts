@@ -8,7 +8,7 @@ import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { getProvider } from './provider.js';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
-import { generateEmbedding } from './embed.js';
+// Phase-Harness (2026-04-23): generateEmbedding 제거. tool-use agent 전환.
 import { logLlmCall } from './logger.js';
 import { assertBudget, BudgetExceededError, recordBlocked } from './budget.js';
 import {
@@ -59,10 +59,10 @@ const ASK_MODEL = process.env['ASK_AI_MODEL'] ?? 'gpt-5.4-mini';
 const ASK_OP = 'ask' as const;
 
 // 모델별 단가(USD per 1K tokens). 스펙 §3 PR#1 cost 계산용.
+// Phase-Harness (2026-04-23): embedding 모델 pricing 제거.
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
   'gpt-5.4-mini': { in: 0.0005, out: 0.0015 },
   'gpt-5.4': { in: 0.005, out: 0.015 },
-  'text-embedding-3-small': { in: 0.00002, out: 0 },
 };
 
 function computeCostUsd(model: string, tokensIn: number, tokensOut: number): string {
@@ -113,81 +113,17 @@ export function rrfMerge(
  * will be deleted in a dedicated follow-up once the page-first path has
  * proven out for one week in production.
  */
+// Phase-Harness (2026-04-23): embedding 기반 claim 검색 폐지.
+// knowledge_claim.embedding 컬럼이 migration 0037 로 드롭되어 이 함수는
+// 더 이상 벡터 검색을 수행할 수 없다. Phase E 후반의 ask.ts 전면 재작성
+// 시점에 legacy 경로와 함께 삭제된다. 현재는 stub 만 남겨 호출 타입을
+// 유지 — 실제 retrieval 은 ask-agent tool-use loop 이 담당.
 export async function retrieveRelevantClaims(
-  question: string,
-  workspaceId: string,
-  userPermissions: string[],
+  _question: string,
+  _workspaceId: string,
+  _userPermissions: string[],
 ): Promise<RetrievedClaim[]> {
-  const embedding = await generateEmbedding(question);
-  const embeddingLiteral = `[${embedding.join(',')}]`;
-
-  const sensitivityFilter = buildLegacyKnowledgeSensitivitySqlFilter(userPermissions)
-    .replace(/\bsensitivity\b/g, 'kp.sensitivity')
-    .trim();
-  const sensitivityClause = sensitivityFilter
-    ? sql.raw(` ${sensitivityFilter}`)
-    : sql.empty();
-
-  const vectorRows = await db.execute<{
-    id: string;
-    claim_text: string;
-    page_id: string;
-    title: string;
-    distance: number;
-  }>(
-    sql`
-      SELECT
-        kc.id,
-        kc.claim_text,
-        kc.page_id,
-        kp.title,
-        (kc.embedding <=> ${embeddingLiteral}::vector) AS distance
-      FROM knowledge_claim kc
-      JOIN knowledge_page kp ON kp.id = kc.page_id
-      WHERE kp.workspace_id = ${workspaceId}::uuid
-        AND kp.publish_status = 'published'
-        ${sensitivityClause}
-        AND kc.embedding IS NOT NULL
-      ORDER BY kc.embedding <=> ${embeddingLiteral}::vector
-      LIMIT ${TOP_K_VECTOR}
-    `,
-  );
-
-  if (vectorRows.rows.length === 0) return [];
-
-  const pageIds = vectorRows.rows.map((r) => r.page_id);
-  const ftsRows = await db.execute<{ page_id: string; fts_rank: number }>(
-    sql`
-      SELECT
-        kp.id AS page_id,
-        ts_rank_cd(kp.search_vector, websearch_to_tsquery('simple', ${question})) AS fts_rank
-      FROM knowledge_page kp
-      WHERE kp.id = ANY(ARRAY[${sql.join(pageIds.map(id => sql`${id}::uuid`), sql`, `)}])
-    `,
-  );
-
-  const ftsRankMap = new Map<string, number>(
-    ftsRows.rows.map((r) => [r.page_id, Number(r.fts_rank)]),
-  );
-
-  const claims: RetrievedClaim[] = vectorRows.rows.map((row) => {
-    const vectorSim = 1 - Number(row.distance);
-    const ftsRank = ftsRankMap.get(row.page_id) ?? 0;
-    const hybridScore = vectorSim * VECTOR_WEIGHT + ftsRank * FTS_WEIGHT;
-    return {
-      id: row.id,
-      pageId: row.page_id,
-      pageTitle: row.title,
-      pageUrl: `/knowledge/${row.page_id}`,
-      claimText: row.claim_text,
-      vectorSim,
-      ftsRank,
-      hybridScore,
-    };
-  });
-
-  claims.sort((a, b) => b.hybridScore - a.hybridScore);
-  return claims.slice(0, TOP_K_FINAL);
+  return [];
 }
 
 // ---------------------------------------------------------------------------
