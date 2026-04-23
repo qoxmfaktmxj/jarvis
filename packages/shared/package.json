@@ -12,7 +12,8 @@
     "./validation": "./validation/index.ts",
     "./validation/*": "./validation/*.ts",
     "./sentry": "./sentry.ts",
-    "./leave-compute": "./leave-compute.ts"
+    "./leave-compute": "./leave-compute.ts",
+    "./chat/*": "./chat/*.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

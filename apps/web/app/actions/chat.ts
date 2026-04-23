@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db, sql } from "@jarvis/db/client";
 import { chatMessage, chatReaction, auditLog } from "@jarvis/db/schema";
 import { getSession } from "@jarvis/auth/session";
@@ -13,6 +13,7 @@ import {
   deleteMessageInputSchema
 } from "@jarvis/shared/validation/chat";
 import type { ChatReactionEmoji } from "@jarvis/shared/constants/chat";
+import { chatChannel } from "@jarvis/shared/chat/channel";
 import { cookies, headers } from "next/headers";
 import type { JarvisSession } from "@jarvis/auth/types";
 
@@ -89,7 +90,7 @@ export async function sendMessage(input: unknown): Promise<{ id: string }> {
     });
   });
 
-  await notify(`chat_ws_${session.workspaceId}`, { kind: "message", id });
+  await notify(chatChannel(session.workspaceId), { kind: "message", id });
   return { id };
 }
 
@@ -98,12 +99,13 @@ export async function deleteMessage(input: unknown): Promise<{ ok: true }> {
   const session = await resolveSession();
 
   const existing = await db
-    .select({ userId: chatMessage.userId })
+    .select({ userId: chatMessage.userId, workspaceId: chatMessage.workspaceId })
     .from(chatMessage)
-    .where(eq(chatMessage.id, messageId))
+    .where(and(eq(chatMessage.id, messageId), isNull(chatMessage.deletedAt)))
     .limit(1);
 
   if (existing.length === 0) throw new Error("message-not-found");
+  if (existing[0]!.workspaceId !== session.workspaceId) throw new Error("forbidden");
 
   const isAuthor = existing[0]!.userId === session.userId;
   const isAdmin = hasPermission(session, PERMISSIONS.ADMIN_ALL);
@@ -125,7 +127,7 @@ export async function deleteMessage(input: unknown): Promise<{ ok: true }> {
     });
   });
 
-  await notify(`chat_ws_${session.workspaceId}`, {
+  await notify(chatChannel(session.workspaceId), {
     kind: "delete",
     id: messageId
   });
@@ -192,7 +194,7 @@ export async function toggleReaction(
     });
   });
 
-  await notify(`chat_ws_${session.workspaceId}`, {
+  await notify(chatChannel(session.workspaceId), {
     kind: "reaction",
     id: messageId
   });
