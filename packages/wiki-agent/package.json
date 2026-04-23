@@ -11,6 +11,8 @@
     "./prompts/aliases-contract": "./src/prompts/aliases-contract.ts",
     "./parsers/file-block": "./src/parsers/file-block.ts",
     "./parsers/review-block": "./src/parsers/review-block.ts",
+    "./maintain-index": "./src/maintain-index.ts",
+    "./append-log": "./src/append-log.ts",
     "./constants": "./src/constants.ts"
   },
   "scripts": {
