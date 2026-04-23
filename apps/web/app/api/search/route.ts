@@ -7,7 +7,9 @@ import type { SearchResult } from '@jarvis/search/types';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { checkRateLimit } from '@/lib/server/rate-limit';
-import { embedSearchQuery } from '@/lib/server/search-embedder';
+// Phase-Harness (2026-04-23): embedSearchQuery 제거. adapter 내부 벡터 경로는
+// featureSearchHybrid()=false 로 우회되므로 no-op embedQuery 를 전달한다.
+const noopEmbed = async (_text: string): Promise<number[]> => [];
 
 const searchSchema = z.object({
   q: z.string().min(1).max(500),
@@ -24,8 +26,8 @@ const searchSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-const laneA = new PgSearchAdapter({ embedQuery: embedSearchQuery });
-const laneB = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
+const laneA = new PgSearchAdapter({ embedQuery: noopEmbed });
+const laneB = new PrecedentSearchAdapter({ embedQuery: noopEmbed });
 
 // Rate limit: 60 requests per minute per user
 const RATE_LIMIT_WINDOW_SECONDS = 60;

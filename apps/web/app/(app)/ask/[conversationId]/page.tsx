@@ -159,10 +159,9 @@ export default async function ConversationPage({ params }: Props) {
   const initialTokenUsage = await getConversationTokenUsage(conversationId);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-5 px-6 pb-4 pt-6">
-      <div className="flex items-baseline gap-3 border-b border-surface-200 pb-4">
+    <div className="flex h-full min-h-0 flex-col px-6 pb-4 pt-4">
+      <div className="flex items-baseline gap-3 border-b border-surface-200 pb-3 mb-3">
         <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
-          <span className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle" />
           Ask AI
         </p>
         <h1 className="text-display truncate text-base font-semibold tracking-tight text-surface-900">

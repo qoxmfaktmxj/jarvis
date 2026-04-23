@@ -25,6 +25,6 @@ export * from "./wiki-lint-report.js";
 export * from "./notice.js";
 export * from "./ask-conversation.js";
 export * from "./user-session.js";
-export * from "./embed-cache.js";
+// Phase-Harness (2026-04-23): embed_cache 테이블 폐지. migration 0038 참조.
 export * from "./additional-development.js";
 export * from "./contractor.js";
