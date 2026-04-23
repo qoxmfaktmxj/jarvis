@@ -303,7 +303,7 @@ export function AskPanel({
       {hasConversation ? (
         <>
           <ScrollArea className="min-h-0 flex-1">
-            <div className="mx-auto max-w-3xl space-y-8 py-6 pr-4">
+            <div className="mx-auto max-w-3xl space-y-8 py-4 pr-4">
               {history.map((entry, index) => (
                 <div key={`${entry.question}-${index}`} className="space-y-4">
                   {/* User turn — right-aligned monochrome bubble */}
@@ -469,7 +469,7 @@ export function AskPanel({
           <div className="mx-auto w-full max-w-3xl pt-4">{composer}</div>
         </>
       ) : (
-        <section className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col justify-end gap-8 pb-4">
+        <section className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col justify-end gap-6 pb-4">
           <header className="space-y-2">
             <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
               문서 기반 AI 어시스턴트

@@ -196,6 +196,37 @@
     --mint-tint:    #10322A;
     --amber:        #E0A93A;
     --amber-tint:   #2A2211;
+
+    /* Tailwind surface scale — inverted for dark backgrounds */
+    --color-surface-50:  oklch(0.115 0.027 259);
+    --color-surface-100: oklch(0.158 0.037 259);
+    --color-surface-200: oklch(0.210 0.042 259);
+    --color-surface-300: oklch(0.275 0.045 259);
+    --color-surface-400: oklch(0.444 0.020 260);
+    --color-surface-500: oklch(0.608 0.018 260);
+    --color-surface-600: oklch(0.700 0.015 260);
+    --color-surface-700: oklch(0.750 0.013 260);
+    --color-surface-800: oklch(0.815 0.012 260);
+    --color-surface-900: oklch(0.940 0.008 260);
+    --color-surface-950: oklch(0.975 0.004 260);
+
+    /* Card / popover = panel background in dark */
+    --color-card:               oklch(0.158 0.037 259);
+    --color-card-foreground:    oklch(0.940 0.008 260);
+    --color-popover:            oklch(0.190 0.040 259);
+    --color-popover-foreground: oklch(0.940 0.008 260);
+
+    /* Semantic token overrides */
+    --color-background: oklch(0.115 0.027 259);
+    --color-foreground: oklch(0.940 0.008 260);
+    --color-muted:      oklch(0.158 0.037 259);
+    --color-muted-foreground: oklch(0.608 0.018 260);
+    --color-border:     oklch(0.210 0.042 259);
+    --color-input:      oklch(0.250 0.044 259);
+
+    /* ISU Blue — lighten for dark backgrounds */
+    --color-isu-500: oklch(0.65 0.168 260);
+    --color-isu-600: oklch(0.72 0.155 260);
   }
   :root[data-theme="dark"] body {
     background: var(--bg);
