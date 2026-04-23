@@ -2,11 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the current hardcoded OpenAI-only provider with a multi-provider (OpenAI + Anthropic + Gemini + Ollama) factory driven by DB config. Enable three modes — **company system subscription** (기본), **per-user BYO subscription**, **per-workspace API-key** — all selectable from an admin UI and a user settings page. Keep embeddings strictly local via Ollama.
+> **Amendment (2026-04-23)** — Harness-first 전환 결정으로 **Ollama / embedding 파이프라인은 scope에서 제외**된다. 기존 Phase A7(embed dim migration), Phase B5(Ollama adapter), Phase D5 seed의 embed 라인, Task A5 §1.4(임베딩 모델 허용), Task A6의 Ollama allow 부분은 모두 삭제. embedding 계층 자체 제거는 별도 PR `feat/ask-harness-transition`에서 처리된다. 본 plan은 **생성·reasoning 계열 multi-provider** 에만 집중한다.
 
-**Architecture:** `packages/ai/providers/` holds one adapter per vendor exposing a unified `chat / stream / embed` interface. A resolver reads `llm_provider_config` + `llm_credential` (DB, scoped **user > workspace > global > env fallback**) and returns the right adapter per `Operation`. CLIProxy-style OAuth gateways cover subscription modes (OpenAI existing, Claude+Gemini newly wired in Phase C). `packages/secret/` stores API keys/OAuth tokens AES-256-GCM encrypted. Ollama handles all embeddings (HNSW re-indexed when dim changes). Admin UI + user settings page drive all config without restart.
+**Goal:** Replace the current hardcoded OpenAI-only provider with a multi-provider (OpenAI + Anthropic + Gemini) factory driven by DB config. Enable three modes — **company system subscription** (기본), **per-user BYO subscription**, **per-workspace API-key** — all selectable from an admin UI and a user settings page.
 
-**Tech Stack:** Next.js 15 App Router, React 19, Drizzle ORM (PostgreSQL 16 + pg_trgm + pgvector + HNSW), Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`), Ollama REST, pg-boss worker queue, Vitest + Playwright.
+**Architecture:** `packages/ai/providers/` holds one adapter per vendor exposing a unified `chat / stream` interface. A resolver reads `llm_provider_config` + `llm_credential` (DB, scoped **user > workspace > global > env fallback**) and returns the right adapter per `Operation`. CLIProxy-style OAuth gateways cover subscription modes (OpenAI existing, Claude+Gemini newly wired in Phase C). `packages/secret/` stores API keys/OAuth tokens AES-256-GCM encrypted. Admin UI + user settings page drive all config without restart.
+
+**Tech Stack:** Next.js 15 App Router, React 19, Drizzle ORM (PostgreSQL 16 + pg_trgm), Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`), pg-boss worker queue, Vitest + Playwright.
 
 ---
 
@@ -36,15 +38,14 @@ node scripts/check-llm-models.mjs
 - `OPENAI_API_KEY` in `.env`/`apps/web/.env.local` may be placeholder — this work makes it optional (system subscription is default)
 - Docker Compose services running: `postgres` (5436), `minio` (9100/9101), `cli-proxy` (8317, OpenAI OAuth)
 - Node 22+, pnpm 9+
-- **Optional until Phase D:** Ollama installed locally (`https://ollama.ai/download`, then `ollama pull bge-m3`)
 
 **Existing constraints (DO NOT VIOLATE):**
-- `docs/policies/llm-models.md` — currently allows ONLY OpenAI `gpt-5.4` / `gpt-5.4-mini` + `text-embedding-3-small`. **Task A5 rewrites this policy** to permit Anthropic/Gemini/Ollama with the new whitelist. No code may reference the new models until A5 lands.
+- `docs/policies/llm-models.md` — currently allows ONLY OpenAI `gpt-5.4` / `gpt-5.4-mini` + `text-embedding-3-small`. **Task A5 rewrites this policy** to permit Anthropic/Gemini with the new whitelist. No code may reference the new models until A5 lands.
 - `scripts/check-llm-models.mjs` — **Task A6 extends the allow-list**. Before that task, any Claude/Gemini literal trips the lint.
 - DB sensitivity + RBAC rules (`packages/db/schema/knowledge.ts`, `packages/auth/rbac.ts`) must be preserved — new `admin:llm_config` permission is added alongside, not replacing existing ones
-- `knowledge_page.embedding` is HNSW-indexed at 1536d (`text-embedding-3-small`). Ollama models use **different** dims (bge-m3 = 1024d). **Task A7 migrates this column to a configurable dim** and re-indexes. All ingest/search code must read the dim from config, not hardcode 1536.
 - `.env`/`apps/web/.env.local` are gitignored — do NOT commit credentials
 - Jarvis "subscription-first" default: every operation's default `mode` must be `system_subscription` unless env overrides
+- **Embedding은 본 plan scope에서 완전 제외.** `embed` operation과 `text-embedding-3-small` / Ollama 관련 코드는 별도 PR `feat/ask-harness-transition`에서 전량 삭제된다. 본 plan 진행 중에는 기존 embed 코드를 그대로 둔다 (변경하지 않음).
 
 ---
 
@@ -52,9 +53,9 @@ node scripts/check-llm-models.mjs
 
 ### In scope
 
-- **4 providers:** OpenAI · Anthropic · Gemini · Ollama (Ollama for `embed` only in v1)
-- **4 modes:** `system_subscription`, `user_subscription` (BYO), `api_key`, `local`
-- **4 operations:** `query` · `ingest` · `lint` · `embed`
+- **3 providers:** OpenAI · Anthropic · Gemini
+- **3 modes:** `system_subscription`, `user_subscription` (BYO), `api_key`
+- **3 operations:** `query` · `ingest` · `lint` (embed 제외 — Harness-first 전환으로 embed 자체 폐지)
 - **DB-driven config** with per-scope precedence (user > workspace > global > env)
 - **Admin UI** at `/admin/llm-providers` (RBAC: `admin:llm_config`)
 - **User settings UI** at `/settings/llm` (every authenticated user)
@@ -64,11 +65,13 @@ node scripts/check-llm-models.mjs
 
 ### Out of scope (explicit)
 
+- **Ollama / local embedding** — Harness-first 전환에 따라 embedding 파이프라인 자체가 폐지됨. `feat/ask-harness-transition` PR에서 별도 처리
+- **Embedding dim migration (1536 → 1024)** — embed 폐지로 불필요
+- **`embed` operation adapter / call site 재작성** — 동일 이유
 - Multi-model ensembling / primary→fallback chain (only simple retry in E5)
 - Fine-tuned model hosting
 - Streaming proxy re-implementation — use Vercel AI SDK streams as-is
 - Cost/usage dashboard redesign (`llm_call_log` table stays; dashboard UI is a separate PR)
-- Anthropic/Gemini for `embed` op (v1 keeps Ollama only — per user decision)
 - Ingest via subscription (still ToS-direct per existing policy; user subscription allowed for query/lint only)
 
 ---
@@ -83,11 +86,9 @@ packages/ai/providers/
   openai.ts                     # OpenAI adapter (subscription + api_key)
   anthropic.ts                  # Anthropic adapter
   gemini.ts                     # Google GenAI adapter
-  ollama.ts                     # Ollama local (embed only)
   __tests__/openai.test.ts
   __tests__/anthropic.test.ts
   __tests__/gemini.test.ts
-  __tests__/ollama.test.ts
 
 packages/ai/gateway/
   cliproxy-openai.ts            # Wrap existing CLIProxy
@@ -96,7 +97,7 @@ packages/ai/gateway/
 
 packages/ai/
   resolver.ts                   # DB lookup -> {provider, mode, credential}
-  client.ts                     # Unified chat / stream / embed
+  client.ts                     # Unified chat / stream
   __tests__/resolver.test.ts
   __tests__/client.integration.test.ts
 
@@ -107,7 +108,6 @@ packages/db/schema/
 packages/db/drizzle/
   0037_llm_provider_config.sql
   0038_llm_credential.sql
-  0039_embedding_dim_flex.sql   # knowledge_page.embedding -> vector(1024) + HNSW rebuild
 
 packages/secret/
   encrypt.ts                    # AES-256-GCM (if not present)
@@ -143,7 +143,6 @@ infra/cliproxy-gemini/
   README.md
 
 docs/policies/llm-models.md            # UPDATED (Task A5 rewrites)
-docs/ops/ollama-setup.md               # NEW — install + model pull
 docs/ops/byo-subscription-flow.md      # NEW — user flow for BYO
 
 apps/web/messages/ko.json              # MODIFY — Admin.llm.*, Settings.llm.* keys
@@ -155,9 +154,9 @@ apps/web/messages/en.json              # MODIFY — English equivalents
 | Path | Change |
 |------|--------|
 | `packages/ai/provider.ts` | Deprecated thin shim calling `resolver.ts`. Kept for compat |
-| `packages/ai/ask.ts`, `tutor.ts`, `page-first/index.ts`, `page-first/synthesize.ts`, `embed.ts` | Replace direct `getProvider()` with `client.chat()` / `client.embed()` |
+| `packages/ai/ask.ts`, `tutor.ts`, `page-first/index.ts`, `page-first/synthesize.ts` | Replace direct `getProvider()` with `client.chat()` (chat/stream만 이관. embed 호출부는 `feat/ask-harness-transition`에서 제거 예정이라 본 plan에서는 건드리지 않음) |
 | `apps/worker/src/jobs/ingest/analyze.ts`, `ingest/generate.ts`, `wiki-lint/contradictions.ts`, `wiki-bootstrap.ts` | Same |
-| `apps/web/lib/env.ts` | Add `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OLLAMA_URL`, `SECRET_MASTER_KEY` (all optional) |
+| `apps/web/lib/env.ts` | Add `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `SECRET_MASTER_KEY` (all optional) |
 | `apps/web/lib/navigation/routes.ts` | Register `/admin/llm-providers`, `/settings/llm` |
 | `apps/web/components/layout/Sidebar.tsx` | Add menu items (gated by RBAC) |
 | `packages/auth/rbac.ts` | Add `admin:llm_config` permission + assign to `admin` role |
@@ -166,16 +165,15 @@ apps/web/messages/en.json              # MODIFY — English equivalents
 | `.env.example`, `apps/web/.env.local.example` | Add new env docs |
 | `scripts/check-llm-models.mjs` | Extend allow-list (Task A6) |
 | `README.md` §6, §6.5 | Tech-stack + policy summary refresh |
-| `packages/search/pg-search.ts` | Read embedding dim from config (not 1536 hardcode) |
 
 ---
 
 ## Phases (execution order)
 
 - **Phase A** (2d): Schema + policy + encryption foundation
-- **Phase B** (3d): Provider adapters (4 vendors)
+- **Phase B** (2d): Provider adapters (3 vendors — OpenAI/Anthropic/Gemini)
 - **Phase C** (2d): Subscription gateway research + wire-up (Claude, Gemini)
-- **Phase D** (2d): Resolver + unified client + migrate call sites
+- **Phase D** (2d): Resolver + unified client + migrate call sites (chat/stream only)
 - **Phase E** (3d): Admin UI + API routes + RBAC
 - **Phase F** (2d): User BYO settings + OAuth flow
 - **Phase G** (2d): Integration tests + docs + release
@@ -604,14 +602,13 @@ New allow-list (replace entire §1 content):
 | `gemini-2.5-pro` | 합성·reasoning |
 | `gemini-2.5-flash` | 라우팅·셀렉터 |
 
-### 1.4 임베딩 (Ollama 로컬 전용)
+### 1.4 임베딩 정책 (Harness-first 전환 이후)
 
-| 모델 | 차원 | 비고 |
-|------|------|------|
-| `bge-m3` | 1024 | 기본. 한국어 우수 |
-| `Qwen3-Embedding-0.6B` | 1024 | 대안 |
+> 2026-04-23 결정: Ollama / 로컬 embedding 도입은 취소. Harness-first 전환에 따라 embedding 파이프라인 자체가 폐지되므로 embedding 모델 허용 목록은 비워 둔다. `text-embedding-3-small`을 비롯한 기존 embed 호출부는 `feat/ask-harness-transition` PR에서 일괄 제거된다.
 
-OpenAI `text-embedding-3-small`은 기존 인덱스 호환 목적으로만 허용 (2~3 릴리스 후 DROP).
+| 모델 | 상태 |
+|------|------|
+| (없음) | Harness-first 전환 이후 embedding 호출 경로 없음 |
 ```
 
 - [ ] **Step 3: Update §2 "금지 모델"**
@@ -621,23 +618,24 @@ Adjust the forbidden list — only legacy versions remain forbidden:
 ```markdown
 ## 2. 금지 모델 (blocklist)
 
-- OpenAI: `gpt-4*`, `gpt-3*`, `o1`·`o3`·`o4`, `text-embedding-ada-*`, `text-embedding-3-large`
+- OpenAI: `gpt-4*`, `gpt-3*`, `o1`·`o3`·`o4`, `text-embedding-ada-*`, `text-embedding-3-large`, `text-embedding-3-small` (Harness-first 전환 이후 폐지)
 - Anthropic: `claude-3*`, `claude-2*`, `claude-instant*` (구 버전)
 - Google: `gemini-1*`, `gemini-pro` (무버전), PaLM 계열
-- Other local: `nomic-embed`, `embeddinggemma`, llama.cpp 통한 생성 LLM (embedding 외 로컬 생성 금지)
+- Local embedding: `bge-m3`, `nomic-embed`, `embeddinggemma`, Ollama 계열 embed 모델 (embedding 파이프라인 자체 폐지)
 ```
 
 - [ ] **Step 4: Add §7 변경 이력 entry**
 
 ```markdown
-| 2026-04-21 | Multi-provider 확장. Claude/Gemini 생성 허용, Ollama embedding 도입, `text-embedding-3-small` sunset 선언 | PR #??: feat/llm-multi-provider |
+| 2026-04-21 | Multi-provider 확장. Claude/Gemini 생성 허용 | PR #??: feat/llm-multi-provider |
+| 2026-04-23 | Harness-first 전환으로 embedding 모델 전면 금지 (Ollama 도입 취소) | feat/ask-harness-transition |
 ```
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add docs/policies/llm-models.md
-git commit -m "docs(policy): expand LLM allow-list — Claude 4.7, Gemini 2.5, Ollama embed"
+git commit -m "docs(policy): expand LLM allow-list — Claude 4.7, Gemini 2.5 (embedding excluded)"
 ```
 
 ---
@@ -665,15 +663,7 @@ Add Gemini:
   { pattern: /\bpalm[\w.-]*/gi, reason: "PaLM (Google legacy)" },
 ```
 
-Remove `ollama` / `bge-m3` from forbidden (now allowed for embedding):
-
-```js
-  // DELETE these lines:
-  { pattern: /\bollama\b/gi, ... },
-  { pattern: /\bbge-(?:m3|...)\b/gi, ... },
-```
-
-Keep `nomic-embed`, `embeddinggemma` forbidden.
+**Embedding 모델은 여전히 전량 금지.** Harness-first 전환에 따라 `ollama`, `bge-m3`, `nomic-embed`, `embeddinggemma`는 기존대로 FORBIDDEN 유지. `text-embedding-3-small`도 Harness transition PR에서 호출부 제거 후 FORBIDDEN으로 이동.
 
 - [ ] **Step 2: Run lint to verify nothing in repo trips new rules**
 
@@ -687,72 +677,14 @@ Expected: ✅ 0 violations (repo has no `claude-4.7`, `gemini-2.5` etc. yet).
 
 ```bash
 git add scripts/check-llm-models.mjs
-git commit -m "feat(lint): permit claude-4.7+ / gemini-2.5+ / ollama bge-m3 per new policy"
+git commit -m "feat(lint): permit claude-4.7+ / gemini-2.5+ per new policy"
 ```
 
 ---
 
-### Task A7: Migration 0039 — flexible embedding dim
+### Task A7: ~~Migration 0039 — flexible embedding dim~~ (삭제됨)
 
-**Problem:** `knowledge_page.embedding` is `vector(1536)` HNSW-indexed. bge-m3 is 1024d. Must migrate.
-
-**Strategy:** Drop-and-recreate column. Data loss is acceptable — embeddings will be regenerated by ingest workers after Phase D.
-
-**Files:**
-- Create: `packages/db/drizzle/0039_embedding_dim_flex.sql` (manual, not via drizzle-kit — custom SQL)
-
-- [ ] **Step 1: Write migration SQL**
-
-```sql
--- packages/db/drizzle/0039_embedding_dim_flex.sql
--- Phase-W6: drop 1536d embedding, recreate as 1024d for Ollama bge-m3.
--- Existing vectors will be re-generated by ingest workers; data loss is intentional.
-
-DROP INDEX IF EXISTS knowledge_page_embedding_hnsw_idx;
-ALTER TABLE knowledge_page DROP COLUMN IF EXISTS embedding;
-ALTER TABLE knowledge_page ADD COLUMN embedding vector(1024);
-
-CREATE INDEX knowledge_page_embedding_hnsw_idx
-  ON knowledge_page USING hnsw (embedding vector_cosine_ops);
-```
-
-- [ ] **Step 2: Update `_journal.json`**
-
-Manually append entry for 0039 following the same format as 0037/0038.
-
-- [ ] **Step 3: Update schema file**
-
-Edit `packages/db/schema/knowledge.ts` — change `embedding: vector("embedding", { dimensions: 1536 })` → `1024`.
-
-- [ ] **Step 4: Update search code**
-
-Edit `packages/search/pg-search.ts` — any reference to "1536" or "text-embedding-3-small" in comments/constants should note "now 1024d bge-m3".
-
-Search-replace:
-```bash
-grep -rn "1536\|text-embedding-3-small" packages/search packages/ai apps/web/lib/server/search-embedder.ts
-```
-
-Decide each match — if it's hardcoded dim, make it come from a constant `EMBEDDING_DIM = 1024` exported from `packages/ai/providers/ollama.ts`.
-
-- [ ] **Step 5: Apply + verify**
-
-```bash
-pnpm db:migrate
-docker exec jarvis-postgres psql -U jarvis -d jarvis -c "\d knowledge_page"
-# Expect: embedding | vector(1024)
-node scripts/check-schema-drift.mjs
-```
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add packages/db/drizzle/0039_embedding_dim_flex.sql \
-        packages/db/drizzle/meta/_journal.json \
-        packages/db/schema/knowledge.ts \
-        packages/search/pg-search.ts apps/web/lib/server/search-embedder.ts
-git commit -m "feat(db): migration 0039 — embedding 1536d -> 1024d for Ollama bge-m3"
-```
+> **삭제됨 (2026-04-23).** Harness-first 전환에 따라 embedding 파이프라인 자체가 폐지되므로 dim migration 불필요. `knowledge_page.embedding` / HNSW 인덱스 / `packages/search/pg-search.ts`의 벡터 검색 코드는 `feat/ask-harness-transition` PR에서 전량 삭제된다.
 
 ---
 
@@ -769,7 +701,6 @@ Add to `baseSchema` object:
 ```ts
     ANTHROPIC_API_KEY: z.string().min(1).optional(),
     GEMINI_API_KEY: z.string().min(1).optional(),
-    OLLAMA_URL: z.string().url().default("http://localhost:11434"),
     SECRET_MASTER_KEY: z.string().regex(/^[0-9a-f]{64}$/i).optional(),
     CLAUDE_GATEWAY_URL: z.string().url().optional(),
     GEMINI_GATEWAY_URL: z.string().url().optional(),
@@ -784,9 +715,6 @@ ANTHROPIC_API_KEY=
 
 # Google Gemini (optional)
 GEMINI_API_KEY=
-
-# Ollama (local embedding)
-OLLAMA_URL=http://localhost:11434
 
 # Secret encryption master key (32 bytes hex). Generate:
 #   node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
@@ -807,7 +735,7 @@ pnpm --filter @jarvis/web test lib/env
 
 ```bash
 git add apps/web/lib/env.ts .env.example apps/web/.env.local.example
-git commit -m "feat(env): add Anthropic/Gemini/Ollama/SecretMasterKey vars"
+git commit -m "feat(env): add Anthropic/Gemini/SecretMasterKey vars"
 ```
 
 ---
@@ -816,7 +744,7 @@ git commit -m "feat(env): add Anthropic/Gemini/Ollama/SecretMasterKey vars"
 
 ---
 
-## Phase B: Provider Adapters (3 days)
+## Phase B: Provider Adapters (2 days)
 
 **Pattern:** Each adapter follows the same TDD loop — detailed for B1 (OpenAI), abbreviated for B2/B3/B4 (same pattern, different SDK).
 
@@ -832,18 +760,17 @@ git commit -m "feat(env): add Anthropic/Gemini/Ollama/SecretMasterKey vars"
 // packages/ai/providers/__tests__/types.test.ts
 import { describe, it, expectTypeOf } from "vitest";
 import type {
-  Provider, Operation, Mode, ChatRequest, ChatResponse,
-  EmbedRequest, EmbedResponse, ProviderAdapter,
+  Provider, Operation, Mode, ChatRequest, ChatResponse, ProviderAdapter,
 } from "../types";
 
 describe("provider types", () => {
   it("Provider union", () => {
-    expectTypeOf<Provider>().toEqualTypeOf<"openai" | "anthropic" | "gemini" | "ollama">();
+    expectTypeOf<Provider>().toEqualTypeOf<"openai" | "anthropic" | "gemini">();
   });
-  it("ProviderAdapter has chat+embed", () => {
+  it("ProviderAdapter has chat+stream", () => {
     type A = ProviderAdapter;
     expectTypeOf<A["chat"]>().toBeFunction();
-    expectTypeOf<A["embed"]>().toBeFunction();
+    expectTypeOf<A["stream"]>().toBeFunction();
   });
 });
 ```
@@ -852,9 +779,9 @@ describe("provider types", () => {
 
 ```ts
 // packages/ai/providers/types.ts
-export type Provider = "openai" | "anthropic" | "gemini" | "ollama";
-export type Operation = "query" | "ingest" | "lint" | "embed";
-export type Mode = "system_subscription" | "user_subscription" | "api_key" | "local";
+export type Provider = "openai" | "anthropic" | "gemini";
+export type Operation = "query" | "ingest" | "lint"; // embed 제외 — Harness-first 전환
+export type Mode = "system_subscription" | "user_subscription" | "api_key";
 
 export interface ChatRequest {
   model: string;
@@ -875,17 +802,6 @@ export interface ChatResponse {
   usage?: { promptTokens: number; completionTokens: number };
 }
 
-export interface EmbedRequest {
-  model: string;
-  inputs: string[];
-}
-
-export interface EmbedResponse {
-  embeddings: number[][];
-  model: string;
-  dim: number;
-}
-
 export interface ResolvedCredential {
   provider: Provider;
   mode: Mode;
@@ -897,7 +813,6 @@ export interface ProviderAdapter {
   name: Provider;
   chat(req: ChatRequest, cred: ResolvedCredential): Promise<ChatResponse>;
   stream(req: ChatRequest, cred: ResolvedCredential): AsyncIterable<ChatChunk>;
-  embed(req: EmbedRequest, cred: ResolvedCredential): Promise<EmbedResponse>;
 }
 ```
 
@@ -921,7 +836,6 @@ Follow TDD pattern identically to B1:
 
 - [ ] **Step 1: Write test with mocked OpenAI SDK** — assert:
   - `chat()` calls `client.chat.completions.create` with correct baseURL (gateway if `mode=system_subscription`, default if `api_key`)
-  - `embed()` throws `Error("OpenAI embed not supported in v1 — use Ollama")`
   - `stream()` yields `ChatChunk` objects
 
 - [ ] **Step 2: Run test, expect fail**
@@ -931,7 +845,7 @@ Follow TDD pattern identically to B1:
 ```ts
 // packages/ai/providers/openai.ts
 import OpenAI from "openai";
-import type { ProviderAdapter, ChatRequest, ChatResponse, ChatChunk, EmbedRequest, EmbedResponse, ResolvedCredential } from "./types";
+import type { ProviderAdapter, ChatRequest, ChatResponse, ChatChunk, ResolvedCredential } from "./types";
 
 function client(cred: ResolvedCredential): OpenAI {
   if (cred.mode === "system_subscription" || cred.mode === "user_subscription") {
@@ -977,9 +891,6 @@ export const openaiAdapter: ProviderAdapter = {
       if (delta) yield { delta };
     }
   },
-  async embed() {
-    throw new Error("OpenAI embed disabled in v1. Use Ollama bge-m3.");
-  },
 };
 ```
 
@@ -1003,7 +914,6 @@ import Anthropic from "@anthropic-ai/sdk";
 // ... client(cred) branches on mode -> gateway or direct
 // chat: c.messages.create({ model, max_tokens, messages })
 // stream: iterate c.messages.stream
-// embed: throw Error("use Ollama")
 ```
 
 Install SDK (A8 env plus Anthropic SDK dep):
@@ -1028,57 +938,13 @@ Commit: `feat(ai): Gemini provider adapter`
 
 ---
 
-### Task B5: Ollama adapter (embed only)
+### Task B5: ~~Ollama adapter (embed only)~~ (삭제됨)
 
-**Files:**
-- Create: `packages/ai/providers/ollama.ts`
-- Test: `packages/ai/providers/__tests__/ollama.test.ts`
-
-Ollama speaks a simple REST. No OpenAI SDK needed.
-
-- [ ] **Step 1: Write failing test** — assert `embed()` POSTs to `${OLLAMA_URL}/api/embeddings` and returns `{embeddings, model, dim}`.
-
-- [ ] **Step 2: Implementation**
-
-```ts
-// packages/ai/providers/ollama.ts
-import type { ProviderAdapter, ResolvedCredential, EmbedRequest, EmbedResponse } from "./types";
-
-export const OLLAMA_EMBED_DIM = 1024; // bge-m3
-
-export const ollamaAdapter: ProviderAdapter = {
-  name: "ollama",
-  async chat() { throw new Error("Ollama chat disabled in v1 (subscription LLMs only)"); },
-  async *stream() { throw new Error("Ollama stream disabled in v1"); },
-  async embed(req, cred): Promise<EmbedResponse> {
-    const baseUrl = cred.gatewayUrl ?? process.env["OLLAMA_URL"] ?? "http://localhost:11434";
-    const vectors: number[][] = [];
-    for (const input of req.inputs) {
-      const res = await fetch(`${baseUrl}/api/embeddings`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ model: req.model, prompt: input }),
-      });
-      if (!res.ok) throw new Error(`Ollama embed ${res.status}: ${await res.text()}`);
-      const json = (await res.json()) as { embedding: number[] };
-      vectors.push(json.embedding);
-    }
-    return { embeddings: vectors, model: req.model, dim: vectors[0]?.length ?? 0 };
-  },
-};
-```
-
-- [ ] **Step 3: Verify + commit**
-
-```bash
-# Test: mock fetch to return {embedding: Array(1024).fill(0.1)}
-pnpm --filter @jarvis/ai test providers/__tests__/ollama
-git commit -m "feat(ai): Ollama provider adapter (embed only, bge-m3 1024d)"
-```
+> **삭제됨 (2026-04-23).** Harness-first 전환으로 embedding 파이프라인 자체 폐지. Ollama adapter 불필요.
 
 ---
 
-**Phase B gate:** all 5 adapter test files green (types + 4 adapters). Tag: `git tag phase-b-complete`.
+**Phase B gate:** all 4 test files green (types + OpenAI + Anthropic + Gemini). Tag: `git tag phase-b-complete`.
 
 ---
 
@@ -1195,13 +1061,11 @@ import type { Operation, ProviderAdapter, ResolvedCredential } from "./providers
 import { openaiAdapter } from "./providers/openai";
 import { anthropicAdapter } from "./providers/anthropic";
 import { geminiAdapter } from "./providers/gemini";
-import { ollamaAdapter } from "./providers/ollama";
 
 const adapters: Record<string, ProviderAdapter> = {
   openai: openaiAdapter,
   anthropic: anthropicAdapter,
   gemini: geminiAdapter,
-  ollama: ollamaAdapter,
 };
 
 export interface ResolveArgs {
@@ -1286,7 +1150,7 @@ git commit -m "feat(ai): resolver with scope precedence (user > workspace > glob
 ```ts
 // packages/ai/client.ts
 import { resolve, type ResolveArgs } from "./resolver";
-import type { ChatRequest, ChatResponse, ChatChunk, EmbedRequest, EmbedResponse } from "./providers/types";
+import type { ChatRequest, ChatResponse, ChatChunk } from "./providers/types";
 
 export async function chat(args: ResolveArgs, req: Omit<ChatRequest, "model">): Promise<ChatResponse> {
   const r = await resolve(args);
@@ -1298,13 +1162,11 @@ export async function* stream(args: ResolveArgs, req: Omit<ChatRequest, "model">
   yield* r.adapter.stream({ ...req, model: r.model } as any, r.credential);
 }
 
-export async function embed(args: ResolveArgs, inputs: string[]): Promise<EmbedResponse> {
-  const r = await resolve({ ...args, op: "embed" });
-  return r.adapter.embed({ model: r.model, inputs }, r.credential);
-}
+// embed(): Harness-first 전환으로 제거됨. 기존 embed 호출부는
+// feat/ask-harness-transition PR에서 전량 삭제되므로 본 client에서도 export하지 않음.
 ```
 
-TDD + commit: `feat(ai): unified chat/stream/embed client`
+TDD + commit: `feat(ai): unified chat/stream client`
 
 ---
 
@@ -1326,10 +1188,14 @@ Same pattern for:
 - `packages/ai/tutor.ts`
 - `packages/ai/page-first/index.ts`
 - `packages/ai/page-first/synthesize.ts`
-- `packages/ai/embed.ts` — now calls `embed()` (Ollama)
 - `apps/worker/src/jobs/ingest/analyze.ts`, `ingest/generate.ts`
 - `apps/worker/src/jobs/wiki-lint/contradictions.ts`
 - `apps/worker/src/jobs/wiki-bootstrap.ts`
+
+**제외 대상** (건드리지 않음):
+- `packages/ai/embed.ts` — `feat/ask-harness-transition` PR에서 전량 삭제
+- `apps/web/lib/server/search-embedder.ts` — 동일
+- `apps/worker/src/jobs/embed.ts` — 동일
 
 One commit per file, message format: `refactor(ai): <file> uses unified client`.
 
@@ -1351,7 +1217,7 @@ Insert on first boot if no rows exist — one per `(global, operation)`:
 // (global, query,  openai, system_subscription, gpt-5.4-mini, gateway=http://cli-proxy:8317/v1)
 // (global, lint,   openai, system_subscription, gpt-5.4-mini, gateway=...)
 // (global, ingest, openai, api_key,             gpt-5.4-mini, credential=env_openai_key)
-// (global, embed,  ollama, local,               bge-m3,       gateway=http://localhost:11434)
+// embed 시드는 등록하지 않음 — Harness-first 전환으로 embed op 자체 폐지
 ```
 
 Commit: `feat(db): seed default llm_provider_config rows`
@@ -1411,7 +1277,7 @@ Commit: `feat(api): admin llm-credential CRUD with AES encryption`
 Page layout:
 - Header: "LLM 공급자 설정"
 - Tab: Global / Workspaces
-- Table: rows = operations (query/ingest/lint/embed), columns = providers. Each cell shows current config + edit button.
+- Table: rows = operations (query/ingest/lint), columns = providers. Each cell shows current config + edit button.
 - Edit opens drawer with provider/mode/model/credential selectors
 
 Follow existing admin page patterns (see `apps/web/app/(app)/admin/audit/page.tsx` for reference).
@@ -1504,29 +1370,19 @@ Commit: `test(e2e): admin + user + fallback scenarios`
 
 ---
 
-### Task G2: Ollama setup guide
+### Task G2: ~~Ollama setup guide~~ (삭제됨)
 
-**Files:**
-- Create: `docs/ops/ollama-setup.md`
-
-Content:
-- Install Ollama (macOS/Windows/Linux links)
-- `ollama pull bge-m3`
-- Verify `curl http://localhost:11434/api/tags`
-- Configure `OLLAMA_URL` in `.env`
-- How to run embedding backfill job
-
-Commit: `docs(ops): Ollama setup guide`
+> **삭제됨 (2026-04-23).** Ollama 도입 취소.
 
 ---
 
 ### Task G3: README refresh
 
 **Files:**
-- Modify: `README.md` — §6 (tech stack) add Anthropic/Gemini/Ollama; §6.5 (policy) refresh allow-list table
+- Modify: `README.md` — §6 (tech stack) add Anthropic/Gemini; §6.5 (policy) refresh allow-list table
 - Modify: `CHANGELOG.md` (if exists) — add multi-provider entry
 
-Commit: `docs(readme): reflect multi-provider + Ollama embeddings`
+Commit: `docs(readme): reflect multi-provider generation (OpenAI + Anthropic + Gemini)`
 
 ---
 
@@ -1547,22 +1403,21 @@ Fix any issues. Commit: `chore: final sweep before PR`
 ```bash
 git push -u origin feat/llm-multi-provider
 gh pr create --base main \
-  --title "feat: multi-provider LLM (OpenAI+Claude+Gemini+Ollama) with BYO subscription" \
+  --title "feat: multi-provider LLM generation (OpenAI + Anthropic + Gemini) with BYO subscription" \
   --body "$(cat <<'EOF'
 ## Summary
-- 4 providers, 4 modes, 4 operations in a DB-driven resolver
+- 3 providers · 3 modes · 3 operations(query/ingest/lint) in a DB-driven resolver
 - BYO user subscription via OAuth proxies
-- Ollama embeddings (bge-m3, 1024d) replace OpenAI embeddings
 - Admin UI at /admin/llm-providers, user UI at /settings/llm
-- Policy + lint updated to allow Claude-4.7 / Gemini-2.5 / Ollama
+- Policy + lint updated to allow Claude-4.x / Gemini-2.5
 
 ## Breaking changes
-- `knowledge_page.embedding` dimension: 1536d → 1024d (full re-embed required)
 - `FEATURE_SUBSCRIPTION_*` env flags deprecated (DB-driven now)
-- Ingest/Query/Lint call sites refactored
+- query/ingest/lint call sites refactored (chat/stream만)
+- embedding 관련 breaking change 없음 — 본 plan scope 제외 (별도 PR `feat/ask-harness-transition`에서 처리)
 
 ## Test plan
-- [x] Unit tests for 5 adapters + resolver
+- [x] Unit tests for 4 adapters (types + OpenAI + Anthropic + Gemini) + resolver
 - [x] E2E: admin flip, user BYO, fallback
 - [ ] Manual QA in staging
 
@@ -1578,7 +1433,7 @@ EOF
 Before executing, verify this plan against the spec:
 
 - [x] **OpenAI + Claude + Gemini** — B2/B3/B4 adapters, A5 policy, A6 lint
-- [x] **Ollama embedding only** — B5 adapter, A7 dim migration, policy §1.4
+- [x] **~~Ollama embedding only~~** — **삭제됨 (2026-04-23):** Harness-first 전환으로 embedding 파이프라인 자체 폐지
 - [x] **Subscription + API key + BYO modes** — Mode union in B1, resolver D1, BYO in F1-F2
 - [x] **DB-backed config** — A1 + A2 schemas, D1 resolver, D5 seed, E2/E3 API
 - [x] **Admin UI** — E4 matrix page
@@ -1589,6 +1444,7 @@ Before executing, verify this plan against the spec:
 - [x] **Lint updated** (A6) before Claude/Gemini literals appear
 - [x] **RBAC gate** (E1) before admin UI (E4)
 - [x] **Single branch** `feat/llm-multi-provider` throughout
+- [x] **Embedding는 본 plan에서 제외** — Harness transition PR이 선행/병렬로 embed 호출부 전량 제거. 본 plan의 Phase D3/D4는 chat/stream만 이관
 
 ---
 
