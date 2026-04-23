@@ -48,6 +48,24 @@ export interface AskAgentResult {
 }
 
 // ---------------------------------------------------------------------------
+// Phase B2 — Streaming event types.
+//
+// askAgentStream 은 각 step 경계에서 tool-call / tool-result 이벤트를 yield
+// 하고 최종 content 를 text 이벤트로 발행한다. OpenAI token-level streaming
+// 은 Phase B3 (ask.ts 교체) 에서 서비스 SSE 와 합칠 때 선택 도입한다.
+// ---------------------------------------------------------------------------
+
+export type AskAgentEvent =
+  | { type: "tool-call"; name: string; input: unknown; callId: string }
+  | { type: "tool-result"; name: string; callId: string; ok: boolean; error?: string }
+  | { type: "text"; text: string }
+  | {
+      type: "done";
+      finishReason: "stop" | "max_steps" | "error";
+      steps: number;
+    };
+
+// ---------------------------------------------------------------------------
 // Tool registry — Phase A 에서 만든 tool 들을 sensitivity wrapper 로 감싸
 // 한 곳에서 이름→ToolDefinition 매핑.
 // ---------------------------------------------------------------------------
@@ -175,4 +193,106 @@ export async function askAgent(
   }
 
   return { answer: "", toolCalls, steps: MAX_TOOL_STEPS, finishReason: "max_steps" };
+}
+
+// ---------------------------------------------------------------------------
+// askAgentStream — Same loop, AsyncGenerator<AskAgentEvent>.
+//
+// 본 함수는 **step-boundary streaming** 이다. 즉 LLM 토큰은 여전히 step
+// 단위로 한 번에 받지만(`stream: false`), 각 step 사이에 tool-call /
+// tool-result 이벤트를 yield 하여 UI 가 "위키 검색 중" 같은 진행 상태를
+// 즉시 표시할 수 있게 한다. token-level streaming 은 Phase B3 의 ask.ts
+// 통합 단계에서 선택 도입.
+// ---------------------------------------------------------------------------
+
+export async function* askAgentStream(
+  question: string,
+  ctx: ToolContext,
+  options: AskAgentOptions,
+): AsyncGenerator<AskAgentEvent> {
+  const model = options.model ?? "gpt-5.4-mini";
+  const systemPrompt = options.systemPrompt ?? ASK_SYSTEM_PROMPT;
+  const tools = buildToolDict();
+  const openaiTools = toOpenAITools(tools);
+
+  const messages: ChatMessage[] = [
+    { role: "system", content: systemPrompt } as ChatMessage,
+    { role: "user", content: question } as ChatMessage,
+  ];
+
+  for (let step = 0; step < MAX_TOOL_STEPS; step++) {
+    const res = (await options.client.chat.completions.create({
+      model,
+      messages,
+      tools: openaiTools,
+    } as ChatCreateParams)) as Awaited<ReturnType<OpenAI["chat"]["completions"]["create"]>>;
+
+    const choice = (res as { choices?: Array<{ message?: unknown }> }).choices?.[0];
+    const msg = choice?.message as
+      | {
+          role: "assistant";
+          content: string | null;
+          tool_calls?: Array<{
+            id: string;
+            type: "function";
+            function: { name: string; arguments: string };
+          }>;
+        }
+      | undefined;
+
+    if (!msg) {
+      yield { type: "done", finishReason: "error", steps: step + 1 };
+      return;
+    }
+
+    if (!msg.tool_calls || msg.tool_calls.length === 0) {
+      if (msg.content && msg.content.length > 0) {
+        yield { type: "text", text: msg.content };
+      }
+      yield { type: "done", finishReason: "stop", steps: step + 1 };
+      return;
+    }
+
+    // 1) tool-call 이벤트를 먼저 모두 yield (UI 즉시 반영)
+    const parsed = msg.tool_calls.map((tc) => ({
+      tc,
+      input: parseJson(tc.function.arguments),
+    }));
+    for (const { tc, input } of parsed) {
+      yield { type: "tool-call", name: tc.function.name, input, callId: tc.id };
+    }
+
+    // 2) assistant 메시지 conversation 에 추가
+    messages.push(msg as unknown as ChatMessage);
+
+    // 3) 병렬 실행
+    const results = await Promise.all(
+      parsed.map(async ({ tc, input }) => {
+        const tool = tools[tc.function.name];
+        const result: ToolResult<unknown> = tool
+          ? await tool.execute(input, ctx)
+          : { ok: false, code: "unknown", error: `unknown tool: ${tc.function.name}` };
+        return { tc, result };
+      }),
+    );
+
+    // 4) tool-result 이벤트 yield + messages 에 tool 메시지 push
+    for (const { tc, result } of results) {
+      const errorMsg = !result.ok ? result.error : undefined;
+      yield {
+        type: "tool-result",
+        name: tc.function.name,
+        callId: tc.id,
+        ok: result.ok,
+        ...(errorMsg !== undefined ? { error: errorMsg } : {}),
+      };
+      messages.push({
+        role: "tool",
+        tool_call_id: tc.id,
+        content: JSON.stringify(result),
+      } as unknown as ChatMessage);
+    }
+  }
+
+  yield { type: "done", finishReason: "max_steps", steps: MAX_TOOL_STEPS };
 }
