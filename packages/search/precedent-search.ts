@@ -1,50 +1,52 @@
 // packages/search/precedent-search.ts
 //
-// Lane B — precedent_case (TF-IDF + SVD 1536d vector space).
+// Lane B — precedent_case search.
 //
-// ⚠️ PHYSICAL ISOLATION INVARIANT ⚠️
-// This adapter NEVER queries knowledge_page or UNIONs its results with
-// PgSearchAdapter's output. The two vector spaces have the same dimensionality
-// (1536) but different origins (OpenAI vs. TF-IDF+SVD); mixing them produces
-// meaningless cosine similarity. See packages/search/README.md.
+// Phase-Harness (2026-04-23): 벡터 검색(TF-IDF + SVD 1536d) 전면 제거.
+// `precedent_case.embedding` 컬럼이 migration 0037 로 드롭되었기 때문에
+// 이 adapter 는 BM25 / ILIKE 기반 키워드 검색만 수행한다. 향후 ask-agent
+// 의 wiki-grep 동급 도구로 흡수되거나 별도 case-grep tool 로 분리될 수
+// 있음 (Phase G 이후 과제).
 //
-// The API route dispatches on `resourceType`: 'case' → this adapter,
-// everything else → PgSearchAdapter.
+// 격리 원칙은 유지: 이 adapter 는 절대 knowledge_page 를 조회하지 않는다.
 
 import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
 import type { SearchQuery, SearchResult, SearchHit } from './types.js';
-import { assertValidEmbedding } from './pg-search.js';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
 export interface PrecedentSearchAdapterOptions {
-  embedQuery: (text: string) => Promise<number[]>;
+  // Phase-Harness 이후 옵션 없음. 하위 호환을 위해 빈 shape 유지.
 }
 
 export class PrecedentSearchAdapter implements SearchAdapter {
-  private readonly embedQuery: (text: string) => Promise<number[]>;
-
-  constructor(opts: PrecedentSearchAdapterOptions) {
-    this.embedQuery = opts.embedQuery;
-  }
+  constructor(_opts: PrecedentSearchAdapterOptions = {}) {}
 
   async search(query: SearchQuery): Promise<SearchResult> {
     const startMs = Date.now();
     const limit = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const offset = ((query.page ?? 1) - 1) * limit;
 
-    const qvec = await this.embedQuery(query.q);
-    assertValidEmbedding(qvec);
-    const literal = `[${qvec.join(',')}]`;
-
-    // Apply the same sensitivity-based RBAC as Lane A — precedent_case rows
-    // are tagged with `sensitivity` (default 'INTERNAL') and the filter must
-    // exclude RESTRICTED / SECRET_REF_ONLY from users without clearance.
+    // Apply same sensitivity-based RBAC as Lane A.
     const secretFilter = buildLegacyKnowledgeSensitivitySqlFilter(query.userPermissions);
+
+    // BM25-like 근사: title + symptom + cluster_label 에 pg_trgm similarity 사용.
+    // precedent_case 는 search_vector 컬럼이 없어 FTS 대신 trigram 유사도로 대체.
+    const q = query.q.trim();
+    if (q.length === 0) {
+      return {
+        hits: [],
+        total: 0,
+        facets: { byPageType: {}, bySensitivity: {} },
+        suggestions: [],
+        query: q,
+        durationMs: Date.now() - startMs,
+      };
+    }
 
     const rows = await db.execute<{
       id: string;
@@ -52,7 +54,7 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       cluster_label: string | null;
       sensitivity: string;
       updated_at: Date;
-      vector_sim: number;
+      trgm_sim: number;
       total_count: string;
     }>(sql`
       SELECT
@@ -61,13 +63,21 @@ export class PrecedentSearchAdapter implements SearchAdapter {
         cluster_label,
         sensitivity,
         updated_at,
-        1 - (embedding <=> ${literal}::vector) AS vector_sim,
-        COUNT(*) OVER ()::text                AS total_count
+        GREATEST(
+          similarity(title, ${q}),
+          similarity(coalesce(symptom, ''), ${q}),
+          similarity(coalesce(cluster_label, ''), ${q})
+        ) AS trgm_sim,
+        COUNT(*) OVER ()::text AS total_count
       FROM precedent_case
       WHERE workspace_id = ${query.workspaceId}::uuid
-        AND embedding IS NOT NULL
+        AND (
+          title ILIKE ${'%' + q + '%'}
+          OR symptom ILIKE ${'%' + q + '%'}
+          OR cluster_label ILIKE ${'%' + q + '%'}
+        )
         ${sql.raw(secretFilter)}
-      ORDER BY embedding <=> ${literal}::vector
+      ORDER BY trgm_sim DESC, updated_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
 
@@ -81,10 +91,9 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       sensitivity: row.sensitivity,
       updatedAt: row.updated_at.toISOString(),
       ftsRank: 0,
-      trgmSim: 0,
-      vectorSim: row.vector_sim,
+      trgmSim: Number(row.trgm_sim),
       freshness: 0,
-      hybridScore: row.vector_sim,
+      hybridScore: Number(row.trgm_sim),
       url: `/cases/${row.id}`,
     }));
 
@@ -93,19 +102,17 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       total,
       facets: { byPageType: {}, bySensitivity: {} },
       suggestions: [],
-      query: query.q,
+      query: q,
       durationMs: Date.now() - startMs,
     };
   }
 
   async suggest(): Promise<string[]> {
-    // Lane B does not expose prefix suggestions — keep UX distinct from wiki.
     return [];
   }
 
   async indexPage(): Promise<void> {
-    // no-op — precedent_case is populated by the TSVD999 cluster digest pipeline,
-    // not by the wiki publish flow.
+    // no-op
   }
 
   async deletePage(): Promise<void> {

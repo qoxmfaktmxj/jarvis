@@ -1,5 +1,7 @@
 // packages/search/__tests__/precedent-search.test.ts
-// Phase-W5 T7 — unit tests for Lane B (precedent_case) isolation + behaviour.
+// Phase-Harness (2026-04-23): 벡터 검색 제거 후 BM25/trigram 기반 adapter 의
+// 단위 테스트. embedQuery 옵션과 vector_sim 필드는 더 이상 존재하지 않는다.
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SearchQuery } from '../types.js';
 
@@ -22,17 +24,15 @@ const baseQuery: SearchQuery = {
   userPermissions: [],
 };
 
-describe('PrecedentSearchAdapter', () => {
+describe('PrecedentSearchAdapter (Phase-Harness: BM25/trigram)', () => {
   let adapter: PrecedentSearchAdapter;
-  let embedSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    embedSpy = vi.fn().mockResolvedValue(new Array(1536).fill(0.01));
-    adapter = new PrecedentSearchAdapter({ embedQuery: embedSpy });
+    adapter = new PrecedentSearchAdapter({});
   });
 
-  it('returns case hits with resourceType "case"', async () => {
+  it('returns case hits with resourceType "case" and trgmSim populated', async () => {
     mockDb.execute.mockResolvedValueOnce({
       rows: [
         {
@@ -41,7 +41,7 @@ describe('PrecedentSearchAdapter', () => {
           cluster_label: '근태 / 연차',
           sensitivity: 'INTERNAL',
           updated_at: new Date(),
-          vector_sim: 0.88,
+          trgm_sim: 0.73,
           total_count: '1',
         },
       ],
@@ -52,15 +52,9 @@ describe('PrecedentSearchAdapter', () => {
     const hit = res.hits[0]!;
     expect(hit.resourceType).toBe('case');
     expect(hit.url).toBe('/cases/case-1');
-    expect(hit.vectorSim).toBe(0.88);
+    expect(hit.trgmSim).toBeCloseTo(0.73, 5);
+    expect(hit.hybridScore).toBeCloseTo(0.73, 5);
     expect(hit.headline).toBe('근태 / 연차');
-  });
-
-  it('calls embedQuery with the original query string', async () => {
-    mockDb.execute.mockResolvedValueOnce({ rows: [] });
-    await adapter.search(baseQuery);
-    expect(embedSpy).toHaveBeenCalledWith('연차 오류');
-    expect(embedSpy).toHaveBeenCalledTimes(1);
   });
 
   it('never reads knowledge_page (physical Lane A/B isolation)', async () => {
@@ -76,6 +70,13 @@ describe('PrecedentSearchAdapter', () => {
     const res = await adapter.search(baseQuery);
     expect(res.hits).toEqual([]);
     expect(res.total).toBe(0);
+  });
+
+  it('short-circuits on empty query without hitting db', async () => {
+    const res = await adapter.search({ ...baseQuery, q: '   ' });
+    expect(res.hits).toEqual([]);
+    expect(res.total).toBe(0);
+    expect(mockDb.execute).not.toHaveBeenCalled();
   });
 
   it('suggest() always returns empty array', async () => {
