@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   leaveBatchInputSchema,
-  validateBatchBusinessRules
+  validateBatchBusinessRules,
+  type LeaveBatchInput
 } from "./actions.js";
 
 describe("leaveBatchInputSchema", () => {
@@ -61,6 +62,27 @@ describe("validateBatchBusinessRules", () => {
           }
         ],
         cancels: []
+      })
+    ).toThrow();
+  });
+});
+
+describe("leaveBatchInputSchema — cancel UUIDs", () => {
+  it("accepts valid cancel UUIDs", () => {
+    const input: LeaveBatchInput = leaveBatchInputSchema.parse({
+      contractId: "00000000-0000-0000-0000-000000000001",
+      inserts: [],
+      cancels: ["00000000-0000-0000-0000-000000000002"]
+    });
+    expect(input.cancels).toHaveLength(1);
+    expect(input.cancels[0]).toBe("00000000-0000-0000-0000-000000000002");
+  });
+  it("rejects non-UUID cancel ids", () => {
+    expect(() =>
+      leaveBatchInputSchema.parse({
+        contractId: "00000000-0000-0000-0000-000000000001",
+        inserts: [],
+        cancels: ["not-a-uuid"]
       })
     ).toThrow();
   });

@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import {
   contractorContract,
@@ -111,8 +111,14 @@ export async function saveLeaveBatch(
     if (parsed.cancels.length > 0) {
       await tx
         .update(leaveRequest)
-        .set({ cancelledAt: new Date() })
-        .where(inArray(leaveRequest.id, parsed.cancels));
+        .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
+        .where(
+          and(
+            inArray(leaveRequest.id, parsed.cancels),
+            eq(leaveRequest.workspaceId, session.workspaceId),
+            eq(leaveRequest.status, "approved")
+          )
+        );
 
       for (const id of parsed.cancels) {
         await tx.insert(auditLog).values({
