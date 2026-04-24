@@ -286,4 +286,27 @@ describe('askAI() — logLlmCall (Phase B3)', () => {
     // max_steps triggers error SSE event, so status=error
     expect(row.status).toBe('error');
   });
+
+  it('records non-zero inputTokens/outputTokens/costUsd when totalTokens > 0 (budget gate fix)', async () => {
+    mockAgentStream.mockImplementation(() =>
+      agentEvents([
+        { type: 'text', text: 'ok' },
+        // totalTokens=100 → heuristic 70/30 split → inputTokens=70, outputTokens=30
+        { type: 'done', finishReason: 'stop', steps: 1, totalTokens: 100 },
+      ]),
+    );
+
+    const { askAI } = await import('../ask.js');
+    await drain(askAI({ ...baseQuery }));
+
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(logLlmCallMock).toHaveBeenCalledTimes(1);
+    const row = logLlmCallMock.mock.calls[0]![0];
+    // Non-zero tokens must propagate so assertBudget sees real spend.
+    expect(row.inputTokens).toBeGreaterThan(0);
+    expect(row.outputTokens).toBeGreaterThan(0);
+    // costUsd is a string from toFixed(6); must not be zero.
+    expect(row.costUsd).not.toBe('0.000000');
+  });
 });

@@ -310,6 +310,58 @@ describe("askAgentToSSE — full happy path event order", () => {
 });
 
 // ---------------------------------------------------------------------------
+// isWikiReadOutput runtime guard — malformed data must not produce sources
+// ---------------------------------------------------------------------------
+describe("askAgentToSSE — wiki_read runtime guard", () => {
+  it("does NOT harvest wiki_read result when title is missing (guard rejects)", async () => {
+    const events = await collect(
+      askAgentToSSE(
+        fromEvents([
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c1",
+            ok: true,
+            // title and path are missing — guard must reject this
+            data: { slug: "x" },
+          },
+          { type: "done", finishReason: "stop", steps: 1, totalTokens: 10 },
+        ]),
+        WS,
+      ),
+    );
+    const sourcesEvent = events.find((e) => e.type === "sources") as
+      | { type: "sources"; sources: unknown[] }
+      | undefined;
+    // Malformed data — isWikiReadOutput rejects it, no source harvested.
+    expect(sourcesEvent!.sources).toHaveLength(0);
+  });
+
+  it("harvests wiki_read result when all required fields are present", async () => {
+    const events = await collect(
+      askAgentToSSE(
+        fromEvents([
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c1",
+            ok: true,
+            data: { slug: "valid-slug", title: "Valid Title", path: "auto/valid.md", sensitivity: "PUBLIC" },
+          },
+          { type: "done", finishReason: "stop", steps: 1, totalTokens: 10 },
+        ]),
+        WS,
+      ),
+    );
+    const sourcesEvent = events.find((e) => e.type === "sources") as
+      | { type: "sources"; sources: Array<{ slug: string }> }
+      | undefined;
+    expect(sourcesEvent!.sources).toHaveLength(1);
+    expect(sourcesEvent!.sources[0]!.slug).toBe("valid-slug");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Token tracking end-to-end
 // ---------------------------------------------------------------------------
 describe("askAgentToSSE — token tracking", () => {

@@ -8,15 +8,21 @@
 import type { AskAgentEvent } from "./ask-agent.js";
 import type { SSEEvent, SourceRef } from "../types.js";
 import type { WikiPageSourceRef } from "../types.js";
+import type { WikiReadOutput } from "./tools/wiki-read.js";
 
 // ---------------------------------------------------------------------------
-// wiki_read tool output shape (from packages/ai/agent/tools/wiki-read.ts)
+// Runtime guard — verifies an unknown value has the minimum fields required to
+// build a WikiPageSourceRef. Sourced from WikiReadOutput (single source of
+// truth). Guards against tool output drift reaching the UI silently.
 // ---------------------------------------------------------------------------
-interface WikiReadData {
-  slug: string;
-  title: string;
-  path: string;
-  sensitivity: string;
+function isWikiReadOutput(data: unknown): data is WikiReadOutput {
+  return (
+    typeof data === "object" && data !== null &&
+    "slug" in data && typeof (data as { slug: unknown }).slug === "string" &&
+    "title" in data && typeof (data as { title: unknown }).title === "string" &&
+    "path" in data && typeof (data as { path: unknown }).path === "string" &&
+    "sensitivity" in data && typeof (data as { sensitivity: unknown }).sensitivity === "string"
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -50,7 +56,13 @@ export async function* askAgentToSSE(
       case "tool-result": {
         // Dropped from SSE stream; side-effect: accumulate wiki sources.
         if (event.name === "wiki_read" && event.ok && event.data !== undefined) {
-          const d = event.data as WikiReadData;
+          if (!isWikiReadOutput(event.data)) {
+            // Guard rejected — wiki-read output is missing required fields.
+            // Skip silently rather than pushing a malformed SourceRef to the UI.
+            console.warn("[sse-adapter] wiki_read result failed shape guard — skipping source");
+            break;
+          }
+          const d = event.data;
           // De-duplicate by slug — agent may read the same page twice.
           const alreadySeen = accumulatedSources.some(
             (s) => s.kind === "wiki-page" && s.slug === d.slug,

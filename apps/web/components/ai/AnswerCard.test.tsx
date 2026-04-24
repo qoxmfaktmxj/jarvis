@@ -29,8 +29,10 @@ describe("AnswerCard — [[slug]] citation rendering (Phase B4)", () => {
     const html = renderToStaticMarkup(
       <AnswerCard answer="Jarvis에 대해 [[jarvis-intro]] 참고하세요." sources={sources} />,
     );
-    // ClaimBadge should be rendered (renders a sup element)
-    expect(html).toContain("<sup>");
+    // ClaimBadge should be rendered (renders a sup element).
+    // Radix Tooltip wraps the trigger in <sup data-state="closed"> so match
+    // the opening tag only, not the full literal "<sup>".
+    expect(html).toMatch(/<sup[\s>]/);
     // The raw [[jarvis-intro]] text should not appear verbatim
     expect(html).not.toContain("[[jarvis-intro]]");
   });

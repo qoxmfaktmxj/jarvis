@@ -484,15 +484,22 @@ export async function* askAI(
     yield doneEvent;
   } finally {
     // logLlmCall — fire-and-forget, don't block the stream.
+    // Heuristic 70/30 input/output split: ask-agent accumulates totalTokens
+    // across all steps but does not expose per-step prompt/completion breakdown.
+    // Using 70% input / 30% output is a conservative approximation until
+    // per-step token telemetry is added (tracked as follow-up).
+    // MODEL_PRICING keys at top of file drive computeCostUsd.
+    const splitIn = Math.round(totalTokens * 0.7);
+    const splitOut = totalTokens - splitIn;
     logLlmCall({
       op: ASK_OP,
       workspaceId,
       requestId: query.requestId ?? null,
       model: resolvedModel,
       promptVersion: PROMPT_VERSION,
-      inputTokens: 0,        // agent doesn't expose per-step prompt/completion split
-      outputTokens: 0,
-      costUsd: computeCostUsd(resolvedModel, 0, 0),
+      inputTokens: splitIn,
+      outputTokens: splitOut,
+      costUsd: computeCostUsd(resolvedModel, splitIn, splitOut),
       durationMs: Date.now() - startedAt,
       status: hasError ? 'error' : 'ok',
       blockedBy: null,
