@@ -18,6 +18,52 @@
  * ══════════════════════════════════════════════════════════════════ */
 
 @theme {
+  /* ── Notion-aligned Palette (2026-04-24 overhaul) ─────────────── */
+  /* Primary */
+  --color-notion-blue:      #0075de;
+  --color-notion-blue-hover:#005bab;  /* active/pressed */
+  --color-notion-blue-bg:   #f2f9ff;  /* pill badge bg */
+  --color-notion-blue-text: #097fe8;  /* pill badge text, focus ring */
+  --color-notion-black:     rgba(0,0,0,0.95);
+
+  /* Warm neutrals (yellow-brown undertone) */
+  --color-warm-50:   #faf9f8;
+  --color-warm-100:  #f6f5f4;
+  --color-warm-200:  #e7e5e3;
+  --color-warm-300:  #a39e98;
+  --color-warm-500:  #615d59;
+  --color-warm-700:  #47433f;
+  --color-warm-900:  #31302e;
+
+  /* Semantic accents (Notion 6 + red) */
+  --color-teal:      #2a9d99;
+  --color-teal-50:   #e8f6f5;
+  --color-green:     #1aae39;
+  --color-green-50:  #e7f7eb;
+  --color-orange:    #dd5b00;
+  --color-orange-50: #fff4e6;
+  --color-pink:      #ff64c8;
+  --color-pink-50:   #ffe6f5;
+  --color-purple:    #391c57;
+  --color-purple-50: #efeaf5;
+  --color-brown:     #523410;
+  --color-brown-50:  #f4eee7;
+  --color-red-500:   #dc2626;
+  --color-red-50:    #fef2f2;
+  --color-red-200:   #fecaca;
+
+  /* Whisper borders */
+  --color-whisper:      rgba(0,0,0,0.10);
+  --color-whisper-soft: rgba(0,0,0,0.06);
+
+  /* Graph visualization (UI에선 금지, graph-* 유틸로만 노출) */
+  --graph-node-1: #2a9d99;  /* Teal */
+  --graph-node-2: #ff64c8;  /* Pink */
+  --graph-node-3: #391c57;  /* Purple */
+  --graph-node-4: #523410;  /* Brown */
+  --graph-node-5: #dd5b00;  /* Orange */
+  --graph-node-6: #0075de;  /* Blue */
+
   /* ── ISU Blue Scale ─────────────────────────────────────────── */
   --color-isu-50:  oklch(0.97 0.010 260);
   --color-isu-100: oklch(0.93 0.030 260);
