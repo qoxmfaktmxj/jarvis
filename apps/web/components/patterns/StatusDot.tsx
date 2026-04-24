@@ -7,11 +7,11 @@ export type StatusDotProps = {
 };
 
 const toneStyles: Record<StatusDotProps["tone"], { dot: string; text: string }> = {
-  healthy: { dot: "bg-lime-500", text: "text-lime-700" },
+  healthy: { dot: "bg-[--brand-primary]", text: "text-[--brand-primary-text]" },
   warning: { dot: "bg-warning", text: "text-warning" },
   danger: { dot: "bg-danger", text: "text-danger" },
-  info: { dot: "bg-isu-500", text: "text-isu-700" },
-  neutral: { dot: "bg-surface-400", text: "text-surface-600" },
+  info: { dot: "bg-[--brand-primary]", text: "text-[--brand-primary-text]" },
+  neutral: { dot: "bg-[--fg-muted]", text: "text-[--fg-secondary]" },
 };
 
 const sizeStyles = {

@@ -51,7 +51,7 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
       {stamp ? (
         <span
           aria-hidden="true"
-          className="text-display select-none font-mono text-[72px] font-bold leading-[0.85] tracking-[-0.04em] text-surface-200 pt-0.5"
+          className="text-display select-none font-mono text-[72px] font-bold leading-[0.85] tracking-[-0.04em] text-[--fg-muted] pt-0.5"
         >
           {stamp}
         </span>
@@ -60,19 +60,19 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
       <div className="flex min-w-0 flex-1 items-start justify-between gap-5">
         <div className="min-w-0">
           {kicker ? (
-            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.08em] text-surface-500">
+            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.08em] text-[--fg-secondary]">
               <span
                 aria-hidden="true"
-                className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-lime-500 align-middle"
+                className="mr-1.5 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-[--brand-primary] align-middle"
               />
               {kicker}
             </p>
           ) : null}
-          <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-[-0.02em] text-surface-900">
+          <h1 className="mt-2 text-[30px] font-bold leading-tight tracking-[-0.02em] text-[--fg-primary]">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-surface-500">
+            <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-[--fg-secondary]">
               {subtitle}
             </p>
           ) : null}
