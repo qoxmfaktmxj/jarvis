@@ -124,22 +124,60 @@ function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Answer body — inline citations preserved
+// Answer body — inline citations preserved.
+// Supports two citation formats:
+//   [source:N]   — legacy 1-based index format (backward compat)
+//   [[slug]]     — Phase B3/B4 agent format (matches wiki-page SourceRef by slug)
 // ---------------------------------------------------------------------------
 function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
-  const parts = text.split(/(\[source:\d+\])/g);
+  // Build slug → sourceNumber map from wiki-page sources for [[slug]] resolution.
+  const slugToIndex = new Map<string, number>();
+  sources.forEach((s, i) => {
+    if (s.kind === 'wiki-page') {
+      slugToIndex.set(s.slug, i + 1); // 1-based to match ClaimBadge
+    }
+  });
+
+  // Split on both legacy [source:N] and wikilink [[slug]] citation patterns.
+  const parts = text.split(/(\[source:\d+\]|\[\[[^\]]+\]\])/g);
 
   return (
     <div className="prose prose-sm max-w-none text-sm leading-relaxed text-surface-800">
       {parts.map((part, index) => {
-        const match = part.match(/^\[source:(\d+)\]$/);
-        if (match?.[1]) {
+        // Legacy [source:N] format.
+        const legacyMatch = part.match(/^\[source:(\d+)\]$/);
+        if (legacyMatch?.[1]) {
           return (
             <ClaimBadge
               key={index}
-              sourceNumber={parseInt(match[1], 10)}
+              sourceNumber={parseInt(legacyMatch[1], 10)}
               sources={sources}
             />
+          );
+        }
+        // [[slug]] wikilink format — resolve to wiki-page source by slug.
+        const wikilinkMatch = part.match(/^\[\[([^\]]+)\]\]$/);
+        if (wikilinkMatch?.[1]) {
+          const slug = wikilinkMatch[1];
+          const sourceNumber = slugToIndex.get(slug);
+          if (sourceNumber !== undefined) {
+            return (
+              <ClaimBadge
+                key={index}
+                sourceNumber={sourceNumber}
+                sources={sources}
+              />
+            );
+          }
+          // Slug not found in sources — render as plain wikilink text.
+          return (
+            <Link
+              key={index}
+              href={`/wiki/default/${encodeURIComponent(slug)}`}
+              className="text-isu-700 underline decoration-isu-200 underline-offset-2 hover:decoration-isu-500"
+            >
+              {slug}
+            </Link>
           );
         }
         return <span key={index}>{part}</span>;

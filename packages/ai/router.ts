@@ -1,6 +1,11 @@
 // packages/ai/router.ts
 // Ask AI 6-Lane 라우터 — 질문 의도에 따라 최적 retrieval 경로를 결정한다.
 //
+// @deprecated Phase B3 (2026-04-24): ask.ts 가 ask-agent (tool-use loop)로
+// 전환되면서 이 라우터는 더 이상 호출되지 않습니다.
+// 레거시 경로(_legacyAskAI_unused)가 삭제될 때 함께 제거 예정.
+// See: packages/ai/agent/ask-agent.ts
+//
 // Lane 정의:
 //   text-first      — 규정·정책·절차·FAQ (canonical wiki 우선)
 //   graph-first     — 구조·연결·의존·영향도 (graph context 우선)

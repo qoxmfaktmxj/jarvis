@@ -137,7 +137,12 @@ const baseQuery = {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
-describe('askAI() cache-through', () => {
+// TODO(Phase B3 follow-up): These tests exercised the legacy 6-lane router path
+// (featurePageFirstQuery=false). After Phase B3, askAI delegates to ask-agent.
+// The legacy OpenAI stream mock no longer matches the production path.
+// New agent-based cache tests are in ask-agent-integration.test.ts.
+// Kept for historical reference — delete alongside _legacyAskAI_unused in follow-up PR.
+describe.skip('askAI() cache-through (legacy — skipped after Phase B3)', () => {
   beforeEach(async () => {
     // Reset LRU between tests
     __resetCacheForTests();

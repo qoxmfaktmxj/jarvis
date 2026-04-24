@@ -95,7 +95,7 @@ describe("askAgentStream", () => {
     expect(events.map((e) => e.type)).toEqual(["text", "done"]);
     expect(events[0]).toEqual({ type: "text", text: "즉답입니다." });
     const done = events[events.length - 1];
-    expect(done).toMatchObject({ type: "done", finishReason: "stop" });
+    expect(done).toMatchObject({ type: "done", finishReason: "stop", totalTokens: expect.any(Number) });
   });
 
   it("yields tool-call → tool-result → text → done for one tool step", async () => {
@@ -159,7 +159,7 @@ describe("askAgentStream", () => {
     const client = makeClient(seq);
     const events = await collect(askAgentStream("?", ctx, { client: client as never }));
     const done = events[events.length - 1];
-    expect(done).toMatchObject({ type: "done", finishReason: "max_steps", steps: MAX_TOOL_STEPS });
+    expect(done).toMatchObject({ type: "done", finishReason: "max_steps", steps: MAX_TOOL_STEPS, totalTokens: expect.any(Number) });
     // tool-call / tool-result 쌍이 MAX_TOOL_STEPS 만큼 들어있어야 함
     const calls = events.filter((e) => e.type === "tool-call");
     expect(calls.length).toBe(MAX_TOOL_STEPS);
@@ -175,6 +175,6 @@ describe("askAgentStream", () => {
     const texts = events.filter((e) => e.type === "text");
     expect(texts.length).toBe(0);
     const done = events[events.length - 1];
-    expect(done).toMatchObject({ type: "done", finishReason: "stop" });
+    expect(done).toMatchObject({ type: "done", finishReason: "stop", totalTokens: expect.any(Number) });
   });
 });
