@@ -64,53 +64,55 @@
   --graph-node-5: #dd5b00;  /* Orange */
   --graph-node-6: #0075de;  /* Blue */
 
-  /* ── ISU Blue Scale ─────────────────────────────────────────── */
-  --color-isu-50:  oklch(0.97 0.010 260);
-  --color-isu-100: oklch(0.93 0.030 260);
-  --color-isu-200: oklch(0.85 0.060 260);
-  --color-isu-300: oklch(0.72 0.100 260);
-  --color-isu-400: oklch(0.58 0.150 260);
-  --color-isu-500: oklch(0.48 0.170 260);
-  --color-isu-600: oklch(0.40 0.157 260);
-  --color-isu-700: oklch(0.33 0.140 260);
-  --color-isu-800: oklch(0.27 0.110 260);
-  --color-isu-900: oklch(0.20 0.080 260);
-  --color-isu-950: oklch(0.14 0.060 260);
+  /* ── Alias bridge: ISU Blue → Notion Blue scale (Phase 2에서 제거) ── */
+  --color-isu-50:  #f2f9ff;  /* → notion-blue-bg */
+  --color-isu-100: #e0eeff;
+  --color-isu-200: #c9dfff;
+  --color-isu-300: #99c2ff;
+  --color-isu-400: #4a97e3;
+  --color-isu-500: #1a87e5;
+  --color-isu-600: #0075de;  /* = notion-blue (primary) */
+  --color-isu-700: #005bab;  /* = notion-blue-hover */
+  --color-isu-800: #004a89;
+  --color-isu-900: #003970;
+  --color-isu-950: #002855;
 
-  /* ── ISU Lime Scale ─────────────────────────────────────────── */
-  --color-lime-50:  oklch(0.97 0.020 134);
-  --color-lime-100: oklch(0.93 0.050 134);
-  --color-lime-200: oklch(0.87 0.100 134);
-  --color-lime-300: oklch(0.78 0.150 134);
-  --color-lime-400: oklch(0.70 0.180 134);
-  --color-lime-500: oklch(0.65 0.190 134);
-  --color-lime-600: oklch(0.55 0.160 134);
-  --color-lime-700: oklch(0.45 0.130 134);
+  /* ── Alias bridge: Lime → neutral (Lime UI 사용은 금지, graph-only) ── */
+  /* 기존 lime-* 유틸을 쓰는 화면이 UI에 색을 노출 못하게 neutral로 매핑.
+   * 그래프 시각화는 bg-[--graph-node-*] 유틸을 사용. */
+  --color-lime-50:  var(--color-warm-50);
+  --color-lime-100: var(--color-warm-100);
+  --color-lime-200: var(--color-warm-200);
+  --color-lime-300: var(--color-warm-200);
+  --color-lime-400: var(--color-warm-300);
+  --color-lime-500: var(--color-warm-500);
+  --color-lime-600: var(--color-warm-700);
+  --color-lime-700: var(--color-warm-900);
 
-  /* ── Brand-Tinted Neutrals (hue 260) ────────────────────────── */
-  --color-surface-50:  oklch(0.985 0.003 260);
-  --color-surface-100: oklch(0.960 0.005 260);
-  --color-surface-200: oklch(0.920 0.008 260);
-  --color-surface-300: oklch(0.870 0.012 260);
-  --color-surface-400: oklch(0.700 0.015 260);
-  --color-surface-500: oklch(0.550 0.018 260);
-  --color-surface-600: oklch(0.440 0.018 260);
-  --color-surface-700: oklch(0.350 0.018 260);
-  --color-surface-800: oklch(0.250 0.018 260);
-  --color-surface-900: oklch(0.170 0.022 260);
-  --color-surface-950: oklch(0.120 0.028 260);
+  /* ── Alias bridge: Surface → warm neutrals (Phase 2에서 제거) ── */
+  --color-surface-50:  #ffffff;              /* 페이지 배경 → pure white */
+  --color-surface-100: var(--color-warm-50); /* 섹션 → warm-50 */
+  --color-surface-200: var(--color-whisper); /* 보더 → whisper */
+  --color-surface-300: rgba(0,0,0,0.16);
+  --color-surface-400: var(--color-warm-300);
+  --color-surface-500: var(--color-warm-500);
+  --color-surface-600: var(--color-warm-700);
+  --color-surface-700: var(--color-warm-900);
+  --color-surface-800: #242322;
+  --color-surface-900: var(--color-notion-black);
+  --color-surface-950: rgba(0,0,0,0.98);
 
-  /* ── Semantic Status ────────────────────────────────────────── */
-  --color-success: oklch(0.62 0.160 150);
-  --color-success-subtle: oklch(0.95 0.040 150);
-  --color-success-strong: oklch(0.50 0.155 150);
-  --color-warning: oklch(0.75 0.160 75);
-  --color-warning-subtle: oklch(0.96 0.050 75);
-  --color-warning-strong: oklch(0.58 0.160 55);
-  --color-danger: oklch(0.58 0.200 25);
-  --color-danger-subtle: oklch(0.96 0.030 25);
-  --color-info: oklch(0.65 0.130 230);
-  --color-info-subtle: oklch(0.95 0.035 230);
+  /* ── Semantic Status (Notion-aligned) ──────────────────────── */
+  --color-success:        var(--color-teal);
+  --color-success-subtle: var(--color-teal-50);
+  --color-success-strong: #1f7a77;
+  --color-warning:        var(--color-orange);
+  --color-warning-subtle: var(--color-orange-50);
+  --color-warning-strong: #b04800;
+  --color-danger:         var(--color-red-500);
+  --color-danger-subtle:  var(--color-red-50);
+  --color-info:           var(--color-notion-blue);
+  --color-info-subtle:    var(--color-notion-blue-bg);
 
   /* ── shadcn/ui semantic token bridge (Notion-aligned) ─────── */
   --color-background:           #ffffff;                        /* pure white */
