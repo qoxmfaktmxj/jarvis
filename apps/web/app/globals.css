@@ -403,6 +403,8 @@
   --accent:       #529cca;
   --accent-ink:   #74b3d8;
   --accent-tint:  rgba(82,156,202,0.12);
+  --shadow-md:    0 2px 6px rgba(0,0,0,0.40), 0 6px 20px rgba(0,0,0,0.30);
+  --shadow-lg:    0 10px 30px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.35);
 }
 
 @media (prefers-color-scheme: dark) {
