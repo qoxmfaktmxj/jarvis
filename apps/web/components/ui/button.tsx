@@ -24,7 +24,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         // DEPRECATED: Phase 2에서 전 호출부 제거 예정
-        accent:    "bg-[--brand-primary] text-white shadow-[var(--shadow-flat)] hover:bg-[--brand-primary-hover]",
+        accent:    "bg-[--brand-primary] text-white shadow-[var(--shadow-flat)] hover:bg-[--brand-primary-hover] focus-visible:ring-2 focus-visible:ring-[--border-focus] focus-visible:ring-offset-2",
       },
       size: {
         default: "h-9 px-4 py-2 text-[14px]",
