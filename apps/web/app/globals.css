@@ -112,26 +112,72 @@
   --color-info: oklch(0.65 0.130 230);
   --color-info-subtle: oklch(0.95 0.035 230);
 
-  /* ── shadcn/ui semantic token bridge ────────────────────────── */
-  --color-background: var(--color-surface-50);
-  --color-foreground: var(--color-surface-900);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: var(--color-surface-900);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: var(--color-surface-900);
-  --color-primary: var(--color-isu-600);
-  --color-primary-foreground: oklch(0.98 0.005 260);
-  --color-secondary: var(--color-surface-100);
-  --color-secondary-foreground: var(--color-surface-900);
-  --color-muted: var(--color-surface-100);
-  --color-muted-foreground: var(--color-surface-500);
-  --color-accent: var(--color-lime-100);
-  --color-accent-foreground: var(--color-lime-700);
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: oklch(0.98 0.005 25);
-  --color-border: var(--color-surface-200);
-  --color-input: var(--color-surface-300);
-  --color-ring: var(--color-isu-400);
+  /* ── shadcn/ui semantic token bridge (Notion-aligned) ─────── */
+  --color-background:           #ffffff;                        /* pure white */
+  --color-foreground:           var(--color-notion-black);
+  --color-card:                 #ffffff;
+  --color-card-foreground:      var(--color-notion-black);
+  --color-popover:              #ffffff;
+  --color-popover-foreground:   var(--color-notion-black);
+  --color-primary:              var(--color-notion-blue);
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            var(--color-warm-50);
+  --color-secondary-foreground: var(--color-notion-black);
+  --color-muted:                var(--color-warm-50);
+  --color-muted-foreground:     var(--color-warm-500);
+  --color-accent:               var(--color-notion-blue-bg);    /* lime 제거, Notion Blue tint */
+  --color-accent-foreground:    var(--color-notion-blue-text);
+  --color-destructive:          var(--color-red-500);
+  --color-destructive-foreground: #ffffff;
+  --color-border:               var(--color-whisper);
+  --color-input:                var(--color-whisper);
+  --color-ring:                 var(--color-notion-blue-text);
+
+  /* Role aliases (primitive에서 직접 참조) */
+  --bg-page:                    #ffffff;
+  --bg-surface:                 var(--color-warm-50);
+  --fg-primary:                 var(--color-notion-black);
+  --fg-secondary:               var(--color-warm-500);
+  --fg-muted:                   var(--color-warm-300);
+  --brand-primary:              var(--color-notion-blue);
+  --brand-primary-hover:        var(--color-notion-blue-hover);
+  --brand-primary-bg:           var(--color-notion-blue-bg);
+  --brand-primary-text:         var(--color-notion-blue-text);
+  --border-default:             var(--color-whisper);
+  --border-soft:                var(--color-whisper-soft);
+  --border-focus:               var(--color-notion-blue-text);
+
+  /* Status role tokens (StatusChip에서 참조) */
+  --status-done-bg:     var(--color-green-50);
+  --status-done-fg:     var(--color-green);
+  --status-success-bg:  var(--color-teal-50);
+  --status-success-fg:  var(--color-teal);
+  --status-active-bg:   var(--color-notion-blue-bg);
+  --status-active-fg:   var(--color-notion-blue-text);
+  --status-warn-bg:     var(--color-orange-50);
+  --status-warn-fg:     var(--color-orange);
+  --status-danger-bg:   var(--color-red-50);
+  --status-danger-fg:   var(--color-red-500);
+  --status-neutral-bg:  var(--color-warm-50);
+  --status-neutral-fg:  var(--color-warm-700);
+  --status-decorative-pink-bg:   var(--color-pink-50);
+  --status-decorative-pink-fg:   var(--color-pink);
+  --status-decorative-purple-bg: var(--color-purple-50);
+  --status-decorative-purple-fg: var(--color-purple);
+  --status-decorative-brown-bg:  var(--color-brown-50);
+  --status-decorative-brown-fg:  var(--color-brown);
+
+  /* Shadow tokens (§5.2) */
+  --shadow-soft:  rgba(0,0,0,0.04) 0 4px 18px,
+                  rgba(0,0,0,0.027) 0 2.025px 7.84688px,
+                  rgba(0,0,0,0.02) 0 0.8px 2.925px,
+                  rgba(0,0,0,0.01) 0 0.175px 1.04062px;
+  --shadow-deep:  rgba(0,0,0,0.01) 0 1px 3px,
+                  rgba(0,0,0,0.02) 0 3px 7px,
+                  rgba(0,0,0,0.02) 0 7px 15px,
+                  rgba(0,0,0,0.04) 0 14px 28px,
+                  rgba(0,0,0,0.05) 0 23px 52px;
+  --shadow-flat:  0 1px 2px rgba(15,23,42,0.03);
 
   /* ── Motion ─────────────────────────────────────────────────── */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
