@@ -237,28 +237,25 @@
     --sidebar-width-collapsed: 60px;
     --topbar-height: 52px;
 
-    /* ── Prototype tokens (app.jsx / PDF spec — LITERAL HEX MATCH) ───────
-     *   Pretendard body · JetBrains Mono · 차분한 블루(#2B5BFF) + 민트(#1FB488)
-     *   ISU Blue scale(oklch)는 tailwind utility(bg-isu-*)로만 쓰고,
-     *   커맨드/탑바/사이드바/페이지헤더/칩은 이 vars만 참조한다. */
-    --bg:           #F6F7F8;
-    --panel:        #FFFFFF;
-    --line:         #E7E8EC;
-    --line2:        #EEF0F3;
-    --ink:          #0B0F1A;
-    --ink2:         #31384A;
-    --muted:        #6B7386;
-    --faint:        #9AA1B2;
-    --accent:       #2B5BFF;
-    --accent-ink:   #1E3FBE;
-    --accent-tint:  #EAEFFF;
-    --mint:         #1FB488;
-    --mint-tint:    #E5F5EF;
-    --amber:        #C78A1E;
-    --amber-tint:   #FBF1DB;
-    --red:          #D14343;
-    --shadow-md:    0 2px 4px rgba(11,15,26,.05), 0 8px 24px rgba(11,15,26,.06);
-    --shadow-lg:    0 10px 40px rgba(11,15,26,.10), 0 2px 8px rgba(11,15,26,.05);
+    /* ── Prototype token aliases → new Notion-aligned scale ─── */
+    --bg:          #ffffff;                       /* page */
+    --panel:       var(--color-warm-50);          /* elevated surface */
+    --line:        var(--color-whisper);
+    --line2:       var(--color-whisper-soft);
+    --ink:         var(--color-notion-black);
+    --ink2:        var(--color-warm-700);
+    --muted:       var(--color-warm-500);
+    --faint:       var(--color-warm-300);
+    --accent:      var(--color-notion-blue);
+    --accent-ink:  #ffffff;
+    --accent-tint: var(--color-notion-blue-bg);
+    --mint:        var(--color-teal);
+    --mint-tint:   var(--color-teal-50);
+    --amber:       var(--color-orange);
+    --amber-tint:  var(--color-orange-50);
+    --red:         var(--color-red-500);
+    --shadow-md:   0 2px 6px rgba(15,23,42,0.05), 0 6px 20px rgba(15,23,42,0.04);
+    --shadow-lg:   0 10px 30px rgba(15,23,42,0.08), 0 4px 10px rgba(15,23,42,0.04);
 
     /* Z-index scale */
     --z-sidebar: 40;
@@ -288,10 +285,9 @@
   }
 
   /* Consistent focus rings across native controls */
-  :focus-visible {
-    outline: 2px solid var(--color-isu-400);
+  *:focus-visible {
+    outline: 2px solid var(--border-focus);
     outline-offset: 2px;
-    border-radius: 6px;
   }
 
   /* Scrollbar — subtle, brand-tinted */

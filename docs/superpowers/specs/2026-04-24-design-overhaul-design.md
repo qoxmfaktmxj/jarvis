@@ -562,7 +562,7 @@ const STATUS_STYLES = {
 **Scope:**
 1. `apps/web/app/globals.css` 전면 재작성 (light + dark 토큰 페어)
 2. Tailwind config v4 `@theme` 블록 업데이트 (만약 사용 중이면)
-3. `components/ui/*` shadcn primitive 리튠 (11개 파일)
+3. `components/ui/*` shadcn primitive 리튠 (27개 파일)
 4. 패턴 헬퍼 4종 추출 → `components/patterns/{Field,Select,StatusChip,PriorityChip}.tsx`
 5. `docs/design-system.md` v3 재작성
 6. 5개 프리뷰 HTML을 `docs/superpowers/specs/previews/`에 커밋

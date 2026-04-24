@@ -47,6 +47,17 @@ spec을 파고든다. Phase 2 화면 리튠의 standing reference.
 --graph-node-{1..6}  ← UI 금지, graph 시각화 전용
 ```
 
+### Contrast matrix (WCAG AA)
+
+| Token | Light on `--bg-page` | Dark on `--bg-page` | Use |
+|---|---|---|---|
+| `--fg-primary` | ~18:1 (AAA) | ~16:1 (AAA) | Body text, headings |
+| `--fg-secondary` | ~5.5:1 (AA) | ~5.3:1 (AA) | Helper text, meta |
+| `--fg-muted` | ~2.5:1 (FAIL) | ~3.6:1 (FAIL) | **Placeholder/decorative only — never body text** |
+| `--brand-primary-text` | ~4.6:1 (AA large) | ~6.2:1 (AA) | Links, focus |
+
+**Rule:** never use `--fg-muted` for text users need to read. Use it for placeholders, disabled states, and decorative ornaments only.
+
 ## 4. 패턴 헬퍼 (항상 이걸 써라)
 
 - `StatusChip` (`components/patterns/StatusChip.tsx`) — 상태 칩
