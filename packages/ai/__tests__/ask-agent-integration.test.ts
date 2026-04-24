@@ -217,6 +217,36 @@ describe('askAI() — cache (Phase B3)', () => {
   });
 });
 
+describe('askAI() — sources from wiki_read (Phase B3 spec fix)', () => {
+  it('emits sources event with wiki_read slug when agent reads a page', async () => {
+    mockAgentStream.mockImplementation(() =>
+      agentEvents([
+        { type: 'tool-call', name: 'wiki_read', input: { slug: 'my-page' }, callId: 'tc1' },
+        {
+          type: 'tool-result',
+          name: 'wiki_read',
+          callId: 'tc1',
+          ok: true,
+          data: { slug: 'my-page', title: 'My Page', path: 'auto/MyPage.md', sensitivity: 'PUBLIC' },
+        },
+        { type: 'text', text: '위키 기반 답변입니다.' },
+        { type: 'done', finishReason: 'stop', steps: 2, totalTokens: 150 },
+      ]),
+    );
+
+    const { askAI } = await import('../ask.js');
+    const events = await drain(askAI({ ...baseQuery }));
+
+    const sourcesEvent = events.find(
+      (e) => (e as { type: string }).type === 'sources',
+    ) as { type: 'sources'; sources: Array<{ slug: string; title: string }> } | undefined;
+
+    expect(sourcesEvent).toBeDefined();
+    expect(sourcesEvent!.sources).toHaveLength(1);
+    expect(sourcesEvent!.sources[0]).toMatchObject({ slug: 'my-page', title: 'My Page' });
+  });
+});
+
 describe('askAI() — logLlmCall (Phase B3)', () => {
   it('calls logLlmCall once after the agent completes', async () => {
     mockAgentStream.mockImplementation(() =>

@@ -176,7 +176,13 @@ describe("askAgentToSSE — tool-result handling", () => {
     const events = await collect(
       askAgentToSSE(
         fromEvents([
-          { type: "tool-result", name: "wiki_read", callId: "c1", ok: true },
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c1",
+            ok: true,
+            data: { slug: "foo", title: "Foo", path: "auto/Foo.md", sensitivity: "PUBLIC" },
+          },
           { type: "done", finishReason: "stop", steps: 1, totalTokens: 10 },
         ]),
         WS,
@@ -184,6 +190,101 @@ describe("askAgentToSSE — tool-result handling", () => {
     );
     const types = events.map((e) => e.type);
     expect(types).not.toContain("tool-result");
+  });
+
+  // -------------------------------------------------------------------------
+  // wiki_read sources are harvested into the sources SSE event
+  // -------------------------------------------------------------------------
+  it("harvests wiki_read result into sources event", async () => {
+    const events = await collect(
+      askAgentToSSE(
+        fromEvents([
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c1",
+            ok: true,
+            data: { slug: "foo", title: "Foo Title", path: "auto/Foo.md", sensitivity: "PUBLIC" },
+          },
+          { type: "text", text: "답변" },
+          { type: "done", finishReason: "stop", steps: 2, totalTokens: 50 },
+        ]),
+        WS,
+      ),
+    );
+    const sourcesEvent = events.find((e) => e.type === "sources") as
+      | { type: "sources"; sources: Array<{ slug: string; title: string }> }
+      | undefined;
+    expect(sourcesEvent).toBeDefined();
+    expect(sourcesEvent!.sources).toHaveLength(1);
+    expect(sourcesEvent!.sources[0]).toMatchObject({ slug: "foo", title: "Foo Title" });
+  });
+
+  it("deduplicates wiki_read results with same slug", async () => {
+    const events = await collect(
+      askAgentToSSE(
+        fromEvents([
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c1",
+            ok: true,
+            data: { slug: "foo", title: "Foo Title", path: "auto/Foo.md", sensitivity: "PUBLIC" },
+          },
+          {
+            type: "tool-result",
+            name: "wiki_read",
+            callId: "c2",
+            ok: true,
+            data: { slug: "foo", title: "Foo Title", path: "auto/Foo.md", sensitivity: "PUBLIC" },
+          },
+          { type: "done", finishReason: "stop", steps: 2, totalTokens: 80 },
+        ]),
+        WS,
+      ),
+    );
+    const sourcesEvent = events.find((e) => e.type === "sources") as
+      | { type: "sources"; sources: Array<{ slug: string }> }
+      | undefined;
+    expect(sourcesEvent!.sources).toHaveLength(1);
+    expect(sourcesEvent!.sources[0]!.slug).toBe("foo");
+  });
+
+  it("does NOT harvest non-wiki_read tool results into sources", async () => {
+    const events = await collect(
+      askAgentToSSE(
+        fromEvents([
+          {
+            type: "tool-result",
+            name: "wiki_grep",
+            callId: "c1",
+            ok: true,
+            data: { slug: "foo", title: "Foo", path: "auto/Foo.md", sensitivity: "PUBLIC" },
+          },
+          {
+            type: "tool-result",
+            name: "wiki_follow_link",
+            callId: "c2",
+            ok: true,
+            data: { slug: "bar", title: "Bar", path: "auto/Bar.md", sensitivity: "PUBLIC" },
+          },
+          {
+            type: "tool-result",
+            name: "wiki_graph_query",
+            callId: "c3",
+            ok: true,
+            data: { slug: "baz", title: "Baz", path: "auto/Baz.md", sensitivity: "PUBLIC" },
+          },
+          { type: "done", finishReason: "stop", steps: 2, totalTokens: 60 },
+        ]),
+        WS,
+      ),
+    );
+    const sourcesEvent = events.find((e) => e.type === "sources") as
+      | { type: "sources"; sources: unknown[] }
+      | undefined;
+    // Only wiki_read results should appear — wiki_grep/follow_link/graph_query must NOT
+    expect(sourcesEvent!.sources).toHaveLength(0);
   });
 });
 

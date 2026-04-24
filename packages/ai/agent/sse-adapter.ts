@@ -19,13 +19,6 @@ interface WikiReadData {
   sensitivity: string;
 }
 
-interface ToolResultPayload {
-  ok: boolean;
-  data?: WikiReadData;
-  error?: string;
-  code?: string;
-}
-
 // ---------------------------------------------------------------------------
 // askAgentToSSE — async generator that maps AskAgentEvent → SSEEvent.
 //
@@ -56,25 +49,13 @@ export async function* askAgentToSSE(
 
       case "tool-result": {
         // Dropped from SSE stream; side-effect: accumulate wiki sources.
-        if (event.name === "wiki_read" && event.ok) {
-          // The tool result content is available via the agent events stream.
-          // However AskAgentEvent tool-result does not carry the full data payload —
-          // it only carries ok/error. The actual data was consumed by the agent loop.
-          // We cannot reconstruct the WikiPageSourceRef here without the data.
-          // This is by design: the SSE adapter only gets the event shape, not the
-          // raw tool output. Source accumulation requires the data field.
-          //
-          // Resolution: the agent emits `tool-result` events with the result payload
-          // injected. We cast to access an optional `_data` field if present, or
-          // rely on the extended event type below.
-          //
-          // Phase B3 pragmatic decision: wiki sources are best accumulated at the
-          // ask.ts level from the askAgent (non-streaming) result, or via an
-          // extended event type. For now, attempt to extract from the event.
-          const extended = event as AskAgentEvent & { _data?: unknown };
-          const payload = extended._data as ToolResultPayload | undefined;
-          if (payload?.ok && payload.data) {
-            const d = payload.data;
+        if (event.name === "wiki_read" && event.ok && event.data !== undefined) {
+          const d = event.data as WikiReadData;
+          // De-duplicate by slug — agent may read the same page twice.
+          const alreadySeen = accumulatedSources.some(
+            (s) => s.kind === "wiki-page" && s.slug === d.slug,
+          );
+          if (!alreadySeen) {
             accumulatedSources.push({
               kind: "wiki-page",
               pageId: d.slug, // slug as pageId (index join not needed for citations)

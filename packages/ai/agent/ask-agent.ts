@@ -57,7 +57,7 @@ export interface AskAgentResult {
 
 export type AskAgentEvent =
   | { type: "tool-call"; name: string; input: unknown; callId: string }
-  | { type: "tool-result"; name: string; callId: string; ok: boolean; error?: string }
+  | { type: "tool-result"; name: string; callId: string; ok: boolean; data?: unknown; error?: string }
   | { type: "text"; text: string }
   | {
       type: "done";
@@ -295,6 +295,7 @@ export async function* askAgentStream(
         name: tc.function.name,
         callId: tc.id,
         ok: result.ok,
+        ...(result.ok && result.data !== undefined ? { data: result.data } : {}),
         ...(errorMsg !== undefined ? { error: errorMsg } : {}),
       };
       messages.push({
