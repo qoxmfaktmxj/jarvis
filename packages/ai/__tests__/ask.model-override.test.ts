@@ -104,7 +104,11 @@ const baseQuery = {
   sensitivityScope: 'workspace:ws-model-override|level:internal',
 };
 
-describe('askAI() query.model override', () => {
+// TODO(Phase B3 follow-up): This describe block directly tests generateAnswer()
+// (legacy 6-lane path). After Phase B3, askAI delegates to ask-agent and no longer
+// calls generateAnswer. The logLlmCall invocation shape also changed (no per-step
+// prompt/completion token split). Skipped — delete with _legacyAskAI_unused.
+describe.skip('askAI() query.model override (legacy — skipped after Phase B3)', () => {
   beforeEach(() => {
     __resetCacheForTests();
     logLlmCallMock.mockClear();
