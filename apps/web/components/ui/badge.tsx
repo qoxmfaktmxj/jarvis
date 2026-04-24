@@ -15,7 +15,8 @@ const badgeVariants = cva(
         success:     "bg-[--status-done-bg] text-[--status-done-fg]",
         warning:     "bg-[--status-warn-bg] text-[--status-warn-fg]",
         info:        "bg-[--status-active-bg] text-[--status-active-fg]",
-        accent:      "bg-lime-100 text-lime-700",
+        // DEPRECATED: Phase 2에서 전 호출부 제거 예정
+        accent:      "bg-[--brand-primary] text-white",
       },
     },
     defaultVariants: {
