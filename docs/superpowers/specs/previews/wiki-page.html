@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Jarvis · Wiki Page (Design Overhaul Preview)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --bg-page:#fff; --bg-surface:#faf9f8;
+  --fg-primary:rgba(0,0,0,0.95); --fg-secondary:#615d59; --fg-muted:#a39e98;
+  --brand-primary:#0075de; --brand-primary-hover:#005bab;
+  --brand-primary-bg:#f2f9ff; --brand-primary-text:#097fe8;
+  --border-default:rgba(0,0,0,0.10); --border-soft:rgba(0,0,0,0.06); --border-focus:#097fe8;
+  --color-teal:#2a9d99; --color-teal-50:#e8f6f5;
+  --color-green:#1aae39; --color-green-50:#e7f7eb;
+  --color-orange:#dd5b00; --color-orange-50:#fff4e6;
+  --color-red:#dc2626; --color-red-50:#fef2f2;
+  --color-pink:#ff64c8; --color-pink-50:#ffe6f5;
+  --color-purple:#391c57; --color-purple-50:#efeaf5;
+  --shadow-soft:rgba(0,0,0,0.04) 0 4px 18px,rgba(0,0,0,0.027) 0 2.025px 7.85px,
+               rgba(0,0,0,0.02) 0 0.8px 2.93px,rgba(0,0,0,0.01) 0 0.175px 1.04px;
+  --shadow-flat:0 1px 2px rgba(15,23,42,0.03);
+}
+[data-theme="dark"]{
+  --bg-page:#191918; --bg-surface:#242322;
+  --fg-primary:rgba(255,255,255,0.95); --fg-secondary:#a8a4a0; --fg-muted:#7c7874;
+  --brand-primary:#529cca; --brand-primary-hover:#74b3d8;
+  --brand-primary-bg:rgba(82,156,202,0.12); --brand-primary-text:#74b3d8;
+  --border-default:rgba(255,255,255,0.094); --border-soft:rgba(255,255,255,0.06); --border-focus:#74b3d8;
+  --color-teal-50:rgba(42,157,153,0.15); --color-teal:#5cc5c1;
+  --color-green-50:rgba(26,174,57,0.15); --color-green:#4ccf64;
+  --color-orange-50:rgba(221,91,0,0.18); --color-orange:#ff8844;
+  --color-red-50:rgba(220,38,38,0.18); --color-red:#ff6b6b;
+  --color-pink-50:rgba(255,100,200,0.15); --color-pink:#ff85d3;
+  --color-purple-50:rgba(124,92,169,0.20); --color-purple:#b598d5;
+  --shadow-soft:rgba(0,0,0,0.30) 0 4px 18px,rgba(0,0,0,0.20) 0 1px 4px;
+  --shadow-flat:0 1px 2px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  background:var(--bg-page); color:var(--fg-primary);
+  font-feature-settings:"ss01","tnum","lnum";
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brand-primary-text);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:2px}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border-default)}
+.top-left{display:flex;align-items:center;gap:12px}
+.top-logo{width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,#0075de,#005bab);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.top-crumbs{font-size:13px;color:var(--fg-secondary);display:flex;align-items:center;gap:6px}
+.top-crumbs a{color:var(--fg-secondary)}
+.top-crumbs .sep{color:var(--fg-muted)}
+.top-actions{display:flex;align-items:center;gap:8px}
+.btn-ghost{background:transparent;border:1px solid var(--border-default);padding:6px 12px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;color:var(--fg-primary);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{background:var(--bg-surface)}
+.btn-primary{background:var(--brand-primary);color:#fff;border:none;padding:6px 12px;border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-primary:hover{background:var(--brand-primary-hover)}
+
+/* layout */
+.wrap{display:grid;grid-template-columns:1fr 240px;gap:52px;max-width:1080px;margin:0 auto;padding:52px 40px 80px}
+@media (max-width:900px){ .wrap{grid-template-columns:1fr;gap:32px} }
+
+/* Header / Hero */
+.breadcrumb{font-size:13px;color:var(--fg-secondary);margin-bottom:18px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.breadcrumb .sep{color:var(--fg-muted)}
+.badges{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.badge{font-size:12px;font-weight:600;padding:4px 10px;border-radius:9999px;letter-spacing:0.125px}
+.badge.runbook{background:var(--brand-primary-bg);color:var(--brand-primary-text)}
+.badge.published{background:var(--color-green-50);color:var(--color-green)}
+.badge.p1{background:var(--color-orange-50);color:var(--color-orange)}
+.badge.derived{background:var(--color-purple-50);color:var(--color-purple)}
+
+h1.hero{font-size:48px;font-weight:700;line-height:1.04;margin:0 0 16px;letter-spacing:-1.5px;color:var(--fg-primary)}
+h1.hero:lang(ko){letter-spacing:0}
+.lead{font-size:20px;font-weight:400;line-height:1.55;color:var(--fg-secondary);margin:0 0 36px;max-width:720px}
+.lead:lang(ko){letter-spacing:0}
+
+.meta{display:flex;gap:28px;padding:16px 0;border-top:1px solid var(--border-default);border-bottom:1px solid var(--border-default);margin-bottom:40px;flex-wrap:wrap}
+.meta-item{font-size:13px;color:var(--fg-secondary);line-height:1.4}
+.meta-key{display:block;font-size:10.5px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:4px}
+.meta-val{color:var(--fg-primary);font-weight:500}
+
+/* Body typography */
+.body{font-size:16px;line-height:1.75;color:var(--fg-primary)}
+.body p{margin:0 0 18px}
+.body h2{font-size:26px;font-weight:700;letter-spacing:-0.625px;line-height:1.2;margin:44px 0 14px;color:var(--fg-primary)}
+.body h2:lang(ko){letter-spacing:0}
+.body h3{font-size:20px;font-weight:700;letter-spacing:-0.25px;margin:32px 0 10px;color:var(--fg-primary)}
+.body h3:lang(ko){letter-spacing:0}
+.body ul,.body ol{padding-left:22px;margin:0 0 18px}
+.body li{margin-bottom:6px}
+.body code{background:var(--bg-surface);border:1px solid var(--border-soft);border-radius:4px;padding:1px 6px;font-family:"JetBrains Mono",monospace;font-size:14px;color:var(--fg-primary)}
+.body pre{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:10px;padding:18px 20px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.6;margin:0 0 22px}
+.body pre code{background:transparent;border:none;padding:0;font-size:inherit}
+.body blockquote{border-left:3px solid var(--brand-primary);background:var(--brand-primary-bg);padding:14px 18px;margin:0 0 22px;border-radius:0 8px 8px 0;color:var(--fg-primary);font-size:15.5px}
+
+/* Callout */
+.callout{display:flex;gap:12px;align-items:flex-start;background:var(--color-orange-50);border:1px solid rgba(221,91,0,0.2);border-radius:10px;padding:14px 18px;margin:0 0 26px}
+.callout-icon{width:22px;height:22px;border-radius:9999px;background:var(--color-orange);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:13px}
+.callout b{color:var(--color-orange);font-weight:700}
+.callout p{margin:0;font-size:14.5px;color:var(--fg-primary);line-height:1.55}
+.callout p:first-of-type{margin-bottom:4px}
+
+/* TOC side */
+.toc{position:sticky;top:32px;align-self:start}
+.toc-label{font-size:10.5px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:12px}
+.toc ul{list-style:none;padding:0;margin:0}
+.toc li{margin-bottom:7px}
+.toc a{display:block;font-size:13px;color:var(--fg-secondary);padding:4px 0;border-left:2px solid transparent;padding-left:10px;margin-left:-2px;line-height:1.4}
+.toc a:hover{color:var(--fg-primary);text-decoration:none}
+.toc a.active{color:var(--brand-primary-text);border-left-color:var(--brand-primary);font-weight:600}
+.toc-sub{padding-left:16px !important;font-size:12.5px !important;color:var(--fg-muted) !important}
+
+.contributors{margin-top:26px;padding-top:22px;border-top:1px solid var(--border-default)}
+.contrib-stack{display:flex;align-items:center;gap:-6px;margin-top:8px}
+.contrib-avatar{width:26px;height:26px;border-radius:9999px;border:2px solid var(--bg-page);background:var(--brand-primary-bg);color:var(--brand-primary-text);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600;margin-left:-6px}
+.contrib-avatar:first-child{margin-left:0}
+
+.theme-toggle{position:fixed;top:14px;right:20px;background:var(--bg-page);border:1px solid var(--border-default);border-radius:9999px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--fg-secondary);cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:0.05em;z-index:20}
+.theme-toggle:hover{background:var(--bg-surface)}
+.theme-toggle .dot{width:8px;height:8px;border-radius:9999px;background:var(--brand-primary)}
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'':'dark'"><span class="dot"></span>THEME</button>
+
+<!-- Top bar -->
+<header class="top">
+  <div class="top-left">
+    <div class="top-logo">J</div>
+    <nav class="top-crumbs">
+      <a href="#">Workspace</a><span class="sep">/</span>
+      <a href="#">Wiki</a><span class="sep">/</span>
+      <a href="#">Infrastructure</a><span class="sep">/</span>
+      <span style="color:var(--fg-primary);font-weight:500">Ask AI 6-lane 라우터 장애 대응</span>
+    </nav>
+  </div>
+  <div class="top-actions">
+    <button class="btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      Export
+    </button>
+    <button class="btn-ghost">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edit
+    </button>
+    <button class="btn-primary">Ask AI</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Main column -->
+  <article>
+    <nav class="breadcrumb">
+      <a href="#">Runbooks</a>
+      <span class="sep">·</span>
+      <span>Platform team</span>
+      <span class="sep">·</span>
+      <span>P1 on-call</span>
+    </nav>
+
+    <div class="badges">
+      <span class="badge runbook">Runbook</span>
+      <span class="badge published">Published</span>
+      <span class="badge p1">Severity P1</span>
+      <span class="badge derived">Auto-compiled</span>
+    </div>
+
+    <h1 class="hero">Ask AI 6-lane 라우터 장애 대응</h1>
+    <p class="lead">
+      분류 라우터 실패, TPM 초과, 특정 lane이 timeout을 반복할 때의 대응 플레이북. 30분 이내 복구를 목표로 하며, 복구 실패 시 platform-lead 에스컬레이션 경로를 포함합니다.
+    </p>
+
+    <div class="meta">
+      <div class="meta-item"><span class="meta-key">Owner</span><span class="meta-val">Platform Team</span></div>
+      <div class="meta-item"><span class="meta-key">Updated</span><span class="meta-val">2026-04-22</span></div>
+      <div class="meta-item"><span class="meta-key">Severity</span><span class="meta-val">P1</span></div>
+      <div class="meta-item"><span class="meta-key">Readers</span><span class="meta-val">Platform, SRE, Ops</span></div>
+      <div class="meta-item"><span class="meta-key">Reviewed</span><span class="meta-val">4시간 전 · Lint OK</span></div>
+    </div>
+
+    <section class="body">
+      <p>
+        Ask AI는 6개 lane(<code>wiki-page</code>, <code>wiki-code</code>, <code>policy</code>, <code>case-law</code>, <code>staff</code>, <code>general</code>)으로 질문을 분기합니다.
+        라우터가 실패하면 전체 질문이 <i>general</i>로 fallback되고 정확도가 급감해요 — 이 런북은 그 상황의 즉시 조치, 진단, 복구, 회복 검증까지 4단계로 설명합니다.
+      </p>
+
+      <div class="callout">
+        <div class="callout-icon">!</div>
+        <div>
+          <p><b>On-call이라면 먼저 읽을 것</b></p>
+          <p>에스컬레이션 임계값(15분 내 복구 실패 시 platform-lead 즉시 호출)과 고객 공지 템플릿은 섹션 §4에 있습니다.</p>
+        </div>
+      </div>
+
+      <h2 id="immediate">1. 즉시 조치 (0–5분)</h2>
+      <p>먼저 라우터의 최근 5분 결정 로그를 확인합니다. 로그 출력에 <code>route_failed</code>가 연속 5회 이상 등장하면 분류 모델이 TPM 한도에 걸린 상태이며, 즉시 fallback을 켜야 합니다.</p>
+
+      <pre><code>pnpm run logs:router --tail 200 | grep route_failed
+# → 연속 5회 이상이면 다음 명령 실행:
+pnpm run router:fallback-on --reason tpm-exceeded</code></pre>
+
+      <p>fallback 모드는 분류 단계를 건너뛰고 모든 질문을 <code>general</code>로 보내지만, 기본 응답은 유지됩니다. 고객이 정확도 저하를 체감할 수 있으니 상태페이지 공지를 5분 이내 작성하세요.</p>
+
+      <h2 id="diagnose">2. 진단 (5–15분)</h2>
+      <p>원인을 좁히려면 다음 세 그래프를 확인합니다:</p>
+      <ul>
+        <li><b>Grafana → Ask AI Router</b>: lane 별 p50/p95 latency</li>
+        <li><b>Grafana → OpenAI TPM</b>: 지난 15분 동안 burst가 1.5× 이상 있었는지</li>
+        <li><b>Worker logs</b>: <code>wiki-agent</code>가 동시에 reindex 중이면 TPM 경쟁 가능</li>
+      </ul>
+
+      <h3 id="diag-tpm">2.1 TPM 초과일 때</h3>
+      <p>일시적 초과면 10분 내 자동 회복됩니다. 15분 이상 지속되면 Organization 설정에서 TPM 조정 티켓을 엽니다. 대기 중엔 fallback 유지.</p>
+
+      <h2 id="recover">3. 복구 (15–30분)</h2>
+      <p>fallback을 끄기 전에 아래 3가지를 확인하세요:</p>
+      <ol>
+        <li>최근 1분 <code>route_failed</code> 0건</li>
+        <li>p95 latency &lt; 1.2s</li>
+        <li>TPM 사용률 &lt; 70%</li>
+      </ol>
+
+      <blockquote>
+        복구 후 30분간 <code>route_accuracy</code> 메트릭을 watch. 이전 baseline 대비 ±5% 이내여야 정상 판단.
+      </blockquote>
+
+      <h2 id="post">4. 회복 검증 & 에스컬레이션</h2>
+      <p>회복 후 Incident 문서를 <code>incidents/YYYY-MM-DD-ask-ai-router.md</code>에 기록하고, 같은 주 금요일 retro에 올립니다.</p>
+    </section>
+  </article>
+
+  <!-- TOC -->
+  <aside class="toc">
+    <div class="toc-label">On this page</div>
+    <ul>
+      <li><a href="#immediate" class="active">1. 즉시 조치</a></li>
+      <li><a href="#diagnose">2. 진단</a></li>
+      <li><a href="#diag-tpm" class="toc-sub">2.1 TPM 초과일 때</a></li>
+      <li><a href="#recover">3. 복구</a></li>
+      <li><a href="#post">4. 회복 검증</a></li>
+    </ul>
+
+    <div class="contributors">
+      <div class="toc-label">Contributors</div>
+      <div class="contrib-stack">
+        <div class="contrib-avatar">KM</div>
+        <div class="contrib-avatar" style="background:var(--color-green-50);color:var(--color-green)">LJ</div>
+        <div class="contrib-avatar" style="background:var(--color-orange-50);color:var(--color-orange)">PJ</div>
+        <div class="contrib-avatar" style="background:var(--color-purple-50);color:var(--color-purple)">+4</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+if (new URL(location).searchParams.get('theme')==='dark') document.documentElement.dataset.theme='dark';
+</script>
+</body>
+</html>
