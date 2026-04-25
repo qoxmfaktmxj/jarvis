@@ -91,7 +91,7 @@ function LoginContent() {
 
           {/* Redirect error strip */}
           {error && (
-            <div className="mt-5 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+            <div className="mt-5 flex items-start gap-2 rounded-md border border-[--color-red-200] bg-[--color-red-50] px-3 py-2 text-[12.5px] text-[--color-red-500]">
               <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`}</span>
             </div>
@@ -177,7 +177,7 @@ function LoginContent() {
 
             {/* Inline submit error */}
             {loginError && (
-              <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[12.5px] text-red-700">
+              <div className="flex items-start gap-2 rounded-md border border-[--color-red-200] bg-[--color-red-50] px-3 py-2 text-[12.5px] text-[--color-red-500]">
                 <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{loginError}</span>
               </div>
