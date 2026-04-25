@@ -59,7 +59,7 @@ export function QuickMenuEditor({
             {items.map((item, index) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between rounded-xl border border-surface-200 px-3 py-3"
+                className="flex items-center justify-between rounded-xl border border-[--border-default] px-3 py-3"
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">{item.label}</p>
@@ -92,7 +92,7 @@ export function QuickMenuEditor({
         {message ? (
           <p
             className={`text-sm ${
-              message === t("saved") ? "text-lime-600" : "text-destructive"
+              message === t("saved") ? "text-[--status-success-fg]" : "text-destructive"
             }`}
           >
             {message}

@@ -173,7 +173,7 @@ export function WikiEditor({
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { class: "text-isu-600 underline" },
+        HTMLAttributes: { class: "text-[--brand-primary-text] underline" },
       }),
       CodeBlockLowlight.configure({ lowlight }),
       Markdown.configure({
@@ -296,7 +296,7 @@ export function WikiEditor({
   if (!editor) {
     // SSR placeholder — the dynamic-import wrapper in the page still renders this on first paint.
     return (
-      <div className="rounded-lg border border-surface-200 bg-card p-6 text-sm text-surface-400">
+      <div className="rounded-lg border border-[--border-default] bg-card p-6 text-sm text-[--fg-muted]">
         {t("loading")}
       </div>
     );
@@ -310,7 +310,7 @@ export function WikiEditor({
         readOnly={readOnly}
       />
 
-      <div className="rounded-lg border border-surface-200 bg-card">
+      <div className="rounded-lg border border-[--border-default] bg-card">
         <Toolbar
           editor={editor}
           features={WIKI_TOOLBAR_FEATURES}
@@ -323,10 +323,10 @@ export function WikiEditor({
             <div
               data-testid="wikilink-autocomplete-dropdown"
               role="listbox"
-              className="absolute z-30 w-72 rounded-lg border border-surface-200 bg-card shadow-lg"
+              className="absolute z-30 w-72 rounded-lg border border-[--border-default] bg-card shadow-lg"
               style={{ top: suggest.position.top, left: suggest.position.left }}
             >
-              <div className="p-2 border-b border-surface-100">
+              <div className="p-2 border-b border-[--border-soft]">
                 <Input
                   // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
                   autoFocus
@@ -345,15 +345,15 @@ export function WikiEditor({
               </div>
               <ul className="max-h-60 overflow-auto py-1">
                 {isLoading ? (
-                  <li className="px-3 py-2 text-sm text-surface-400">
+                  <li className="px-3 py-2 text-sm text-[--fg-muted]">
                     {tWikilink("searching")}
                   </li>
                 ) : isErrored ? (
-                  <li className="px-3 py-2 text-sm text-red-600">
+                  <li className="px-3 py-2 text-sm text-[--color-red-500]">
                     {tWikilink("searchFailed")}
                   </li>
                 ) : filteredPages.length === 0 ? (
-                  <li className="px-3 py-2 text-sm text-surface-400">
+                  <li className="px-3 py-2 text-sm text-[--fg-muted]">
                     {tWikilink("noResults")}
                   </li>
                 ) : (
@@ -362,20 +362,20 @@ export function WikiEditor({
                       <button
                         type="button"
                         onClick={() => insertWikiLink(p.slug, p.title)}
-                        className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-surface-50"
+                        className="flex w-full items-start justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-[--brand-primary-bg]"
                       >
-                        <span className="font-medium text-surface-900">{p.title}</span>
-                        <span className="text-xs text-surface-400">{p.slug}</span>
+                        <span className="font-medium text-[--fg-primary]">{p.title}</span>
+                        <span className="text-xs text-[--fg-muted]">{p.slug}</span>
                       </button>
                     </li>
                   ))
                 )}
               </ul>
-              <div className="border-t border-surface-100 px-3 py-1.5 text-right">
+              <div className="border-t border-[--border-soft] px-3 py-1.5 text-right">
                 <button
                   type="button"
                   onClick={closeSuggest}
-                  className="text-xs text-surface-500 hover:text-surface-700"
+                  className="text-xs text-[--fg-secondary] hover:text-[--fg-primary]"
                 >
                   Esc
                 </button>
