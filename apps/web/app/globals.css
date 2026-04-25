@@ -18,74 +18,168 @@
  * ══════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* ── ISU Blue Scale ─────────────────────────────────────────── */
-  --color-isu-50:  oklch(0.97 0.010 260);
-  --color-isu-100: oklch(0.93 0.030 260);
-  --color-isu-200: oklch(0.85 0.060 260);
-  --color-isu-300: oklch(0.72 0.100 260);
-  --color-isu-400: oklch(0.58 0.150 260);
-  --color-isu-500: oklch(0.48 0.170 260);
-  --color-isu-600: oklch(0.40 0.157 260);
-  --color-isu-700: oklch(0.33 0.140 260);
-  --color-isu-800: oklch(0.27 0.110 260);
-  --color-isu-900: oklch(0.20 0.080 260);
-  --color-isu-950: oklch(0.14 0.060 260);
+  /* ── Notion-aligned Palette (2026-04-24 overhaul) ─────────────── */
+  /* Primary */
+  --color-notion-blue:      #0075de;
+  --color-notion-blue-hover:#005bab;  /* active/pressed */
+  --color-notion-blue-bg:   #f2f9ff;  /* pill badge bg */
+  --color-notion-blue-text: #097fe8;  /* pill badge text, focus ring */
+  --color-notion-black:     rgba(0,0,0,0.95);
 
-  /* ── ISU Lime Scale ─────────────────────────────────────────── */
-  --color-lime-50:  oklch(0.97 0.020 134);
-  --color-lime-100: oklch(0.93 0.050 134);
-  --color-lime-200: oklch(0.87 0.100 134);
-  --color-lime-300: oklch(0.78 0.150 134);
-  --color-lime-400: oklch(0.70 0.180 134);
-  --color-lime-500: oklch(0.65 0.190 134);
-  --color-lime-600: oklch(0.55 0.160 134);
-  --color-lime-700: oklch(0.45 0.130 134);
+  /* Warm neutrals (yellow-brown undertone) */
+  --color-warm-50:   #faf9f8;
+  --color-warm-100:  #f6f5f4;
+  --color-warm-200:  #e7e5e3;
+  --color-warm-300:  #a39e98;
+  --color-warm-500:  #615d59;
+  --color-warm-700:  #47433f;
+  --color-warm-900:  #31302e;
 
-  /* ── Brand-Tinted Neutrals (hue 260) ────────────────────────── */
-  --color-surface-50:  oklch(0.985 0.003 260);
-  --color-surface-100: oklch(0.960 0.005 260);
-  --color-surface-200: oklch(0.920 0.008 260);
-  --color-surface-300: oklch(0.870 0.012 260);
-  --color-surface-400: oklch(0.700 0.015 260);
-  --color-surface-500: oklch(0.550 0.018 260);
-  --color-surface-600: oklch(0.440 0.018 260);
-  --color-surface-700: oklch(0.350 0.018 260);
-  --color-surface-800: oklch(0.250 0.018 260);
-  --color-surface-900: oklch(0.170 0.022 260);
-  --color-surface-950: oklch(0.120 0.028 260);
+  /* Semantic accents (Notion 6 + red) */
+  --color-teal:      #2a9d99;
+  --color-teal-50:   #e8f6f5;
+  --color-green:     #1aae39;
+  --color-green-50:  #e7f7eb;
+  --color-orange:    #dd5b00;
+  --color-orange-50: #fff4e6;
+  --color-pink:      #ff64c8;
+  --color-pink-50:   #ffe6f5;
+  --color-purple:    #391c57;
+  --color-purple-50: #efeaf5;
+  --color-brown:     #523410;
+  --color-brown-50:  #f4eee7;
+  --color-red-500:   #dc2626;
+  --color-red-50:    #fef2f2;
+  --color-red-200:   #fecaca;
 
-  /* ── Semantic Status ────────────────────────────────────────── */
-  --color-success: oklch(0.62 0.160 150);
-  --color-success-subtle: oklch(0.95 0.040 150);
-  --color-success-strong: oklch(0.50 0.155 150);
-  --color-warning: oklch(0.75 0.160 75);
-  --color-warning-subtle: oklch(0.96 0.050 75);
-  --color-warning-strong: oklch(0.58 0.160 55);
-  --color-danger: oklch(0.58 0.200 25);
-  --color-danger-subtle: oklch(0.96 0.030 25);
-  --color-info: oklch(0.65 0.130 230);
-  --color-info-subtle: oklch(0.95 0.035 230);
+  /* Whisper borders */
+  --color-whisper:      rgba(0,0,0,0.10);
+  --color-whisper-soft: rgba(0,0,0,0.06);
 
-  /* ── shadcn/ui semantic token bridge ────────────────────────── */
-  --color-background: var(--color-surface-50);
-  --color-foreground: var(--color-surface-900);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: var(--color-surface-900);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: var(--color-surface-900);
-  --color-primary: var(--color-isu-600);
-  --color-primary-foreground: oklch(0.98 0.005 260);
-  --color-secondary: var(--color-surface-100);
-  --color-secondary-foreground: var(--color-surface-900);
-  --color-muted: var(--color-surface-100);
-  --color-muted-foreground: var(--color-surface-500);
-  --color-accent: var(--color-lime-100);
-  --color-accent-foreground: var(--color-lime-700);
-  --color-destructive: var(--color-danger);
-  --color-destructive-foreground: oklch(0.98 0.005 25);
-  --color-border: var(--color-surface-200);
-  --color-input: var(--color-surface-300);
-  --color-ring: var(--color-isu-400);
+  /* Graph visualization (UI에선 금지, graph-* 유틸로만 노출) */
+  --graph-node-1: #2a9d99;  /* Teal */
+  --graph-node-2: #ff64c8;  /* Pink */
+  --graph-node-3: #391c57;  /* Purple */
+  --graph-node-4: #523410;  /* Brown */
+  --graph-node-5: #dd5b00;  /* Orange */
+  --graph-node-6: #0075de;  /* Blue */
+
+  /* ── Alias bridge: ISU Blue → Notion Blue scale (Phase 2에서 제거) ── */
+  --color-isu-50:  #f2f9ff;  /* → notion-blue-bg */
+  --color-isu-100: #e0eeff;
+  --color-isu-200: #c9dfff;
+  --color-isu-300: #99c2ff;
+  --color-isu-400: #4a97e3;
+  --color-isu-500: #1a87e5;
+  --color-isu-600: #0075de;  /* = notion-blue (primary) */
+  --color-isu-700: #005bab;  /* = notion-blue-hover */
+  --color-isu-800: #004a89;
+  --color-isu-900: #003970;
+  --color-isu-950: #002855;
+
+  /* ── Alias bridge: Lime → neutral (Lime UI 사용은 금지, graph-only) ── */
+  /* 기존 lime-* 유틸을 쓰는 화면이 UI에 색을 노출 못하게 neutral로 매핑.
+   * 그래프 시각화는 bg-[--graph-node-*] 유틸을 사용. */
+  --color-lime-50:  var(--color-warm-50);
+  --color-lime-100: var(--color-warm-100);
+  --color-lime-200: var(--color-warm-200);
+  --color-lime-300: var(--color-warm-200);
+  --color-lime-400: var(--color-warm-300);
+  --color-lime-500: var(--color-warm-500);
+  --color-lime-600: var(--color-warm-700);
+  --color-lime-700: var(--color-warm-900);
+
+  /* ── Alias bridge: Surface → warm neutrals (Phase 2에서 제거) ── */
+  --color-surface-50:  #ffffff;              /* 페이지 배경 → pure white */
+  --color-surface-100: var(--color-warm-50); /* 섹션 → warm-50 */
+  --color-surface-200: var(--color-whisper); /* 보더 → whisper */
+  --color-surface-300: rgba(0,0,0,0.16);
+  --color-surface-400: var(--color-warm-300);
+  --color-surface-500: var(--color-warm-500);
+  --color-surface-600: var(--color-warm-700);
+  --color-surface-700: var(--color-warm-900);
+  --color-surface-800: #242322;
+  --color-surface-900: var(--color-notion-black);
+  --color-surface-950: rgba(0,0,0,0.98);
+
+  /* ── Semantic Status (Notion-aligned) ──────────────────────── */
+  --color-success:        var(--color-teal);
+  --color-success-subtle: var(--color-teal-50);
+  --color-success-strong: #1f7a77;
+  --color-warning:        var(--color-orange);
+  --color-warning-subtle: var(--color-orange-50);
+  --color-warning-strong: #b04800;
+  --color-danger:         var(--color-red-500);
+  --color-danger-subtle:  var(--color-red-50);
+  --color-info:           var(--color-notion-blue);
+  --color-info-subtle:    var(--color-notion-blue-bg);
+
+  /* ── shadcn/ui semantic token bridge (Notion-aligned) ─────── */
+  --color-background:           #ffffff;                        /* pure white */
+  --color-foreground:           var(--color-notion-black);
+  --color-card:                 #ffffff;
+  --color-card-foreground:      var(--color-notion-black);
+  --color-popover:              #ffffff;
+  --color-popover-foreground:   var(--color-notion-black);
+  --color-primary:              var(--color-notion-blue);
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            var(--color-warm-50);
+  --color-secondary-foreground: var(--color-notion-black);
+  --color-muted:                var(--color-warm-50);
+  --color-muted-foreground:     var(--color-warm-500);
+  --color-accent:               var(--color-notion-blue-bg);    /* lime 제거, Notion Blue tint */
+  --color-accent-foreground:    var(--color-notion-blue-text);
+  --color-destructive:          var(--color-red-500);
+  --color-destructive-foreground: #ffffff;
+  --color-border:               var(--color-whisper);
+  --color-input:                var(--color-whisper);
+  --color-ring:                 var(--color-notion-blue-text);
+
+  /* Role aliases (primitive에서 직접 참조) */
+  --bg-page:                    #ffffff;
+  --bg-surface:                 var(--color-warm-50);
+  --fg-primary:                 var(--color-notion-black);
+  --fg-secondary:               var(--color-warm-500);
+  --fg-muted:                   var(--color-warm-300);
+  --brand-primary:              var(--color-notion-blue);
+  --brand-primary-hover:        var(--color-notion-blue-hover);
+  --brand-primary-bg:           var(--color-notion-blue-bg);
+  --brand-primary-text:         var(--color-notion-blue-text);
+  --border-default:             var(--color-whisper);
+  --border-soft:                var(--color-whisper-soft);
+  --border-focus:               var(--color-notion-blue-text);
+
+  /* Status role tokens (StatusChip에서 참조) */
+  --status-done-bg:     var(--color-green-50);
+  --status-done-fg:     var(--color-green);
+  --status-success-bg:  var(--color-teal-50);
+  --status-success-fg:  var(--color-teal);
+  --status-active-bg:   var(--color-notion-blue-bg);
+  --status-active-fg:   var(--color-notion-blue-text);
+  --status-warn-bg:     var(--color-orange-50);
+  --status-warn-fg:     var(--color-orange);
+  --status-danger-bg:   var(--color-red-50);
+  --status-danger-fg:   var(--color-red-500);
+  --status-neutral-bg:  var(--color-warm-50);
+  --status-neutral-fg:  var(--color-warm-700);
+  --status-decorative-pink-bg:   var(--color-pink-50);
+  --status-decorative-pink-fg:   var(--color-pink);
+  --status-decorative-purple-bg: var(--color-purple-50);
+  --status-decorative-purple-fg: var(--color-purple);
+  --status-decorative-brown-bg:  var(--color-brown-50);
+  --status-decorative-brown-fg:  var(--color-brown);
+
+  /* Shadow tokens (§5.2) */
+  --shadow-soft:  rgba(0,0,0,0.04) 0 4px 18px,
+                  rgba(0,0,0,0.027) 0 2.025px 7.84688px,
+                  rgba(0,0,0,0.02) 0 0.8px 2.925px,
+                  rgba(0,0,0,0.01) 0 0.175px 1.04062px;
+  --shadow-deep:  rgba(0,0,0,0.01) 0 1px 3px,
+                  rgba(0,0,0,0.02) 0 3px 7px,
+                  rgba(0,0,0,0.02) 0 7px 15px,
+                  rgba(0,0,0,0.04) 0 14px 28px,
+                  rgba(0,0,0,0.05) 0 23px 52px;
+  --shadow-flat:  0 1px 2px rgba(15,23,42,0.03);
 
   /* ── Motion ─────────────────────────────────────────────────── */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
@@ -143,28 +237,25 @@
     --sidebar-width-collapsed: 60px;
     --topbar-height: 52px;
 
-    /* ── Prototype tokens (app.jsx / PDF spec — LITERAL HEX MATCH) ───────
-     *   Pretendard body · JetBrains Mono · 차분한 블루(#2B5BFF) + 민트(#1FB488)
-     *   ISU Blue scale(oklch)는 tailwind utility(bg-isu-*)로만 쓰고,
-     *   커맨드/탑바/사이드바/페이지헤더/칩은 이 vars만 참조한다. */
-    --bg:           #F6F7F8;
-    --panel:        #FFFFFF;
-    --line:         #E7E8EC;
-    --line2:        #EEF0F3;
-    --ink:          #0B0F1A;
-    --ink2:         #31384A;
-    --muted:        #6B7386;
-    --faint:        #9AA1B2;
-    --accent:       #2B5BFF;
-    --accent-ink:   #1E3FBE;
-    --accent-tint:  #EAEFFF;
-    --mint:         #1FB488;
-    --mint-tint:    #E5F5EF;
-    --amber:        #C78A1E;
-    --amber-tint:   #FBF1DB;
-    --red:          #D14343;
-    --shadow-md:    0 2px 4px rgba(11,15,26,.05), 0 8px 24px rgba(11,15,26,.06);
-    --shadow-lg:    0 10px 40px rgba(11,15,26,.10), 0 2px 8px rgba(11,15,26,.05);
+    /* ── Prototype token aliases → new Notion-aligned scale ─── */
+    --bg:          #ffffff;                       /* page */
+    --panel:       var(--color-warm-50);          /* elevated surface */
+    --line:        var(--color-whisper);
+    --line2:       var(--color-whisper-soft);
+    --ink:         var(--color-notion-black);
+    --ink2:        var(--color-warm-700);
+    --muted:       var(--color-warm-500);
+    --faint:       var(--color-warm-300);
+    --accent:      var(--color-notion-blue);
+    --accent-ink:  #ffffff;
+    --accent-tint: var(--color-notion-blue-bg);
+    --mint:        var(--color-teal);
+    --mint-tint:   var(--color-teal-50);
+    --amber:       var(--color-orange);
+    --amber-tint:  var(--color-orange-50);
+    --red:         var(--color-red-500);
+    --shadow-md:   0 2px 6px rgba(15,23,42,0.05), 0 6px 20px rgba(15,23,42,0.04);
+    --shadow-lg:   0 10px 30px rgba(15,23,42,0.08), 0 4px 10px rgba(15,23,42,0.04);
 
     /* Z-index scale */
     --z-sidebar: 40;
@@ -178,60 +269,6 @@
   /* Sidebar width driven by preference (set via <html data-sidebar="..."> bootstrap). */
   :root[data-sidebar="expanded"] { --sidebar-width: 220px; }
   :root[data-sidebar="rail"]     { --sidebar-width: 60px; }
-
-  /* Dark theme — LITERAL HEX MATCH per app.jsx */
-  :root[data-theme="dark"] {
-    --bg:           #0B0F1A;
-    --panel:        #121725;
-    --line:         #1E2434;
-    --line2:        #171C2B;
-    --ink:          #ECEEF4;
-    --ink2:         #C6CAD6;
-    --muted:        #8B93A7;
-    --faint:        #5E667A;
-    --accent:       #5A82FF;
-    --accent-ink:   #A9BEFF;
-    --accent-tint:  #1A2244;
-    --mint:         #3DD8A8;
-    --mint-tint:    #10322A;
-    --amber:        #E0A93A;
-    --amber-tint:   #2A2211;
-
-    /* Tailwind surface scale — inverted for dark backgrounds */
-    --color-surface-50:  oklch(0.115 0.027 259);
-    --color-surface-100: oklch(0.158 0.037 259);
-    --color-surface-200: oklch(0.210 0.042 259);
-    --color-surface-300: oklch(0.275 0.045 259);
-    --color-surface-400: oklch(0.444 0.020 260);
-    --color-surface-500: oklch(0.608 0.018 260);
-    --color-surface-600: oklch(0.700 0.015 260);
-    --color-surface-700: oklch(0.750 0.013 260);
-    --color-surface-800: oklch(0.815 0.012 260);
-    --color-surface-900: oklch(0.940 0.008 260);
-    --color-surface-950: oklch(0.975 0.004 260);
-
-    /* Card / popover = panel background in dark */
-    --color-card:               oklch(0.158 0.037 259);
-    --color-card-foreground:    oklch(0.940 0.008 260);
-    --color-popover:            oklch(0.190 0.040 259);
-    --color-popover-foreground: oklch(0.940 0.008 260);
-
-    /* Semantic token overrides */
-    --color-background: oklch(0.115 0.027 259);
-    --color-foreground: oklch(0.940 0.008 260);
-    --color-muted:      oklch(0.158 0.037 259);
-    --color-muted-foreground: oklch(0.608 0.018 260);
-    --color-border:     oklch(0.210 0.042 259);
-    --color-input:      oklch(0.250 0.044 259);
-
-    /* ISU Blue — lighten for dark backgrounds */
-    --color-isu-500: oklch(0.65 0.168 260);
-    --color-isu-600: oklch(0.72 0.155 260);
-  }
-  :root[data-theme="dark"] body {
-    background: var(--bg);
-    color: var(--ink);
-  }
 
   * { border-color: var(--color-surface-200); }
 
@@ -248,10 +285,9 @@
   }
 
   /* Consistent focus rings across native controls */
-  :focus-visible {
-    outline: 2px solid var(--color-isu-400);
+  *:focus-visible {
+    outline: 2px solid var(--border-focus);
     outline-offset: 2px;
-    border-radius: 6px;
   }
 
   /* Scrollbar — subtle, brand-tinted */
@@ -269,6 +305,107 @@
   ::selection {
     background: var(--color-lime-200);
     color: var(--color-isu-900);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+ * Dark mode (Phase 1 T4)
+ * ══════════════════════════════════════════════════════════════════ */
+
+:root[data-theme="dark"] {
+  --color-background:           #191918;
+  --color-foreground:           rgba(255,255,255,0.95);
+  --color-card:                 #191918;
+  --color-card-foreground:      rgba(255,255,255,0.95);
+  --color-popover:              #242322;
+  --color-popover-foreground:   rgba(255,255,255,0.95);
+  --color-primary:              #529cca;
+  --color-primary-foreground:   #ffffff;
+  --color-secondary:            #242322;
+  --color-secondary-foreground: rgba(255,255,255,0.95);
+  --color-muted:                #242322;
+  --color-muted-foreground:     #a8a4a0;
+  --color-accent:               rgba(82,156,202,0.12);
+  --color-accent-foreground:    #74b3d8;
+  --color-destructive:          #ff6b6b;
+  --color-destructive-foreground: #ffffff;
+  --color-border:               rgba(255,255,255,0.094);
+  --color-input:                rgba(255,255,255,0.094);
+  --color-ring:                 #74b3d8;
+
+  --bg-page:                    #191918;
+  --bg-surface:                 #242322;
+  --fg-primary:                 rgba(255,255,255,0.95);
+  --fg-secondary:               #a8a4a0;
+  --fg-muted:                   #7c7874;
+  --brand-primary:              #529cca;
+  --brand-primary-hover:        #74b3d8;
+  --brand-primary-bg:           rgba(82,156,202,0.12);
+  --brand-primary-text:         #74b3d8;
+  --border-default:             rgba(255,255,255,0.094);
+  --border-soft:                rgba(255,255,255,0.06);
+  --border-focus:               #74b3d8;
+
+  --status-done-bg:              rgba(26,174,57,0.15);
+  --status-done-fg:              #4ccf64;
+  --status-success-bg:           rgba(42,157,153,0.15);
+  --status-success-fg:           #5cc5c1;
+  --status-active-bg:            rgba(82,156,202,0.15);
+  --status-active-fg:            #74b3d8;
+  --status-warn-bg:              rgba(221,91,0,0.18);
+  --status-warn-fg:              #ff8844;
+  --status-danger-bg:            rgba(220,38,38,0.18);
+  --status-danger-fg:            #ff6b6b;
+  --status-neutral-bg:           rgba(255,255,255,0.06);
+  --status-neutral-fg:           #a8a4a0;
+  --status-decorative-pink-bg:   rgba(255,100,200,0.15);
+  --status-decorative-pink-fg:   #ff85d3;
+  --status-decorative-purple-bg: rgba(124,92,169,0.20);
+  --status-decorative-purple-fg: #b598d5;
+  --status-decorative-brown-bg:  rgba(176,128,84,0.18);
+  --status-decorative-brown-fg:  #c9a583;
+
+  --shadow-soft: rgba(0,0,0,0.30) 0 4px 18px,
+                 rgba(0,0,0,0.20) 0 1px 4px;
+  --shadow-deep: rgba(0,0,0,0.40) 0 14px 28px,
+                 rgba(0,0,0,0.30) 0 4px 10px;
+  --shadow-flat: 0 1px 2px rgba(0,0,0,0.4);
+
+  /* Bridge in dark mode — isu- / surface- / lime- 스케일을 다크 팔레트로 */
+  --color-isu-50:      rgba(82,156,202,0.15);
+  --color-isu-100:     rgba(82,156,202,0.22);
+  --color-isu-500:     #529cca;
+  --color-isu-600:     #74b3d8;
+  --color-isu-700:     #99c9e5;
+  --color-surface-50:  #191918;
+  --color-surface-100: #242322;
+  --color-surface-200: rgba(255,255,255,0.094);
+  --color-surface-500: #a8a4a0;
+  --color-surface-700: #c9c5c0;
+  --color-surface-900: rgba(255,255,255,0.95);
+  --color-lime-50:     #242322;
+  --color-lime-100:    #2d2c2a;
+  --color-lime-600:    #a8a4a0;
+
+  /* Prototype tokens — warm-dark 팔레트 */
+  --bg:           #191918;
+  --panel:        #242322;
+  --line:         rgba(255,255,255,0.094);
+  --line2:        rgba(255,255,255,0.06);
+  --ink:          rgba(255,255,255,0.95);
+  --ink2:         #c9c5c0;
+  --muted:        #a8a4a0;
+  --faint:        #7c7874;
+  --accent:       #529cca;
+  --accent-ink:   #74b3d8;
+  --accent-tint:  rgba(82,156,202,0.12);
+  --shadow-md:    0 2px 6px rgba(0,0,0,0.40), 0 6px 20px rgba(0,0,0,0.30);
+  --shadow-lg:    0 10px 30px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
   }
 }
 

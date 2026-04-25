@@ -4,24 +4,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-[0.125px]",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-isu-100 text-isu-700",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground",
-        success:
-          "border-transparent bg-success-subtle text-success",
-        warning:
-          "border-transparent bg-warning-subtle text-warning",
-        destructive:
-          "border-transparent bg-danger-subtle text-destructive",
-        outline:
-          "border-border bg-background text-foreground",
-        accent:
-          "border-transparent bg-lime-100 text-lime-700",
+        default:     "bg-[--brand-primary] text-white",
+        secondary:   "bg-[--bg-surface] text-[--fg-primary]",
+        destructive: "bg-[--color-red-50] text-[--color-red-500] border border-[--color-red-200]",
+        outline:     "bg-transparent text-[--fg-primary] border border-[--border-default]",
+        success:     "bg-[--status-done-bg] text-[--status-done-fg]",
+        warning:     "bg-[--status-warn-bg] text-[--status-warn-fg]",
+        info:        "bg-[--status-active-bg] text-[--status-active-fg]",
+        // DEPRECATED: Phase 2에서 전 호출부 제거 예정
+        accent:      "bg-[--brand-primary] text-white",
       },
     },
     defaultVariants: {

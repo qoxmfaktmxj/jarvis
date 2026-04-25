@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Jarvis · 로그인 (Design Overhaul Preview)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root {
+  --bg-page: #ffffff;
+  --bg-surface: #faf9f8;
+  --fg-primary: rgba(0,0,0,0.95);
+  --fg-secondary: #615d59;
+  --fg-muted: #a39e98;
+  --brand-primary: #0075de;
+  --brand-primary-hover: #005bab;
+  --brand-primary-bg: #f2f9ff;
+  --brand-primary-text: #097fe8;
+  --border-default: rgba(0,0,0,0.10);
+  --border-soft: rgba(0,0,0,0.06);
+  --border-focus: #097fe8;
+  --shadow-soft: rgba(0,0,0,0.04) 0 4px 18px, rgba(0,0,0,0.027) 0 2.025px 7.84688px,
+                 rgba(0,0,0,0.02) 0 0.8px 2.925px, rgba(0,0,0,0.01) 0 0.175px 1.04062px;
+  --shadow-deep: rgba(0,0,0,0.01) 0 1px 3px, rgba(0,0,0,0.02) 0 3px 7px,
+                 rgba(0,0,0,0.02) 0 7px 15px, rgba(0,0,0,0.04) 0 14px 28px,
+                 rgba(0,0,0,0.05) 0 23px 52px;
+}
+[data-theme="dark"] {
+  --bg-page: #191918;
+  --bg-surface: #242322;
+  --fg-primary: rgba(255,255,255,0.95);
+  --fg-secondary: #a8a4a0;
+  --fg-muted: #7c7874;
+  --brand-primary: #529cca;
+  --brand-primary-hover: #74b3d8;
+  --brand-primary-bg: rgba(82,156,202,0.12);
+  --brand-primary-text: #74b3d8;
+  --border-default: rgba(255,255,255,0.094);
+  --border-soft: rgba(255,255,255,0.06);
+  --border-focus: #74b3d8;
+  --shadow-soft: rgba(0,0,0,0.30) 0 4px 18px, rgba(0,0,0,0.20) 0 1px 4px;
+  --shadow-deep: rgba(0,0,0,0.40) 0 14px 28px, rgba(0,0,0,0.30) 0 4px 10px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  background:var(--bg-page);
+  color:var(--fg-primary);
+  font-feature-settings:"ss01","tnum","lnum";
+  -webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+.shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+@media (max-width:900px){ .shell{grid-template-columns:1fr} .brand{display:none} }
+
+/* ============ LEFT — Brand panel ============ */
+.brand{
+  position:relative;
+  padding:48px 56px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  background:var(--bg-surface);
+  border-right:1px solid var(--border-default);
+  overflow:hidden;
+}
+.brand-logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:700;color:var(--fg-primary);letter-spacing:-0.25px}
+.brand-logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#0075de 0%,#005bab 100%);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;
+  box-shadow:0 2px 6px rgba(0,117,222,0.25);
+}
+.brand-hero h1{
+  font-size:48px;font-weight:700;line-height:1.04;margin:0 0 18px;
+  color:var(--fg-primary);
+}
+.brand-hero h1:lang(ko){letter-spacing:0}
+.brand-hero h1 .accent{color:var(--brand-primary)}
+.brand-hero p{
+  font-size:18px;font-weight:400;line-height:1.6;color:var(--fg-secondary);
+  margin:0;max-width:420px;
+}
+.brand-features{display:flex;flex-direction:column;gap:14px;margin-top:36px;max-width:420px}
+.feat{display:flex;gap:12px;align-items:flex-start;font-size:14px;color:var(--fg-secondary);line-height:1.5}
+.feat-dot{
+  width:20px;height:20px;border-radius:9999px;flex-shrink:0;
+  background:var(--brand-primary-bg);color:var(--brand-primary-text);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px;
+}
+.feat b{color:var(--fg-primary);font-weight:600}
+.brand-footer{font-size:12px;color:var(--fg-muted);display:flex;gap:18px}
+.brand-footer a{color:var(--fg-muted);text-decoration:none}
+.brand-footer a:hover{color:var(--brand-primary)}
+
+/* Decorative aura */
+.brand::before{
+  content:"";position:absolute;top:-120px;right:-120px;width:360px;height:360px;
+  background:radial-gradient(circle,rgba(0,117,222,0.08),transparent 70%);
+  pointer-events:none;
+}
+
+/* ============ RIGHT — Form ============ */
+.form-wrap{display:flex;align-items:center;justify-content:center;padding:48px 40px;background:var(--bg-page)}
+.form-card{
+  width:100%;max-width:420px;
+  background:transparent;
+}
+.form-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12px;font-weight:600;color:var(--brand-primary-text);
+  background:var(--brand-primary-bg);padding:4px 10px;border-radius:9999px;
+  letter-spacing:0.125px;margin-bottom:20px;
+}
+.form-eyebrow .dot{width:6px;height:6px;border-radius:9999px;background:var(--brand-primary)}
+.form-title{
+  font-size:40px;font-weight:700;line-height:1.1;color:var(--fg-primary);
+  margin:0 0 10px;
+}
+.form-title:lang(ko){letter-spacing:0}
+.form-sub{font-size:16px;font-weight:400;color:var(--fg-secondary);line-height:1.5;margin:0 0 36px}
+.field{margin-bottom:18px}
+.field-label{display:block;font-size:13px;font-weight:500;color:var(--fg-primary);margin-bottom:8px}
+.field-input{
+  width:100%;height:44px;padding:0 14px;
+  border:1px solid var(--border-default);border-radius:8px;
+  background:var(--bg-page);color:var(--fg-primary);
+  font-family:inherit;font-size:15px;
+  transition:border-color .15s,box-shadow .15s;
+  font-variant-numeric:tabular-nums;
+}
+.field-input::placeholder{color:var(--fg-muted)}
+.field-input:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px var(--brand-primary-bg)}
+
+.field-row{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin:-6px 0 24px}
+.checkbox{display:inline-flex;align-items:center;gap:8px;color:var(--fg-secondary);cursor:pointer}
+.checkbox input{accent-color:var(--brand-primary);width:15px;height:15px;cursor:pointer}
+.link{color:var(--brand-primary-text);text-decoration:none;font-weight:500}
+.link:hover{text-decoration:underline;text-underline-offset:2px}
+
+.btn-primary{
+  width:100%;height:46px;
+  background:var(--brand-primary);color:#fff;
+  border:none;border-radius:8px;
+  font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s;
+  box-shadow:0 1px 2px rgba(0,117,222,0.08);
+}
+.btn-primary:hover{background:var(--brand-primary-hover)}
+.btn-primary:focus{outline:2px solid var(--border-focus);outline-offset:2px}
+
+.divider{
+  display:flex;align-items:center;gap:12px;margin:28px 0;
+  font-size:12px;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;
+}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border-default)}
+
+.btn-sso{
+  width:100%;height:44px;
+  background:var(--bg-page);color:var(--fg-primary);
+  border:1px solid var(--border-default);border-radius:8px;
+  font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:background .15s,border-color .15s;
+}
+.btn-sso:hover{background:var(--bg-surface);border-color:rgba(0,0,0,0.18)}
+
+.footer-note{font-size:12.5px;color:var(--fg-muted);text-align:center;margin-top:32px;line-height:1.6}
+
+/* Theme toggle */
+.theme-toggle{
+  position:fixed;top:20px;right:20px;
+  background:var(--bg-page);border:1px solid var(--border-default);
+  border-radius:9999px;padding:6px 12px;
+  font-size:11px;font-weight:600;color:var(--fg-secondary);
+  cursor:pointer;display:flex;align-items:center;gap:6px;
+  letter-spacing:0.05em;
+  z-index:10;
+}
+.theme-toggle:hover{background:var(--bg-surface)}
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'':'dark'">
+  <span class="dot" style="width:8px;height:8px;border-radius:9999px;background:var(--brand-primary)"></span>
+  THEME
+</button>
+
+<div class="shell">
+  <!-- LEFT — Brand panel -->
+  <div class="brand">
+    <div class="brand-logo">
+      <div class="brand-logo-mark">J</div>
+      Jarvis
+    </div>
+
+    <div class="brand-hero">
+      <h1>사내 업무 시스템과<br>LLM 컴파일 위키를<br><span class="accent">한 곳에서</span></h1>
+      <p>프로젝트 · 문서 · 지식 · 근태까지, 필요한 답이 항상 <i>가까이</i> 있게.</p>
+
+      <div class="brand-features">
+        <div class="feat">
+          <span class="feat-dot">1</span>
+          <span><b>Ask AI 6-lane 라우터</b>로 질문을 최적 소스에 연결하고, 페이지 기반 검색으로 정확도를 유지합니다.</span>
+        </div>
+        <div class="feat">
+          <span class="feat-dot">2</span>
+          <span><b>LLM 컴파일 위키</b>가 새 업데이트마다 스스로 재색인되어, 팀의 지식이 녹슬지 않습니다.</span>
+        </div>
+        <div class="feat">
+          <span class="feat-dot">3</span>
+          <span><b>34 권한 · 5 역할 RBAC</b>로 민감한 정보는 정확한 사람에게만 보입니다.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="brand-footer">
+      <span>© 2026 Jarvis</span>
+      <a href="#">개인정보처리방침</a>
+      <a href="#">이용약관</a>
+      <a href="#">고객센터</a>
+    </div>
+  </div>
+
+  <!-- RIGHT — Form -->
+  <div class="form-wrap">
+    <form class="form-card" onsubmit="return false">
+      <span class="form-eyebrow"><span class="dot"></span>SECURE SIGN-IN</span>
+      <h2 class="form-title">다시 오신 걸 환영해요</h2>
+      <p class="form-sub">사원번호와 비밀번호로 로그인하세요.</p>
+
+      <div class="field">
+        <label class="field-label" for="id">사원번호</label>
+        <input id="id" class="field-input" type="text" placeholder="2019-0412" value="2019-0412" autocomplete="username">
+      </div>
+      <div class="field">
+        <label class="field-label" for="pw">비밀번호</label>
+        <input id="pw" class="field-input" type="password" placeholder="••••••••" value="demo1234" autocomplete="current-password">
+      </div>
+
+      <div class="field-row">
+        <label class="checkbox"><input type="checkbox" checked> 로그인 유지</label>
+        <a href="#" class="link">비밀번호 재설정</a>
+      </div>
+
+      <button class="btn-primary" type="submit">
+        로그인
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+          <path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="divider">또는</div>
+
+      <button type="button" class="btn-sso">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden>
+          <path d="M8 2a6 6 0 1 0 4.24 10.24A6 6 0 0 0 8 2zm0 2a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" fill="#615d59"/>
+        </svg>
+        사내 SSO로 로그인
+      </button>
+
+      <p class="footer-note">
+        계정이 없으신가요? 관리자에게 <a href="#" class="link">사내 계정 발급</a>을 요청해 주세요.
+      </p>
+    </form>
+  </div>
+</div>
+
+<script>
+// ?theme=dark 지원
+if (new URL(location).searchParams.get('theme')==='dark') document.documentElement.dataset.theme='dark';
+</script>
+</body>
+</html>

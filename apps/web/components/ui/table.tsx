@@ -6,7 +6,7 @@ const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableE
     <div className="relative w-full overflow-auto">
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn("w-full caption-bottom text-[13px]", className)}
         {...props}
       />
     </div>
@@ -18,7 +18,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <thead
       ref={ref}
-      className={cn("[&_tr]:border-b bg-surface-50", className)}
+      className={cn("bg-[--bg-surface]", className)}
       {...props}
     />
   ),
@@ -41,7 +41,7 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
     <tfoot
       ref={ref}
       className={cn(
-        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
+        "bg-[--bg-surface] font-medium border-t border-[--border-default]",
         className,
       )}
       {...props}
@@ -55,7 +55,7 @@ const TableRow = React.forwardRef<HTMLTableRowElement, React.HTMLAttributes<HTML
     <tr
       ref={ref}
       className={cn(
-        "border-b border-surface-100 transition-colors hover:bg-surface-50 data-[state=selected]:bg-surface-100",
+        "group border-b border-[--border-soft] transition-colors hover:bg-[--brand-primary-bg] data-[state=selected]:bg-[--brand-primary-bg]",
         className,
       )}
       {...props}
@@ -69,7 +69,7 @@ const TableHead = React.forwardRef<HTMLTableCellElement, React.ThHTMLAttributes<
     <th
       ref={ref}
       className={cn(
-        "h-10 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wide text-surface-600 [&:has([role=checkbox])]:pr-0",
+        "h-9 px-4 text-left align-middle text-[11px] font-semibold uppercase tracking-[0.1em] text-[--fg-secondary] [&:has([role=checkbox])]:pr-0",
         className,
       )}
       {...props}
@@ -82,7 +82,7 @@ const TableCell = React.forwardRef<HTMLTableCellElement, React.TdHTMLAttributes<
   ({ className, ...props }, ref) => (
     <td
       ref={ref}
-      className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+      className={cn("px-4 py-2.5 align-middle text-[--fg-primary] [&:has([role=checkbox])]:pr-0", className)}
       {...props}
     />
   ),
@@ -93,7 +93,7 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttribu
   ({ className, ...props }, ref) => (
     <caption
       ref={ref}
-      className={cn("mt-4 text-sm text-muted-foreground", className)}
+      className={cn("mt-4 text-[12px] text-[--fg-muted]", className)}
       {...props}
     />
   ),
