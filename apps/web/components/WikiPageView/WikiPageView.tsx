@@ -34,7 +34,7 @@ const SENSITIVITY_STYLES: Record<
   },
   secret: {
     chip: 'bg-[--color-red-50] text-[--color-red-500] ring-[--color-red-500]/25',
-    bar: 'from-red-500/70 to-red-500/0',
+    bar: 'from-[--color-red-500]/70 to-[--color-red-500]/0',
     label: 'Secret',
   },
 };

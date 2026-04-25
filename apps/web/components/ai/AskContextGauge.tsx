@@ -40,7 +40,7 @@ export function AskContextGauge({
       title={`${formatTokens(usedTokens)} / ${formatTokens(totalWindow)} 토큰`}
     >
       <span
-        className="relative inline-flex h-1 w-12 overflow-hidden rounded-full bg-[--border-default]"
+        className="relative inline-flex h-1 w-12 overflow-hidden rounded-full bg-[--bg-surface]"
         aria-hidden
       >
         <span

@@ -349,7 +349,7 @@ export function WikiEditor({
                     {tWikilink("searching")}
                   </li>
                 ) : isErrored ? (
-                  <li className="px-3 py-2 text-sm text-red-600">
+                  <li className="px-3 py-2 text-sm text-[--color-red-500]">
                     {tWikilink("searchFailed")}
                   </li>
                 ) : filteredPages.length === 0 ? (
