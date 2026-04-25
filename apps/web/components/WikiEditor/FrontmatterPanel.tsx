@@ -139,7 +139,7 @@ export function FrontmatterPanel({
 
   return (
     <section
-      className="rounded-lg border border-surface-200 bg-surface-50 p-4 space-y-4"
+      className="rounded-lg border border-[--border-default] bg-[--bg-surface] p-4 space-y-4"
       data-testid="wiki-frontmatter-panel"
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
