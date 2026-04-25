@@ -22,10 +22,10 @@ export function ProfileInfo({ session }: { session: JarvisSession }) {
           <dd className="text-foreground">{session.email ?? "-"}</dd>
 
           <dt className="text-muted-foreground">{t("employeeId")}</dt>
-          <dd className="font-mono text-xs text-surface-600">{session.employeeId}</dd>
+          <dd className="font-mono text-xs text-[--fg-secondary]">{session.employeeId}</dd>
 
           <dt className="text-muted-foreground">{t("workspace")}</dt>
-          <dd className="font-mono text-xs text-surface-600">{session.workspaceId}</dd>
+          <dd className="font-mono text-xs text-[--fg-secondary]">{session.workspaceId}</dd>
 
           <dt className="text-muted-foreground">{t("roles")}</dt>
           <dd className="flex flex-wrap gap-2">
