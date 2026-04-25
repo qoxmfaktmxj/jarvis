@@ -2,6 +2,7 @@
 // 2026-04-13: 6-lane 라우터 + Cases/Directory Layer 추가 + OpenAI 생성 마이그레이션
 // 2026-04-14 (Phase-7A PR#5): cache-through with workspace/prompt/scope-aware key.
 // 2026-04-15 (Phase-7A merged): assertBudget + logLlmCall integrated.
+// 2026-04-24 (Phase B3): askAI delegates to ask-agent tool-use loop.
 
 import OpenAI from 'openai';
 import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
@@ -30,6 +31,9 @@ import { makeCacheKey, getCached, setCached } from './cache.js';
 import { featurePageFirstQuery } from '@jarvis/db/feature-flags';
 import { pageFirstAsk } from './page-first/index.js';
 import { createChatWithTokenFallback } from './openai-compat.js';
+// Phase B3: agent + SSE adapter imports.
+import { askAgentStream } from './agent/ask-agent.js';
+import { askAgentToSSE } from './agent/sse-adapter.js';
 import type {
   SSEEvent,
   SourceRef,
@@ -384,6 +388,7 @@ export async function* generateAnswer(
 // ---------------------------------------------------------------------------
 // Unified retrieval: 항상 4개 소스 전부 병렬 검색 → lane 가중치로 랭킹만 조정.
 // 라우터는 "어떤 소스를 버릴지"가 아니라 "얼마나 신뢰할지"를 결정한다.
+// ---- legacy (unused after Phase B3) ----
 // ---------------------------------------------------------------------------
 const UNIFIED_TOP_K = 8;      // 각 소스 초기 fetch 개수
 const UNIFIED_FINAL_TEXT = 5;
@@ -394,11 +399,132 @@ const UNIFIED_FINAL_GRAPH = 5;
 export async function* askAI(
   query: import('./types.js').AskQuery,
 ): AsyncGenerator<SSEEvent> {
+  const { question, workspaceId, userId, userPermissions } = query;
+
+  // -------------------------------------------------------------------------
+  // Cache-through (in-memory LRU; see packages/ai/cache.ts).
+  // sensitivityScope encodes both knowledge clearance and graph access so that
+  // users with different permission profiles never share a cache entry.
+  // -------------------------------------------------------------------------
+  const sensitivityScope =
+    query.sensitivityScope ??
+    `workspace:${workspaceId}|level:internal|graph:0`;
+
+  // 요청별 모델 오버라이드 — undefined면 env default (ASK_MODEL).
+  const resolvedModel = query.model ?? ASK_MODEL;
+
+  const cacheKey = makeCacheKey({
+    promptVersion: PROMPT_VERSION,
+    workspaceId,
+    sensitivityScope,
+    input: question,
+    model: resolvedModel,
+  });
+
+  // Budget gate applies even on cache hit.
+  try {
+    await assertBudget(workspaceId);
+  } catch (err) {
+    if (err instanceof BudgetExceededError) {
+      await recordBlocked(workspaceId, resolvedModel, query.requestId ?? null, ASK_OP);
+      yield { type: 'error', message: 'daily budget exceeded' };
+      yield { type: 'done', totalTokens: 0 };
+      return;
+    }
+    throw err;
+  }
+
+  const hit = await getCached(cacheKey);
+  if (hit) {
+    const cached = JSON.parse(hit) as SSEEvent[];
+    for (const evt of cached) {
+      yield evt;
+    }
+    return;
+  }
+
+  // No cache hit — run the agent tool-use loop.
+  const startedAt = Date.now();
+  const client = getAskClient();
+  const toolContext = {
+    workspaceId,
+    userId: userId ?? 'unknown',
+    permissions: userPermissions as readonly string[],
+  };
+
+  const collectedEvents: SSEEvent[] = [];
+  let totalTokens = 0;
+  let hasError = false;
+
+  try {
+    const agentStream = askAgentStream(question, toolContext, {
+      client,
+      model: resolvedModel,
+    });
+
+    for await (const sseEvent of askAgentToSSE(agentStream, workspaceId)) {
+      collectedEvents.push(sseEvent);
+      yield sseEvent;
+
+      if (sseEvent.type === 'done') {
+        totalTokens = sseEvent.totalTokens;
+      }
+      if (sseEvent.type === 'error') {
+        hasError = true;
+      }
+    }
+  } catch (err) {
+    hasError = true;
+    const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다';
+    const errEvent: SSEEvent = { type: 'error', message };
+    collectedEvents.push(errEvent);
+    yield errEvent;
+    const doneEvent: SSEEvent = { type: 'done', totalTokens: 0 };
+    collectedEvents.push(doneEvent);
+    yield doneEvent;
+  } finally {
+    // logLlmCall — fire-and-forget, don't block the stream.
+    // Heuristic 70/30 input/output split: ask-agent accumulates totalTokens
+    // across all steps but does not expose per-step prompt/completion breakdown.
+    // Using 70% input / 30% output is a conservative approximation until
+    // per-step token telemetry is added (tracked as follow-up).
+    // MODEL_PRICING keys at top of file drive computeCostUsd.
+    const splitIn = Math.round(totalTokens * 0.7);
+    const splitOut = totalTokens - splitIn;
+    logLlmCall({
+      op: ASK_OP,
+      workspaceId,
+      requestId: query.requestId ?? null,
+      model: resolvedModel,
+      promptVersion: PROMPT_VERSION,
+      inputTokens: splitIn,
+      outputTokens: splitOut,
+      costUsd: computeCostUsd(resolvedModel, splitIn, splitOut),
+      durationMs: Date.now() - startedAt,
+      status: hasError ? 'error' : 'ok',
+      blockedBy: null,
+      errorCode: null,
+    }).catch((e) => {
+      console.error('[ask] logLlmCall failed:', e instanceof Error ? e.message : e);
+    });
+  }
+
+  // Cache only successful responses.
+  if (!hasError) {
+    await setCached(cacheKey, JSON.stringify(collectedEvents));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ---- legacy (unused after Phase B3) — kept for reference, scheduled for
+// deletion in a follow-up PR once Phase G burn-in completes. ----
+// ---------------------------------------------------------------------------
+
+/** @deprecated legacy entry point before Phase B3 — DO NOT call from new code */
+async function* _legacyAskAI_unused(
+  query: import('./types.js').AskQuery,
+): AsyncGenerator<SSEEvent> {
   // Page-first path (DEFAULT since B4 Phase 2).
-  // Delegates to the wiki page-first pipeline (lexical shortlist → 1-hop
-  // wikilink expansion → disk read → LLM synthesis with [[slug]] citations).
-  // The legacy vector+hybrid path below stays 100% intact so
-  // FEATURE_PAGE_FIRST_QUERY=false preserves existing behaviour.
   if (featurePageFirstQuery()) {
     yield* pageFirstAsk(query);
     return;
