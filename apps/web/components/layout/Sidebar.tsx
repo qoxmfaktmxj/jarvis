@@ -102,9 +102,11 @@ export function Sidebar() {
         transition: "width .2s ease",
       }}
     >
-      {/* Brand header */}
-      <div
-        className="flex items-center border-b"
+      {/* Brand header — clicking goes to /dashboard */}
+      <Link
+        href="/dashboard"
+        aria-label="Dashboard"
+        className="flex items-center border-b transition-colors hover:bg-[--bg-surface]"
         style={{
           height: "var(--topbar-height)",
           padding: expanded ? "0 16px" : 0,
@@ -122,7 +124,7 @@ export function Sidebar() {
             Jarvis
           </span>
         ) : null}
-      </div>
+      </Link>
 
       {/* Nav */}
       <nav

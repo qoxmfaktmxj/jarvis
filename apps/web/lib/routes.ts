@@ -6,7 +6,6 @@ import {
   FileText,
   GitFork,
   HardDrive,
-  LayoutDashboard,
   Library,
   Megaphone,
   MessageSquare,
@@ -32,7 +31,6 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { id: "nav-dashboard",    href: "/dashboard",          label: "대시보드",      icon: LayoutDashboard, description: "홈 · 이번 주 요약",  keywords: ["dashboard", "home", "홈"] },
   { id: "nav-notices",      href: "/notices",            label: "공지사항",      icon: Megaphone,       description: "사내 공지사항",      keywords: ["notice", "공지"] },
   { id: "nav-ask",          href: "/ask",                label: "AI 질문",       icon: MessageSquare,   description: "AI에게 질문",        keywords: ["ai", "chat", "질문"], badge: "AI" },
   { id: "nav-search",       href: "/search",             label: "검색",          icon: Search,          description: "전체 리소스 검색",   keywords: ["search", "find"] },
