@@ -9,7 +9,6 @@ import { resolveAllowedWikiSensitivities } from '@jarvis/auth/rbac';
 import { mapDbSensitivity } from '@/components/WikiPageView';
 import type { WikiPageMeta } from '@/components/WikiPageView';
 import { PageHeader } from '@/components/patterns/PageHeader';
-import { isoWeekNumber } from '@/lib/date-utils';
 import { WikiIndexSearch } from './_components/WikiIndexSearch';
 
 export const dynamic = 'force-dynamic';
@@ -112,7 +111,6 @@ export default async function WikiHomePage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-        stamp={`W${isoWeekNumber(new Date())}`}
         kicker="Wiki"
         title={t('title')}
       />

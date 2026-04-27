@@ -247,7 +247,7 @@
     --muted:       var(--color-warm-500);
     --faint:       var(--color-warm-300);
     --accent:      var(--color-notion-blue);
-    --accent-ink:  #ffffff;
+    --accent-ink:  var(--color-notion-blue-text);
     --accent-tint: var(--color-notion-blue-bg);
     --mint:        var(--color-teal);
     --mint-tint:   var(--color-teal-50);

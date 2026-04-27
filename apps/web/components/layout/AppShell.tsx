@@ -1,3 +1,4 @@
+import { AppShellMain } from "./AppShellMain";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { UI_PREFS_BOOTSTRAP } from "./uiPrefs";
@@ -24,17 +25,7 @@ export function AppShell({
       />
       <Sidebar />
       <Topbar userName={userName} />
-      <main
-        id="main-content"
-        style={{
-          minHeight: "100vh",
-          paddingLeft: "var(--sidebar-width)",
-          paddingTop: "var(--topbar-height)",
-          transition: "padding-left .2s ease",
-        }}
-      >
-        <div className="mx-auto max-w-[1400px] px-8 py-8">{children}</div>
-      </main>
+      <AppShellMain>{children}</AppShellMain>
     </div>
   );
 }
