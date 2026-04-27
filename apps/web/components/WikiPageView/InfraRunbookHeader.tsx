@@ -27,7 +27,7 @@ const ENV_STYLES: Record<string, string> = {
   staging: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   qa: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   dev: 'bg-[--brand-primary-bg] text-[--brand-primary-text] ring-[--brand-primary]/25',
-  local: 'bg-[--bg-page] text-[--fg-primary] ring-[--border-default]',
+  local: 'bg-[--bg-surface] text-[--fg-primary] ring-[--border-default]',
 };
 
 export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
@@ -53,7 +53,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
   if (rows.length === 0) return null;
 
   const envKey = meta.envType?.toLowerCase() ?? '';
-  const envChip = ENV_STYLES[envKey] ?? 'bg-[--bg-page] text-[--fg-primary] ring-[--border-default]';
+  const envChip = ENV_STYLES[envKey] ?? 'bg-[--bg-surface] text-[--fg-primary] ring-[--border-default]';
 
   return (
     <aside
@@ -62,15 +62,15 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
     >
       {/* Header bar */}
       <div className="flex items-center gap-2 border-b border-[--border-default] bg-[--bg-surface]/70 px-4 py-2.5">
-        <span className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-[--brand-primary-bg] text-[--brand-primary] ring-1 ring-inset ring-[--brand-primary-border]">
+        <span className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-[--brand-primary-bg] text-[--brand-primary] ring-1 ring-inset ring-[--brand-primary-bg]">
           <Server className="h-3.5 w-3.5" />
         </span>
-        <span className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-[--brand-primary-text]">
+        <span className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-[--brand-primary]">
           Infra runbook
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-1.5">
           {meta.companyCd && (
-            <span className="inline-flex items-center rounded-full bg-[--bg-page] px-2 py-0.5 text-[10px] font-semibold text-[--fg-secondary] ring-1 ring-inset ring-[--border-default]">
+            <span className="inline-flex items-center rounded-full bg-[--bg-surface] px-2 py-0.5 text-[10px] font-semibold text-[--fg-secondary] ring-1 ring-inset ring-[--border-default]">
               company/{meta.companyCd.toLowerCase()}
             </span>
           )}
