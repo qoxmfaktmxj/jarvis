@@ -81,10 +81,6 @@ vi.mock('../../lib/pii-redactor.js', () => ({
   redactPII: vi.fn((text: string) => ({ redacted: text, hits: [] })),
 }));
 
-vi.mock('@jarvis/ai/embed', () => ({
-  generateEmbedding: vi.fn(),
-}));
-
 vi.mock('openai', () => ({
   default: vi.fn(),
 }));
