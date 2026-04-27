@@ -28,7 +28,7 @@ export function QuickLinksWidget({ items }: { items: MenuItem[] }) {
             <li key={item.id}>
               <Link
                 href={item.path ?? "/dashboard"}
-                className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-3 py-1.5 text-sm text-[--fg-primary] transition-colors duration-150 hover:border-[--brand-primary] hover:bg-[--brand-primary-bg] hover:text-[--brand-primary]"
+                className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-3 py-1.5 text-sm text-[--fg-primary] transition-colors duration-150 hover:bg-[--brand-primary-bg] hover:text-[--brand-primary]"
               >
                 <span className="text-display text-[11px] font-semibold text-[--fg-muted] group-hover:text-[--brand-primary]">
                   {item.label.slice(0, 1).toUpperCase()}

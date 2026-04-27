@@ -32,7 +32,7 @@ export function SearchTrendsWidget({ trends }: { trends: TrendItem[] }) {
                 <span className="text-display text-xs font-semibold tabular-nums text-[--fg-muted]">
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <div className="relative h-7 overflow-hidden rounded-md bg-[--bg-surface]">
+                <div className="relative h-7 overflow-hidden rounded-md bg-[--bg-surface]/60">
                   <div
                     className="absolute inset-y-0 left-0 bg-[--brand-primary-bg] transition-all duration-500"
                     style={{ width: `${width}%` }}
