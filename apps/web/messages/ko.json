@@ -273,30 +273,51 @@
     }
   },
   "Dashboard": {
-    "title": "대시보드",
-    "welcome": "{name}님, 반갑습니다. 현재 워크스페이스 현황입니다.",
-    "MyTasks": {
-      "title": "내 작업",
-      "empty": "담당 작업이 없습니다.",
-      "due": "마감 {date}",
-      "noDueDate": "마감일 없음"
+    "greeting": "안녕하세요, {name}님",
+    "info": {
+      "todayLabel": "오늘",
+      "timeLabel": "현재 시각",
+      "weatherLabel": "서울 · 맑음",
+      "weatherHiLo": "H {hi}° / L {lo}°",
+      "weatherParticulate": "미세먼지 {level}",
+      "fxLabel": "환율 · KRW 기준",
+      "source": { "weather": "기상청", "fx": "수출입은행" }
     },
-    "QuickLinks": {
-      "title": "빠른 링크",
-      "empty": "빠른 링크가 아직 없습니다."
+    "lounge": {
+      "title": "전사 라운지",
+      "subtitle": "{online}명 온라인 · 자유 채팅",
+      "composerPlaceholder": "{name} · {role} — 메시지 입력…",
+      "send": "전송",
+      "delete": "삭제",
+      "deleted": "삭제된 메시지입니다",
+      "addReaction": "리액션 추가",
+      "empty": "아직 메시지가 없습니다. 첫 메시지를 남겨보세요."
     },
-    "RecentActivity": {
-      "title": "최근 활동",
-      "empty": "최근 기록된 활동이 없습니다."
+    "notices": {
+      "title": "사내 공지",
+      "viewAll": "전체",
+      "badgePinned": "필독",
+      "badgeNotice": "공지",
+      "badgeEvent": "이벤트",
+      "empty": "게시된 공지가 없습니다."
     },
-    "StalePages": {
-      "title": "만료된 페이지",
-      "allFresh": "모든 게시 페이지가 최신 상태입니다.",
-      "overdueNote": "일 이상 오래됨 ({date} 이후)"
+    "vacations": {
+      "title": "금주 휴가",
+      "count": "{count}명",
+      "returnAt": "{date} ({weekday})",
+      "types": {
+        "annual": "연차",
+        "halfAm": "반차-오전",
+        "halfPm": "반차-오후",
+        "sick": "질병",
+        "family": "경조사"
+      },
+      "empty": "이번 주 휴가자가 없습니다."
     },
-    "SearchTrends": {
-      "title": "검색 트렌드",
-      "empty": "이번 주 검색 트렌드 데이터가 없습니다."
+    "latestWiki": {
+      "title": "최신 위키",
+      "viewAll": "전체",
+      "empty": "최근 게시된 페이지가 없습니다."
     }
   },
   "Profile": {
@@ -698,7 +719,53 @@
   "Contractors": {
     "title": "외주인력관리",
     "subtitle": "외주인력 계약·연차·일정을 관리합니다.",
-    "tabs": { "roster": "인력·연차", "schedule": "일정 달력" },
+    "tabs": {
+      "schedule": "일정",
+      "leaves": "휴가관리"
+    },
+    "leaves": {
+      "title": "휴가관리",
+      "search": {
+        "referenceDate": "기준일자",
+        "name": "성명",
+        "submit": "조회"
+      },
+      "master": {
+        "columns": {
+          "no": "No",
+          "employeeId": "사번",
+          "name": "성명",
+          "contractStart": "계약시작일",
+          "contractEnd": "계약종료일",
+          "generated": "발행일수",
+          "used": "사용일수",
+          "remaining": "잔여일수",
+          "note": "비고"
+        }
+      },
+      "detail": {
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "type": "근태명",
+          "appliedAt": "신청일",
+          "requestStatus": "신청상태",
+          "startDate": "적용시작일",
+          "endDate": "적용종료일",
+          "days": "적용일수",
+          "reason": "사유"
+        },
+        "actions": {
+          "add": "입력",
+          "save": "저장"
+        },
+        "toast": {
+          "saved": "저장되었습니다",
+          "saveFailed": "저장 실패"
+        }
+      }
+    },
     "columns": {
       "employeeId": "사번", "name": "성명", "org": "조직",
       "contractPeriod": "계약기간",

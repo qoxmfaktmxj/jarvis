@@ -7,20 +7,33 @@ export function ContractorTabs() {
   const t = useTranslations("Contractors");
   const pathname = usePathname();
   const tabs = [
-    { href: "/contractors", label: t("tabs.roster") },
-    { href: "/contractors/schedule", label: t("tabs.schedule") }
+    { href: "/contractors", label: t("tabs.schedule") },
+    { href: "/contractors/leaves", label: t("tabs.leaves") }
   ];
   return (
-    <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--line)", marginBottom: 16 }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 4,
+        borderBottom: "1px solid var(--line)",
+        marginBottom: 16
+      }}
+    >
       {tabs.map((tab) => {
-        const active = pathname === tab.href;
+        // /contractors or /contractors/schedule both activate "일정"
+        const isSchedule =
+          tab.href === "/contractors" &&
+          (pathname === "/contractors" || pathname === "/contractors/schedule");
+        const active = isSchedule || pathname === tab.href;
         return (
           <Link
             key={tab.href}
             href={tab.href}
             style={{
               padding: "8px 16px",
-              borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
+              borderBottom: active
+                ? "2px solid var(--ink)"
+                : "2px solid transparent",
               color: active ? "var(--ink)" : "var(--muted)",
               fontWeight: active ? 600 : 400,
               textDecoration: "none"

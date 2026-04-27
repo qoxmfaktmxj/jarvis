@@ -1,6 +1,6 @@
 {
   "id": "92f00998-9542-4f67-950e-561c99c99a2c",
-  "prevId": "6ebca844-4319-4e12-96f5-e7982e18f977",
+  "prevId": "df8820c1-04e9-4a14-b64a-b9cf28741358",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -399,15 +399,13 @@
           "name": "job_title",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "is_outsourced": {
           "name": "is_outsourced",
           "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": false
         },
         "status": {
@@ -416,7 +414,6 @@
           "typeSchema": "public",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'active'::user_status"
         },
         "employment_type": {
@@ -424,7 +421,6 @@
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'internal'"
         }
       },
@@ -6052,7 +6048,12 @@
         "idx_project_access_project": {
           "name": "idx_project_access_project",
           "columns": [
-            "project_id"
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false,
           "concurrently": false,
@@ -6619,79 +6620,69 @@
     },
     "public.contractor_contract": {
       "name": "contractor_contract",
-      "schema": "public",
+      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false,
           "default": "gen_random_uuid()"
         },
         "workspace_id": {
           "name": "workspace_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "enter_cd": {
           "name": "enter_cd",
           "type": "varchar(30)",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "start_date": {
           "name": "start_date",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "end_date": {
           "name": "end_date",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "generated_leave_hours": {
           "name": "generated_leave_hours",
           "type": "numeric(6, 1)",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "additional_leave_hours": {
           "name": "additional_leave_hours",
           "type": "numeric(6, 1)",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'0'"
         },
         "note": {
           "name": "note",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "status": {
           "name": "status",
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'active'"
         },
         "created_at": {
@@ -6699,7 +6690,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         },
         "updated_at": {
@@ -6707,7 +6697,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         }
       },
@@ -6715,22 +6704,42 @@
         "idx_contract_user": {
           "name": "idx_contract_user",
           "columns": [
-            "user_id"
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         },
         "idx_contract_status": {
           "name": "idx_contract_status",
           "columns": [
-            "status"
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         },
         "idx_contract_one_active": {
           "name": "idx_contract_one_active",
           "columns": [
-            "workspace_id",
-            "user_id"
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": true,
           "where": "status = 'active'"
@@ -6771,114 +6780,99 @@
     },
     "public.leave_request": {
       "name": "leave_request",
-      "schema": "public",
+      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false,
           "default": "gen_random_uuid()"
         },
         "workspace_id": {
           "name": "workspace_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "contract_id": {
           "name": "contract_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "type": {
           "name": "type",
           "type": "varchar(20)",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "start_date": {
           "name": "start_date",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "end_date": {
           "name": "end_date",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "time_from": {
           "name": "time_from",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "time_to": {
           "name": "time_to",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "hours": {
           "name": "hours",
           "type": "numeric(5, 1)",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "reason": {
           "name": "reason",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "status": {
           "name": "status",
           "type": "varchar(20)",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "'approved'"
         },
         "cancelled_at": {
           "name": "cancelled_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "created_by": {
           "name": "created_by",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         },
         "updated_at": {
@@ -6886,7 +6880,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         }
       },
@@ -6894,22 +6887,42 @@
         "idx_leave_user": {
           "name": "idx_leave_user",
           "columns": [
-            "user_id"
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         },
         "idx_leave_contract": {
           "name": "idx_leave_contract",
           "columns": [
-            "contract_id"
+            {
+              "expression": "contract_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         },
         "idx_leave_date": {
           "name": "idx_leave_date",
           "columns": [
-            "start_date",
-            "end_date"
+            {
+              "expression": "start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         }
@@ -6977,50 +6990,44 @@
     },
     "public.holiday": {
       "name": "holiday",
-      "schema": "public",
+      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "uuid",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false,
           "default": "gen_random_uuid()"
         },
         "workspace_id": {
           "name": "workspace_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "date": {
           "name": "date",
           "type": "date",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "name": {
           "name": "name",
           "type": "varchar(100)",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
+          "notNull": true
         },
         "note": {
           "name": "note",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         },
         "updated_at": {
@@ -7028,7 +7035,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
           "default": "now()"
         }
       },
@@ -7036,15 +7042,30 @@
         "holiday_workspace_date_unique": {
           "name": "holiday_workspace_date_unique",
           "columns": [
-            "workspace_id",
-            "date"
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": true
         },
         "idx_holiday_date": {
           "name": "idx_holiday_date",
           "columns": [
-            "date"
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false
         }

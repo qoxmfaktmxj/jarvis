@@ -1,14 +1,11 @@
 import { db } from "@jarvis/db/client";
 import {
-  auditLog,
   menuItem,
-  popularSearch,
   wikiPageIndex
 } from "@jarvis/db/schema";
 import {
   and,
   asc,
-  desc,
   eq,
   inArray,
   isNotNull,
@@ -26,24 +23,6 @@ export interface MenuItem {
   path: string | null;
   icon: string | null;
   sortOrder: number;
-}
-
-export interface AuditLogEntry {
-  id: string;
-  action: string;
-  resourceType: string;
-  resourceId: string | null;
-  userId: string | null;
-  createdAt: Date;
-}
-
-/** @deprecated project domain removed in P0 — kept for DashboardData shape compat */
-export interface TaskSummary {
-  id: string;
-  title: string;
-  status: string;
-  dueDate: string | null;
-  projectId: string;
 }
 
 type StaleKnowledgePageRow = {
@@ -64,29 +43,7 @@ export interface StalePage {
   overdueDays: number;
 }
 
-export interface TrendItem {
-  query: string;
-  count: number;
-}
-
-export interface DashboardData {
-  quickLinks: MenuItem[];
-  recentActivity: AuditLogEntry[];
-  myTasks: TaskSummary[];
-  stalePages: StalePage[];
-  searchTrends: TrendItem[];
-}
-
 type DashboardDb = typeof db;
-
-/** @deprecated project domain removed in P0 */
-export async function getMyTasks(
-  _workspaceId: string,
-  _userId: string,
-  _database: DashboardDb = db
-): Promise<TaskSummary[]> {
-  return [];
-}
 
 export function getSearchPeriodStart(now: Date = new Date()): string {
   const current = new Date(now);
@@ -157,26 +114,6 @@ export async function getQuickLinks(
 // Alias for spec compatibility
 export const getQuickLinksWithRoleFilter = getQuickLinks;
 
-export async function getRecentActivity(
-  workspaceId: string,
-  database: DashboardDb = db
-): Promise<AuditLogEntry[]> {
-  return database
-    .select({
-      id: auditLog.id,
-      action: auditLog.action,
-      resourceType: auditLog.resourceType,
-      resourceId: auditLog.resourceId,
-      userId: auditLog.userId,
-      createdAt: auditLog.createdAt
-    })
-    .from(auditLog)
-    .where(eq(auditLog.workspaceId, workspaceId))
-    .orderBy(desc(auditLog.createdAt))
-    .limit(10) as Promise<AuditLogEntry[]>;
-}
-
-
 export async function getStalePages(
   workspaceId: string,
   userPermissions: string[],
@@ -240,73 +177,50 @@ export async function getStalePages(
   });
 }
 
-export async function getSearchTrends(
-  workspaceId: string,
-  now: Date = new Date(),
-  database: DashboardDb = db
-): Promise<TrendItem[]> {
-  const periodStart = getSearchPeriodStart(now);
-
-  return database
-    .select({
-      query: popularSearch.query,
-      count: popularSearch.count
-    })
-    .from(popularSearch)
-    .where(
-      and(
-        eq(popularSearch.workspaceId, workspaceId),
-        eq(popularSearch.period, periodStart)
-      )
-    )
-    .orderBy(desc(popularSearch.count))
-    .limit(10) as Promise<TrendItem[]>;
-}
-
-export type DashboardLoaders = {
-  getQuickLinks: typeof getQuickLinks;
-  getRecentActivity: typeof getRecentActivity;
-  getMyTasks: typeof getMyTasks;
-  getStalePages: typeof getStalePages;
-  getSearchTrends: typeof getSearchTrends;
-};
-
-const dashboardLoaders: DashboardLoaders = {
-  getQuickLinks,
-  getRecentActivity,
-  getMyTasks,
-  getStalePages,
-  getSearchTrends
-};
-
 export async function getDashboardData(
   workspaceId: string,
-  userId: string,
+  _userId: string,
   userRoles: string[],
   userPermissions: string[],
-  loaders: Partial<DashboardLoaders> = {}
-): Promise<DashboardData> {
-  const api = { ...dashboardLoaders, ...loaders };
+  loaders: Partial<{
+    getQuickLinks: typeof getQuickLinks;
+    getStalePages: typeof getStalePages;
+    getRecentActivity: (workspaceId: string) => Promise<unknown[]>;
+    getMyTasks: (workspaceId: string, userId: string) => Promise<unknown[]>;
+    getSearchTrends: (workspaceId: string) => Promise<unknown[]>;
+  }> = {}
+): Promise<{
+  quickLinks: MenuItem[];
+  stalePages: StalePage[];
+  recentActivity: unknown[];
+  myTasks: unknown[];
+  searchTrends: unknown[];
+}> {
+  const resolvedGetQuickLinks = loaders.getQuickLinks ?? getQuickLinks;
+  const resolvedGetStalePages = loaders.getStalePages ?? getStalePages;
+  const resolvedGetRecentActivity = loaders.getRecentActivity ?? (async () => []);
+  const resolvedGetMyTasks = loaders.getMyTasks ?? (async () => []);
+  const resolvedGetSearchTrends = loaders.getSearchTrends ?? (async () => []);
 
   const [
     quickLinks,
+    stalePages,
     recentActivity,
     myTasks,
-    stalePages,
     searchTrends
   ] = await Promise.all([
-    api.getQuickLinks(workspaceId, userRoles),
-    api.getRecentActivity(workspaceId),
-    api.getMyTasks(workspaceId, userId),
-    api.getStalePages(workspaceId, userPermissions),
-    api.getSearchTrends(workspaceId)
+    resolvedGetQuickLinks(workspaceId, userRoles),
+    resolvedGetStalePages(workspaceId, userPermissions),
+    resolvedGetRecentActivity(workspaceId),
+    resolvedGetMyTasks(workspaceId, _userId),
+    resolvedGetSearchTrends(workspaceId)
   ]);
 
   return {
     quickLinks,
+    stalePages,
     recentActivity,
     myTasks,
-    stalePages,
     searchTrends
   };
 }

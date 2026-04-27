@@ -462,3 +462,139 @@ export async function listLeaveRequests({
     .where(and(...conds))
     .orderBy(desc(leaveRequest.startDate));
 }
+
+// ─── listLeaveSummary ─────────────────────────────
+
+export interface LeaveSummaryInput {
+  contractId: string;
+  userId: string;
+  employeeId: string;
+  name: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  generatedHours: number;
+  additionalHours: number;
+  note: string | null;
+  leaves: Array<{
+    hours: number;
+    cancelledAt: Date | null;
+    endDate: string;
+  }>;
+  referenceDate: string;
+}
+
+export interface LeaveSummaryRow {
+  contractId: string;
+  userId: string;
+  employeeId: string;
+  name: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  generatedDays: number;
+  usedDays: number;
+  remainingDays: number;
+  note: string | null;
+}
+
+export function buildLeaveSummaryRow(input: LeaveSummaryInput): LeaveSummaryRow {
+  const usedHours = input.leaves
+    .filter((l) => l.cancelledAt === null && l.endDate <= input.referenceDate)
+    .reduce((sum, l) => sum + Number(l.hours), 0);
+  const generatedHours =
+    Number(input.generatedHours) + Number(input.additionalHours);
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  return {
+    contractId: input.contractId,
+    userId: input.userId,
+    employeeId: input.employeeId,
+    name: input.name,
+    contractStartDate: input.contractStartDate,
+    contractEndDate: input.contractEndDate,
+    generatedDays: round2(generatedHours / 8),
+    usedDays: round2(usedHours / 8),
+    remainingDays: round2((generatedHours - usedHours) / 8),
+    note: input.note
+  };
+}
+
+export async function listLeaveSummary({
+  workspaceId,
+  referenceDate,
+  nameLike,
+  currentUserId,
+  database = db
+}: {
+  workspaceId: string;
+  referenceDate: string;
+  nameLike?: string;
+  currentUserId?: string;
+  database?: DbOrTx;
+}): Promise<LeaveSummaryRow[]> {
+  const whereClauses = [
+    eq(contractorContract.workspaceId, workspaceId),
+    lte(contractorContract.startDate, referenceDate),
+    gte(contractorContract.endDate, referenceDate)
+  ];
+  if (currentUserId) {
+    whereClauses.push(eq(contractorContract.userId, currentUserId));
+  }
+  if (nameLike && nameLike.trim().length > 0) {
+    whereClauses.push(ilike(user.name, `%${escapeLike(nameLike.trim())}%`));
+  }
+
+  const contracts = await database
+    .select({
+      contractId: contractorContract.id,
+      userId: contractorContract.userId,
+      employeeId: user.employeeId,
+      name: user.name,
+      contractStartDate: contractorContract.startDate,
+      contractEndDate: contractorContract.endDate,
+      generatedHours: contractorContract.generatedLeaveHours,
+      additionalHours: contractorContract.additionalLeaveHours,
+      note: contractorContract.note
+    })
+    .from(contractorContract)
+    .innerJoin(user, eq(contractorContract.userId, user.id))
+    .where(and(...whereClauses));
+
+  if (contracts.length === 0) return [];
+
+  const contractIds = contracts.map((c) => c.contractId);
+  const leaves = await database
+    .select({
+      contractId: leaveRequest.contractId,
+      hours: leaveRequest.hours,
+      cancelledAt: leaveRequest.cancelledAt,
+      endDate: leaveRequest.endDate
+    })
+    .from(leaveRequest)
+    .where(
+      and(
+        eq(leaveRequest.workspaceId, workspaceId),
+        inArray(leaveRequest.contractId, contractIds)
+      )
+    );
+
+  const leavesByContract = new Map<string, typeof leaves>();
+  for (const l of leaves) {
+    const k = l.contractId;
+    const arr = leavesByContract.get(k) ?? [];
+    arr.push(l);
+    leavesByContract.set(k, arr);
+  }
+
+  return contracts.map((c) =>
+    buildLeaveSummaryRow({
+      ...c,
+      generatedHours: Number(c.generatedHours),
+      additionalHours: Number(c.additionalHours),
+      leaves: (leavesByContract.get(c.contractId) ?? []).map((l) => ({
+        hours: Number(l.hours),
+        cancelledAt: l.cancelledAt,
+        endDate: l.endDate
+      })),
+      referenceDate
+    })
+  );
+}
