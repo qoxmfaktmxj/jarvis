@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateSend, validateToggle } from "./chat.js";
+import { validateSend, validateToggle } from "./chat.validators.js";
 import { chatChannel } from "@jarvis/shared/chat/channel";
 
 describe("chatChannel", () => {

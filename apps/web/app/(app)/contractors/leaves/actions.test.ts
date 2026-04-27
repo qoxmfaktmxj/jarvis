@@ -3,7 +3,7 @@ import {
   leaveBatchInputSchema,
   validateBatchBusinessRules,
   type LeaveBatchInput
-} from "./actions.js";
+} from "./actions.validators.js";
 
 describe("leaveBatchInputSchema", () => {
   it("accepts minimal batch", () => {

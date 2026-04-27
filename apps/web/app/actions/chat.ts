@@ -7,31 +7,11 @@ import { chatMessage, chatReaction, auditLog } from "@jarvis/db/schema";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import {
-  sendMessageInputSchema,
-  toggleReactionInputSchema,
-  deleteMessageInputSchema
-} from "@jarvis/shared/validation/chat";
 import type { ChatReactionEmoji } from "@jarvis/shared/constants/chat";
 import { chatChannel } from "@jarvis/shared/chat/channel";
 import { cookies, headers } from "next/headers";
 import type { JarvisSession } from "@jarvis/auth/types";
-
-// ---------------------------------------------------------------------------
-// Pure validators (exported for tests)
-// ---------------------------------------------------------------------------
-
-export function validateSend(input: unknown) {
-  return sendMessageInputSchema.parse(input);
-}
-
-export function validateToggle(input: unknown) {
-  return toggleReactionInputSchema.parse(input);
-}
-
-export function validateDelete(input: unknown) {
-  return deleteMessageInputSchema.parse(input);
-}
+import { validateSend, validateToggle, validateDelete } from "./chat.validators.js";
 
 // ---------------------------------------------------------------------------
 // Internal session helper (mirrors profile.ts pattern)
