@@ -219,7 +219,7 @@ export function AskPanel({
   const composer = (
     <div className="space-y-2">
       {/* Composer — hairline textarea only */}
-      <div className="relative rounded-xl border border-surface-200 bg-card transition-colors duration-150 focus-within:border-isu-300 focus-within:ring-1 focus-within:ring-isu-200">
+      <div className="relative rounded-xl border border-[--border-default] bg-card transition-colors duration-150 focus-within:border-[--brand-primary] focus-within:ring-1 focus-within:ring-[--brand-primary-bg]">
         <Textarea
           ref={textareaRef}
           value={input}
@@ -240,9 +240,9 @@ export function AskPanel({
         />
 
         {activeScope ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-surface-200 bg-card px-2 py-1 text-surface-700">
-            <BotMessageSquare className="h-3 w-3 text-isu-500" aria-hidden />
-            <span className="text-display text-[10px] font-semibold uppercase tracking-wide text-surface-400">
+          <span className="inline-flex items-center gap-1.5 rounded-md border border-[--border-default] bg-card px-2 py-1 text-[--fg-primary]">
+            <BotMessageSquare className="h-3 w-3 text-[--brand-primary]" aria-hidden />
+            <span className="text-display text-[10px] font-semibold uppercase tracking-wide text-[--fg-muted]">
               Graph
             </span>
             <span className="max-w-[160px] truncate">{activeScope.title}</span>
@@ -250,7 +250,7 @@ export function AskPanel({
               type="button"
               onClick={() => setActiveScope(null)}
               aria-label="범위 해제"
-              className="ml-0.5 rounded text-surface-400 hover:text-surface-700"
+              className="ml-0.5 rounded text-[--fg-muted] hover:text-[--fg-primary]"
             >
               ✕
             </button>
@@ -264,7 +264,7 @@ export function AskPanel({
           />
         ) : null}
 
-        <span className="ml-auto hidden text-[11px] text-surface-400 sm:inline">
+        <span className="ml-auto hidden text-[11px] text-[--fg-muted] sm:inline">
           Enter 전송 · Shift+Enter 줄바꿈
         </span>
 
@@ -273,7 +273,7 @@ export function AskPanel({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-surface-500 hover:text-surface-800"
+              className="h-8 w-8 text-[--fg-secondary] hover:text-[--fg-primary]"
               onClick={handleReset}
               title="대화 초기화"
             >
@@ -308,7 +308,7 @@ export function AskPanel({
                 <div key={`${entry.question}-${index}`} className="space-y-4">
                   {/* User turn — right-aligned monochrome bubble */}
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-surface-100 px-3.5 py-2 text-sm leading-relaxed text-surface-800">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[--bg-surface] px-3.5 py-2 text-sm leading-relaxed text-[--fg-primary]">
                       {entry.question}
                     </div>
                   </div>
@@ -316,10 +316,10 @@ export function AskPanel({
                   {/* Assistant turn — full-width flow */}
                   <div>
                     <div className="mb-2 flex items-center gap-2">
-                      <span className="text-display text-[10px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+                      <span className="text-display text-[10px] font-semibold uppercase tracking-[0.18em] text-[--brand-primary-text]">
                         Jarvis
                       </span>
-                      <span className="h-px flex-1 bg-surface-200" aria-hidden />
+                      <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
                     </div>
                     <AnswerCard answer={entry.answer} sources={entry.sources} />
                   </div>
@@ -329,7 +329,7 @@ export function AskPanel({
               {(isStreaming || answer) && (
                 <div className="space-y-4">
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-surface-100 px-3.5 py-2 text-sm leading-relaxed text-surface-800">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-[--bg-surface] px-3.5 py-2 text-sm leading-relaxed text-[--fg-primary]">
                       {question}
                     </div>
                   </div>
@@ -345,14 +345,14 @@ export function AskPanel({
                     <div className="mb-2 flex items-center gap-2">
                       <span
                         className={`text-display text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                          isStreaming ? 'text-isu-500' : 'text-isu-600'
+                          isStreaming ? 'text-[--brand-primary]' : 'text-[--brand-primary-text]'
                         }`}
                       >
                         {isStreaming ? (
                           <span className="inline-flex items-center gap-1.5">
                             <span className="relative flex h-1.5 w-1.5">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-isu-400 opacity-60" />
-                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-isu-500" />
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[--brand-primary] opacity-60" />
+                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[--brand-primary]" />
                             </span>
                             Thinking
                           </span>
@@ -360,7 +360,7 @@ export function AskPanel({
                           'Jarvis'
                         )}
                       </span>
-                      <span className="h-px flex-1 bg-surface-200" aria-hidden />
+                      <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
                     </div>
                     <div className="space-y-3">
                       {isStreaming && !answer ? (
@@ -372,25 +372,25 @@ export function AskPanel({
                           />
                         </div>
                       ) : null}
-                      <div className="prose prose-sm max-w-none text-sm leading-relaxed text-surface-800">
+                      <div className="prose prose-sm max-w-none text-sm leading-relaxed text-[--fg-primary]">
                         {answer ? (
                           <AnswerText text={answer} sources={sources} />
                         ) : null}
                         {isStreaming && answer && (
-                          <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse align-text-bottom bg-isu-600" />
+                          <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse align-text-bottom bg-[--brand-primary-text]" />
                         )}
                       </div>
 
                       {!isStreaming && sources.length > 0 && (
                         <div className="space-y-2 pt-1">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+                            <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
                               참고 문서
                             </span>
-                            <span className="text-display text-[11px] font-semibold tabular-nums text-surface-400">
+                            <span className="text-display text-[11px] font-semibold tabular-nums text-[--fg-muted]">
                               {sources.length}
                             </span>
-                            <span className="h-px flex-1 bg-surface-200" aria-hidden />
+                            <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
                           </div>
                           {sources.map((source, sourceIndex) => {
                             const keyPart =
@@ -415,19 +415,19 @@ export function AskPanel({
                       {!isStreaming && answer && (
                         <div className="flex items-center gap-2 pt-2 text-xs">
                           {lane ? (
-                            <span className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-400">
+                            <span className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-[--fg-muted]">
                               lane · {lane}
                             </span>
                           ) : null}
-                          <span className="ml-auto text-surface-500">이 답변이 도움이 됐나요?</span>
+                          <span className="ml-auto text-[--fg-secondary]">이 답변이 도움이 됐나요?</span>
                           <button
                             type="button"
                             onClick={() => sendFeedback('up')}
                             disabled={!!feedbackSent}
                             className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'up'
-                                ? 'border-lime-300 bg-lime-50 text-lime-700'
-                                : 'border-surface-200 text-surface-500 hover:bg-surface-100 hover:text-surface-700'
+                                ? 'border-[--status-success-fg]/40 bg-[--status-success-bg] text-[--status-success-fg]'
+                                : 'border-[--border-default] text-[--fg-secondary] hover:bg-[--bg-surface] hover:text-[--fg-primary]'
                             }`}
                             title="도움됨"
                           >
@@ -440,7 +440,7 @@ export function AskPanel({
                             className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'down'
                                 ? 'border-danger/40 bg-danger/10 text-danger'
-                                : 'border-surface-200 text-surface-500 hover:bg-surface-100 hover:text-surface-700'
+                                : 'border-[--border-default] text-[--fg-secondary] hover:bg-[--bg-surface] hover:text-[--fg-primary]'
                             }`}
                             title="도움 안 됨"
                           >
@@ -471,36 +471,36 @@ export function AskPanel({
       ) : (
         <section className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col justify-end gap-6 pb-4">
           <header className="space-y-2">
-            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+            <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-[--brand-primary-text]">
               문서 기반 AI 어시스턴트
             </p>
-            <h2 className="text-display text-2xl font-bold tracking-tight text-surface-900 sm:text-3xl">
+            <h2 className="text-display text-2xl font-bold tracking-tight text-[--fg-primary] sm:text-3xl">
               무엇이 궁금하신가요?
             </h2>
-            <p className="max-w-xl text-sm leading-relaxed text-surface-600">
+            <p className="max-w-xl text-sm leading-relaxed text-[--fg-secondary]">
               사내 문서와 운영 기록을 근거로 답변하고, 인용 문서를 함께 보여줍니다.
             </p>
           </header>
 
           <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-[5rem_1fr]">
-            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
               요약
             </dt>
-            <dd className="text-surface-700">
+            <dd className="text-[--fg-primary]">
               운영 정책, 프로젝트 문서, 런북을 한 번에 요약합니다.
             </dd>
 
-            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
               인용
             </dt>
-            <dd className="text-surface-700">
+            <dd className="text-[--fg-primary]">
               답변마다 참고 문서를 붙여 근거를 바로 확인할 수 있습니다.
             </dd>
 
-            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+            <dt className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
               스트리밍
             </dt>
-            <dd className="text-surface-700">
+            <dd className="text-[--fg-primary]">
               길게 기다리지 않고, 답변이 생성되는 동안 바로 읽기 시작합니다.
             </dd>
           </dl>
@@ -508,10 +508,10 @@ export function AskPanel({
           {featuredPrompts.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-baseline gap-2">
-                <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-surface-500">
+                <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
                   추천 질문
                 </span>
-                <span className="h-px flex-1 bg-surface-200" aria-hidden />
+                <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
               </div>
 
               <div className="grid gap-1.5 md:grid-cols-1">
@@ -522,12 +522,12 @@ export function AskPanel({
                       setInput(prompt);
                       handleAsk(prompt);
                     }}
-                    className="group flex items-start gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 hover:border-surface-200 hover:bg-surface-50"
+                    className="group flex items-start gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 hover:border-[--border-default] hover:bg-[--bg-surface]"
                   >
-                    <span className="text-display mt-0.5 w-6 shrink-0 text-[11px] font-semibold tabular-nums text-surface-400 group-hover:text-isu-500">
+                    <span className="text-display mt-0.5 w-6 shrink-0 text-[11px] font-semibold tabular-nums text-[--fg-muted] group-hover:text-[--brand-primary]">
                       {String(i + 1).padStart(2, '0')}
                     </span>
-                    <span className="flex-1 text-sm text-surface-700 group-hover:text-surface-900">
+                    <span className="flex-1 text-sm text-[--fg-primary] group-hover:text-[--fg-primary]">
                       {prompt}
                     </span>
                   </button>

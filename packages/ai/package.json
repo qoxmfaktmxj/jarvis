@@ -6,7 +6,6 @@
   "exports": {
     ".": "./index.ts",
     "./types": "./types.ts",
-    "./embed": "./embed.ts",
     "./ask": "./ask.ts",
     "./provider": "./provider.ts",
     "./breaker": "./breaker.ts",

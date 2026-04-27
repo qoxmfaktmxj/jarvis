@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Jarvis · Ask AI (Design Overhaul Preview)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<style>
+:root{
+  --bg-page:#fff; --bg-surface:#faf9f8;
+  --fg-primary:rgba(0,0,0,0.95); --fg-secondary:#615d59; --fg-muted:#a39e98;
+  --brand-primary:#0075de; --brand-primary-hover:#005bab;
+  --brand-primary-bg:#f2f9ff; --brand-primary-text:#097fe8;
+  --border-default:rgba(0,0,0,0.10); --border-soft:rgba(0,0,0,0.06); --border-focus:#097fe8;
+  --color-teal:#2a9d99; --color-teal-50:#e8f6f5;
+  --color-green:#1aae39; --color-green-50:#e7f7eb;
+  --color-orange:#dd5b00; --color-orange-50:#fff4e6;
+  --color-red:#dc2626; --color-red-50:#fef2f2;
+  --color-pink:#ff64c8; --color-pink-50:#ffe6f5;
+  --color-purple:#391c57; --color-purple-50:#efeaf5;
+  --shadow-soft:rgba(0,0,0,0.04) 0 4px 18px,rgba(0,0,0,0.027) 0 2.025px 7.85px,
+               rgba(0,0,0,0.02) 0 0.8px 2.93px,rgba(0,0,0,0.01) 0 0.175px 1.04px;
+  --shadow-flat:0 1px 2px rgba(15,23,42,0.03);
+}
+[data-theme="dark"]{
+  --bg-page:#191918; --bg-surface:#242322;
+  --fg-primary:rgba(255,255,255,0.95); --fg-secondary:#a8a4a0; --fg-muted:#7c7874;
+  --brand-primary:#529cca; --brand-primary-hover:#74b3d8;
+  --brand-primary-bg:rgba(82,156,202,0.12); --brand-primary-text:#74b3d8;
+  --border-default:rgba(255,255,255,0.094); --border-soft:rgba(255,255,255,0.06); --border-focus:#74b3d8;
+  --color-teal-50:rgba(42,157,153,0.15); --color-teal:#5cc5c1;
+  --color-green-50:rgba(26,174,57,0.15); --color-green:#4ccf64;
+  --color-orange-50:rgba(221,91,0,0.18); --color-orange:#ff8844;
+  --color-red-50:rgba(220,38,38,0.18); --color-red:#ff6b6b;
+  --color-pink-50:rgba(255,100,200,0.15); --color-pink:#ff85d3;
+  --color-purple-50:rgba(124,92,169,0.20); --color-purple:#b598d5;
+  --shadow-soft:rgba(0,0,0,0.30) 0 4px 18px,rgba(0,0,0,0.20) 0 1px 4px;
+  --shadow-flat:0 1px 2px rgba(0,0,0,0.4);
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+  background:var(--bg-page); color:var(--fg-primary);
+  font-feature-settings:"ss01","tnum","lnum";
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ===== Shell ===== */
+.shell{display:grid;grid-template-columns:280px 1fr;height:100vh;overflow:hidden}
+@media (max-width:900px){ .shell{grid-template-columns:1fr} .sidebar{display:none} }
+
+/* ===== Sidebar (T2) ===== */
+.sidebar{border-right:1px solid var(--border-default);background:var(--bg-page);display:flex;flex-direction:column;overflow:hidden}
+.side-head{padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border-default)}
+.side-logo{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;letter-spacing:-0.2px}
+.side-logo-mark{width:22px;height:22px;border-radius:5px;background:linear-gradient(135deg,#0075de,#005bab);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700}
+.new-btn{background:var(--brand-primary);color:#fff;border:none;border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;font-weight:600}
+.new-btn:hover{background:var(--brand-primary-hover)}
+
+.side-search{padding:10px 14px 4px}
+.side-search input{width:100%;height:32px;padding:0 12px 0 32px;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:6px;font-family:inherit;font-size:12.5px;color:var(--fg-primary)}
+.side-search{position:relative}
+.side-search::before{
+  content:"";position:absolute;left:24px;top:18px;width:12px;height:12px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Ccircle cx='5' cy='5' r='3.5' stroke='%23a39e98' stroke-width='1.3'/%3E%3Cpath d='M8 8l3 3' stroke='%23a39e98' stroke-width='1.3' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
+
+.side-group{padding:10px 8px 4px}
+.side-group-title{font-size:10px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.12em;padding:6px 10px 8px}
+.conv-item{display:flex;flex-direction:column;gap:3px;padding:9px 10px;border-radius:6px;cursor:pointer;transition:background .12s}
+.conv-item:hover{background:var(--bg-surface)}
+.conv-item.active{background:var(--brand-primary-bg)}
+.conv-title{font-size:13px;font-weight:500;color:var(--fg-primary);line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.conv-item.active .conv-title{color:var(--brand-primary-text);font-weight:600}
+.conv-meta{font-size:11px;color:var(--fg-muted);display:flex;gap:8px;align-items:center}
+.conv-meta .dot{width:4px;height:4px;border-radius:9999px;background:var(--fg-muted)}
+.lane-chip{font-size:9.5px;font-weight:600;padding:1px 6px;border-radius:9999px;letter-spacing:0.05em}
+.lane-chip.policy{background:var(--color-purple-50);color:var(--color-purple)}
+.lane-chip.wiki-page{background:var(--brand-primary-bg);color:var(--brand-primary-text)}
+.lane-chip.staff{background:var(--color-teal-50);color:var(--color-teal)}
+.lane-chip.case-law{background:var(--color-orange-50);color:var(--color-orange)}
+
+.sidebar-scroll{flex:1;overflow-y:auto}
+.side-foot{padding:12px 16px;border-top:1px solid var(--border-default);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--fg-secondary)}
+.foot-avatar{width:24px;height:24px;border-radius:9999px;background:var(--brand-primary-bg);color:var(--brand-primary-text);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:600}
+
+/* ===== Main chat (T1) ===== */
+.chat{display:flex;flex-direction:column;height:100%;overflow:hidden;background:var(--bg-page)}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid var(--border-default)}
+.chat-title{font-size:15px;font-weight:600;color:var(--fg-primary);display:flex;align-items:center;gap:8px}
+.chat-title .route{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:9999px;background:var(--color-purple-50);color:var(--color-purple);letter-spacing:0.05em}
+.chat-actions{display:flex;gap:6px;color:var(--fg-secondary)}
+.chat-actions button{background:transparent;border:none;padding:6px 8px;border-radius:6px;color:var(--fg-secondary);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:12px;font-family:inherit}
+.chat-actions button:hover{background:var(--bg-surface);color:var(--fg-primary)}
+
+.chat-scroll{flex:1;overflow-y:auto;padding:40px 0 28px}
+.chat-inner{max-width:760px;margin:0 auto;padding:0 32px}
+
+/* Messages */
+.msg{display:flex;gap:14px;margin-bottom:32px;align-items:flex-start}
+.msg-avatar{width:32px;height:32px;border-radius:9999px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;margin-top:2px}
+.msg.user .msg-avatar{background:var(--brand-primary-bg);color:var(--brand-primary-text)}
+.msg.assistant .msg-avatar{background:linear-gradient(135deg,#0075de,#005bab);color:#fff;font-weight:700}
+.msg-body{flex:1;min-width:0}
+.msg-name{font-size:13px;font-weight:600;color:var(--fg-primary);margin-bottom:4px}
+.msg-name .time{font-size:11.5px;color:var(--fg-muted);font-weight:400;margin-left:8px}
+.msg-content{font-size:16px;line-height:1.7;color:var(--fg-primary)}
+.msg-content p{margin:0 0 14px}
+.msg-content code{background:var(--bg-surface);border:1px solid var(--border-soft);padding:1px 6px;border-radius:4px;font-family:"JetBrains Mono",monospace;font-size:14px}
+.msg-content ul,.msg-content ol{padding-left:22px;margin:0 0 16px}
+.msg-content li{margin-bottom:6px}
+.msg-content pre{background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;padding:14px 16px;overflow:auto;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.55;margin:0 0 16px}
+.msg-content pre code{background:transparent;border:none;padding:0}
+
+/* Sources panel inside assistant reply */
+.sources{border:1px solid var(--border-default);border-radius:10px;padding:14px 16px;background:var(--bg-page);margin-top:16px;box-shadow:var(--shadow-flat)}
+.sources-head{font-size:10.5px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sources-head .cnt{background:var(--brand-primary-bg);color:var(--brand-primary-text);padding:1px 7px;border-radius:9999px;font-size:10px}
+.src-list{display:flex;flex-direction:column;gap:8px}
+.src{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:6px;cursor:pointer;text-decoration:none;color:inherit}
+.src:hover{background:var(--bg-surface)}
+.src-idx{width:20px;height:20px;border-radius:4px;background:var(--brand-primary-bg);color:var(--brand-primary-text);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0;margin-top:1px}
+.src-body{flex:1;min-width:0}
+.src-title{font-size:13px;font-weight:500;color:var(--fg-primary);line-height:1.4;margin:0}
+.src-path{font-size:11.5px;color:var(--fg-muted);margin-top:2px;font-family:"JetBrains Mono",monospace}
+
+/* Message actions (reply feedback) */
+.msg-actions{display:flex;gap:4px;margin-top:14px}
+.msg-actions button{background:transparent;border:1px solid var(--border-default);padding:4px 10px;border-radius:6px;font-family:inherit;font-size:11.5px;color:var(--fg-secondary);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.msg-actions button:hover{background:var(--bg-surface);color:var(--fg-primary)}
+
+/* Input (T1 but compact) */
+.composer-wrap{padding:14px 32px 22px;background:linear-gradient(to top,var(--bg-page) 70%,rgba(255,255,255,0))}
+.composer{max-width:760px;margin:0 auto;background:var(--bg-page);border:1px solid var(--border-default);border-radius:14px;box-shadow:var(--shadow-soft);padding:10px 12px 10px 14px;display:flex;flex-direction:column;gap:8px}
+.composer:focus-within{border-color:var(--brand-primary);box-shadow:0 0 0 3px var(--brand-primary-bg),var(--shadow-soft)}
+.composer textarea{border:none;outline:none;resize:none;width:100%;min-height:42px;max-height:180px;font-family:inherit;font-size:15px;line-height:1.55;color:var(--fg-primary);background:transparent;padding:6px 2px 0}
+.composer textarea::placeholder{color:var(--fg-muted)}
+.composer-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.composer-opts{display:flex;gap:4px}
+.opt-btn{background:transparent;border:1px solid var(--border-default);padding:5px 10px;border-radius:9999px;font-size:11.5px;font-weight:500;color:var(--fg-secondary);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.opt-btn:hover{background:var(--bg-surface);color:var(--fg-primary)}
+.opt-btn.active{background:var(--brand-primary-bg);color:var(--brand-primary-text);border-color:transparent}
+.send-btn{background:var(--brand-primary);color:#fff;border:none;width:34px;height:34px;border-radius:9999px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.send-btn:hover{background:var(--brand-primary-hover)}
+
+.composer-hint{max-width:760px;margin:8px auto 0;font-size:11.5px;color:var(--fg-muted);display:flex;justify-content:space-between;padding:0 8px}
+
+.theme-toggle{position:fixed;top:14px;right:20px;background:var(--bg-page);border:1px solid var(--border-default);border-radius:9999px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--fg-secondary);cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:0.05em;z-index:20}
+.theme-toggle:hover{background:var(--bg-surface)}
+.theme-toggle .dot{width:8px;height:8px;border-radius:9999px;background:var(--brand-primary)}
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="document.documentElement.dataset.theme = document.documentElement.dataset.theme==='dark'?'':'dark'"><span class="dot"></span>THEME</button>
+
+<div class="shell">
+  <!-- SIDEBAR (T2) -->
+  <aside class="sidebar">
+    <div class="side-head">
+      <div class="side-logo"><div class="side-logo-mark">J</div>Ask AI</div>
+      <button class="new-btn" title="새 대화">+</button>
+    </div>
+
+    <div class="side-search">
+      <input type="text" placeholder="대화 검색…">
+    </div>
+
+    <div class="sidebar-scroll">
+      <div class="side-group">
+        <div class="side-group-title">Today</div>
+
+        <div class="conv-item active">
+          <div class="conv-title">RBAC 권한 매트릭스 — 외주 계약직은 위키 편집 가능한가?</div>
+          <div class="conv-meta"><span class="lane-chip policy">policy</span><span>·</span><span>3분 전</span></div>
+        </div>
+
+        <div class="conv-item">
+          <div class="conv-title">Ask AI 6-lane 라우터 장애 대응 절차</div>
+          <div class="conv-meta"><span class="lane-chip wiki-page">wiki-page</span><span>·</span><span>1시간 전</span></div>
+        </div>
+
+        <div class="conv-item">
+          <div class="conv-title">이지훈 사원의 최근 담당 프로젝트</div>
+          <div class="conv-meta"><span class="lane-chip staff">staff</span><span>·</span><span>3시간 전</span></div>
+        </div>
+
+        <div class="conv-item">
+          <div class="conv-title">근로계약서 전자서명 대법원 판례 요약</div>
+          <div class="conv-meta"><span class="lane-chip case-law">case-law</span><span>·</span><span>5시간 전</span></div>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-title">Yesterday</div>
+
+        <div class="conv-item">
+          <div class="conv-title">Wiki orphan 경보 Slack 연동 예제</div>
+          <div class="conv-meta"><span class="lane-chip wiki-page">wiki-page</span><span>·</span><span>어제</span></div>
+        </div>
+
+        <div class="conv-item">
+          <div class="conv-title">Systems 헬스 체크 엔드포인트 리스트</div>
+          <div class="conv-meta"><span class="lane-chip wiki-page">wiki-page</span><span>·</span><span>어제</span></div>
+        </div>
+
+        <div class="conv-item">
+          <div class="conv-title">Schema drift hook CI blocking 모드 추가 이유</div>
+          <div class="conv-meta"><span class="lane-chip policy">policy</span><span>·</span><span>어제</span></div>
+        </div>
+      </div>
+
+      <div class="side-group">
+        <div class="side-group-title">Earlier</div>
+        <div class="conv-item"><div class="conv-title">page-first retrieval과 raw chunk RAG 차이</div><div class="conv-meta"><span class="lane-chip wiki-page">wiki-page</span><span>·</span><span>3일 전</span></div></div>
+        <div class="conv-item"><div class="conv-title">사내 근태 시스템 휴게시간 규칙</div><div class="conv-meta"><span class="lane-chip policy">policy</span><span>·</span><span>4일 전</span></div></div>
+      </div>
+    </div>
+
+    <div class="side-foot">
+      <div class="foot-avatar">KM</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--fg-primary)">김민석</div>
+        <div style="font-size:11px;color:var(--fg-muted)">Platform · 2019-0412</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CHAT (T1) -->
+  <main class="chat">
+    <div class="chat-head">
+      <div class="chat-title">
+        RBAC 권한 매트릭스 — 외주 계약직은 위키 편집 가능한가?
+        <span class="route">LANE · policy</span>
+      </div>
+      <div class="chat-actions">
+        <button>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M4 6h16M4 18h16"/></svg>
+          History
+        </button>
+        <button>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <div class="chat-scroll">
+      <div class="chat-inner">
+
+        <!-- USER -->
+        <div class="msg user">
+          <div class="msg-avatar">KM</div>
+          <div class="msg-body">
+            <div class="msg-name">김민석 <span class="time">10:42</span></div>
+            <div class="msg-content">
+              <p>외주 계약직(contractor) 사원이 위키에서 <b>Infrastructure Runbook</b>을 편집할 수 있는지 알려줘. 필요하면 RBAC 매트릭스 문서도 근거로 붙여줘.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ASSISTANT -->
+        <div class="msg assistant">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-body">
+            <div class="msg-name">Ask AI <span class="time">10:42 · 2.1s · policy lane</span></div>
+            <div class="msg-content">
+              <p><b>결론부터:</b> 외주 계약직(<code>contractor</code>)은 <b>편집 불가</b>, <b>읽기만 가능</b>합니다. 단 해당 문서가 <code>sensitivity: internal</code> 이하일 때에만.</p>
+
+              <p>근거:</p>
+              <ul>
+                <li>RBAC 매트릭스 §3.2에 따르면 <code>contractor</code> 역할은 <code>wiki:read</code> 권한만 보유, <code>wiki:write</code>·<code>wiki:review</code>는 제외.</li>
+                <li>Infrastructure Runbook 카테고리는 <code>sensitivity: confidential</code>로 분류되어 있어, <code>contractor</code>에게는 <b>목록조차 노출되지 않습니다</b>.</li>
+                <li>긴급 편집이 필요하면 <code>wiki:emergency-edit</code> 임시 권한을 platform-lead가 4시간 한도로 발급할 수 있습니다 (감사 로그 남음).</li>
+              </ul>
+
+              <p>요약 표:</p>
+              <pre><code>역할            wiki:read  wiki:write  wiki:review
+employee        ✓          ✓ (own)     ✗
+reviewer        ✓          ✓           ✓
+platform-lead   ✓          ✓           ✓ (all)
+admin           ✓          ✓           ✓ (all)
+contractor      ✓ (scope)  ✗           ✗</code></pre>
+
+              <div class="sources">
+                <div class="sources-head">SOURCES <span class="cnt">3</span></div>
+                <div class="src-list">
+                  <a class="src" href="#">
+                    <div class="src-idx">1</div>
+                    <div class="src-body">
+                      <p class="src-title">RBAC 권한 매트릭스 — 34 권한 × 5 역할</p>
+                      <p class="src-path">wiki/policies/rbac-matrix.md §3.2</p>
+                    </div>
+                  </a>
+                  <a class="src" href="#">
+                    <div class="src-idx">2</div>
+                    <div class="src-body">
+                      <p class="src-title">Wiki 민감도(sensitivity) 분류 가이드</p>
+                      <p class="src-path">wiki/infra/sensitivity.md §2</p>
+                    </div>
+                  </a>
+                  <a class="src" href="#">
+                    <div class="src-idx">3</div>
+                    <div class="src-body">
+                      <p class="src-title">긴급 편집 권한 임시 발급 절차</p>
+                      <p class="src-path">wiki/policies/emergency-edit.md</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+
+              <div class="msg-actions">
+                <button>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10v12M15 5l-3 10h9a2 2 0 012 2v2a2 2 0 01-2 2H7V10l5-8a3 3 0 013 3v0"/></svg>
+                  도움됨
+                </button>
+                <button>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 14V2M9 19l3-10H3a2 2 0 00-2 2v2a2 2 0 002 2h10V19a3 3 0 01-3 3v0"/></svg>
+                  틀렸어
+                </button>
+                <button>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  복사
+                </button>
+                <button>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                  후속 질문
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- USER follow-up -->
+        <div class="msg user">
+          <div class="msg-avatar">KM</div>
+          <div class="msg-body">
+            <div class="msg-name">김민석 <span class="time">10:44</span></div>
+            <div class="msg-content">
+              <p>emergency-edit 발급 시 감사 로그는 어디서 확인해?</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ASSISTANT streaming -->
+        <div class="msg assistant">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-body">
+            <div class="msg-name">Ask AI <span class="time">생성 중… · policy lane</span></div>
+            <div class="msg-content">
+              <p><code>/admin/audit</code> 화면의 <b>권한 변경</b> 탭에서 조회 가능합니다. 필터를 <code>action=emergency-edit-grant</code>로 좁히면…<span style="display:inline-block;width:8px;height:16px;background:var(--brand-primary);vertical-align:text-bottom;animation:pulse 1s infinite"></span></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Composer -->
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea placeholder="위키, 판례, 사람, 시스템 — 무엇이든 물어보세요…"></textarea>
+        <div class="composer-row">
+          <div class="composer-opts">
+            <button class="opt-btn active">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V2H6.5A2.5 2.5 0 004 4.5v15z"/></svg>
+              Auto lane
+            </button>
+            <button class="opt-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+              Verify sources
+            </button>
+            <button class="opt-btn">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20"/></svg>
+              Web search
+            </button>
+          </div>
+          <button class="send-btn" title="보내기">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l14 0M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="composer-hint">
+        <span><kbd>↵</kbd> 보내기 · <kbd>⇧↵</kbd> 줄바꿈</span>
+        <span>page-first retrieval · 1,284 pages indexed</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<style>
+@keyframes pulse { 50% { opacity: 0; } }
+kbd{font-family:"JetBrains Mono",monospace;background:var(--bg-surface);border:1px solid var(--border-default);padding:0 5px;border-radius:4px;font-size:10.5px;color:var(--fg-secondary)}
+</style>
+
+<script>
+if (new URL(location).searchParams.get('theme')==='dark') document.documentElement.dataset.theme='dark';
+</script>
+</body>
+</html>

@@ -46,15 +46,5 @@ export function featureWikiFsMode(): boolean {
   return process.env.FEATURE_WIKI_FS_MODE === "true";
 }
 
-/**
- * Phase-W5 T1: hybrid vector search in PgSearchAdapter.
- *
- * When true, `/api/search` runs the FTS + trgm + vector RRF hybrid path against
- * `knowledge_page.embedding` (OpenAI text-embedding-3-small, 1536d). When false
- * (default), only FTS + trgm fallback runs — behaviour identical to pre-W5.
- *
- * @defaultValue false (`FEATURE_SEARCH_HYBRID === 'true'`)
- */
-export function featureSearchHybrid(): boolean {
-  return process.env.FEATURE_SEARCH_HYBRID === "true";
-}
+// Phase-W5 T1 featureSearchHybrid — Phase-Harness (2026-04-23) 로 제거됨.
+// 벡터 경로 자체가 없어 플래그가 불필요하다.

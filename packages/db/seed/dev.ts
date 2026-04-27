@@ -124,12 +124,11 @@ async function seed() {
       authorId: adminUser.id,
     });
 
-    // Insert a sample claim (no real embedding in seed — use zeros placeholder)
+    // Insert a sample claim. Phase-Harness (2026-04-23): embedding 컬럼 제거됨.
     await db.insert(knowledgeClaim).values({
       pageId: kp.id,
       chunkIndex: 0,
       claimText: kd.mdx.slice(0, 200),
-      embedding: new Array(1536).fill(0),
     });
   }
 

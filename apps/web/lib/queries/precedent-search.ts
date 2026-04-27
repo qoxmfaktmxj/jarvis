@@ -1,10 +1,9 @@
 // apps/web/lib/queries/precedent-search.ts
-// Phase-W5: server-side Lane B executor mirroring lib/queries/search.ts.
+// Lane B server-side executor. Phase-Harness (2026-04-23) 이후 BM25/trigram 전용.
 import { PrecedentSearchAdapter } from '@jarvis/search/precedent-search';
 import type { SearchQuery, SearchResult } from '@jarvis/search/types';
-import { embedSearchQuery } from '@/lib/server/search-embedder';
 
-const adapter = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
+const adapter = new PrecedentSearchAdapter({});
 
 /**
  * Executes Lane B (precedent_case) search directly via adapter.

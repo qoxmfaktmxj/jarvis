@@ -264,8 +264,29 @@
     {
       "idx": 37,
       "version": "7",
+      "when": 1745740800000,
+      "tag": "0037_drop_embedding_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1745827200000,
+      "tag": "0038_drop_embed_cache",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1745913600000,
+      "tag": "0039_precedent_case_trgm_indexes",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
       "when": 1776941484652,
-      "tag": "0037_flowery_outlaw_kid",
+      "tag": "0040_flowery_outlaw_kid",
       "breakpoints": true
     }
   ]

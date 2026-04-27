@@ -39,3 +39,20 @@ export { ALIASES_CONTRACT } from "./prompts/aliases-contract.js";
 
 export { parseFileBlocks } from "./parsers/file-block.js";
 export { parseReviewBlocks } from "./parsers/review-block.js";
+
+// ---------------------------------------------------------------------------
+// Phase C — Karpathy LLM Wiki indexing/logging helpers (pure functions).
+// Caller(wiki-fs / apps/worker) 가 실제 I/O 를 담당한다.
+// ---------------------------------------------------------------------------
+export { buildIndexMarkdown } from "./maintain-index.js";
+export type {
+  WikiPageMeta,
+  MaintainIndexOptions,
+} from "./maintain-index.js";
+
+export {
+  formatLogEntry,
+  appendLogEntry,
+  parseRecentLogHeaders,
+} from "./append-log.js";
+export type { LogEntry, LogEventType } from "./append-log.js";

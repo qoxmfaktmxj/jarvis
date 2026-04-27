@@ -57,12 +57,14 @@ export interface AskAgentResult {
 
 export type AskAgentEvent =
   | { type: "tool-call"; name: string; input: unknown; callId: string }
-  | { type: "tool-result"; name: string; callId: string; ok: boolean; error?: string }
+  | { type: "tool-result"; name: string; callId: string; ok: boolean; data?: unknown; error?: string }
   | { type: "text"; text: string }
   | {
       type: "done";
       finishReason: "stop" | "max_steps" | "error";
       steps: number;
+      /** Accumulated OpenAI usage.total_tokens across all steps (Phase B3). */
+      totalTokens: number;
     };
 
 // ---------------------------------------------------------------------------
@@ -220,12 +222,21 @@ export async function* askAgentStream(
     { role: "user", content: question } as ChatMessage,
   ];
 
+  // Phase B3: accumulate total_tokens across all steps.
+  let totalTokens = 0;
+
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
     const res = (await options.client.chat.completions.create({
       model,
       messages,
       tools: openaiTools,
     } as ChatCreateParams)) as Awaited<ReturnType<OpenAI["chat"]["completions"]["create"]>>;
+
+    // Accumulate usage tokens from each step response.
+    const usage = (res as { usage?: { total_tokens?: number } }).usage;
+    if (usage?.total_tokens) {
+      totalTokens += usage.total_tokens;
+    }
 
     const choice = (res as { choices?: Array<{ message?: unknown }> }).choices?.[0];
     const msg = choice?.message as
@@ -241,7 +252,7 @@ export async function* askAgentStream(
       | undefined;
 
     if (!msg) {
-      yield { type: "done", finishReason: "error", steps: step + 1 };
+      yield { type: "done", finishReason: "error", steps: step + 1, totalTokens };
       return;
     }
 
@@ -249,7 +260,7 @@ export async function* askAgentStream(
       if (msg.content && msg.content.length > 0) {
         yield { type: "text", text: msg.content };
       }
-      yield { type: "done", finishReason: "stop", steps: step + 1 };
+      yield { type: "done", finishReason: "stop", steps: step + 1, totalTokens };
       return;
     }
 
@@ -284,6 +295,7 @@ export async function* askAgentStream(
         name: tc.function.name,
         callId: tc.id,
         ok: result.ok,
+        ...(result.ok && result.data !== undefined ? { data: result.data } : {}),
         ...(errorMsg !== undefined ? { error: errorMsg } : {}),
       };
       messages.push({
@@ -294,5 +306,5 @@ export async function* askAgentStream(
     }
   }
 
-  yield { type: "done", finishReason: "max_steps", steps: MAX_TOOL_STEPS };
+  yield { type: "done", finishReason: "max_steps", steps: MAX_TOOL_STEPS, totalTokens };
 }

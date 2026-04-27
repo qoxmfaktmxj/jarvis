@@ -8,18 +8,15 @@ import { cn } from "@/lib/utils";
  * NOTE: No left-stripe (`border-l-4`) by design — we lean on icon + bg-tint.
  */
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7",
+  "relative w-full rounded-lg border px-4 py-3 text-[13px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:h-4 [&>svg]:w-4 [&>svg~*]:pl-7",
   {
     variants: {
       variant: {
-        default:
-          "bg-background text-foreground",
-        destructive:
-          "border-destructive/30 bg-danger-subtle text-destructive [&>svg]:text-destructive",
-        success:
-          "border-transparent bg-success-subtle text-success [&>svg]:text-success",
-        warning:
-          "border-transparent bg-warning-subtle text-warning [&>svg]:text-warning",
+        default:     "bg-[--bg-surface] border-[--border-default] text-[--fg-primary]",
+        destructive: "bg-[--color-red-50] border-[--color-red-200] text-[--color-red-500]",
+        warning:     "bg-[--status-warn-bg] border-[rgba(221,91,0,0.2)] text-[--status-warn-fg]",
+        info:        "bg-[--status-active-bg] border-[rgba(0,117,222,0.15)] text-[--status-active-fg]",
+        success:     "bg-[--status-done-bg] border-[rgba(26,174,57,0.2)] text-[--status-done-fg]",
       },
     },
     defaultVariants: {
@@ -48,7 +45,7 @@ const AlertTitle = React.forwardRef<
   // eslint-disable-next-line jsx-a11y/heading-has-content -- children are required by API contract and passed through props
   <h5
     ref={ref}
-    className={cn("mb-1 font-medium leading-none tracking-tight", className)}
+    className={cn("mb-1 font-medium leading-none tracking-tight text-[14px]", className)}
     {...props}
   />
 ));
@@ -60,7 +57,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-sm [&_p]:leading-relaxed", className)}
+    className={cn("text-[12.5px] leading-relaxed [&_p]:leading-relaxed", className)}
     {...props}
   />
 ));

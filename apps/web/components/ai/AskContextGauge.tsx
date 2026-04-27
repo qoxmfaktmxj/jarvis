@@ -26,12 +26,12 @@ export function AskContextGauge({
       ? "bg-danger"
       : pct >= 75
         ? "bg-warning"
-        : "bg-isu-400";
+        : "bg-[--brand-primary]";
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-[11px] text-surface-500",
+        "inline-flex items-center gap-1.5 text-[11px] text-[--fg-secondary]",
         className,
       )}
       aria-label={`컨텍스트 ${pct}% · ${formatTokens(usedTokens)} / ${formatTokens(
@@ -40,7 +40,7 @@ export function AskContextGauge({
       title={`${formatTokens(usedTokens)} / ${formatTokens(totalWindow)} 토큰`}
     >
       <span
-        className="relative inline-flex h-1 w-12 overflow-hidden rounded-full bg-surface-200"
+        className="relative inline-flex h-1 w-12 overflow-hidden rounded-full bg-[--bg-surface]"
         aria-hidden
       >
         <span

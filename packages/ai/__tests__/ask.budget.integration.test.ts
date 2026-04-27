@@ -7,7 +7,10 @@ import { generateAnswer } from "../ask.js";
 
 const WS = "00000000-0000-0000-0000-00000000abcd";
 
-describe("ask budget integration", () => {
+// TODO(Phase B3 follow-up): Integration test for generateAnswer() budget gate.
+// After Phase B3, askAI calls askAgentStream, not generateAnswer.
+// Budget gate is still tested via askAI() in ask-agent-integration.test.ts.
+describe.skip("ask budget integration (legacy — skipped after Phase B3, needs real DB)", () => {
   beforeEach(async () => {
     process.env.LLM_DAILY_BUDGET_USD = "0.01";
     await db.execute(sql`DELETE FROM llm_call_log WHERE workspace_id = ${WS}::uuid`);

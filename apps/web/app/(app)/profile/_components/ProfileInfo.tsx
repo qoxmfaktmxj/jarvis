@@ -15,19 +15,19 @@ export function ProfileInfo({ session }: { session: JarvisSession }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <dl className="grid grid-cols-[120px_1fr] gap-x-4 gap-y-3 text-sm">
-          <dt className="text-muted-foreground">{t("name")}</dt>
-          <dd className="font-medium text-foreground">{session.name}</dd>
+          <dt className="text-[--fg-secondary]">{t("name")}</dt>
+          <dd className="font-medium text-[--fg-primary]">{session.name}</dd>
 
-          <dt className="text-muted-foreground">{t("email")}</dt>
-          <dd className="text-foreground">{session.email ?? "-"}</dd>
+          <dt className="text-[--fg-secondary]">{t("email")}</dt>
+          <dd className="text-[--fg-primary]">{session.email ?? "-"}</dd>
 
-          <dt className="text-muted-foreground">{t("employeeId")}</dt>
-          <dd className="font-mono text-xs text-surface-600">{session.employeeId}</dd>
+          <dt className="text-[--fg-secondary]">{t("employeeId")}</dt>
+          <dd className="font-mono text-xs text-[--fg-secondary]">{session.employeeId}</dd>
 
-          <dt className="text-muted-foreground">{t("workspace")}</dt>
-          <dd className="font-mono text-xs text-surface-600">{session.workspaceId}</dd>
+          <dt className="text-[--fg-secondary]">{t("workspace")}</dt>
+          <dd className="font-mono text-xs text-[--fg-secondary]">{session.workspaceId}</dd>
 
-          <dt className="text-muted-foreground">{t("roles")}</dt>
+          <dt className="text-[--fg-secondary]">{t("roles")}</dt>
           <dd className="flex flex-wrap gap-2">
             {session.roles.length > 0 ? (
               session.roles.map((role) => (
@@ -36,7 +36,7 @@ export function ProfileInfo({ session }: { session: JarvisSession }) {
                 </Badge>
               ))
             ) : (
-              <span className="text-muted-foreground">{t("noRoles")}</span>
+              <span className="text-[--fg-secondary]">{t("noRoles")}</span>
             )}
           </dd>
         </dl>

@@ -23,8 +23,8 @@ const SENSITIVITY_STYLES: Record<
     label: 'Public',
   },
   internal: {
-    chip: 'bg-isu-50 text-isu-700 ring-isu-500/25',
-    bar: 'from-isu-500/70 to-isu-500/0',
+    chip: 'bg-[--brand-primary-bg] text-[--brand-primary-text] ring-[--brand-primary-bg]',
+    bar: 'from-[--brand-primary]/70 to-[--brand-primary]/0',
     label: 'Internal',
   },
   restricted: {
@@ -33,8 +33,8 @@ const SENSITIVITY_STYLES: Record<
     label: 'Restricted',
   },
   secret: {
-    chip: 'bg-red-50 text-red-700 ring-red-600/25',
-    bar: 'from-red-500/70 to-red-500/0',
+    chip: 'bg-[--color-red-50] text-[--color-red-500] ring-[--color-red-500]/25',
+    bar: 'from-[--color-red-500]/70 to-[--color-red-500]/0',
     label: 'Secret',
   },
 };
@@ -84,8 +84,8 @@ function renderWithWikilinks(
         aria-label={isOrphan ? `${target} (orphan)` : target}
         className={
           isOrphan
-            ? 'orphan-slug font-medium text-red-600 decoration-red-400/60 decoration-dashed underline underline-offset-[3px] hover:text-red-700'
-            : 'font-medium text-isu-600 decoration-isu-300 underline underline-offset-[3px] hover:text-isu-700 hover:decoration-isu-500'
+            ? 'orphan-slug font-medium text-[--color-red-500] decoration-[--color-red-200]/60 decoration-dashed underline underline-offset-[3px] hover:text-[--color-red-500]'
+            : 'font-medium text-[--brand-primary-text] decoration-[--border-focus]/40 underline underline-offset-[3px] hover:text-[--brand-primary-text] hover:decoration-[--border-focus]'
         }
         title={isOrphan ? target : undefined}
       >
@@ -144,7 +144,7 @@ export function WikiPageView({
   return (
     <article className="mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
-      <header className="relative border-b border-surface-200 pb-5">
+      <header className="relative border-b border-[--border-default] pb-5">
         {/* Sensitivity accent ribbon */}
         <div
           className={cn(
@@ -155,12 +155,12 @@ export function WikiPageView({
         />
 
         {/* Eyebrow — slug path */}
-        <p className="text-display mt-2 truncate text-[11px] uppercase tracking-[0.12em] text-surface-400">
+        <p className="text-display mt-2 truncate text-[11px] uppercase tracking-[0.12em] text-[--fg-muted]">
           {page.slug.split('/').join(' / ')}
         </p>
 
         <div className="mt-1 flex items-start justify-between gap-4">
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-surface-900 [text-wrap:pretty]">
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-[--fg-primary] [text-wrap:pretty]">
             {page.title}
           </h1>
           <div className="flex shrink-0 items-center gap-2">
@@ -182,9 +182,9 @@ export function WikiPageView({
             {page.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-0.5 rounded-full bg-surface-50 px-2 py-0.5 text-[11px] font-medium text-surface-600 ring-1 ring-inset ring-surface-200"
+                className="inline-flex items-center gap-0.5 rounded-full bg-[--bg-surface] px-2 py-0.5 text-[11px] font-medium text-[--fg-secondary] ring-1 ring-inset ring-[--border-default]"
               >
-                <Hash className="h-2.5 w-2.5 text-surface-400" />
+                <Hash className="h-2.5 w-2.5 text-[--fg-muted]" />
                 {tag}
               </span>
             ))}
@@ -192,11 +192,11 @@ export function WikiPageView({
         )}
 
         {/* Meta row */}
-        <div className="text-display mt-3 flex items-center gap-1.5 text-[11px] tabular-nums text-surface-500">
-          <Calendar className="h-3 w-3 text-surface-400" />
+        <div className="text-display mt-3 flex items-center gap-1.5 text-[11px] tabular-nums text-[--fg-secondary]">
+          <Calendar className="h-3 w-3 text-[--fg-muted]" />
           <span>{t('lastUpdated')}</span>
-          <span className="text-surface-300">·</span>
-          <span className="font-medium text-surface-700">{formattedDate}</span>
+          <span className="text-[--fg-muted]">·</span>
+          <span className="font-medium text-[--fg-primary]">{formattedDate}</span>
         </div>
       </header>
 
@@ -207,7 +207,7 @@ export function WikiPageView({
       )}
 
       {/* Body */}
-      <div className="prose prose-sm mt-6 max-w-none text-[14.5px] leading-[1.75] text-surface-800">
+      <div className="prose prose-sm mt-6 max-w-none text-[14.5px] leading-[1.75] text-[--fg-primary]">
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
@@ -222,42 +222,42 @@ export function WikiPageView({
               </li>
             ),
             h1: ({ children }) => (
-              <h1 className="mt-8 mb-3 border-b border-surface-200 pb-2 text-[22px] font-bold tracking-tight text-surface-900">
+              <h1 className="mt-8 mb-3 border-b border-[--border-default] pb-2 text-[22px] font-bold tracking-tight text-[--fg-primary]">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="mt-7 mb-2.5 text-[18px] font-semibold tracking-tight text-surface-900">
+              <h2 className="mt-7 mb-2.5 text-[18px] font-semibold tracking-tight text-[--fg-primary]">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="mt-5 mb-2 text-[15px] font-semibold text-surface-900">
+              <h3 className="mt-5 mb-2 text-[15px] font-semibold text-[--fg-primary]">
                 {children}
               </h3>
             ),
             ul: ({ children }) => (
-              <ul className="my-3 list-disc space-y-1 pl-5 marker:text-surface-400">
+              <ul className="my-3 list-disc space-y-1 pl-5 marker:text-[--fg-muted]">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="my-3 list-decimal space-y-1 pl-5 marker:text-surface-400 marker:font-semibold">
+              <ol className="my-3 list-decimal space-y-1 pl-5 marker:text-[--fg-muted] marker:font-semibold">
                 {children}
               </ol>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="my-4 rounded-r-md border-l-[3px] border-isu-400 bg-isu-50/60 px-4 py-3 text-[14px] italic text-surface-700 [&_p]:my-0">
+              <blockquote className="my-4 rounded-r-md border-l-[3px] border-[--brand-primary] bg-[--brand-primary-bg] px-4 py-3 text-[14px] italic text-[--fg-primary] [&_p]:my-0">
                 {children}
               </blockquote>
             ),
-            hr: () => <hr className="my-6 border-surface-200" />,
+            hr: () => <hr className="my-6 border-[--border-default]" />,
             code: ({ className, children, ...props }) => {
               const isInline = !className;
               if (isInline) {
                 return (
                   <code
-                    className="rounded-[4px] bg-surface-100 px-[0.35em] py-[0.15em] font-mono text-[0.88em] text-rose-700 ring-1 ring-inset ring-surface-200"
+                    className="rounded-[4px] bg-[--bg-surface] px-[0.35em] py-[0.15em] font-mono text-[0.88em] text-[--fg-primary] ring-1 ring-inset ring-[--border-soft]"
                     {...props}
                   >
                     {children}
@@ -271,32 +271,32 @@ export function WikiPageView({
               );
             },
             pre: ({ children }) => (
-              <pre className="relative my-4 overflow-x-auto rounded-md bg-[#0f172a] p-4 font-mono text-[13px] leading-[1.65] text-slate-100 ring-1 ring-inset ring-slate-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+              <pre className="relative my-4 overflow-x-auto rounded-md bg-[--bg-surface] p-4 font-mono text-[13px] leading-[1.65] text-[--fg-primary] ring-1 ring-inset ring-[--border-default] shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]">
                 {children}
               </pre>
             ),
             table: ({ children }) => (
-              <div className="my-4 overflow-hidden overflow-x-auto rounded-md border border-surface-200">
+              <div className="my-4 overflow-hidden overflow-x-auto rounded-md border border-[--border-default]">
                 <table className="w-full border-collapse text-[13px]">{children}</table>
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-surface-50 text-left">{children}</thead>
+              <thead className="bg-[--bg-surface] text-left">{children}</thead>
             ),
             th: ({ children }) => (
-              <th className="text-display border-b border-surface-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-surface-600">
+              <th className="text-display border-b border-[--border-default] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[--fg-secondary]">
                 {children}
               </th>
             ),
             td: ({ children }) => (
-              <td className="border-b border-surface-100 px-3 py-2 text-surface-700 last:border-0">
+              <td className="border-b border-[--border-soft] px-3 py-2 text-[--fg-primary] last:border-0">
                 {processChildren(children, onWikiLinkClick, orphanSet)}
               </td>
             ),
             a: ({ href, children }) => (
               <a
                 href={href}
-                className="font-medium text-isu-600 decoration-isu-300 underline underline-offset-[3px] hover:text-isu-700 hover:decoration-isu-500"
+                className="font-medium text-[--brand-primary-text] decoration-[--border-focus]/40 underline underline-offset-[3px] hover:text-[--brand-primary-text] hover:decoration-[--border-focus]"
               >
                 {children}
               </a>
@@ -306,7 +306,7 @@ export function WikiPageView({
               <img
                 src={src}
                 alt={alt ?? ''}
-                className="my-4 rounded-md border border-surface-200 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                className="my-4 rounded-md border border-[--border-default] shadow-[var(--shadow-flat)]"
               />
             ),
           }}
@@ -316,8 +316,8 @@ export function WikiPageView({
       </div>
 
       {showEdit && (
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-surface-200 pt-5">
-          <p className="text-display text-[11px] text-surface-500">
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-[--border-default] pt-5">
+          <p className="text-display text-[11px] text-[--fg-secondary]">
             직접 수정하려면 편집 모드로 전환하세요.
           </p>
           <Button variant="outline" size="sm">

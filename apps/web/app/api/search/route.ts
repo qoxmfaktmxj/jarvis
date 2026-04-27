@@ -7,7 +7,6 @@ import type { SearchResult } from '@jarvis/search/types';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { checkRateLimit } from '@/lib/server/rate-limit';
-import { embedSearchQuery } from '@/lib/server/search-embedder';
 
 const searchSchema = z.object({
   q: z.string().min(1).max(500),
@@ -24,8 +23,9 @@ const searchSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-const laneA = new PgSearchAdapter({ embedQuery: embedSearchQuery });
-const laneB = new PrecedentSearchAdapter({ embedQuery: embedSearchQuery });
+// Phase-Harness (2026-04-23): 벡터 embedQuery 옵션 제거. 두 adapter 모두 빈 옵션.
+const laneA = new PgSearchAdapter({});
+const laneB = new PrecedentSearchAdapter({});
 
 // Rate limit: 60 requests per minute per user
 const RATE_LIMIT_WINDOW_SECONDS = 60;
