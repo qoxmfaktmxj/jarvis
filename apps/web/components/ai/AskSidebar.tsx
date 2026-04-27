@@ -151,15 +151,15 @@ export function AskSidebar({
   const isWarning = conversationCount >= 16;
 
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-surface-200 bg-surface-50">
+    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-[--border-default] bg-[--bg-surface]">
       {/* Header — brand wordmark + new conversation */}
       <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
-        <span className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-surface-500">
+        <span className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-[--fg-secondary]">
           {t("title")}
         </span>
         <Link
           href="/ask"
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-surface-500 transition-colors duration-150 hover:bg-surface-100 hover:text-surface-800"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--brand-primary-bg] hover:text-[--fg-primary]"
           title={t("newConversation")}
           aria-label={t("newConversation")}
         >
@@ -170,7 +170,7 @@ export function AskSidebar({
       {/* Search */}
       <div className="px-3 pb-2">
         <div className="relative flex items-center">
-          <Search className="absolute left-2.5 h-3.5 w-3.5 text-surface-400" aria-hidden />
+          <Search className="absolute left-2.5 h-3.5 w-3.5 text-[--fg-muted]" aria-hidden />
           <input
             type="text"
             value={searchQuery}
@@ -178,14 +178,14 @@ export function AskSidebar({
             onKeyDown={handleKeyDown}
             placeholder={t("search")}
             aria-label={t("search")}
-            className="w-full rounded-md border border-surface-200 bg-card py-1.5 pl-8 pr-7 text-xs text-surface-800 placeholder:text-surface-400 focus:border-isu-400 focus:outline-none focus:ring-1 focus:ring-isu-200"
+            className="w-full rounded-md border border-[--border-default] bg-card py-1.5 pl-8 pr-7 text-xs text-[--fg-primary] placeholder:text-[--fg-muted] focus:border-[--brand-primary] focus:outline-none focus:ring-1 focus:ring-[--brand-primary-bg]"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={clearSearch}
               aria-label={t("clearSearch")}
-              className="absolute right-2 text-surface-400 hover:text-surface-700"
+              className="absolute right-2 text-[--fg-muted] hover:text-[--fg-primary]"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -198,15 +198,15 @@ export function AskSidebar({
         {filteredGroups.length === 0 ? (
           debouncedQuery.trim() ? (
             <div className="px-4 py-8 text-center">
-              <p className="text-xs text-surface-500">{t("noSearchResults")}</p>
+              <p className="text-xs text-[--fg-secondary]">{t("noSearchResults")}</p>
             </div>
           ) : (
             <div className="px-4 py-10 text-center">
-              <MessageSquare className="mx-auto mb-2 h-6 w-6 text-surface-300" />
-              <p className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-surface-500">
+              <MessageSquare className="mx-auto mb-2 h-6 w-6 text-[--fg-muted]" />
+              <p className="text-display text-xs font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
                 {t("emptyTitle")}
               </p>
-              <p className="mt-1 text-xs text-surface-400">{t("emptyDescription")}</p>
+              <p className="mt-1 text-xs text-[--fg-muted]">{t("emptyDescription")}</p>
             </div>
           )
         ) : (
@@ -225,12 +225,12 @@ export function AskSidebar({
       </div>
 
       {/* Counter footer — hairline, tabular */}
-      <div className="border-t border-surface-200">
+      <div className="border-t border-[--border-default]">
         <div className="flex items-center justify-between gap-2 px-4 py-2.5">
           <span
             className={cn(
               "text-display text-[10px] font-semibold uppercase tracking-[0.14em]",
-              isWarning ? "text-warning" : "text-surface-400",
+              isWarning ? "text-warning" : "text-[--fg-muted]",
             )}
           >
             Conversations
@@ -238,11 +238,11 @@ export function AskSidebar({
           <span
             className={cn(
               "text-display text-xs font-semibold tabular-nums",
-              isWarning ? "text-warning" : "text-surface-600",
+              isWarning ? "text-warning" : "text-[--fg-secondary]",
             )}
           >
             {conversationCount}
-            <span className="text-surface-400">/{MAX_CONVERSATIONS_PER_USER}</span>
+            <span className="text-[--fg-muted]">/{MAX_CONVERSATIONS_PER_USER}</span>
           </span>
         </div>
         {isAtLimit && (

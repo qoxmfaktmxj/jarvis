@@ -143,20 +143,20 @@ export function AskSidebarItem({
         className={cn(
           "relative block rounded-md pl-3 pr-8 py-2 text-sm transition-colors duration-150 ease-out",
           isActive
-            ? "bg-isu-50 text-isu-800"
-            : "text-surface-700 hover:bg-surface-100",
+            ? "bg-[--brand-primary-bg] text-[--fg-primary]"
+            : "text-[--fg-primary] hover:bg-[--brand-primary-bg]",
         )}
         aria-selected={isActive}
         aria-label={`${t("conversationLabel")}: ${conversation.title}, ${timeLabel}`}
       >
         {isActive ? (
           <span
-            className="absolute left-0 top-2 h-[calc(100%-1rem)] w-[2px] rounded-full bg-isu-500"
+            className="absolute left-0 top-2 h-[calc(100%-1rem)] w-[2px] rounded-full bg-[--brand-primary]"
             aria-hidden
           />
         ) : null}
         <p className={cn("truncate text-sm", isActive && "font-medium")}>{conversation.title}</p>
-        <p className="text-display text-[10px] tabular-nums text-surface-400">{timeLabel}</p>
+        <p className="text-display text-[10px] tabular-nums text-[--fg-muted]">{timeLabel}</p>
       </Link>
 
       {/* More menu — fade in on hover */}
@@ -165,7 +165,7 @@ export function AskSidebarItem({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-surface-500 hover:bg-surface-200 hover:text-surface-800"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--brand-primary-bg] hover:text-[--fg-primary]"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
