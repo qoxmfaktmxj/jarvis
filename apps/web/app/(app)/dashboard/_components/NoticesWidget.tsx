@@ -2,19 +2,10 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import type { DashboardNoticeRow } from "@/lib/queries/dashboard-notices";
 
-function badgeFor(n: DashboardNoticeRow): { label: string; className: string } {
-  if (n.pinned)
-    return {
-      label: "필독",
-      className: "bg-danger-subtle text-danger border-danger/30"
-    };
-  return {
-    label: n.sensitivity === "PUBLIC" ? "이벤트" : "공지",
-    className:
-      n.sensitivity === "PUBLIC"
-        ? "bg-warning-subtle text-warning border-warning/30"
-        : "bg-[--bg-surface] text-[--fg-secondary] border-[--border-default]"
-  };
+function badgeClassFor(n: DashboardNoticeRow): string {
+  if (n.pinned) return "bg-danger-subtle text-danger border-danger/30";
+  if (n.sensitivity === "PUBLIC") return "bg-warning-subtle text-warning border-warning/30";
+  return "bg-[--bg-surface] text-[--fg-secondary] border-[--border-default]";
 }
 
 function rel(d: Date, now: Date): string {
@@ -45,12 +36,10 @@ export async function NoticesWidget({
         <p className="text-sm text-[--fg-secondary]">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
-          {items.map((n) => {
-            const b = badgeFor(n);
-            return (
+          {items.map((n) => (
               <li key={n.id} className="flex items-start gap-2">
                 <span
-                  className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${b.className}`}
+                  className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${badgeClassFor(n)}`}
                 >
                   {n.pinned ? t("badgePinned") : n.sensitivity === "PUBLIC" ? t("badgeEvent") : t("badgeNotice")}
                 </span>
@@ -61,8 +50,7 @@ export async function NoticesWidget({
                   </div>
                 </div>
               </li>
-            );
-          })}
+            ))}
         </ul>
       )}
     </section>
