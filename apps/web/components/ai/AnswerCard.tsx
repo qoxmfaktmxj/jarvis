@@ -29,6 +29,8 @@ import { ClaimBadge } from './ClaimBadge';
 interface AnswerCardProps {
   answer: string;
   sources: SourceRef[];
+  /** Session workspaceId — required for wiki source links. */
+  workspaceId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +131,7 @@ function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
 //   [source:N]   — legacy 1-based index format (backward compat)
 //   [[slug]]     — Phase B3/B4 agent format (matches wiki-page SourceRef by slug)
 // ---------------------------------------------------------------------------
-function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
+function AnswerBody({ text, sources, workspaceId }: { text: string; sources: SourceRef[]; workspaceId: string }) {
   // Build slug → sourceNumber map from wiki-page sources for [[slug]] resolution.
   const slugToIndex = new Map<string, number>();
   sources.forEach((s, i) => {
@@ -173,7 +175,7 @@ function AnswerBody({ text, sources }: { text: string; sources: SourceRef[] }) {
           return (
             <Link
               key={index}
-              href={`/wiki/default/${encodeURIComponent(slug)}`}
+              href={`/wiki/${workspaceId}/${encodeURIComponent(slug)}`}
               className="text-[--brand-primary-text] underline decoration-[--brand-primary-bg] underline-offset-2 hover:decoration-[--brand-primary]"
             >
               {slug}
@@ -348,7 +350,7 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
 // medium (>=0.65) and high (>=0.85) sources are surfaced; low (<0.65) hidden.
 const WIKI_PAGE_MIN_CONFIDENCE = 0.65;
 
-function WikiPageSection({ sources }: { sources: WikiPageSourceRef[] }) {
+function WikiPageSection({ sources, workspaceId }: { sources: WikiPageSourceRef[]; workspaceId: string }) {
   const visible = sources.filter((s) => s.confidence >= WIKI_PAGE_MIN_CONFIDENCE);
   if (visible.length === 0) return null;
   return (
@@ -468,7 +470,7 @@ function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
 // ---------------------------------------------------------------------------
 // Main Component — flow layout, no Card chrome
 // ---------------------------------------------------------------------------
-export function AnswerCard({ answer, sources }: AnswerCardProps) {
+export function AnswerCard({ answer, sources, workspaceId }: AnswerCardProps) {
   const { text, graph, cases, directory, wikiPages } = categorizeSources(sources);
   const hasSections =
     text.length > 0 ||
@@ -478,21 +480,21 @@ export function AnswerCard({ answer, sources }: AnswerCardProps) {
     wikiPages.length > 0;
 
   if (!hasSections) {
-    return <AnswerBody text={answer} sources={sources} />;
+    return <AnswerBody text={answer} sources={sources} workspaceId={workspaceId} />;
   }
 
   return (
     <div className="space-y-5">
       {/* Answer body + confidence */}
       <div className="space-y-2">
-        <AnswerBody text={answer} sources={sources} />
+        <AnswerBody text={answer} sources={sources} workspaceId={workspaceId} />
         <ConfidenceInline sources={sources} />
       </div>
 
       {/* Evidence sections in consistent flow */}
       <div className="space-y-5">
         <DocumentSection sources={text} />
-        <WikiPageSection sources={wikiPages} />
+        <WikiPageSection sources={wikiPages} workspaceId={workspaceId} />
         <GraphSection sources={graph} />
         <CaseSection sources={cases} />
         <DirectorySection sources={directory} />
