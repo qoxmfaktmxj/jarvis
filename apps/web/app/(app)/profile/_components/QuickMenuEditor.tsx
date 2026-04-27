@@ -92,7 +92,7 @@ export function QuickMenuEditor({
         {message ? (
           <p
             className={`text-sm ${
-              message === t("saved") ? "text-[--status-success-fg]" : "text-destructive"
+              message === t("saved") ? "text-[--status-success-fg]" : "text-[--color-red-500]"
             }`}
           >
             {message}
