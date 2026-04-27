@@ -252,7 +252,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:border-[--brand-primary] hover:bg-[--brand-primary-bg]"
+                  className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[--brand-primary-bg]"
                 >
                   {inner}
                 </Link>
@@ -391,7 +391,7 @@ function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
           <li key={`${s.nodeId}-${i}`}>
             <Link
               href={s.url}
-              className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:border-[--brand-primary] hover:bg-[--brand-primary-bg]"
+              className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[--brand-primary-bg]"
             >
               <Network className="h-3 w-3 text-[--fg-muted] group-hover:text-[--brand-primary]" aria-hidden />
               <span className="text-[--fg-primary] group-hover:text-[--brand-primary-text]">{s.nodeLabel}</span>

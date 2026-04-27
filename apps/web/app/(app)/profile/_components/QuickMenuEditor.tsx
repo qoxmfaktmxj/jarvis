@@ -51,7 +51,7 @@ export function QuickMenuEditor({
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-[--fg-secondary]">
             {t("empty")}
           </p>
         ) : (
@@ -62,8 +62,8 @@ export function QuickMenuEditor({
                 className="flex items-center justify-between rounded-xl border border-[--border-default] px-3 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-foreground">{item.label}</p>
-                  <p className="text-xs text-muted-foreground">{item.path}</p>
+                  <p className="text-sm font-medium text-[--fg-primary]">{item.label}</p>
+                  <p className="text-xs text-[--fg-secondary]">{item.path}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -92,7 +92,7 @@ export function QuickMenuEditor({
         {message ? (
           <p
             className={`text-sm ${
-              message === t("saved") ? "text-[--status-success-fg]" : "text-destructive"
+              message === t("saved") ? "text-[--status-success-fg]" : "text-[--color-red-500]"
             }`}
           >
             {message}

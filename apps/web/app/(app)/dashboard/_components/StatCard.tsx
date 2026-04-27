@@ -17,18 +17,18 @@ export function StatCard({
   accent?: ReactNode;
 }) {
   return (
-    <section className="flex h-full flex-col gap-3 rounded-xl border border-surface-200 bg-card p-5">
+    <section className="flex h-full flex-col gap-3 rounded-xl border border-[--border-default] bg-card p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-surface-500">
+        <h2 className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-[--fg-secondary]">
           {title}
         </h2>
         {accent}
       </div>
-      <p className="text-display text-4xl font-bold leading-none tracking-tight text-surface-900">
+      <p className="text-display text-4xl font-bold leading-none tracking-tight text-[--fg-primary]">
         {value}
       </p>
       {description ? (
-        <p className="text-sm text-surface-500">{description}</p>
+        <p className="text-sm text-[--fg-secondary]">{description}</p>
       ) : null}
     </section>
   );

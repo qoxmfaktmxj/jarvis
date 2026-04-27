@@ -306,7 +306,7 @@ export function WikiPageView({
               <img
                 src={src}
                 alt={alt ?? ''}
-                className="my-4 rounded-md border border-[--border-default] shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+                className="my-4 rounded-md border border-[--border-default] shadow-[var(--shadow-flat)]"
               />
             ),
           }}
