@@ -15,11 +15,11 @@ export async function DateCard({ now }: { now: Date }) {
   const day = parts.find((p) => p.type === "day")?.value ?? "";
   const weekday = parts.find((p) => p.type === "weekday")?.value ?? "";
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-surface-200 bg-card p-4">
-      <span className="text-xs font-medium text-surface-500">
+    <div className="flex flex-col gap-1 rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
+      <span className="text-xs font-medium text-[--fg-secondary]">
         {t("todayLabel")}
       </span>
-      <span className="text-lg font-semibold tabular-nums text-surface-900">
+      <span className="text-lg font-semibold tabular-nums text-[--fg-primary]">
         {year}. {month}. {day} {weekday}
       </span>
     </div>

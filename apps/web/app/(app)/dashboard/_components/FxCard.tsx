@@ -17,24 +17,24 @@ export function FxCard() {
   );
   const snap = data?.status === "ok" ? data.data : undefined;
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-surface-200 bg-card p-4">
-      <span className="text-xs font-medium text-surface-500">
+    <div className="flex flex-col gap-1 rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
+      <span className="text-xs font-medium text-[--fg-secondary]">
         {t("fxLabel")}
       </span>
       {snap ? (
         <ul className="flex gap-4 text-sm tabular-nums">
           {snap.rates.map((r) => (
             <li key={r.code} className="flex flex-col">
-              <span className="text-[11px] font-medium text-surface-500">
+              <span className="text-[11px] font-medium text-[--fg-secondary]">
                 {r.code}
                 {r.basis === "100" ? " · 100" : ""}
               </span>
-              <span className="text-lg font-semibold text-surface-900">
+              <span className="text-lg font-semibold text-[--fg-primary]">
                 {r.value.toLocaleString("ko-KR")}
               </span>
               <span
                 className={
-                  r.delta >= 0 ? "text-isu-600 text-xs" : "text-danger text-xs"
+                  r.delta >= 0 ? "text-[--brand-primary] text-xs" : "text-danger text-xs"
                 }
               >
                 {r.delta >= 0 ? "▲" : "▼"} {Math.abs(r.delta).toFixed(1)}%
@@ -43,7 +43,7 @@ export function FxCard() {
           ))}
         </ul>
       ) : (
-        <span className="text-xs text-surface-400">—</span>
+        <span className="text-xs text-[--fg-muted]">—</span>
       )}
     </div>
   );

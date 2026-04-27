@@ -13,7 +13,7 @@ function badgeFor(n: DashboardNoticeRow): { label: string; className: string } {
     className:
       n.sensitivity === "PUBLIC"
         ? "bg-warning-subtle text-warning border-warning/30"
-        : "bg-surface-100 text-surface-600 border-surface-200"
+        : "bg-[--bg-surface] text-[--fg-secondary] border-[--border-default]"
   };
 }
 
@@ -34,15 +34,15 @@ export async function NoticesWidget({
 }) {
   const t = await getTranslations("Dashboard.notices");
   return (
-    <section className="rounded-xl border border-surface-200 bg-card p-4">
+    <section className="rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-surface-800">{t("title")}</h2>
-        <Link href="/notices" className="text-xs text-surface-500 hover:text-isu-600">
+        <h2 className="text-sm font-semibold text-[--fg-primary]">{t("title")}</h2>
+        <Link href="/notices" className="text-xs text-[--fg-secondary] hover:text-[--brand-primary]">
           {t("viewAll")} →
         </Link>
       </header>
       {items.length === 0 ? (
-        <p className="text-sm text-surface-500">{t("empty")}</p>
+        <p className="text-sm text-[--fg-secondary]">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {items.map((n) => {
@@ -55,8 +55,8 @@ export async function NoticesWidget({
                   {n.pinned ? t("badgePinned") : n.sensitivity === "PUBLIC" ? t("badgeEvent") : t("badgeNotice")}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-surface-800">{n.title}</div>
-                  <div className="text-xs text-surface-500">
+                  <div className="truncate text-sm text-[--fg-primary]">{n.title}</div>
+                  <div className="text-xs text-[--fg-secondary]">
                     {n.authorName} · {n.publishedAt ? rel(n.publishedAt, now) : "—"}
                   </div>
                 </div>

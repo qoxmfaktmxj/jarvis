@@ -18,8 +18,8 @@ export function ReactionChipRow({
           onClick={() => onToggle(r.emoji)}
           className={
             r.mine
-              ? "inline-flex items-center gap-1 rounded-full border border-isu-300 bg-isu-50 px-2 py-0.5 text-xs text-isu-700"
-              : "inline-flex items-center gap-1 rounded-full border border-surface-200 bg-surface-50 px-2 py-0.5 text-xs text-surface-700"
+              ? "inline-flex items-center gap-1 rounded-full border border-[--brand-primary] bg-[--brand-primary-bg] px-2 py-0.5 text-xs text-[--brand-primary]"
+              : "inline-flex items-center gap-1 rounded-full border border-[--border-default] bg-[--bg-surface] px-2 py-0.5 text-xs text-[--fg-primary]"
           }
         >
           <span>{r.emoji}</span>

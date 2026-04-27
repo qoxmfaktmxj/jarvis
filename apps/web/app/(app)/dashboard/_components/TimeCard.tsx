@@ -22,13 +22,13 @@ export function TimeCard() {
   }, []);
   return (
     <div
-      className="flex flex-col gap-1 rounded-xl border border-surface-200 bg-card p-4"
+      className="flex flex-col gap-1 rounded-xl border border-[--border-default] bg-[--bg-surface] p-4"
       suppressHydrationWarning
     >
-      <span className="text-xs font-medium text-surface-500">
+      <span className="text-xs font-medium text-[--fg-secondary]">
         {t("timeLabel")}
       </span>
-      <span className="text-lg font-semibold tabular-nums text-surface-900">
+      <span className="text-lg font-semibold tabular-nums text-[--fg-primary]">
         {text}
       </span>
     </div>
