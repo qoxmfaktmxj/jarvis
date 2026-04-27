@@ -27,7 +27,7 @@ describe("AnswerCard — [[slug]] citation rendering (Phase B4)", () => {
       wikiSource({ slug: "jarvis-intro", confidence: 0.9, title: "Jarvis 소개" }),
     ];
     const html = renderToStaticMarkup(
-      <AnswerCard answer="Jarvis에 대해 [[jarvis-intro]] 참고하세요." sources={sources} />,
+      <AnswerCard answer="Jarvis에 대해 [[jarvis-intro]] 참고하세요." sources={sources} workspaceId="test-workspace" />,
     );
     // ClaimBadge should be rendered (renders a sup element).
     // Radix Tooltip wraps the trigger in <sup data-state="closed"> so match
@@ -42,7 +42,7 @@ describe("AnswerCard — [[slug]] citation rendering (Phase B4)", () => {
       wikiSource({ slug: "known", confidence: 0.9, title: "Known" }),
     ];
     const html = renderToStaticMarkup(
-      <AnswerCard answer="이것은 [[unknown-page]] 링크입니다." sources={sources} />,
+      <AnswerCard answer="이것은 [[unknown-page]] 링크입니다." sources={sources} workspaceId="test-workspace" />,
     );
     // Should render as a link to /wiki/default/unknown-page
     expect(html).toContain("unknown-page");
@@ -54,7 +54,7 @@ describe("AnswerCard — [[slug]] citation rendering (Phase B4)", () => {
       wikiSource({ slug: "alpha", confidence: 0.9, title: "Alpha" }),
     ];
     const html = renderToStaticMarkup(
-      <AnswerCard answer="결과 [source:1] 그리고 [[alpha]] 확인." sources={sources} />,
+      <AnswerCard answer="결과 [source:1] 그리고 [[alpha]] 확인." sources={sources} workspaceId="test-workspace" />,
     );
     // Both citations should produce sup elements
     const supCount = (html.match(/<sup/g) ?? []).length;
@@ -69,7 +69,7 @@ describe("AnswerCard — [[slug]] citation rendering (Phase B4)", () => {
       wikiSource({ slug: "pageB", confidence: 0.85, title: "Page B" }),
     ];
     const html = renderToStaticMarkup(
-      <AnswerCard answer="A는 [[pageA]] B는 [[pageB]] 참고." sources={sources} />,
+      <AnswerCard answer="A는 [[pageA]] B는 [[pageB]] 참고." sources={sources} workspaceId="test-workspace" />,
     );
     const supCount = (html.match(/<sup/g) ?? []).length;
     expect(supCount).toBe(2);
@@ -85,7 +85,7 @@ describe("AnswerCard — WikiPageSection", () => {
       wikiSource({ slug: "medium", confidence: 0.7, title: "VisibleMedium" }),
       wikiSource({ slug: "low", confidence: 0.4, title: "HiddenLow" }),
     ];
-    const html = renderToStaticMarkup(<AnswerCard answer="answer text" sources={sources} />);
+    const html = renderToStaticMarkup(<AnswerCard answer="answer text" sources={sources} workspaceId="test-workspace" />);
     expect(html).toContain("VisibleHigh");
     expect(html).toContain("VisibleMedium");
     expect(html).not.toContain("HiddenLow");
@@ -95,7 +95,7 @@ describe("AnswerCard — WikiPageSection", () => {
     const sources = [
       wikiSource({ slug: "alpha", confidence: 0.9, title: "AlphaTitle" }),
     ];
-    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} />);
+    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} workspaceId="test-workspace" />);
     expect(html).not.toContain("[[alpha]]");
     expect(html).toContain("AlphaTitle");
     expect(html).toContain("wiki/alpha.md");
@@ -106,7 +106,7 @@ describe("AnswerCard — WikiPageSection", () => {
       wikiSource({ slug: "a", confidence: 0.3, title: "HiddenAlpha" }),
       wikiSource({ slug: "b", confidence: 0.1, title: "HiddenBeta" }),
     ];
-    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} />);
+    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} workspaceId="test-workspace" />);
     expect(html).not.toContain("위키 페이지");
     expect(html).not.toContain("HiddenAlpha");
     expect(html).not.toContain("HiddenBeta");
@@ -118,7 +118,7 @@ describe("AnswerCard — WikiPageSection", () => {
       wikiSource({ slug: "b", confidence: 0.2, title: "dropB" }),
       wikiSource({ slug: "c", confidence: 0.7, title: "keepC" }),
     ];
-    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} />);
+    const html = renderToStaticMarkup(<AnswerCard answer="answer" sources={sources} workspaceId="test-workspace" />);
     expect(html).toContain("keepA");
     expect(html).toContain("keepC");
     expect(html).not.toContain("dropB");

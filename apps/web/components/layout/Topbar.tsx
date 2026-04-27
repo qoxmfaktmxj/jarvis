@@ -9,11 +9,10 @@
 
 import { useCallback, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, Moon, Search, Settings, Sun } from "lucide-react";
+import { Bell, Search, Settings } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
 import { TweaksPanel } from "./TweaksPanel";
-import { setTheme, useTheme } from "./uiPrefs";
 import { ROUTE_LABELS } from "@/lib/routes";
 
 function routeLabel(pathname: string): string {
@@ -25,7 +24,6 @@ function routeLabel(pathname: string): string {
 
 export function Topbar({ userName }: { userName: string }) {
   const pathname = usePathname();
-  const theme = useTheme();
   const [tweaksOpen, setTweaksOpen] = useState(false);
 
   const openPalette = useCallback(() => {
@@ -33,10 +31,6 @@ export function Topbar({ userName }: { userName: string }) {
     const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
     window.dispatchEvent(evt);
   }, []);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme]);
 
   return (
     <>
@@ -97,20 +91,6 @@ export function Topbar({ userName }: { userName: string }) {
           >
             K
           </kbd>
-        </button>
-
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "라이트 테마로" : "다크 테마로"}
-          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
-          style={{ color: "var(--muted)" }}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-[18px] w-[18px]" aria-hidden />
-          ) : (
-            <Moon className="h-[18px] w-[18px]" aria-hidden />
-          )}
         </button>
 
         <button

@@ -9,7 +9,7 @@ export async function HeroGreeting({ name }: { name: string }) {
         {t("greeting", { name })}
       </h1>
       <Image
-        src="/mascot/capybara.svg"
+        src="/capybara/basic.png"
         alt=""
         width={40}
         height={40}

@@ -321,7 +321,7 @@ export function AskPanel({
                       </span>
                       <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
                     </div>
-                    <AnswerCard answer={entry.answer} sources={entry.sources} />
+                    <AnswerCard answer={entry.answer} sources={entry.sources} workspaceId={workspaceId} />
                   </div>
                 </div>
               ))}

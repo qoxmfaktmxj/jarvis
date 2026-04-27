@@ -25,8 +25,8 @@ export async function NoticesWidget({
 }) {
   const t = await getTranslations("Dashboard.notices");
   return (
-    <section className="rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
-      <header className="mb-3 flex items-center justify-between">
+    <section className="flex max-h-[220px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
+      <header className="mb-3 flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold text-[--fg-primary]">{t("title")}</h2>
         <Link href="/notices" className="text-xs text-[--fg-secondary] hover:text-[--brand-primary]">
           {t("viewAll")} →
@@ -35,7 +35,7 @@ export async function NoticesWidget({
       {items.length === 0 ? (
         <p className="text-sm text-[--fg-secondary]">{t("empty")}</p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2 overflow-y-auto">
           {items.map((n) => (
               <li key={n.id} className="flex items-start gap-2">
                 <span
