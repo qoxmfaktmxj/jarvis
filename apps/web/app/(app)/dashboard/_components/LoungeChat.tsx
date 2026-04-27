@@ -94,7 +94,7 @@ export function LoungeChat({
   }
 
   return (
-    <section className="flex h-[520px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface]">
+    <section className="flex h-full min-h-[520px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface]">
       <header className="flex items-center justify-between border-b border-[--border-default] px-4 py-3">
         <div>
           <div className="text-sm font-semibold text-[--fg-primary]">

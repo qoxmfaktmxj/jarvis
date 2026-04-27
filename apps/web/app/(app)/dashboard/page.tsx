@@ -26,16 +26,17 @@ export default async function DashboardPage() {
 
   const viewerRole = session.roles[0] ?? "—";
   const isAdmin = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const displayName = session.name || "사용자";
 
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-4 p-6">
-      <HeroGreeting name={session.name || "사용자"} />
+      <HeroGreeting name={displayName} />
       <InfoCardRow now={now} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <LoungeChat
           initial={chatInit}
           viewerId={session.userId}
-          viewerName={session.name || "사용자"}
+          viewerName={displayName}
           viewerRole={viewerRole}
           isAdmin={isAdmin}
         />
