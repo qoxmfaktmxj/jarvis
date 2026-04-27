@@ -76,7 +76,7 @@ const THEME_OPTIONS: ReadonlyArray<Option<ThemeMode>> = [
 ];
 
 const SIDEBAR_OPTIONS: ReadonlyArray<Option<SidebarMode>> = [
-  ["rail", "아이콘 레일"],
+  ["rail", "아이콘"],
   ["expanded", "펼침"],
 ];
 
@@ -112,8 +112,7 @@ export function TweaksPanel({
         gap: 14,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}>Tweaks</div>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
         <button
           type="button"
           onClick={onClose}
