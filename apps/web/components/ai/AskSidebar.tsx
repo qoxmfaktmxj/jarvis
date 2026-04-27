@@ -159,7 +159,7 @@ export function AskSidebar({
         </span>
         <Link
           href="/ask"
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--brand-primary-bg] hover:text-[--fg-primary]"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-surface] hover:text-[--fg-primary]"
           title={t("newConversation")}
           aria-label={t("newConversation")}
         >

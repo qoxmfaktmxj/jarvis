@@ -143,8 +143,8 @@ export function AskSidebarItem({
         className={cn(
           "relative block rounded-md pl-3 pr-8 py-2 text-sm transition-colors duration-150 ease-out",
           isActive
-            ? "bg-[--brand-primary-bg] text-[--fg-primary]"
-            : "text-[--fg-primary] hover:bg-[--brand-primary-bg]",
+            ? "bg-[--brand-primary-bg] text-[--brand-primary-text]"
+            : "text-[--fg-primary] hover:bg-[--bg-surface]",
         )}
         aria-selected={isActive}
         aria-label={`${t("conversationLabel")}: ${conversation.title}, ${timeLabel}`}
@@ -165,7 +165,7 @@ export function AskSidebarItem({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--brand-primary-bg] hover:text-[--fg-primary]"
+              className="flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--bg-surface] hover:text-[--fg-primary]"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
