@@ -6,7 +6,6 @@ import { ProjectTable } from "@/components/project/ProjectTable";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isoWeekNumber } from "@/lib/date-utils";
 import { listProjects } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -54,7 +53,6 @@ export default async function ProjectsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        stamp={`W${isoWeekNumber(new Date())}`}
         kicker="Projects"
         title={t("title")}
         subtitle={t("description", { total: result.pagination.total })}
