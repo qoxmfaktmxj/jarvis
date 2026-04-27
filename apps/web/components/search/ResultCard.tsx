@@ -15,7 +15,7 @@ const SENSITIVITY_META: Record<
   { label: string; className: string }
 > = {
   PUBLIC: { label: 'Public', className: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' },
-  INTERNAL: { label: 'Internal', className: 'bg-isu-50 text-isu-700 ring-1 ring-inset ring-isu-500/20' },
+  INTERNAL: { label: 'Internal', className: 'bg-[--brand-primary-bg] text-[--brand-primary-text] ring-1 ring-inset ring-[--brand-primary]/20' },
   CONFIDENTIAL: { label: 'Confidential', className: 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20' },
   SECRET_REF_ONLY: { label: 'Secret', className: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20' },
 };
@@ -43,23 +43,23 @@ export function ResultCard({ hit }: ResultCardProps) {
   const sensitivityMeta = hit.sensitivity ? SENSITIVITY_META[hit.sensitivity] : undefined;
 
   return (
-    <article className="group relative rounded-md border border-surface-200 bg-white p-4 transition-all hover:-translate-y-[1px] hover:border-isu-200 hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]">
+    <article className="group relative rounded-md border border-[--border-default] bg-white p-4 transition-all hover:-translate-y-[1px] hover:border-[--brand-primary] hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]">
       <div className="flex items-start gap-3">
         {/* Type icon */}
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-surface-50 text-surface-500 ring-1 ring-inset ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[--bg-surface] text-[--fg-secondary] ring-1 ring-inset ring-[--border-default] group-hover:bg-[--brand-primary-bg] group-hover:text-[--brand-primary] group-hover:ring-[--brand-primary]/20">
           <PageIcon className="h-4 w-4" />
         </span>
 
         <div className="min-w-0 flex-1">
           {/* Breadcrumb / url */}
-          <p className="text-display truncate text-[11px] text-surface-400">
+          <p className="text-display truncate text-[11px] text-[--fg-muted]">
             {prettifyUrl(hit.url)}
           </p>
 
           {/* Title */}
           <Link
             href={hit.url}
-            className="mt-0.5 block text-[15px] font-semibold text-surface-900 decoration-isu-500 decoration-2 underline-offset-4 group-hover:text-isu-700 group-hover:underline"
+            className="mt-0.5 block text-[15px] font-semibold text-[--fg-primary] decoration-[--brand-primary] decoration-2 underline-offset-4 group-hover:text-[--brand-primary] group-hover:underline"
           >
             <span className="line-clamp-1">{hit.title}</span>
           </Link>
@@ -67,7 +67,7 @@ export function ResultCard({ hit }: ResultCardProps) {
           {/* Headline snippet with highlighted terms */}
           {hit.headline && (
             <p
-              className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-surface-600 [&_mark]:rounded [&_mark]:bg-isu-100 [&_mark]:px-1 [&_mark]:py-0.5 [&_mark]:font-medium [&_mark]:text-isu-800"
+              className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-[--fg-secondary] [&_mark]:rounded [&_mark]:bg-[--brand-primary-bg] [&_mark]:px-1 [&_mark]:py-0.5 [&_mark]:font-medium [&_mark]:text-[--brand-primary-text]"
               // ts_headline is sanitized server-side — only <mark> tags remain
               dangerouslySetInnerHTML={{ __html: hit.headline }}
             />
@@ -88,7 +88,7 @@ export function ResultCard({ hit }: ResultCardProps) {
                 {sensitivityMeta.label}
               </span>
             )}
-            <span className="text-display text-[11px] text-surface-400 tabular-nums">
+            <span className="text-display text-[11px] text-[--fg-muted] tabular-nums">
               {updatedAgo}
             </span>
           </div>
@@ -96,7 +96,7 @@ export function ResultCard({ hit }: ResultCardProps) {
 
         {/* Relevance score indicator */}
         <div
-          className="text-display shrink-0 rounded-md bg-surface-50 px-2 py-1 text-[10px] font-semibold tabular-nums text-surface-500 ring-1 ring-inset ring-surface-200"
+          className="text-display shrink-0 rounded-md bg-[--bg-surface] px-2 py-1 text-[10px] font-semibold tabular-nums text-[--fg-secondary] ring-1 ring-inset ring-[--border-default]"
           aria-hidden
           title="관련도 점수"
         >
