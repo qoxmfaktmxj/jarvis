@@ -43,7 +43,7 @@ export function ResultCard({ hit }: ResultCardProps) {
   const sensitivityMeta = hit.sensitivity ? SENSITIVITY_META[hit.sensitivity] : undefined;
 
   return (
-    <article className="group relative rounded-md border border-[--border-default] bg-white p-4 transition-all hover:-translate-y-[1px] hover:border-[--brand-primary] hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]">
+    <article className="group relative rounded-md border border-[--border-default] bg-white p-4 transition-all hover:-translate-y-[1px] hover:ring-1 hover:ring-[--brand-primary]/20 hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]">
       <div className="flex items-start gap-3">
         {/* Type icon */}
         <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-[--bg-surface] text-[--fg-secondary] ring-1 ring-inset ring-[--border-default] group-hover:bg-[--brand-primary-bg] group-hover:text-[--brand-primary] group-hover:ring-[--brand-primary]/20">
