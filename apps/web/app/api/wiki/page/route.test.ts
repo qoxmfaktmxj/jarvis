@@ -86,6 +86,17 @@ describe('GET /api/wiki/page', () => {
     expect(json.orphanSlugs).toEqual(['bar']);
   });
 
+  it('403 when meta.requiredPermission is set and user lacks it (and is not ADMIN_ALL)', async () => {
+    mockLoad.mockResolvedValue({
+      meta: { id: 'p1', title: 'Foo', sensitivity: 'INTERNAL', requiredPermission: 'WIKI_RESTRICTED_READ' },
+      bodyOnly: '...',
+    });
+    // ADMIN_ALL check: false; specific permission check: false → 403
+    mockHasPermission.mockReturnValue(false);
+    const res = await GET(makeReq('workspaceId=ws1&path=foo.md'));
+    expect(res.status).toBe(403);
+  });
+
   it('decodes encoded path segments before lookup', async () => {
     mockLoad.mockResolvedValue({
       meta: { id: 'p1', title: 'Foo', sensitivity: 'INTERNAL', path: '한글/page.md', slug: 'page' },
