@@ -58,6 +58,9 @@ function WikiLink({
       className={className}
       onClick={(e) => {
         if (!isLargeScreen || !panel.hasProvider) return; // lg 미만 또는 Provider 없음: 풀페이지 nav
+        // Allow Ctrl/Cmd-click, Shift-click, middle-click to escape the panel
+        // and use the default <a> behavior (open in new tab/window).
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
         e.preventDefault();
         panel.open({ slug });
       }}

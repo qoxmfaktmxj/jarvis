@@ -134,7 +134,18 @@ describe("AnswerCard — WikiPageSection", () => {
 // Task 4 — WikiLink progressive enhancement (panel intercept vs full-page nav)
 // ---------------------------------------------------------------------------
 describe("AnswerCard wiki source click", () => {
-  afterEach(() => cleanup());
+  // Capture jsdom's default matchMedia (typically undefined) so tests don't leak
+  // their stub into other test files in the same vitest worker.
+  const originalMatchMedia = window.matchMedia as typeof window.matchMedia | undefined;
+
+  afterEach(() => {
+    cleanup();
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      configurable: true,
+      value: originalMatchMedia,
+    });
+  });
 
   const wikiSources: WikiPageSourceRef[] = [
     {
@@ -151,14 +162,12 @@ describe("AnswerCard wiki source click", () => {
   ];
 
   it("intercepts click and calls panel.open inside Provider on lg viewport", async () => {
-    const mqlChange = vi.fn();
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: (query: string) => ({
         matches: query === "(min-width: 1024px)",
         media: query,
-        addEventListener: (_e: string, h: () => void) =>
-          mqlChange.mockImplementation(h),
+        addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
         dispatchEvent: vi.fn(),
         onchange: null,
