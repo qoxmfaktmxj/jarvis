@@ -1,4 +1,5 @@
 import { vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 import koMessages from "./messages/ko.json";
 
 // Provide minimum env vars required by lib/env.ts so tests that invoke

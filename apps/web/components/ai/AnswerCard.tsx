@@ -2,6 +2,7 @@
 // 구조화된 답변 카드 — flow layout, hairline sections, single-tone accents.
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText,
@@ -22,6 +23,52 @@ import type {
   WikiPageSourceRef,
 } from '@jarvis/ai/types';
 import { ClaimBadge } from './ClaimBadge';
+import { useWikiPanel } from './WikiPanelContext';
+
+// ---------------------------------------------------------------------------
+// WikiLink — progressive enhancement: <a href> fallback + panel intercept on lg
+// ---------------------------------------------------------------------------
+function WikiLink({
+  workspaceId,
+  slug,
+  className,
+  children,
+}: {
+  workspaceId: string;
+  slug: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const panel = useWikiPanel();
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    setIsLargeScreen(mq.matches);
+    const listener = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
+    mq.addEventListener('change', listener);
+    return () => mq.removeEventListener('change', listener);
+  }, []);
+
+  const href = `/wiki/${workspaceId}/${encodeURIComponent(slug)}`;
+
+  return (
+    <a
+      href={href}
+      className={className}
+      onClick={(e) => {
+        if (!isLargeScreen || !panel.hasProvider) return; // lg 미만 또는 Provider 없음: 풀페이지 nav
+        // Allow Ctrl/Cmd-click, Shift-click, middle-click to escape the panel
+        // and use the default <a> behavior (open in new tab/window).
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        panel.open({ slug });
+      }}
+    >
+      {children}
+    </a>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -173,13 +220,14 @@ function AnswerBody({ text, sources, workspaceId }: { text: string; sources: Sou
           }
           // Slug not found in sources — render as plain wikilink text.
           return (
-            <Link
+            <WikiLink
               key={index}
-              href={`/wiki/${workspaceId}/${encodeURIComponent(slug)}`}
+              workspaceId={workspaceId}
+              slug={slug}
               className="text-[--brand-primary-text] underline decoration-[--brand-primary-bg] underline-offset-2 hover:decoration-[--brand-primary]"
             >
               {slug}
-            </Link>
+            </WikiLink>
           );
         }
         return <span key={index}>{part}</span>;
@@ -359,8 +407,9 @@ function WikiPageSection({ sources, workspaceId }: { sources: WikiPageSourceRef[
       <ul className="divide-y divide-[--border-soft]">
         {visible.map((s, i) => (
           <li key={`${s.pageId}-${i}`}>
-            <Link
-              href={`/wiki/default/${encodeURIComponent(s.slug)}`}
+            <WikiLink
+              workspaceId={workspaceId}
+              slug={s.slug}
               className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-[--bg-surface] -mx-2 px-2 rounded-md"
             >
               <span className="flex-1 min-w-0">
@@ -372,7 +421,7 @@ function WikiPageSection({ sources, workspaceId }: { sources: WikiPageSourceRef[
                 </span>
               </span>
               <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[--border-default] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[--brand-primary]" aria-hidden />
-            </Link>
+            </WikiLink>
           </li>
         ))}
       </ul>

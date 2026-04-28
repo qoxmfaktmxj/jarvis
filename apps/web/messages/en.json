@@ -10,6 +10,11 @@
       "miniHint": "Fast · default",
       "fullHint": "Precise · ~10× cost",
       "tooltip": "You can switch models per message"
+    },
+    "sidebar": {
+      "collapse": "Collapse sidebar",
+      "expand": "Expand sidebar",
+      "asideLabelCollapsed": "Conversation list (collapsed)"
     }
   },
   "WikiGraph": {
