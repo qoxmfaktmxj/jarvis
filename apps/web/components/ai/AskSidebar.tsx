@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, Plus, Search, X } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, MessageSquare, Plus, Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AskConversation } from "@jarvis/db/schema/ask-conversation";
 import { MAX_CONVERSATIONS_PER_USER } from "@jarvis/shared/constants/ask";
@@ -15,6 +15,8 @@ interface AskSidebarProps {
   conversations: AskConversation[];
   currentConversationId?: string;
   conversationCount: number;
+  collapsed?: boolean;
+  onToggle?: () => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -90,9 +92,29 @@ export function AskSidebar({
   conversations,
   currentConversationId: currentConversationIdProp,
   conversationCount,
+  collapsed = false,
+  onToggle,
 }: AskSidebarProps) {
   const t = useTranslations("Ask.sidebar");
   const pathname = usePathname();
+
+  if (collapsed) {
+    return (
+      <aside
+        aria-label={t('asideLabelCollapsed')}
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-[--border-default] bg-[--bg-surface] py-3"
+      >
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={t('expand')}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--bg-page] hover:text-[--fg-primary]"
+        >
+          <ChevronsRight className="h-4 w-4" aria-hidden />
+        </button>
+      </aside>
+    );
+  }
 
   // Derive active conversation from URL: /ask/{conversationId}
   const currentConversationId = currentConversationIdProp ?? (() => {
@@ -157,14 +179,26 @@ export function AskSidebar({
         <span className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-[--fg-secondary]">
           {t("title")}
         </span>
-        <Link
-          href="/ask"
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-surface] hover:text-[--fg-primary]"
-          title={t("newConversation")}
-          aria-label={t("newConversation")}
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/ask"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-surface] hover:text-[--fg-primary]"
+            title={t("newConversation")}
+            aria-label={t("newConversation")}
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Link>
+          {onToggle && (
+            <button
+              type="button"
+              onClick={onToggle}
+              aria-label={t('collapse')}
+              className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-page] hover:text-[--fg-primary]"
+            >
+              <ChevronsLeft className="h-3.5 w-3.5" aria-hidden />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search */}
