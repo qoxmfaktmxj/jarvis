@@ -98,24 +98,7 @@ export function AskSidebar({
   const t = useTranslations("Ask.sidebar");
   const pathname = usePathname();
 
-  if (collapsed) {
-    return (
-      <aside
-        aria-label={t('asideLabelCollapsed')}
-        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-[--border-default] bg-[--bg-surface] py-3"
-      >
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-label={t('expand')}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--bg-page] hover:text-[--fg-primary]"
-        >
-          <ChevronsRight className="h-4 w-4" aria-hidden />
-        </button>
-      </aside>
-    );
-  }
-
+  // ⚠️ All hooks must run unconditionally before any early return below.
   // Derive active conversation from URL: /ask/{conversationId}
   const currentConversationId = currentConversationIdProp ?? (() => {
     const match = pathname.match(/^\/ask\/([0-9a-f-]{36})$/);
@@ -168,6 +151,25 @@ export function AskSidebar({
       }))
       .filter((g) => g.conversations.length > 0);
   }, [groups, debouncedQuery]);
+
+  // Collapsed rail: render after all hooks have run unconditionally.
+  if (collapsed) {
+    return (
+      <aside
+        aria-label={t('asideLabelCollapsed')}
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-[--border-default] bg-[--bg-surface] py-3"
+      >
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={t('expand')}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-[--fg-secondary] hover:bg-[--bg-page] hover:text-[--fg-primary]"
+        >
+          <ChevronsRight className="h-4 w-4" aria-hidden />
+        </button>
+      </aside>
+    );
+  }
 
   const isAtLimit = conversationCount >= MAX_CONVERSATIONS_PER_USER;
   const isWarning = conversationCount >= 16;
