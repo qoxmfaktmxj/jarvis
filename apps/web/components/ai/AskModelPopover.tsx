@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import { Check, ChevronUp } from "lucide-react";
 import {
   Popover,
@@ -29,15 +29,16 @@ export function AskModelPopover({
   options,
   className,
 }: AskModelPopoverProps) {
+  const [open, setOpen] = useState(false);
   if (options.length === 0) return null;
   const current = options.find((o) => o.value === value) ?? options[0]!;
   const TriggerIcon = current.icon;
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border border-[--border-default] bg-card px-2 py-1 text-xs font-medium text-[--fg-primary] transition-colors duration-150 hover:border-[--border-default] hover:bg-[--bg-surface] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--border-focus]",
+          "inline-flex items-center gap-1.5 rounded-md border border-[--border-default] bg-[--bg-page] px-2 py-1 text-xs font-medium text-[--fg-primary] transition-colors duration-150 hover:border-[--border-default] hover:bg-[--bg-surface] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--border-focus]",
           className,
         )}
         aria-label={`모델: ${current.label}`}
@@ -64,7 +65,10 @@ export function AskModelPopover({
                   type="button"
                   role="menuitemradio"
                   aria-checked={selected}
-                  onClick={() => onChange(option.value)}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
                   className={cn(
                     "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150",
                     selected
