@@ -4,7 +4,7 @@ import { desc, eq, and, count } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { askConversation } from "@jarvis/db/schema/ask-conversation";
-import { AskSidebar } from "@/components/ai/AskSidebar";
+import { AskShell } from "./_components/AskShell";
 
 /**
  * Ask 전용 레이아웃 — 사이드바(대화 목록) + 메인 영역.
@@ -64,12 +64,12 @@ export default async function AskLayout({
   const conversationCount = countRow?.value ?? 0;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
-      <AskSidebar
-        conversations={conversations}
-        conversationCount={conversationCount}
-      />
-      <div className="flex-1 min-w-0">{children}</div>
-    </div>
+    <AskShell
+      conversations={conversations}
+      conversationCount={conversationCount}
+      workspaceId={session.workspaceId}
+    >
+      {children}
+    </AskShell>
   );
 }
