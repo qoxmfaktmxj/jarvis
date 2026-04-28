@@ -10,6 +10,8 @@ interface WikiPanelContextValue {
   active: WikiPanelTarget | null;
   /** Split pane이 현재 활성인지 (lg breakpoint + 사용자가 source를 클릭했는지). */
   isOpen: boolean;
+  /** Provider 안에서 사용 중인지 여부. WikiLink의 panel 인터셉트 조건 판별에 사용. */
+  hasProvider: boolean;
 }
 
 const WikiPanelContext = createContext<WikiPanelContextValue | null>(null);
@@ -21,6 +23,7 @@ export function WikiPanelProvider({ children }: { children: ReactNode }) {
     () => ({
       active,
       isOpen: active !== null,
+      hasProvider: true,
       open: (t) => setActive(t),
       close: () => setActive(null),
     }),
@@ -40,6 +43,7 @@ export function useWikiPanel(): WikiPanelContextValue {
   return {
     active: null,
     isOpen: false,
+    hasProvider: false,
     open: () => {},
     close: () => {},
   };

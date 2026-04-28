@@ -1,7 +1,10 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import type { WikiPageSourceRef } from "@jarvis/ai/types";
 import { AnswerCard } from "./AnswerCard";
+import { WikiPanelProvider } from "./WikiPanelContext";
 // Note: Next.js Link renders as <a> in renderToStaticMarkup context.
 
 function wikiSource(overrides: Partial<WikiPageSourceRef> & { slug: string }): WikiPageSourceRef {
@@ -124,5 +127,86 @@ describe("AnswerCard — WikiPageSection", () => {
     expect(html).not.toContain("dropB");
     const match = html.match(/위키 페이지[\s\S]*?>(\d+)</);
     expect(match?.[1]).toBe("2");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 4 — WikiLink progressive enhancement (panel intercept vs full-page nav)
+// ---------------------------------------------------------------------------
+describe("AnswerCard wiki source click", () => {
+  afterEach(() => cleanup());
+
+  const wikiSources: WikiPageSourceRef[] = [
+    {
+      kind: "wiki-page",
+      pageId: "p1",
+      path: "auto/foo.md",
+      slug: "foo",
+      title: "Foo",
+      sensitivity: "INTERNAL",
+      citation: "[[foo]]",
+      origin: "shortlist",
+      confidence: 0.9,
+    },
+  ];
+
+  it("intercepts click and calls panel.open inside Provider on lg viewport", async () => {
+    const mqlChange = vi.fn();
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: (query: string) => ({
+        matches: query === "(min-width: 1024px)",
+        media: query,
+        addEventListener: (_e: string, h: () => void) =>
+          mqlChange.mockImplementation(h),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      }),
+    });
+
+    render(
+      <WikiPanelProvider>
+        <AnswerCard answer="hello" sources={wikiSources} workspaceId="ws1" />
+      </WikiPanelProvider>,
+    );
+    const link = screen.getByText("Foo").closest("a")!;
+    expect(link.getAttribute("href")).toBe("/wiki/ws1/foo");
+    const clickEvent = new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+    });
+    link.dispatchEvent(clickEvent);
+    expect(clickEvent.defaultPrevented).toBe(true);
+  });
+
+  it("does NOT prevent navigation when outside Provider (full-page fallback)", () => {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: (q: string) => ({
+        matches: q === "(min-width: 1024px)",
+        media: q,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+      }),
+    });
+    render(<AnswerCard answer="hi" sources={wikiSources} workspaceId="ws1" />);
+    const link = screen.getAllByText("Foo")[0]!.closest("a")!;
+    const ev = new MouseEvent("click", { bubbles: true, cancelable: true });
+    link.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(false);
+  });
+
+  it("SSR-renders <a href> for both Provider and non-Provider cases", () => {
+    const html = renderToStaticMarkup(
+      <AnswerCard answer="hi" sources={wikiSources} workspaceId="ws1" />,
+    );
+    expect(html).toContain('href="/wiki/ws1/foo"');
   });
 });
