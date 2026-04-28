@@ -121,7 +121,7 @@ describe.skip('askAI() query.model override (legacy — skipped after Phase B3)'
     __resetCacheForTests();
   });
 
-  it('propagates query.model="gpt-5.4" to logLlmCall', async () => {
+  it('propagates query.model="gpt-5.5" to logLlmCall', async () => {
     mockCreate.mockResolvedValue(fakeStream('ok'));
 
     const { askAI } = await import('../ask.js');
@@ -140,17 +140,17 @@ describe.skip('askAI() query.model override (legacy — skipped after Phase B3)'
       [],
       [],
       [],
-      'gpt-5.4',
+      'gpt-5.5',
       { workspaceId: 'ws-test', requestId: 'req-1' },
     ));
 
     expect(logLlmCallMock).toHaveBeenCalledTimes(1);
     const row = logLlmCallMock.mock.calls[0]![0];
-    expect(row.model).toBe('gpt-5.4');
+    expect(row.model).toBe('gpt-5.5');
 
     // askAI used too (coverage) — this is the legacy "no results" branch
     // which doesn't reach generateAnswer, so mockCreate is still just once.
-    await drain(askAI({ ...baseQuery, model: 'gpt-5.4' }));
+    await drain(askAI({ ...baseQuery, model: 'gpt-5.5' }));
     // mockCreate call count unchanged (fallback path did not hit OpenAI).
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
@@ -179,11 +179,11 @@ describe.skip('askAI() query.model override (legacy — skipped after Phase B3)'
     assertBudgetMock.mockRejectedValueOnce(new BudgetExceededError('ws-test', 100, 50));
 
     const { askAI } = await import('../ask.js');
-    await drain(askAI({ ...baseQuery, model: 'gpt-5.4' }));
+    await drain(askAI({ ...baseQuery, model: 'gpt-5.5' }));
 
     expect(recordBlockedMock).toHaveBeenCalledTimes(1);
     const [, modelArg] = recordBlockedMock.mock.calls[0]!;
-    expect(modelArg).toBe('gpt-5.4');
+    expect(modelArg).toBe('gpt-5.5');
   });
 });
 
@@ -196,7 +196,7 @@ describe('makeCacheKey model isolation', () => {
       input: 'same question',
     };
     const miniKey = makeCacheKey({ ...base, model: 'gpt-5.4-mini' });
-    const fullKey = makeCacheKey({ ...base, model: 'gpt-5.4' });
+    const fullKey = makeCacheKey({ ...base, model: 'gpt-5.5' });
     expect(miniKey).not.toBe(fullKey);
   });
 });

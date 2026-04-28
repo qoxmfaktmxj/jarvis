@@ -120,10 +120,10 @@ describe('askAI() — budget gate (Phase B3)', () => {
     );
 
     const { askAI } = await import('../ask.js');
-    await drain(askAI({ ...baseQuery, model: 'gpt-5.4' }));
+    await drain(askAI({ ...baseQuery, model: 'gpt-5.5' }));
 
     const [, modelArg] = recordBlockedMock.mock.calls[0]!;
-    expect(modelArg).toBe('gpt-5.4');
+    expect(modelArg).toBe('gpt-5.5');
   });
 });
 

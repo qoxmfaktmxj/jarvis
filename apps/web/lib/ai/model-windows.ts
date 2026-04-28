@@ -8,7 +8,7 @@
  */
 
 export const MODEL_CONTEXT_WINDOW = {
-  "gpt-5.4": 400_000,
+  "gpt-5.5": 400_000,
   "gpt-5.4-mini": 400_000,
 } as const satisfies Record<string, number>;
 

@@ -6,11 +6,16 @@ import { db } from "@jarvis/db/client";
 import { role, user, userRole } from "@jarvis/db/schema";
 import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { findTempDevAccount } from "@/lib/auth/dev-accounts";
-import { env } from "@/lib/env";
 
-// Development-only login endpoint. Blocked in production.
+// Temporary local login endpoint. In production it is only enabled when
+// JARVIS_ENABLE_TEMP_LOGIN=true is set by the deployment config.
 export async function POST(request: NextRequest) {
-  if (env().NODE_ENV === "production") {
+  const tempLoginEnabled =
+    process.env.NODE_ENV !== "production" ||
+    process.env.JARVIS_ENABLE_TEMP_LOGIN === "true" ||
+    process.env.JARVIS_ENABLE_TEMP_LOGIN === "1";
+
+  if (!tempLoginEnabled) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

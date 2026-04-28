@@ -66,7 +66,7 @@ const ASK_OP = 'ask' as const;
 // Phase-Harness (2026-04-23): embedding 모델 pricing 제거.
 const MODEL_PRICING: Record<string, { in: number; out: number }> = {
   'gpt-5.4-mini': { in: 0.0005, out: 0.0015 },
-  'gpt-5.4': { in: 0.005, out: 0.015 },
+  'gpt-5.5': { in: 0.005, out: 0.015 },
 };
 
 function computeCostUsd(model: string, tokensIn: number, tokensOut: number): string {

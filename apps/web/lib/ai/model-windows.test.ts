@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { getModelContextWindow, DEFAULT_CONTEXT_WINDOW } from "./model-windows";
 
 describe("getModelContextWindow", () => {
-  it("returns 400k for gpt-5.4", () => {
-    expect(getModelContextWindow("gpt-5.4")).toBe(400_000);
+  it("returns 400k for gpt-5.5", () => {
+    expect(getModelContextWindow("gpt-5.5")).toBe(400_000);
   });
 
   it("returns 400k for gpt-5.4-mini", () => {

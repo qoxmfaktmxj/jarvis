@@ -132,7 +132,7 @@ export interface RetrievedClaim {
 }
 
 /** 메시지별 모델 오버라이드. undefined면 env fallback(`ASK_AI_MODEL` 또는 `gpt-5.4-mini`). */
-export type AskModel = 'gpt-5.4' | 'gpt-5.4-mini';
+export type AskModel = 'gpt-5.5' | 'gpt-5.4-mini';
 
 export interface AskQuery {
   question: string;

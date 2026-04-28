@@ -14,7 +14,7 @@ import { evictOldConversations } from '@/app/(app)/ask/actions';
 const bodySchema = z.object({
   question: z.string().min(1).max(2000),
   snapshotId: z.string().uuid().optional(),
-  model: z.enum(['gpt-5.4', 'gpt-5.4-mini']).optional(),
+  model: z.enum(['gpt-5.5', 'gpt-5.4-mini']).optional(),
   conversationId: z.string().uuid().optional(),
 });
 
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   let body: {
     question: string;
     snapshotId?: string;
-    model?: 'gpt-5.4' | 'gpt-5.4-mini';
+    model?: 'gpt-5.5' | 'gpt-5.4-mini';
     conversationId?: string;
   };
   try {

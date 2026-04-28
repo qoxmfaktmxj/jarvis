@@ -79,7 +79,7 @@ describe("synthesizePageFirstAnswer({ model })", () => {
     logLlmCallMock.mockClear();
   });
 
-  it("forwards model='gpt-5.4' to createChatWithTokenFallback + logLlmCall", async () => {
+  it("forwards model='gpt-5.5' to createChatWithTokenFallback + logLlmCall", async () => {
     await drain(
       synthesizePageFirstAnswer({
         question: "what is alpha?",
@@ -87,17 +87,17 @@ describe("synthesizePageFirstAnswer({ model })", () => {
         workspaceId: WS,
         requestId: "req-model-test",
         sensitivityScope: "workspace:" + WS + "|level:internal|graph:0",
-        model: "gpt-5.4",
+        model: "gpt-5.5",
       }),
     );
 
     expect(createChatMock).toHaveBeenCalledTimes(1);
     const [, modelArg] = createChatMock.mock.calls[0]!;
-    expect(modelArg).toBe("gpt-5.4");
+    expect(modelArg).toBe("gpt-5.5");
 
     expect(logLlmCallMock).toHaveBeenCalledTimes(1);
     const logRow = logLlmCallMock.mock.calls[0]![0];
-    expect(logRow.model).toBe("gpt-5.4");
+    expect(logRow.model).toBe("gpt-5.5");
   });
 
   it("defaults to env SYNTH_MODEL when opts.model is undefined", async () => {

@@ -25,7 +25,10 @@ export type Operation = "ingest" | "query" | "lint" | "graph";
 
 const GATEWAY_URL =
   process.env["LLM_GATEWAY_URL"] ?? "http://cli-proxy:8317/v1";
-const GATEWAY_KEY = process.env["LLM_GATEWAY_KEY"] ?? "sk-jarvis-local-dev";
+const GATEWAY_KEY =
+  process.env["LLM_GATEWAY_KEY"] ??
+  process.env["CLIPROXY_API_KEY"] ??
+  "sk-jar...-dev";
 const REQUEST_TIMEOUT_MS = 120_000;
 
 function flag(op: Operation): boolean {

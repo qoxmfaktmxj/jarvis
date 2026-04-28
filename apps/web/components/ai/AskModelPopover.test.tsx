@@ -4,15 +4,15 @@ import { AskModelPopover, type AskModelOption } from "./AskModelPopover";
 
 const OPTIONS: AskModelOption[] = [
   { value: "gpt-5.4-mini", label: "Mini", description: "빠름 · 기본" },
-  { value: "gpt-5.4", label: "Full", description: "정밀 · 약 10배 비용" },
+  { value: "gpt-5.5", label: "GPT-5.5", description: "최고 정밀" },
 ];
 
 describe("AskModelPopover", () => {
   it("renders the current selection label in the trigger", () => {
     const html = renderToStaticMarkup(
-      <AskModelPopover value="gpt-5.4" onChange={() => {}} options={OPTIONS} />,
+      <AskModelPopover value="gpt-5.5" onChange={() => {}} options={OPTIONS} />,
     );
-    expect(html).toContain("Full");
+    expect(html).toContain("GPT-5.5");
   });
 
   it("falls back to the first option when value is unknown", () => {

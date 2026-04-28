@@ -1,6 +1,6 @@
 // apps/web/app/api/ask/route.body-schema.test.ts
 // 2026-04-21 — Tests the Zod bodySchema contract for /api/ask.
-// - accepts { model: 'gpt-5.4' | 'gpt-5.4-mini' }
+// - accepts { model: 'gpt-5.5' | 'gpt-5.4-mini' }
 // - rejects legacy { mode: 'simple' | 'expert' }
 // - accepts empty body extras (model/mode both optional-shape)
 //
@@ -14,7 +14,7 @@ import { z } from "zod";
 const bodySchema = z.object({
   question: z.string().min(1).max(2000),
   snapshotId: z.string().uuid().optional(),
-  model: z.enum(["gpt-5.4", "gpt-5.4-mini"]).optional(),
+  model: z.enum(["gpt-5.5", "gpt-5.4-mini"]).optional(),
   conversationId: z.string().uuid().optional(),
 });
 
@@ -24,8 +24,8 @@ describe("/api/ask bodySchema contract", () => {
     expect(out.success).toBe(true);
   });
 
-  it("accepts { model: 'gpt-5.4' }", () => {
-    const out = bodySchema.safeParse({ question: "hi", model: "gpt-5.4" });
+  it("accepts { model: 'gpt-5.5' }", () => {
+    const out = bodySchema.safeParse({ question: "hi", model: "gpt-5.5" });
     expect(out.success).toBe(true);
   });
 
