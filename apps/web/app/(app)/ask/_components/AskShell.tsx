@@ -40,7 +40,9 @@ function AskShellInner({
     return () => mq.removeEventListener('change', listener);
   }, []);
 
-  const showPanel = isLg && panel.isOpen && panel.active !== null;
+  // panel.isOpen is defined as `active !== null` in WikiPanelContext, so the
+  // active-non-null check below covers both. JSX still re-checks for TS narrowing.
+  const showPanel = isLg && panel.active !== null;
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">
