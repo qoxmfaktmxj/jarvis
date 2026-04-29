@@ -21,9 +21,9 @@ export function buildCsp({ nonce, isProd }: BuildCspOptions): string {
   const directives: string[] = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
     "img-src 'self' data: blob:",
-    "font-src 'self' data:",
+    "font-src 'self' data: https://cdn.jsdelivr.net",
     `connect-src ${connectSrc}`,
     "frame-ancestors 'none'",
     "base-uri 'self'",

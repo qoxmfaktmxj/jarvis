@@ -1,5 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`buildCsp > dev CSP allows ws: for HMR in connect-src 1`] = `"default-src 'self'; script-src 'self' 'nonce-test-nonce' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:*; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"`;
+exports[`buildCsp > dev CSP allows ws: for HMR in connect-src 1`] = `"default-src 'self'; script-src 'self' 'nonce-test-nonce' 'strict-dynamic'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:; font-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self' ws://localhost:*; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"`;
 
-exports[`buildCsp > prod CSP includes strict-dynamic + nonce 1`] = `"default-src 'self'; script-src 'self' 'nonce-abc123' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"`;
+exports[`buildCsp > prod CSP includes strict-dynamic + nonce 1`] = `"default-src 'self'; script-src 'self' 'nonce-abc123' 'strict-dynamic'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob:; font-src 'self' data: https://cdn.jsdelivr.net; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"`;
