@@ -25,10 +25,6 @@ export type Operation = "ingest" | "query" | "lint" | "graph";
 
 const GATEWAY_URL =
   process.env["LLM_GATEWAY_URL"] ?? "http://cli-proxy:8317/v1";
-const GATEWAY_KEY =
-  process.env["LLM_GATEWAY_KEY"] ??
-  process.env["CLIPROXY_API_KEY"] ??
-  "sk-jar...-dev";
 const REQUEST_TIMEOUT_MS = 120_000;
 
 function flag(op: Operation): boolean {
@@ -60,9 +56,16 @@ function directClient(): OpenAI {
 
 function gatewayClient(): OpenAI {
   if (!_gateway) {
+    const gatewayKey =
+      process.env["LLM_GATEWAY_KEY"] ?? process.env["CLIPROXY_API_KEY"];
+    if (!gatewayKey) {
+      throw new Error(
+        "LLM_GATEWAY_KEY or CLIPROXY_API_KEY env var is required when subscription gateway is enabled"
+      );
+    }
     _gateway = new OpenAI({
       baseURL: GATEWAY_URL,
-      apiKey: GATEWAY_KEY,
+      apiKey: gatewayKey,
       maxRetries: 0,
       timeout: REQUEST_TIMEOUT_MS,
     });

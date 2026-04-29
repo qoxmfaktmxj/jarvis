@@ -1,25 +1,66 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { createSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
-import { role, user, userRole } from "@jarvis/db/schema";
+import { auditLog, role, user, userRole } from "@jarvis/db/schema";
 import { ROLE_PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { findTempDevAccount } from "@/lib/auth/dev-accounts";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
-// Temporary local login endpoint. In production it is only enabled when
-// JARVIS_ENABLE_TEMP_LOGIN=true is set by the deployment config.
+// dev-account login endpoint — production에서 절대 활성화 불가.
+// JARVIS_ENABLE_TEMP_LOGIN env override는 완전히 제거됨.
+
+const LOGIN_RATE_MAX = 5;
+const LOGIN_RATE_WINDOW_SEC = 60;
+
+// zero UUID: workspaceId NOT NULL fallback for system-level audit events (no authenticated workspace).
+const SYSTEM_WORKSPACE_ID = "00000000-0000-0000-0000-000000000000";
+
+function extractClientIp(req: NextRequest): string {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]!.trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
+}
+
 export async function POST(request: NextRequest) {
-  const tempLoginEnabled =
-    process.env.NODE_ENV !== "production" ||
-    process.env.JARVIS_ENABLE_TEMP_LOGIN === "true" ||
-    process.env.JARVIS_ENABLE_TEMP_LOGIN === "1";
-
-  if (!tempLoginEnabled) {
+  // dev-account 경로는 production에서 무조건 404.
+  if ((process.env.NODE_ENV as string) === "production") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const payload = await request.json() as {
+  const ip = extractClientIp(request);
+  const rl = checkRateLimit(`login:${ip}`, LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_SEC);
+
+  if (!rl.allowed) {
+    const retryAfterSec = rl.retryAfterSec ?? LOGIN_RATE_WINDOW_SEC;
+    // audit_log: rate-limit 발동. fail-safe — 실패해도 429 응답은 반환.
+    await db
+      .insert(auditLog)
+      .values({
+        workspaceId: SYSTEM_WORKSPACE_ID,
+        action: "auth.login.rate_limit",
+        resourceType: "login",
+        ipAddress: ip === "unknown" ? null : ip,
+        details: {
+          ip,
+          retryAfterSec,
+          ipHash: createHash("sha256").update(ip).digest("hex").slice(0, 16),
+        },
+        success: false,
+      })
+      .catch(() => undefined);
+
+    return NextResponse.json(
+      { error: "too_many_requests", retryAfterSec },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSec) },
+      },
+    );
+  }
+
+  const payload = (await request.json()) as {
     username?: string;
     password?: string;
     keepSignedIn?: boolean;
@@ -29,12 +70,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "username and password required" }, { status: 400 });
   }
 
-  const sessionLifetimeMs = payload.keepSignedIn === true
-    ? 30 * 24 * 60 * 60 * 1000
-    : 8 * 60 * 60 * 1000;
+  const sessionLifetimeMs =
+    payload.keepSignedIn === true
+      ? 30 * 24 * 60 * 60 * 1000
+      : 8 * 60 * 60 * 1000;
 
   const account = findTempDevAccount(payload.username, payload.password);
   if (!account) {
+    // audit_log: 인증 실패.
+    await db
+      .insert(auditLog)
+      .values({
+        workspaceId: SYSTEM_WORKSPACE_ID,
+        action: "auth.login.fail",
+        resourceType: "login",
+        ipAddress: ip === "unknown" ? null : ip,
+        details: {
+          ip,
+          username: payload.username,
+          reason: "invalid_credentials",
+          usernameHash: createHash("sha256")
+            .update(payload.username)
+            .digest("hex")
+            .slice(0, 16),
+        },
+        success: false,
+      })
+      .catch(() => undefined);
+
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
@@ -58,7 +121,7 @@ export async function POST(request: NextRequest) {
 
   const roles = userRoleRows.map((row) => row.roleCode.toUpperCase());
   const permissions = [
-    ...new Set(roles.flatMap((roleCode) => ROLE_PERMISSIONS[roleCode] ?? []))
+    ...new Set(roles.flatMap((roleCode) => ROLE_PERMISSIONS[roleCode] ?? [])),
   ];
 
   const sessionId = randomUUID();
@@ -81,7 +144,7 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set("sessionId", sessionId, {
     httpOnly: true,
-    secure: false,
+    secure: (process.env.NODE_ENV as string) === "production",
     maxAge: Math.floor(sessionLifetimeMs / 1000),
     sameSite: "lax",
     path: "/",

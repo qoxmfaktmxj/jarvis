@@ -173,7 +173,13 @@ async function main(): Promise<void> {
   let client: OpenAI;
   if (useGateway) {
     const baseURL = process.env["LLM_GATEWAY_URL"] ?? "http://127.0.0.1:8317/v1";
-    const apiKey = process.env["LLM_GATEWAY_KEY"] ?? "sk-jarvis-local-dev";
+    const apiKey =
+      process.env["LLM_GATEWAY_KEY"] ?? process.env["CLIPROXY_API_KEY"];
+    if (!apiKey) {
+      throw new Error(
+        "LLM_GATEWAY_KEY or CLIPROXY_API_KEY env var is required when FEATURE_SUBSCRIPTION_QUERY=true",
+      );
+    }
     client = new OpenAI({ baseURL, apiKey });
     console.log(`[fill-aliases] provider=gateway baseURL=${baseURL} model=${model} dir=${dir} limit=${limit} dryRun=${dryRun}`);
   } else {

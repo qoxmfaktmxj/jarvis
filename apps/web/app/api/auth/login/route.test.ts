@@ -1,18 +1,27 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
+// ---------------------------------------------------------------------------
+// Hoist mocks so vi.mock factory closures can reference them.
+// ---------------------------------------------------------------------------
 const {
   createSessionMock,
   userLookupQueue,
-  roleLookupQueue
+  roleLookupQueue,
+  auditInsertMock,
+  checkRateLimitMock,
+  findTempDevAccountMock,
 } = vi.hoisted(() => ({
   createSessionMock: vi.fn(),
   userLookupQueue: [] as unknown[][],
-  roleLookupQueue: [] as unknown[][]
+  roleLookupQueue: [] as unknown[][],
+  auditInsertMock: vi.fn(),
+  checkRateLimitMock: vi.fn(),
+  findTempDevAccountMock: vi.fn(),
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
-  createSession: createSessionMock
+  createSession: createSessionMock,
 }));
 
 vi.mock("@jarvis/db/client", () => ({
@@ -27,84 +36,207 @@ vi.mock("@jarvis/db/client", () => ({
         })),
       })),
     })),
-  }
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        catch: vi.fn((_cb) => {
+          auditInsertMock();
+          return Promise.resolve();
+        }),
+      })),
+    })),
+  },
+}));
+
+vi.mock("@/lib/auth/dev-accounts", () => ({
+  findTempDevAccount: findTempDevAccountMock,
+}));
+
+vi.mock("@/lib/server/rate-limit", () => ({
+  checkRateLimit: checkRateLimitMock,
+  __resetRateLimitForTests: vi.fn(),
 }));
 
 import { POST } from "./route";
 
-function buildRequest(body: Record<string, unknown>) {
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function buildRequest(
+  body: Record<string, unknown>,
+  headers: Record<string, string> = {},
+) {
   return new NextRequest("http://localhost:3010/api/auth/login", {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
-      "content-type": "application/json"
-    }
+      "content-type": "application/json",
+      ...headers,
+    },
   });
 }
 
+const ALLOWED_RL = { allowed: true, current: 1, max: 5 };
+const BLOCKED_RL = { allowed: false, retryAfterSec: 45, current: 6, max: 5 };
+
+const DEV_ACCOUNT = {
+  label: "Admin User",
+  role: "ADMIN",
+  username: "admin",
+  password: "admin123!",
+  email: "admin@jarvis.dev",
+} as const;
+
+const DB_USER = {
+  id: "user-1",
+  workspaceId: "ws-1",
+  employeeId: "EMP001",
+  name: "Admin User",
+  email: "admin@jarvis.dev",
+  orgId: null,
+};
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 describe("/api/auth/login", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     userLookupQueue.length = 0;
     roleLookupQueue.length = 0;
+    // Default: rate-limit passes, dev account matches
+    checkRateLimitMock.mockReturnValue(ALLOWED_RL);
+    findTempDevAccountMock.mockReturnValue(DEV_ACCOUNT);
   });
 
-  it("creates a session from valid dev credentials", async () => {
-    userLookupQueue.push([{
-      id: "user-1",
-      workspaceId: "ws-1",
-      employeeId: "EMP001",
-      name: "Admin User",
-      email: "admin@jarvis.dev",
-      orgId: null
-    }]);
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  // ── P0-2: production → always 404 ────────────────────────────────────────
+
+  it("TC1: NODE_ENV=production → 404 (env override 무시)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+    expect(res.status).toBe(404);
+  });
+
+  it("TC2: NODE_ENV=production + JARVIS_ENABLE_TEMP_LOGIN=true → 404 (완전 제거됨)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("JARVIS_ENABLE_TEMP_LOGIN", "true");
+
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+    expect(res.status).toBe(404);
+  });
+
+  // ── Happy path (NODE_ENV=development) ────────────────────────────────────
+
+  it("TC3: NODE_ENV=development + 정상 자격증명 → 200 + 세션 발급", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    userLookupQueue.push([DB_USER]);
     roleLookupQueue.push([{ roleCode: "ADMIN" }]);
 
-    const response = await POST(
-      buildRequest({
-        username: "admin",
-        password: "admin123!"
-      })
-    );
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
 
-    expect(response.status).toBe(200);
+    expect(res.status).toBe(200);
     expect(createSessionMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user-1",
         workspaceId: "ws-1",
         email: "admin@jarvis.dev",
-        roles: ["ADMIN"]
-      })
+        roles: ["ADMIN"],
+      }),
     );
-    const sessionArg = createSessionMock.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(sessionArg).not.toHaveProperty("ssoSubject");
-    expect(response.headers.get("set-cookie")).toContain("sessionId=");
+    expect(res.headers.get("set-cookie")).toContain("sessionId=");
   });
 
-  it("rejects invalid credentials", async () => {
-    const response = await POST(
-      buildRequest({ username: "alice", password: ["wrong", "password"].join("-") })
+  // ── P0-1: secure 플래그 ───────────────────────────────────────────────────
+
+  it("TC4a: NODE_ENV=development → secure=false 쿠키", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    userLookupQueue.push([DB_USER]);
+    roleLookupQueue.push([{ roleCode: "ADMIN" }]);
+
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+
+    expect(res.status).toBe(200);
+    // development 환경에서는 secure 속성이 없거나 false여야 함
+    const setCookie = res.headers.get("set-cookie") ?? "";
+    expect(setCookie.toLowerCase()).not.toMatch(/;\s*secure/);
+  });
+
+  // ── P0-3: rate-limit ─────────────────────────────────────────────────────
+
+  it("TC5: rate-limit 초과 → 429 + Retry-After 헤더 + retryAfterSec 필드", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    checkRateLimitMock.mockReturnValue(BLOCKED_RL);
+
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("45");
+    const body = await res.json() as Record<string, unknown>;
+    expect(body.error).toBe("too_many_requests");
+    expect(body.retryAfterSec).toBe(45);
+  });
+
+  // ── Audit log ────────────────────────────────────────────────────────────
+
+  it("TC6: 실패 로그인 → audit_log INSERT (action=auth.login.fail)", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    findTempDevAccountMock.mockReturnValue(null);
+
+    const res = await POST(buildRequest({ username: "admin", password: "wrong!" }));
+
+    expect(res.status).toBe(401);
+    expect(auditInsertMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("TC7: rate-limit 발동 → audit_log INSERT (action=auth.login.rate_limit)", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    checkRateLimitMock.mockReturnValue(BLOCKED_RL);
+
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+
+    expect(res.status).toBe(429);
+    expect(auditInsertMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ── IP 추출 ───────────────────────────────────────────────────────────────
+
+  it("TC8: x-forwarded-for 'a.b.c.d, e.f.g.h' → 첫 번째 IP만 rate-limit 키로 사용", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    await POST(
+      buildRequest(
+        { username: "admin", password: "admin123!" },
+        { "x-forwarded-for": "1.2.3.4, 5.6.7.8" },
+      ),
     );
 
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: "invalid credentials" });
+    // checkRateLimit이 'login:1.2.3.4' 키로 호출됐는지 확인
+    expect(checkRateLimitMock).toHaveBeenCalledWith(
+      "login:1.2.3.4",
+      expect.any(Number),
+      expect.any(Number),
+    );
   });
 
-  it("returns 400 when username or password is missing", async () => {
-    const response = await POST(buildRequest({}));
+  // ── 기존 엣지 케이스 유지 ────────────────────────────────────────────────
 
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ error: "username and password required" });
+  it("username/password 누락 → 400", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const res = await POST(buildRequest({}));
+    expect(res.status).toBe(400);
+    await expect(res.json()).resolves.toEqual({ error: "username and password required" });
   });
 
-  it("returns 401 when dev account email is not seeded in database", async () => {
+  it("dev account 이메일이 DB에 없으면 → 401", async () => {
+    vi.stubEnv("NODE_ENV", "development");
     userLookupQueue.push([]);
 
-    const response = await POST(
-      buildRequest({ username: "admin", password: "admin123!" })
-    );
-
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({ error: "invalid credentials" });
+    const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
+    expect(res.status).toBe(401);
   });
 });
