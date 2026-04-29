@@ -21,6 +21,7 @@ const baseSchema = z
     ASK_AI_MODEL: z.string().min(1).default("gpt-5.4-mini"),
     LLM_GATEWAY_URL: urlString.optional(),
     LLM_GATEWAY_KEY: z.string().min(1).optional(),
+    CLIPROXY_API_KEY: z.string().min(1).optional(),
     FEATURE_SUBSCRIPTION_QUERY: booleanFromString.default(false),
     FEATURE_SUBSCRIPTION_INGEST: booleanFromString.default(false),
     FEATURE_SUBSCRIPTION_LINT: booleanFromString.default(false),
@@ -32,6 +33,23 @@ const baseSchema = z
         path: ["DATABASE_URL"],
         message: "DATABASE_URL is required in production",
       });
+    }
+    if (data.NODE_ENV === "production") {
+      const gatewayKey = data.LLM_GATEWAY_KEY ?? data.CLIPROXY_API_KEY;
+      const SENTINELS = new Set(["sk-jar...-dev", "sk-jarvis-local-dev"]);
+      if (!gatewayKey) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["LLM_GATEWAY_KEY"],
+          message: "LLM_GATEWAY_KEY or CLIPROXY_API_KEY is required in production",
+        });
+      } else if (SENTINELS.has(gatewayKey)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["LLM_GATEWAY_KEY"],
+          message: "Sentinel/dev placeholder LLM_GATEWAY_KEY is not allowed in production",
+        });
+      }
     }
   });
 

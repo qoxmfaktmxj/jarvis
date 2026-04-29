@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { askConversation, askMessage } from "@jarvis/db/schema";
-import { and, asc, count, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { MAX_CONVERSATIONS_PER_USER } from "@jarvis/shared/constants/ask";
 import {
   getConversationTokenUsage,
@@ -224,49 +224,59 @@ export async function renameConversation(
 }
 
 // ---------------------------------------------------------------------------
-// evictOldConversations — 20개 초과 시 가장 오래된 것 삭제 (내부 함수, export for route)
+// evictOldConversations — 20개 초과 시 가장 오래된 것 삭제 (session 기반, IDOR 차단)
+// - requireSession()으로 session 검증 후 session.workspaceId/userId만 사용
+// - db.transaction + pg_advisory_xact_lock으로 TOCTOU race 방지
 // ---------------------------------------------------------------------------
 
 export async function evictOldConversations(
-  workspaceId: string,
-  userId: string,
-  excludeId?: string,
+  opts?: { excludeId?: string },
 ): Promise<void> {
-  const [countRow] = await db
-    .select({ count: count() })
-    .from(askConversation)
-    .where(
-      and(
-        eq(askConversation.workspaceId, workspaceId),
-        eq(askConversation.userId, userId),
-      ),
-    );
+  const session = await requireSession();
+  const { workspaceId, userId } = session;
+  const excludeId = opts?.excludeId;
 
-  const total = countRow?.count ?? 0;
-  if (total < MAX_CONVERSATIONS_PER_USER) return;
+  await db.transaction(async (tx) => {
+    // workspaceId+userId 조합으로 advisory lock — 동일 사용자 동시 호출 직렬화
+    const lockKey = `${workspaceId}:${userId}`;
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
 
-  const toDelete = total - (MAX_CONVERSATIONS_PER_USER - 1); // 1자리 비우기
+    const [countRow] = await tx
+      .select({ count: count() })
+      .from(askConversation)
+      .where(
+        and(
+          eq(askConversation.workspaceId, workspaceId),
+          eq(askConversation.userId, userId),
+        ),
+      );
 
-  const conditions = [
-    eq(askConversation.workspaceId, workspaceId),
-    eq(askConversation.userId, userId),
-  ];
-  if (excludeId) {
-    conditions.push(ne(askConversation.id, excludeId));
-  }
+    const total = countRow?.count ?? 0;
+    if (total < MAX_CONVERSATIONS_PER_USER) return;
 
-  const oldest = await db
-    .select({ id: askConversation.id })
-    .from(askConversation)
-    .where(and(...conditions))
-    .orderBy(asc(askConversation.lastMessageAt))
-    .limit(toDelete);
+    const toDelete = total - (MAX_CONVERSATIONS_PER_USER - 1); // 1자리 비우기
 
-  if (oldest.length > 0) {
-    await db
-      .delete(askConversation)
-      .where(inArray(askConversation.id, oldest.map((r) => r.id)));
-  }
+    const conditions = [
+      eq(askConversation.workspaceId, workspaceId),
+      eq(askConversation.userId, userId),
+    ];
+    if (excludeId) {
+      conditions.push(ne(askConversation.id, excludeId));
+    }
+
+    const oldest = await tx
+      .select({ id: askConversation.id })
+      .from(askConversation)
+      .where(and(...conditions))
+      .orderBy(asc(askConversation.lastMessageAt))
+      .limit(toDelete);
+
+    if (oldest.length > 0) {
+      await tx
+        .delete(askConversation)
+        .where(inArray(askConversation.id, oldest.map((r) => r.id)));
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------

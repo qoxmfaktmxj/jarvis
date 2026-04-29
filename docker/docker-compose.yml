@@ -68,7 +68,11 @@ services:
       - ../infra/cliproxy/auths:/root/.cli-proxy-api:rw
       - ../infra/cliproxy/logs:/CLIProxyAPI/logs
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- --header='Authorization: Bearer sk-jarvis-local-dev' http://127.0.0.1:8317/v1/models || exit 1"]
+      # NOTE: ${LLM_GATEWAY_KEY} must be set in the host env (or .env file used
+      # by docker compose). Empty/missing key intentionally fails the healthcheck
+      # so that misconfiguration is loud rather than silent. Sentinel values like
+      # "sk-jarvis-local-dev" are rejected by apps/web/lib/env.ts in production.
+      test: ["CMD-SHELL", "wget -qO- --header=\"Authorization: Bearer ${LLM_GATEWAY_KEY}\" http://127.0.0.1:8317/v1/models || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -92,7 +96,7 @@ services:
       APP_URL: ${APP_URL:-http://localhost}
       # Phase-W1.5 — gateway URL is internal compose DNS.
       LLM_GATEWAY_URL: http://cli-proxy:8317/v1
-      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-sk-jarvis-local-dev}
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY}
       FEATURE_SUBSCRIPTION_INGEST: ${FEATURE_SUBSCRIPTION_INGEST:-false}
       FEATURE_SUBSCRIPTION_QUERY: ${FEATURE_SUBSCRIPTION_QUERY:-false}
       FEATURE_SUBSCRIPTION_LINT: ${FEATURE_SUBSCRIPTION_LINT:-false}
@@ -134,7 +138,7 @@ services:
       MINIO_BUCKET: jarvis-files
       # Phase-W1.5 — gateway URL is internal compose DNS.
       LLM_GATEWAY_URL: http://cli-proxy:8317/v1
-      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY:-sk-jarvis-local-dev}
+      LLM_GATEWAY_KEY: ${LLM_GATEWAY_KEY}
       FEATURE_SUBSCRIPTION_INGEST: ${FEATURE_SUBSCRIPTION_INGEST:-false}
       FEATURE_SUBSCRIPTION_LINT: ${FEATURE_SUBSCRIPTION_LINT:-false}
     # entrypoint.sh reads these secret files and exports as env vars:
