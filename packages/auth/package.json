@@ -7,7 +7,8 @@
     ".": "./index.ts",
     "./types": "./types.ts",
     "./session": "./session.ts",
-    "./rbac": "./rbac.ts"
+    "./rbac": "./rbac.ts",
+    "./cookie": "./cookie.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",

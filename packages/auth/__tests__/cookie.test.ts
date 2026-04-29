@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { validateCookieDomain } from "../cookie.js";
+import { buildSessionCookieOptions } from "../cookie.js";
 
 describe("validateCookieDomain", () => {
   test("returns undefined for undefined input", () => {
@@ -32,5 +33,62 @@ describe("validateCookieDomain", () => {
 
   test("throws on lone dot", () => {
     expect(() => validateCookieDomain(".")).toThrow(/too broad/);
+  });
+});
+
+describe("buildSessionCookieOptions", () => {
+  test("omits domain when cookieDomain is undefined", () => {
+    const opts = buildSessionCookieOptions(
+      { cookieDomain: undefined, isProduction: false },
+      8 * 60 * 60 * 1000,
+    );
+    expect(opts.domain).toBeUndefined();
+    expect(opts.httpOnly).toBe(true);
+    expect(opts.sameSite).toBe("lax");
+    expect(opts.path).toBe("/");
+    expect(opts.secure).toBe(false);
+  });
+
+  test("includes domain when cookieDomain is set and production secure", () => {
+    const opts = buildSessionCookieOptions(
+      { cookieDomain: ".isusystem.com", isProduction: true },
+      8 * 60 * 60 * 1000,
+    );
+    expect(opts.domain).toBe(".isusystem.com");
+    expect(opts.secure).toBe(true);
+  });
+
+  test("converts lifetimeMs to maxAge in seconds (floor)", () => {
+    const opts = buildSessionCookieOptions(
+      { cookieDomain: undefined, isProduction: false },
+      8 * 60 * 60 * 1000,
+    );
+    expect(opts.maxAge).toBe(8 * 60 * 60);
+  });
+
+  test("handles 30-day lifetime (keepSignedIn)", () => {
+    const opts = buildSessionCookieOptions(
+      { cookieDomain: undefined, isProduction: false },
+      30 * 24 * 60 * 60 * 1000,
+    );
+    expect(opts.maxAge).toBe(30 * 24 * 60 * 60);
+  });
+
+  test("propagates validateCookieDomain throw on invalid domain", () => {
+    expect(() =>
+      buildSessionCookieOptions(
+        { cookieDomain: ".com", isProduction: true },
+        1000,
+      ),
+    ).toThrow(/too broad/);
+  });
+
+  test("zero lifetime yields maxAge 0 (for cookie clear)", () => {
+    const opts = buildSessionCookieOptions(
+      { cookieDomain: ".isusystem.com", isProduction: true },
+      0,
+    );
+    expect(opts.maxAge).toBe(0);
+    expect(opts.domain).toBe(".isusystem.com");
   });
 });

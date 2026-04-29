@@ -23,3 +23,40 @@ export function validateCookieDomain(
   }
   return domain;
 }
+
+export interface SessionCookieEnv {
+  cookieDomain: string | undefined;
+  isProduction: boolean;
+}
+
+export interface SessionCookieOptions {
+  httpOnly: true;
+  secure: boolean;
+  sameSite: "lax";
+  path: "/";
+  maxAge: number;
+  domain?: string;
+}
+
+/**
+ * 세션 쿠키 옵션 빌더 (login/logout 공유).
+ *
+ * - 운영(`isProduction=true`)에서 `Secure` 자동 활성
+ * - `cookieDomain` 유효 시 부모 도메인 쿠키, 비어있으면 호스트 한정 폴백
+ * - lifetimeMs=0이면 cookie clear 용도
+ */
+export function buildSessionCookieOptions(
+  env: SessionCookieEnv,
+  lifetimeMs: number,
+): SessionCookieOptions {
+  const opts: SessionCookieOptions = {
+    httpOnly: true,
+    secure: env.isProduction,
+    sameSite: "lax",
+    path: "/",
+    maxAge: Math.floor(lifetimeMs / 1000),
+  };
+  const domain = validateCookieDomain(env.cookieDomain);
+  if (domain) opts.domain = domain;
+  return opts;
+}
