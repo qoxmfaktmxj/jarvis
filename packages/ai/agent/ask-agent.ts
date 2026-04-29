@@ -48,7 +48,6 @@ export const ASK_SYSTEM_PROMPT = buildAskSystemPrompt("__static__");
 export interface AskAgentOptions {
   model?: string;
   client: Pick<OpenAI, "chat">;
-  systemPrompt?: string;
 }
 
 export interface AskAgentToolCall {
@@ -139,12 +138,11 @@ export async function askAgent(
 ): Promise<AskAgentResult> {
   const model = options.model ?? "gpt-5.4-mini";
   const nonce = generateNonce();
-  const systemPrompt = options.systemPrompt ?? buildAskSystemPrompt(nonce);
   const tools = buildToolDict();
   const openaiTools = toOpenAITools(tools);
 
   const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt } as ChatMessage,
+    { role: "system", content: buildAskSystemPrompt(nonce) } as ChatMessage,
     { role: "user", content: wrapUserContent(question, nonce) } as ChatMessage,
   ];
 
@@ -232,12 +230,11 @@ export async function* askAgentStream(
 ): AsyncGenerator<AskAgentEvent> {
   const model = options.model ?? "gpt-5.4-mini";
   const nonce = generateNonce();
-  const systemPrompt = options.systemPrompt ?? buildAskSystemPrompt(nonce);
   const tools = buildToolDict();
   const openaiTools = toOpenAITools(tools);
 
   const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt } as ChatMessage,
+    { role: "system", content: buildAskSystemPrompt(nonce) } as ChatMessage,
     { role: "user", content: wrapUserContent(question, nonce) } as ChatMessage,
   ];
 
