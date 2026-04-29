@@ -17,6 +17,7 @@ import {
   type WikiSensitivity,
 } from "@jarvis/wiki-fs";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
+import { projectLinks } from "@jarvis/wiki-agent/projection";
 import * as path from "node:path";
 
 export type SaveWikiPageError =
@@ -158,47 +159,56 @@ export async function saveWikiPage(
     return { ok: false, error: "git_failed" };
   }
 
-  // wikiPageIndex projection upsert (body 미포함 — body-column-guard 준수)
+  // wikiPageIndex projection upsert + wiki_page_link projection (body 미포함 — body-column-guard 준수)
   try {
     const { data: fmData } = parseFrontmatter(fileContent);
-    await db
-      .insert(wikiPageIndex)
-      .values({
-        workspaceId: parsed.data.workspaceId,
-        path: repoRelPath,
-        title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
-        slug: pageSlugClean,
-        type: fmData.type ?? "concept",
-        authority: "manual",
-        sensitivity: fmData.sensitivity ?? "INTERNAL",
-        requiredPermission:
-          typeof fmData.requiredPermission === "string"
-            ? fmData.requiredPermission
-            : "knowledge:read",
-        frontmatter: fmData as Record<string, unknown>,
-        gitSha: sha,
-        stale: false,
-        publishedStatus: "published",
-        freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
-      })
-      .onConflictDoUpdate({
-        target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
-        set: {
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(wikiPageIndex)
+        .values({
+          workspaceId: parsed.data.workspaceId,
+          path: repoRelPath,
           title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
           slug: pageSlugClean,
+          type: fmData.type ?? "concept",
           authority: "manual",
           sensitivity: fmData.sensitivity ?? "INTERNAL",
+          requiredPermission:
+            typeof fmData.requiredPermission === "string"
+              ? fmData.requiredPermission
+              : "knowledge:read",
           frontmatter: fmData as Record<string, unknown>,
           gitSha: sha,
           stale: false,
+          publishedStatus: "published",
           freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
-          updatedAt: new Date(),
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
+          set: {
+            title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
+            slug: pageSlugClean,
+            authority: "manual",
+            sensitivity: fmData.sensitivity ?? "INTERNAL",
+            frontmatter: fmData as Record<string, unknown>,
+            gitSha: sha,
+            stale: false,
+            freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
+            updatedAt: new Date(),
+          },
+        });
 
+      // wiki_page_link projection: index upsert 이후 동일 tx에서 실행하므로
+      // projectLinks가 fromPageId를 조회할 수 있다.
+      await projectLinks(tx, {
+        workspaceId: parsed.data.workspaceId,
+        sourcePath: repoRelPath,
+        body: incomingBody,
+      });
+    });
   } catch (err) {
     console.error("[wiki:manual:save] projection upsert failed:", err);
-    // git commit은 성공했으나 index가 stale — projection_failed로 사용자에게 알린다
+    // git commit은 성공했으나 index/link가 stale — projection_failed로 사용자에게 알린다
     revalidatePath("/wiki/[workspaceId]/[...path]", "page");
     return { ok: false, error: "projection_failed" };
   }

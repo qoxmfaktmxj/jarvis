@@ -64,6 +64,9 @@ importers:
       '@jarvis/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@jarvis/wiki-agent':
+        specifier: workspace:*
+        version: link:../../packages/wiki-agent
       '@jarvis/wiki-fs':
         specifier: workspace:*
         version: link:../../packages/wiki-fs
@@ -457,6 +460,16 @@ importers:
         version: 3.2.4(@types/debug@4.1.13)(@types/node@22.19.17)(jiti@2.6.1)(jsdom@29.1.0)(lightningcss@1.32.0)(tsx@4.21.0)(yaml@2.8.3)
 
   packages/wiki-agent:
+    dependencies:
+      '@jarvis/db':
+        specifier: workspace:*
+        version: link:../db
+      '@jarvis/wiki-fs':
+        specifier: workspace:*
+        version: link:../wiki-fs
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(pg@8.20.0)
     devDependencies:
       '@types/node':
         specifier: ^22.19.17

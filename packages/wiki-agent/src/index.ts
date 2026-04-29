@@ -1,11 +1,14 @@
 /**
  * @jarvis/wiki-agent
  *
- * Pure-TypeScript prompt builders and LLM-output parsers for the
- * Two-Step Chain-of-Thought ingest pipeline (WIKI-AGENTS.md §3.1).
+ * Pure-TypeScript prompt builders, LLM-output parsers, and DB projection
+ * helpers for the Two-Step Chain-of-Thought ingest pipeline
+ * (WIKI-AGENTS.md §3.1).
  *
- * This package is stateless and free of network I/O: LLM invocation,
- * caching, logging, and DB projection live in the consumer layers
+ * Network I/O remains forbidden (no HTTP/LLM calls inside this package).
+ * Projection helpers (`./projection`) accept a Drizzle transaction handle
+ * provided by the caller — they never open their own DB connection. LLM
+ * invocation, caching, and logging still live in the consumer layers
  * (`apps/worker/src/jobs/ingest/*`, `packages/ai/*`).
  */
 
