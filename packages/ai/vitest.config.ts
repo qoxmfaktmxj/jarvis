@@ -13,7 +13,10 @@ export default defineConfig({
       "**/*.integration.test.ts",
     ],
     // turbo 병렬 실행 시 프로세스 부하로 기본 5s timeout이 자주 초과됨.
-    testTimeout: 20000,
-    hookTimeout: 15000,
+    // budget.test / wiki-ops-budget.test / logger.test: DB mock 모듈 동적
+    // import 시 Node.js 모듈 캐시 초기화로 30s+ 소요되는 known flaky.
+    // 직접 실행 시 ~10s, turbo 병렬 시 최대 ~30s → 45s로 여유 확보.
+    testTimeout: 45000,
+    hookTimeout: 30000,
   },
 });
