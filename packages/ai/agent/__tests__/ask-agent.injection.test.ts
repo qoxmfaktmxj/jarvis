@@ -65,7 +65,7 @@ describe("askAgent — prompt injection nonce", () => {
 
     expect(captured).toHaveLength(1);
     const messages = captured[0] as Array<{ role: string; content: string }>;
-    const sys = messages[0];
+    const sys = messages[0]!;
     expect(sys.role).toBe("system");
     expect(sys.content).toMatch(/<USER_INPUT_[0-9a-f]{32}>/);
   });
@@ -77,8 +77,8 @@ describe("askAgent — prompt injection nonce", () => {
     await askAgent("테스트 질문", ctx, { client: client as never });
 
     const messages = captured[0] as Array<{ role: string; content: string }>;
-    const sysContent = messages[0].content;
-    const usrContent = messages[1].content;
+    const sysContent = messages[0]!.content;
+    const usrContent = messages[1]!.content;
 
     // system prompt 에서 nonce 추출
     const nonceMatch = sysContent.match(/<USER_INPUT_([0-9a-f]{32})>/);
@@ -101,8 +101,8 @@ describe("askAgent — prompt injection nonce", () => {
     const msgs1 = captured1[0] as Array<{ role: string; content: string }>;
     const msgs2 = captured2[0] as Array<{ role: string; content: string }>;
 
-    const match1 = msgs1[0].content.match(/<USER_INPUT_([0-9a-f]{32})>/);
-    const match2 = msgs2[0].content.match(/<USER_INPUT_([0-9a-f]{32})>/);
+    const match1 = msgs1[0]!.content.match(/<USER_INPUT_([0-9a-f]{32})>/);
+    const match2 = msgs2[0]!.content.match(/<USER_INPUT_([0-9a-f]{32})>/);
 
     expect(match1).toBeTruthy();
     expect(match2).toBeTruthy();
@@ -118,10 +118,10 @@ describe("askAgent — prompt injection nonce", () => {
     await askAgent(poisoned, ctx, { client: client as never });
 
     const messages = captured[0] as Array<{ role: string; content: string }>;
-    const usrContent = messages[1].content;
+    const usrContent = messages[1]!.content;
 
     // 실제 nonce 추출
-    const nonceMatch = messages[0].content.match(/<USER_INPUT_([0-9a-f]{32})>/);
+    const nonceMatch = messages[0]!.content.match(/<USER_INPUT_([0-9a-f]{32})>/);
     expect(nonceMatch).toBeTruthy();
     const actualNonce = nonceMatch![1];
 
@@ -140,7 +140,7 @@ describe("askAgent — prompt injection nonce", () => {
     await askAgent("사용자 질문 내용", ctx, { client: client as never });
 
     const messages = captured[0] as Array<{ role: string; content: string }>;
-    const usrContent = messages[1].content;
+    const usrContent = messages[1]!.content;
 
     // 래핑 형식: <USER_INPUT_nonce>\n{question}\n</USER_INPUT_nonce>
     expect(usrContent).toMatch(/^<USER_INPUT_[0-9a-f]{32}>\n/);
@@ -157,8 +157,8 @@ describe("askAgentStream — prompt injection nonce", () => {
 
     expect(captured.length).toBeGreaterThan(0);
     const messages = captured[0] as Array<{ role: string; content: string }>;
-    const sysContent = messages[0].content;
-    const usrContent = messages[1].content;
+    const sysContent = messages[0]!.content;
+    const usrContent = messages[1]!.content;
 
     const nonceMatch = sysContent.match(/<USER_INPUT_([0-9a-f]{32})>/);
     expect(nonceMatch).toBeTruthy();

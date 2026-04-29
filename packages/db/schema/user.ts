@@ -33,6 +33,7 @@ export const user = pgTable("user", {
     .default("internal")
     .notNull(),
   // 'internal' | 'contractor'
+  passwordHash: varchar("password_hash", { length: 255 }),
   preferences: jsonb("preferences")
     .$type<Record<string, unknown>>()
     .default({})

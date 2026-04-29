@@ -21,6 +21,13 @@ describe("buildCsp", () => {
     expect(csp).toContain("ws:");
   });
 
+  it("dev CSP includes unsafe-eval for webpack HMR, prod does not", () => {
+    const dev = buildCsp({ nonce: "n", isProd: false });
+    const prod = buildCsp({ nonce: "n", isProd: true });
+    expect(dev).toContain("'unsafe-eval'");
+    expect(prod).not.toContain("'unsafe-eval'");
+  });
+
   it("both variants include required directives", () => {
     for (const isProd of [true, false]) {
       const csp = buildCsp({ nonce: "n", isProd });
