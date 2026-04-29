@@ -13,7 +13,9 @@ export default defineConfig({
       "**/*.integration.test.ts",
     ],
     // turbo 병렬 실행 시 프로세스 부하로 기본 5s timeout이 자주 초과됨.
-    testTimeout: 20000,
-    hookTimeout: 15000,
+    // budget/logger 테스트는 @jarvis/db/client Pool 초기화(connectionTimeoutMillis:2000)
+    // 대기 시간이 병렬 실행 부하에서 누적되어 약 9s 소요. 60s로 여유를 둔다.
+    testTimeout: 60000,
+    hookTimeout: 30000,
   },
 });
