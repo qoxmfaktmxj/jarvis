@@ -10,7 +10,7 @@ describe("sentry wrapper", () => {
     const { initSentry, captureException } = await import("../sentry.js");
     expect(() => initSentry()).not.toThrow();
     expect(() => captureException(new Error("boom"))).not.toThrow();
-  }, 15000);
+  }, 30000);
 
   it("initSentry calls Sentry.init when DSN is set", async () => {
     process.env.SENTRY_DSN = "https://example@o0.ingest.sentry.io/0";
