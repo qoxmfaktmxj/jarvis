@@ -29,6 +29,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const messages = await getMessages();
+  // NOTE: CSP nonce is injected by middleware via x-csp-nonce request header.
+  // When an inline <Script> is added, read it with:
+  //   const nonce = (await headers()).get("x-csp-nonce") ?? "";
+  // and pass nonce={nonce} to <Script nonce={nonce}>.
+  // Currently no inline scripts exist; strict-dynamic + per-script nonce is
+  // sufficient for Next.js 15 RSC bundle loading.
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
