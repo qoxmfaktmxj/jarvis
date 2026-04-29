@@ -41,6 +41,13 @@ export function isAdmin(session: JarvisSession): boolean {
   return session.permissions.includes(PERMISSIONS.ADMIN_ALL);
 }
 
+/**
+ * Convenience wrapper that delegates to {@link canAccessKnowledgeSensitivityByPermissions}.
+ *
+ * **Scope: `knowledge_page` table only.**
+ * For `wiki_page_index` (Karpathy-projection), use {@link canViewWikiPage} from
+ * `wiki-acl.ts`, which additionally inspects `requiredPermission` and `publishedStatus`.
+ */
 export function canAccessKnowledgeSensitivity(
   session: Pick<JarvisSession, "permissions">,
   sensitivity: string | null | undefined
@@ -51,6 +58,21 @@ export function canAccessKnowledgeSensitivity(
   );
 }
 
+/**
+ * Core access-check for the **`knowledge_page`** (legacy) table.
+ *
+ * **Boundary:** This helper evaluates `sensitivity` only — it does NOT inspect
+ * `requiredPermission` or `publishedStatus`, which are `wiki_page_index`-only columns.
+ *
+ * Do NOT use this helper for `wiki_page_index` rows.
+ * For `wiki_page_index` (Karpathy-projection), use {@link canViewWikiPage} from
+ * `wiki-acl.ts` instead — it checks all three access dimensions:
+ *   1. `publishedStatus` — only `'published'` exposed to non-admin
+ *   2. `requiredPermission` — per-page permission gate
+ *   3. `sensitivity` — delegates to {@link resolveAllowedWikiSensitivities}
+ *
+ * Sole production caller: `apps/web/lib/queries/knowledge.ts` (queries `knowledge_page`).
+ */
 export function canAccessKnowledgeSensitivityByPermissions(
   permissions: string[],
   sensitivity: string | null | undefined

@@ -1,3 +1,17 @@
+/**
+ * @module wiki-acl
+ *
+ * ACL helpers for the **`wiki_page_index`** (Karpathy-projection) table.
+ *
+ * Table boundary:
+ * - `wiki_page_index` → use {@link canViewWikiPage} (this module).
+ *   Checks `publishedStatus`, `requiredPermission`, and `sensitivity` together.
+ * - `knowledge_page` (legacy) → use `canAccessKnowledgeSensitivityByPermissions`
+ *   from `rbac.ts`. That helper inspects `sensitivity` only.
+ *
+ * Never use `canAccessKnowledgeSensitivityByPermissions` for `wiki_page_index` rows —
+ * it is unaware of `requiredPermission` / `publishedStatus` and will over-permit.
+ */
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { resolveAllowedWikiSensitivities } from "./rbac.js";
 
