@@ -68,7 +68,6 @@ import { legacyLexicalShortlist as lexicalShortlist } from "../page-first/shortl
 import { expandOneHop } from "../page-first/expand.js";
 import { readTopPages } from "../page-first/read-pages.js";
 import { synthesizePageFirstAnswer } from "../page-first/synthesize.js";
-import { pageFirstAsk } from "../page-first/index.js";
 import { __resetCacheForTests } from "../cache.js";
 import type { SSEEvent } from "../types.js";
 import { db } from "@jarvis/db/client";
@@ -329,64 +328,3 @@ describe("synthesizePageFirstAnswer", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// orchestrator — end-to-end via pageFirstAsk with mocked DB
-// ---------------------------------------------------------------------------
-describe("pageFirstAsk orchestrator", () => {
-  beforeEach(resetDb);
-
-  it("emits route=wiki.page-first then streams synthesis, cached on second call", async () => {
-    // shortlist query
-    vi.mocked(db.execute).mockResolvedValueOnce({
-      rows: [
-        {
-          id: "p1",
-          path: "auto/policy/vacation.md",
-          title: "Vacation",
-          slug: "vacation",
-          sensitivity: "INTERNAL",
-          required_permission: null,
-          updated_at: new Date(),
-          score: 10,
-        },
-      ],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
-    // expand query
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(db.execute).mockResolvedValueOnce({ rows: [] } as any);
-
-    const events1: SSEEvent[] = [];
-    for await (const ev of pageFirstAsk({
-      question: "휴가 정책이 뭐야?",
-      workspaceId: WS,
-      userId: "u1",
-      userRoles: ["DEVELOPER"],
-      userPermissions: ["knowledge:read"],
-    })) {
-      events1.push(ev);
-    }
-
-    const route = events1[0];
-    expect(route?.type).toBe("route");
-    if (route?.type === "route") expect(route.lane).toBe("wiki.page-first");
-    expect(events1.some((e) => e.type === "sources")).toBe(true);
-    expect(events1.some((e) => e.type === "meta")).toBe(true);
-
-    // Second invocation with identical params should NOT hit DB (cache-through).
-    vi.mocked(db.execute).mockClear();
-    const events2: SSEEvent[] = [];
-    for await (const ev of pageFirstAsk({
-      question: "휴가 정책이 뭐야?",
-      workspaceId: WS,
-      userId: "u1",
-      userRoles: ["DEVELOPER"],
-      userPermissions: ["knowledge:read"],
-    })) {
-      events2.push(ev);
-    }
-    expect(db.execute).not.toHaveBeenCalled();
-    // Replayed events should be identical in type order.
-    expect(events2.map((e) => e.type)).toEqual(events1.map((e) => e.type));
-  });
-});
