@@ -54,10 +54,9 @@ export interface DirectorySourceRef {
 // ---------------------------------------------------------------------------
 // Wiki Page SourceRef — page-first navigation (Phase-W2 T2)
 //
-// Emitted by `packages/ai/page-first/*` when the feature flag
-// FEATURE_PAGE_FIRST_QUERY is on. Citations are surfaced to the UI in
-// `[[page-slug]]` form; the editor can then resolve the slug to a real
-// wiki URL via `packages/wiki-fs/wikilink`.
+// Emitted by `packages/ai/page-first/*`. Citations are surfaced to the UI in
+// `[[page-slug]]` form; the editor resolves the slug to a real wiki URL via
+// `packages/wiki-fs/wikilink`.
 // ---------------------------------------------------------------------------
 export interface WikiPageSourceRef {
   kind: "wiki-page";

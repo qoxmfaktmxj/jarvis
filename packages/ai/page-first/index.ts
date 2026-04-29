@@ -3,10 +3,8 @@
  *
  * Phase-W2 T2 — page-first navigation orchestrator.
  *
- * Public entry: `pageFirstAsk(query)` — a drop-in async generator that
- * `ask.ts` dispatches to when FEATURE_PAGE_FIRST_QUERY=true. The legacy
- * vector/claims/chunks pipeline stays untouched in ask.ts; this module
- * only has to emit the same SSE shape.
+ * Public entry: `pageFirstAsk(query)` — async generator that emits SSEEvent
+ * stream. ask.ts 위키 경로의 메인 엔트리포인트.
  *
  * Pipeline (FEATURE_LLM_SHORTLIST=true):
  *   1. inferDomain → getCatalog (RBAC filtered)
