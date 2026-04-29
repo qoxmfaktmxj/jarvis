@@ -12,7 +12,7 @@ import { useAskAI } from "@/lib/hooks/useAskAI";
 import { Capy } from "@/components/layout/Capy";
 import { GlobeLoader } from "@/components/layout/GlobeLoader";
 import { AnswerCard } from "./AnswerCard";
-import { ClaimBadge } from "./ClaimBadge";
+import { AnswerBody } from "./AnswerBody";
 import { SourceRefCard } from "./SourceRefCard";
 import { AskModelPopover, type AskModelOption } from "./AskModelPopover";
 import { AskContextGauge } from "./AskContextGauge";
@@ -61,29 +61,6 @@ interface AskPanelProps {
   workspaceId: string;
   /** 기존 대화 복원 시 서버에서 미리 집계한 누적 토큰. 없으면 0. */
   initialTokenUsage?: InitialTokenUsage | null;
-}
-
-function AnswerText({ text, sources }: { text: string; sources: SourceRef[] }) {
-  const parts = text.split(/(\[source:\d+\])/g);
-
-  return (
-    <span>
-      {parts.map((part, index) => {
-        const match = part.match(/^\[source:(\d+)\]$/);
-        if (match?.[1]) {
-          return (
-            <ClaimBadge
-              key={index}
-              sourceNumber={parseInt(match[1], 10)}
-              sources={sources}
-            />
-          );
-        }
-
-        return <span key={index}>{part}</span>;
-      })}
-    </span>
-  );
 }
 
 export function AskPanel({
@@ -372,14 +349,14 @@ export function AskPanel({
                           />
                         </div>
                       ) : null}
-                      <div className="prose prose-sm max-w-none text-sm leading-relaxed text-[--fg-primary]">
-                        {answer ? (
-                          <AnswerText text={answer} sources={sources} />
-                        ) : null}
-                        {isStreaming && answer && (
-                          <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse align-text-bottom bg-[--brand-primary-text]" />
-                        )}
-                      </div>
+                      {answer ? (
+                        <div className="relative">
+                          <AnswerBody text={answer} sources={sources} workspaceId={workspaceId} />
+                          {isStreaming && (
+                            <span className="ml-0.5 inline-block h-4 w-[2px] animate-pulse align-text-bottom bg-[--brand-primary-text]" />
+                          )}
+                        </div>
+                      ) : null}
 
                       {!isStreaming && sources.length > 0 && (
                         <div className="space-y-2 pt-1">
