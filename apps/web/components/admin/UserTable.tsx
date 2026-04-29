@@ -103,8 +103,9 @@ export function UserTable({ orgOptions, positionOptions, jobTitleOptions }: Prop
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ id }),
     });
-    if (res.ok) alert(t('toast.passwordResetStub'));
-    else       alert('Failed to request password reset');
+    if (res.status === 501) alert(t('toast.passwordResetNotImplemented'));
+    else if (res.ok) alert(t('toast.passwordResetStub'));
+    else alert(t('toast.passwordResetFailed'));
   };
 
   const handleExport = () => {

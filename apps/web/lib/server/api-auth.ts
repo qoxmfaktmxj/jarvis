@@ -17,7 +17,7 @@ function resolveRequestSessionId(request: NextRequest) {
 
 export async function requireApiSession(
   request: NextRequest,
-  permission: string
+  permission?: string
 ): Promise<ApiAuthResult> {
   const sessionId = resolveRequestSessionId(request);
   if (!sessionId) {
@@ -33,7 +33,7 @@ export async function requireApiSession(
     };
   }
 
-  if (!hasPermission(session, permission)) {
+  if (permission !== undefined && !hasPermission(session, permission)) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 })
     };
