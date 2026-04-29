@@ -1,3 +1,4 @@
+import { sql, type SQL } from "drizzle-orm";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import type { JarvisSession } from "./types.js";
 
@@ -94,6 +95,60 @@ export function buildLegacyKnowledgeSensitivitySqlFilter(
   }
 
   return "AND 1 = 0";
+}
+
+/**
+ * SQL fragment version of `buildLegacyKnowledgeSensitivitySqlFilter`.
+ * Returns a Drizzle `SQL` fragment (no string concatenation) so callers
+ * can embed it directly inside `sql\`\`` templates without `sql.raw()`.
+ *
+ * Usage:  `${buildLegacyKnowledgeSensitivitySqlFragment(perms)}`
+ */
+export function buildLegacyKnowledgeSensitivitySqlFragment(
+  permissions: string[]
+): SQL {
+  if (
+    PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
+      permissions.includes(permission)
+    )
+  ) {
+    return sql``;
+  }
+
+  if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
+    return sql.raw("AND sensitivity NOT IN ('RESTRICTED', 'SECRET_REF_ONLY')");
+  }
+
+  return sql.raw("AND 1 = 0");
+}
+
+/**
+ * SQL fragment version of `buildWikiSensitivitySqlFilter`.
+ * Returns a Drizzle `SQL` fragment so callers can drop `sql.raw()` at call site.
+ *
+ * Usage:  `${buildWikiSensitivitySqlFragment(perms)}`
+ * or:     `${buildWikiSensitivitySqlFragment(perms, { column: 'wpi.sensitivity' })}`
+ */
+export function buildWikiSensitivitySqlFragment(
+  permissions: string[],
+  options: { column?: string } = {}
+): SQL {
+  const col = options.column ?? "sensitivity";
+
+  if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
+    return sql``;
+  }
+
+  const allowed = resolveAllowedWikiSensitivities(permissions);
+
+  if (allowed.length === 0) {
+    return sql.raw("AND 1 = 0");
+  }
+
+  // Build IN (...) clause with static whitelisted values only.
+  // Values come exclusively from WIKI_SENSITIVITIES constant — no user input.
+  const quotedList = allowed.map((v) => `'${v}'`).join(", ");
+  return sql.raw(`AND ${col} IN (${quotedList})`);
 }
 
 export function getAllowedWikiSensitivityValues(
