@@ -32,7 +32,7 @@
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 import { pgTextArray } from "../sql-utils.js";
 
 export interface ShortlistHit {
@@ -107,12 +107,9 @@ export async function legacyLexicalShortlist(
   // synthesis step will then refuse to answer.)
   const hasTokens = tokens.length > 0;
 
-  const sensitivityFilter = buildWikiSensitivitySqlFilter(userPermissions, {
+  const sensitivityClause = buildWikiSensitivitySqlFragment(userPermissions, {
     column: "wpi.sensitivity",
-  }).trim();
-  const sensitivityClause = sensitivityFilter
-    ? sql.raw(` ${sensitivityFilter}`)
-    : sql.empty();
+  });
 
   const permArray = pgTextArray(userPermissions);
 
