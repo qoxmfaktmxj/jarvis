@@ -3,17 +3,19 @@
 /**
  * Sidebar — rail(60px) / expanded(220px) 2모드.
  *
- * - rail:     아이콘만, 활성은 좌측 3px 인디케이터
- * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터
+ * - rail:     아이콘만, 활성은 좌측 3px 인디케이터. 헤더는 토글 버튼만.
+ * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터.
+ *             헤더는 [Capy + "Jarvis"] 좌측, 토글 버튼 우측 끝.
  *
- * 모드 전환은 TweaksPanel에서. localStorage 키 `jv.sidebar`.
+ * 모드 전환은 헤더의 토글 버튼. localStorage 키 `jv.sidebar`.
  * 색상은 app.jsx 디자인 토큰(--panel/--line/--ink/--muted/--line2) 사용.
  */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Capy } from "./Capy";
-import { useSidebar } from "./uiPrefs";
+import { setSidebar, useSidebar } from "./uiPrefs";
 import { NAV_ITEMS, ADMIN_ITEM, type NavItem } from "@/lib/routes";
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
@@ -102,29 +104,51 @@ export function Sidebar() {
         transition: "width .2s ease",
       }}
     >
-      {/* Brand header — clicking goes to /dashboard */}
-      <Link
-        href="/dashboard"
-        aria-label="Dashboard"
-        className="flex items-center border-b transition-colors hover:bg-[--bg-surface]"
+      {/* Brand header — expanded: [Capy + Jarvis] 좌측, toggle 우측 끝. rail: toggle만 가운데. */}
+      <div
+        className="flex items-center border-b"
         style={{
           height: "var(--topbar-height)",
-          padding: expanded ? "0 16px" : 0,
+          padding: expanded ? "0 8px 0 16px" : 0,
           justifyContent: expanded ? "flex-start" : "center",
           borderColor: "var(--line)",
           gap: 8,
         }}
       >
-        <Capy name="reading" size={28} priority className="shrink-0 rounded-full" />
         {expanded ? (
-          <span
-            className="text-display text-[15px] font-bold tracking-tight"
-            style={{ color: "var(--ink)" }}
+          <Link
+            href="/dashboard"
+            aria-label="Dashboard"
+            className="flex items-center transition-opacity hover:opacity-80"
+            style={{ gap: 8 }}
           >
-            Jarvis
-          </span>
+            <Capy name="reading" size={28} priority className="shrink-0 rounded-full" />
+            <span
+              className="text-display text-[15px] font-bold tracking-tight"
+              style={{ color: "var(--ink)" }}
+            >
+              Jarvis
+            </span>
+          </Link>
         ) : null}
-      </Link>
+        <button
+          type="button"
+          onClick={() => setSidebar(expanded ? "rail" : "expanded")}
+          aria-label={expanded ? "사이드바 접기" : "사이드바 펼치기"}
+          aria-pressed={!expanded}
+          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
+          style={{
+            color: "var(--muted)",
+            marginLeft: expanded ? "auto" : undefined,
+          }}
+        >
+          {expanded ? (
+            <PanelLeftClose className="h-[18px] w-[18px]" aria-hidden />
+          ) : (
+            <PanelLeftOpen className="h-[18px] w-[18px]" aria-hidden />
+          )}
+        </button>
+      </div>
 
       {/* Nav */}
       <nav

@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * Topbar — 52px. 좌측 라우트 라벨, 중앙 커맨드 팔레트 트리거, 우측 테마/알림/Tweaks/유저.
+ * Topbar — 52px. 좌측 라우트 라벨, 중앙 커맨드 팔레트 트리거, 우측 테마/알림/유저.
  *
  * 브랜드 Capy는 Sidebar 헤더로 이동했으므로 여기서는 제거.
  * 라우트 라벨은 usePathname 기반 정적 lookup (i18n 불필요).
  */
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, Search, Settings } from "lucide-react";
+import { Bell, Moon, Search, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
-import { TweaksPanel } from "./TweaksPanel";
+import { setTheme, useTheme } from "./uiPrefs";
 import { ROUTE_LABELS } from "@/lib/routes";
 
 function routeLabel(pathname: string): string {
@@ -24,13 +24,18 @@ function routeLabel(pathname: string): string {
 
 export function Topbar({ userName }: { userName: string }) {
   const pathname = usePathname();
-  const [tweaksOpen, setTweaksOpen] = useState(false);
+  const theme = useTheme();
+  const isDark = theme === "dark";
 
   const openPalette = useCallback(() => {
     // CommandPalette는 window keydown(⌘K)으로 트리거되는 기존 계약을 유지.
     const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
     window.dispatchEvent(evt);
   }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(isDark ? "light" : "dark");
+  }, [isDark]);
 
   return (
     <>
@@ -95,6 +100,21 @@ export function Topbar({ userName }: { userName: string }) {
 
         <button
           type="button"
+          onClick={toggleTheme}
+          aria-label={isDark ? "라이트 모드로 전환" : "다크 모드로 전환"}
+          aria-pressed={isDark}
+          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
+          style={{ color: "var(--muted)" }}
+        >
+          {isDark ? (
+            <Sun className="h-[18px] w-[18px]" aria-hidden />
+          ) : (
+            <Moon className="h-[18px] w-[18px]" aria-hidden />
+          )}
+        </button>
+
+        <button
+          type="button"
           aria-label="알림"
           className="relative rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
           style={{ color: "var(--muted)" }}
@@ -114,20 +134,6 @@ export function Topbar({ userName }: { userName: string }) {
           />
         </button>
 
-        <button
-          type="button"
-          onClick={() => setTweaksOpen((v) => !v)}
-          aria-label="Tweaks"
-          aria-pressed={tweaksOpen}
-          className="rounded-lg p-1.5 transition-colors hover:bg-[color:var(--line2)]"
-          style={{
-            color: tweaksOpen ? "var(--ink)" : "var(--muted)",
-            background: tweaksOpen ? "var(--line2)" : "transparent",
-          }}
-        >
-          <Settings className="h-[18px] w-[18px]" aria-hidden />
-        </button>
-
         <div
           aria-hidden
           style={{ width: 1, height: 20, background: "var(--line)" }}
@@ -137,7 +143,6 @@ export function Topbar({ userName }: { userName: string }) {
       </header>
 
       <CommandPalette />
-      <TweaksPanel open={tweaksOpen} onClose={() => setTweaksOpen(false)} />
     </>
   );
 }

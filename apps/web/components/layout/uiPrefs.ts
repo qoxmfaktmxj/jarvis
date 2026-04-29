@@ -21,13 +21,13 @@ const THEME_KEY = "jv.theme";
 const SIDEBAR_EVENT = "jv:sidebar-change";
 const THEME_EVENT = "jv:theme-change";
 
-export const DEFAULT_SIDEBAR: SidebarMode = "rail";
+export const DEFAULT_SIDEBAR: SidebarMode = "expanded";
 export const DEFAULT_THEME: ThemeMode = "light";
 
 function readSidebar(): SidebarMode {
   if (typeof window === "undefined") return DEFAULT_SIDEBAR;
   const v = window.localStorage.getItem(SIDEBAR_KEY);
-  return v === "expanded" ? "expanded" : "rail";
+  return v === "rail" ? "rail" : "expanded";
 }
 
 function readTheme(): ThemeMode {
@@ -87,7 +87,7 @@ export const UI_PREFS_BOOTSTRAP = `
   var s=localStorage.getItem('${SIDEBAR_KEY}');
   var t=localStorage.getItem('${THEME_KEY}');
   var root=document.documentElement;
-  root.setAttribute('data-sidebar', s==='expanded'?'expanded':'rail');
+  root.setAttribute('data-sidebar', s==='rail'?'rail':'expanded');
   root.setAttribute('data-theme', t==='dark'?'dark':'light');
 }catch(e){}})();
 `.trim();
