@@ -160,6 +160,63 @@ describe('verifyMagicBytes — text/plain', () => {
     const result = verifyMagicBytes(buf, 'text/plain');
     expect(result.ok).toBe(false);
   });
+
+  // ─── Bypass attempt: leading whitespace before <script> ──────────────────
+  it('rejects <script> with leading space (bypass via whitespace)', () => {
+    const result = verifyMagicBytes(fromAscii('   <script>alert(1)</script>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <script> with leading tab (bypass via whitespace)', () => {
+    const result = verifyMagicBytes(fromAscii('\t<script>alert(1)</script>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <script> with leading newline (bypass via whitespace)', () => {
+    const result = verifyMagicBytes(fromAscii('\n<script>alert(1)</script>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects BOM + <script> (bypass via UTF-8 BOM \\xEF\\xBB\\xBF)', () => {
+    // UTF-8 BOM: EF BB BF
+    const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+    const rest = fromAscii('<script>alert(1)</script>');
+    const combined = new Uint8Array(bom.length + rest.length);
+    combined.set(bom);
+    combined.set(rest, bom.length);
+    const result = verifyMagicBytes(combined, 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <!doctype html> (bypass via doctype)', () => {
+    const result = verifyMagicBytes(fromAscii('<!doctype html><html>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <!DOCTYPE HTML> case-insensitive (doctype uppercase)', () => {
+    const result = verifyMagicBytes(fromAscii('<!DOCTYPE HTML><html>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <html ...> (bypass via html tag)', () => {
+    const result = verifyMagicBytes(fromAscii('<html lang="ko">'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <iframe src=...> (bypass via iframe tag)', () => {
+    const result = verifyMagicBytes(fromAscii('<iframe src="evil.html"></iframe>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects <svg ...> (bypass via svg tag)', () => {
+    const result = verifyMagicBytes(fromAscii('<svg xmlns="http://www.w3.org/2000/svg"></svg>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects SCRIPT tag uppercase (case-insensitive check)', () => {
+    const result = verifyMagicBytes(fromAscii(' <SCRIPT>alert(1)</SCRIPT>'), 'text/plain');
+    expect(result.ok).toBe(false);
+  });
 });
 
 // ─── text/markdown ──────────────────────────────────────────────────────────
@@ -172,6 +229,21 @@ describe('verifyMagicBytes — text/markdown', () => {
   it('rejects HTML leading < declared as text/markdown (spoof 9)', () => {
     const bytes = fromAscii('<script>alert(1)</script>');
     const result = verifyMagicBytes(bytes, 'text/markdown');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects BOM + <script> declared as text/markdown', () => {
+    const bom = new Uint8Array([0xef, 0xbb, 0xbf]);
+    const rest = fromAscii('<script>alert(1)</script>');
+    const combined = new Uint8Array(bom.length + rest.length);
+    combined.set(bom);
+    combined.set(rest, bom.length);
+    const result = verifyMagicBytes(combined, 'text/markdown');
+    expect(result.ok).toBe(false);
+  });
+
+  it('rejects leading whitespace + <iframe> declared as text/markdown', () => {
+    const result = verifyMagicBytes(fromAscii('\n\t<iframe src="x">'), 'text/markdown');
     expect(result.ok).toBe(false);
   });
 });

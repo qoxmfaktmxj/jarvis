@@ -70,18 +70,63 @@ function zipVerifier(bytes: Uint8Array): MagicResult {
   return { ok: false, reason: 'Missing ZIP/PK magic bytes (PK\\x03\\x04)' };
 }
 
+// Dangerous HTML/JS tag patterns that enable XSS via browser content sniffing.
+// Matched case-insensitively after stripping leading whitespace + BOM.
+const DANGEROUS_TAG_PATTERNS = [
+  '<script',
+  '<iframe',
+  '<svg',
+  '<!doctype',
+  '<html',
+];
+
 function textVerifier(bytes: Uint8Array): MagicResult {
-  // Heuristic 1: must not start with "<" (blocks HTML/SVG/XML injection)
-  if (bytes.length > 0 && bytes[0] === 0x3c /* '<' */) {
-    return { ok: false, reason: 'Text file must not begin with "<" (possible HTML/XML/SVG injection)' };
-  }
-  // Heuristic 2: no NUL byte in first 256 bytes (indicates binary)
   const scanLength = Math.min(bytes.length, 256);
+
+  // Heuristic 1: no NUL byte in first 256 bytes (indicates binary)
   for (let i = 0; i < scanLength; i++) {
     if (bytes[i] === 0x00) {
       return { ok: false, reason: 'Binary content (NUL byte) found in file declared as text' };
     }
   }
+
+  // Heuristic 2: strip leading whitespace (0x09 \t, 0x0a \n, 0x0d \r, 0x20 space)
+  // and UTF-8 BOM (0xEF 0xBB 0xBF), then check for dangerous HTML tags.
+  let start = 0;
+  // Skip UTF-8 BOM
+  if (
+    scanLength >= 3 &&
+    bytes[0] === 0xef &&
+    bytes[1] === 0xbb &&
+    bytes[2] === 0xbf
+  ) {
+    start = 3;
+  }
+  // Skip leading ASCII whitespace
+  while (start < scanLength && (
+    bytes[start] === 0x09 ||
+    bytes[start] === 0x0a ||
+    bytes[start] === 0x0d ||
+    bytes[start] === 0x20
+  )) {
+    start++;
+  }
+
+  // Build lowercase string from the trimmed region for tag scanning
+  const trimmedStr = Array.from(bytes.subarray(start, scanLength))
+    .map((b) => String.fromCharCode(b))
+    .join('')
+    .toLowerCase();
+
+  for (const pattern of DANGEROUS_TAG_PATTERNS) {
+    if (trimmedStr.startsWith(pattern)) {
+      return {
+        ok: false,
+        reason: `Text file must not begin with "${pattern}" (possible HTML/script injection)`,
+      };
+    }
+  }
+
   return { ok: true };
 }
 
