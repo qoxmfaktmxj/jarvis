@@ -128,8 +128,15 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
         });
 
         if (!registerRes.ok) {
-          const err = await registerRes.json().catch(() => ({}));
-          throw new Error((err as { error?: string }).error ?? 'Failed to register file');
+          const registerErr = await registerRes.json().catch(() => ({}));
+          const code = (registerErr as { error?: string }).error;
+          if (code === 'forbidden_object_key') {
+            throw new Error(t('pathTraversal'));
+          }
+          if (code === 'magic_byte_mismatch') {
+            throw new Error(t('magicMismatch', { declared: file.type }));
+          }
+          throw new Error((registerErr as { error?: string }).error ?? 'Failed to register file');
         }
 
         const { rawSourceId } = await registerRes.json() as { rawSourceId: string };

@@ -838,9 +838,7 @@
     "Errors": {
       "magicMismatch": "파일 내용이 선언된 형식과 일치하지 않습니다. ({declared}로 선언되었으나 실제 파일 형식이 다릅니다.)",
       "finalizeFailed": "파일 업로드 검증에 실패했습니다. 다시 시도해주세요.",
-      "pathTraversal": "허용되지 않은 파일 경로입니다.",
-      "fetchFailed": "MinIO에서 파일을 읽는 중 오류가 발생했습니다.",
-      "removeFailed": "업로드된 파일 삭제 중 오류가 발생했습니다."
+      "pathTraversal": "허용되지 않은 파일 경로입니다."
     }
   }
 }
