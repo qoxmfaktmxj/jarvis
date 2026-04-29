@@ -108,7 +108,7 @@ describe('pg-search SQL injection regression', () => {
     const result = await adapter.search({
       q: 'test',
       workspaceId: BASE_WORKSPACE,
-      sortBy: "';DELETE FROM knowledge_page;--",
+      sortBy: "';DELETE FROM knowledge_page;--" as any,
       userPermissions: BASE_PERMS,
       userRoles: ['VIEWER'],
       userId: 'user-test',
