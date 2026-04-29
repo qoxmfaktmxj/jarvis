@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { canViewWikiPage } from "@jarvis/auth";
 import { ok, err, type ToolDefinition } from "./types.js";
 
 const execFileP = promisify(execFile);
@@ -142,7 +142,12 @@ export const wikiGraphQuery: ToolDefinition<WikiGraphQueryInput, WikiGraphQueryO
       let allowedSlugs = new Set<string>();
       if (wikiPageSlugs.length > 0) {
         const rows = await db
-          .select({ slug: wikiPageIndex.slug, sensitivity: wikiPageIndex.sensitivity })
+          .select({
+            slug: wikiPageIndex.slug,
+            sensitivity: wikiPageIndex.sensitivity,
+            requiredPermission: wikiPageIndex.requiredPermission,
+            publishedStatus: wikiPageIndex.publishedStatus,
+          })
           .from(wikiPageIndex)
           .where(
             and(
@@ -153,9 +158,13 @@ export const wikiGraphQuery: ToolDefinition<WikiGraphQueryInput, WikiGraphQueryO
         allowedSlugs = new Set(
           rows
             .filter((r) =>
-              canAccessKnowledgeSensitivityByPermissions(
-                [...ctx.permissions],
-                r.sensitivity,
+              canViewWikiPage(
+                {
+                  sensitivity: r.sensitivity,
+                  requiredPermission: r.requiredPermission,
+                  publishedStatus: r.publishedStatus,
+                },
+                ctx.permissions as string[],
               ),
             )
             .map((r) => r.slug),

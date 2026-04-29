@@ -1,12 +1,13 @@
 // packages/ai/agent/tools/wiki-grep.ts
 //
-// Ask AI harness tool: 위키 페이지를 slug/title 키워드로 검색.
+// Ask AI harness tool: 위키 페이지를 keyword로 검색.
 // 본문은 포함하지 않고 후보 리스트만 반환 — 본문은 wiki-read tool이 담당.
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
-import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
-import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   ok,
   err,
@@ -34,32 +35,25 @@ export interface WikiGrepOutput {
   matches: WikiGrepMatch[];
 }
 
+function escapeIlike(s: string): string {
+  return s.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
 export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
   name: "wiki_grep",
   description:
-    "위키 페이지를 slug/title 키워드로 검색. 본문은 wiki-read 로 후속 조회.",
+    "위키 페이지를 title/slug/aliases/routeKey 키워드로 검색. 본문은 wiki-read 로 후속 조회.",
   parameters: {
     type: "object",
     required: ["query"],
     properties: {
-      query: {
-        type: "string",
-        minLength: 2,
-        description: "검색 키워드 (2자 이상)",
-      },
+      query: { type: "string", minLength: 2 },
       scope: {
         type: "string",
         enum: ["all", "manual", "auto", "procedures"],
         default: "all",
-        description: "검색 범위 필터. 기본값 all",
       },
-      limit: {
-        type: "integer",
-        minimum: 1,
-        maximum: 30,
-        default: 10,
-        description: "반환할 최대 결과 수 (1-30)",
-      },
+      limit: { type: "integer", minimum: 1, maximum: 30, default: 10 },
     },
   },
 
@@ -71,21 +65,35 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
     if (q.length < 2) {
       return err("invalid", "query must be at least 2 characters");
     }
-
     const lim = Math.min(30, Math.max(1, limit));
+    const escaped = escapeIlike(q);
+    const perms = ctx.permissions as string[];
+    const isAdmin = perms.includes(PERMISSIONS.ADMIN_ALL);
+    const allowedSensitivities = resolveAllowedWikiSensitivities(perms);
+
+    if (allowedSensitivities.length === 0) {
+      return ok({ matches: [] });
+    }
+
+    // workspace-relative scope: '%/{zone}/%' 형태로 매칭 (멀티테넌트 안전)
+    const scopeCond =
+      scope === "all"
+        ? sql`true`
+        : sql`${wikiPageIndex.path} LIKE ${`%/${scope}/%`}`;
+
+    // ACL: requiredPermission이 null이거나, caller가 보유, 또는 ADMIN_ALL
+    const requiredPermissionCond = isAdmin
+      ? sql`true`
+      : sql`(${wikiPageIndex.requiredPermission} IS NULL OR ${wikiPageIndex.requiredPermission} = ANY(${perms}))`;
+
+    const publishedCond = isAdmin
+      ? sql`true`
+      : eq(wikiPageIndex.publishedStatus, "published");
+
+    // aliases는 frontmatter->'aliases' (jsonb array of string)
+    const aliasMatch = sql`(${wikiPageIndex.frontmatter} -> 'aliases') ?| ARRAY[${q}]`;
 
     try {
-      // sensitivity 허용 목록 — getAllowedWikiSensitivityValues는 drizzle 조건 아님
-      const allowedSensitivities = getAllowedWikiSensitivityValues(
-        ctx.permissions as string[],
-      );
-
-      // scope 필터: all 이면 조건 없음
-      const scopeCond =
-        scope === "all"
-          ? sql`true`
-          : ilike(wikiPageIndex.path, `wiki/jarvis/${scope}/%`);
-
       const rows = await db
         .select({
           slug: wikiPageIndex.slug,
@@ -98,11 +106,15 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
           and(
             eq(wikiPageIndex.workspaceId, ctx.workspaceId),
             or(
-              ilike(wikiPageIndex.title, `%${q}%`),
-              ilike(wikiPageIndex.slug, `%${q}%`),
+              ilike(wikiPageIndex.title, `%${escaped}%`),
+              ilike(wikiPageIndex.slug, `%${escaped}%`),
+              ilike(wikiPageIndex.routeKey, `%${escaped}%`),
+              aliasMatch,
             ),
             scopeCond,
-            inArray(wikiPageIndex.sensitivity, allowedSensitivities),
+            sql`${wikiPageIndex.sensitivity} = ANY(${allowedSensitivities})`,
+            requiredPermissionCond,
+            publishedCond,
           ),
         )
         .orderBy(wikiPageIndex.title)
@@ -118,10 +130,7 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
         })),
       });
     } catch (e) {
-      return err(
-        "unknown",
-        e instanceof Error ? e.message : String(e),
-      );
+      return err("unknown", e instanceof Error ? e.message : String(e));
     }
   },
 };

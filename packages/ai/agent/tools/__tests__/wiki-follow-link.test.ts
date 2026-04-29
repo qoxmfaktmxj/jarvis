@@ -14,6 +14,8 @@ vi.mock("@jarvis/db/schema", () => ({
     path: "path",
     sensitivity: "sensitivity",
     workspaceId: "workspaceId",
+    requiredPermission: "requiredPermission",
+    publishedStatus: "publishedStatus",
   },
 }));
 
@@ -23,8 +25,9 @@ vi.mock("drizzle-orm", () => ({
   inArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: [col, vals] })),
 }));
 
-vi.mock("@jarvis/auth/rbac", () => ({
-  canAccessKnowledgeSensitivityByPermissions: vi.fn(),
+vi.mock("@jarvis/auth", () => ({
+  canViewWikiPage: vi.fn(),
+  PERMISSIONS: { ADMIN_ALL: "admin:all" },
 }));
 
 vi.mock("@jarvis/wiki-fs", () => ({
@@ -41,7 +44,7 @@ vi.mock("@jarvis/wiki-fs/wikilink", () => ({
 
 // ── imports after mocks ────────────────────────────────────────────────────
 import { db } from "@jarvis/db/client";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { canViewWikiPage } from "@jarvis/auth";
 import { readPage } from "@jarvis/wiki-fs";
 import { splitFrontmatter } from "@jarvis/wiki-fs/frontmatter";
 import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
@@ -102,9 +105,14 @@ describe("wikiFollowLink", () => {
 
   it("source sensitivity forbidden → forbidden", async () => {
     makeSelectChainWithLimit([
-      { path: "wiki/ws/secret.md", sensitivity: "SECRET_REF_ONLY" },
+      {
+        path: "wiki/ws/secret.md",
+        sensitivity: "SECRET_REF_ONLY",
+        requiredPermission: null,
+        publishedStatus: "published",
+      },
     ]);
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockReturnValue(false);
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
     const result = await wikiFollowLink.execute({ from_slug: "secret-page" }, ctx);
     expect(result).toEqual({ ok: false, code: "forbidden", error: expect.any(String) });
@@ -116,16 +124,21 @@ describe("wikiFollowLink", () => {
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       limit: vi.fn().mockResolvedValue([
-        { path: "wiki/ws/source.md", sensitivity: "INTERNAL" },
+        {
+          path: "wiki/ws/source.md",
+          sensitivity: "INTERNAL",
+          requiredPermission: null,
+          publishedStatus: "published",
+        },
       ]),
     };
     // 2차 SELECT: target pages batch
     const targetChain = {
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockResolvedValue([
-        { slug: "a", title: "Page A", sensitivity: "SECRET_REF_ONLY" },
-        { slug: "b", title: "Page B", sensitivity: "INTERNAL" },
-        { slug: "c", title: "Page C", sensitivity: "PUBLIC" },
+        { slug: "a", title: "Page A", sensitivity: "SECRET_REF_ONLY", requiredPermission: null, publishedStatus: "published" },
+        { slug: "b", title: "Page B", sensitivity: "INTERNAL", requiredPermission: null, publishedStatus: "published" },
+        { slug: "c", title: "Page C", sensitivity: "PUBLIC", requiredPermission: null, publishedStatus: "published" },
       ]),
     };
     (db.select as ReturnType<typeof vi.fn>)
@@ -134,7 +147,7 @@ describe("wikiFollowLink", () => {
 
     // source: 접근 가능
     // a: 접근 불가, b,c: 접근 가능
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>)
+    (canViewWikiPage as ReturnType<typeof vi.fn>)
       .mockReturnValueOnce(true)   // source
       .mockReturnValueOnce(false)  // a
       .mockReturnValueOnce(true)   // b
@@ -165,9 +178,14 @@ describe("wikiFollowLink", () => {
 
   it("본문에 wikilink 없으면 → { links: [] }", async () => {
     makeSelectChainWithLimit([
-      { path: "wiki/ws/empty.md", sensitivity: "PUBLIC" },
+      {
+        path: "wiki/ws/empty.md",
+        sensitivity: "PUBLIC",
+        requiredPermission: null,
+        publishedStatus: "published",
+      },
     ]);
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockReturnValue(true);
     (readPage as ReturnType<typeof vi.fn>).mockResolvedValue("no links here");
     (splitFrontmatter as ReturnType<typeof vi.fn>).mockReturnValue({
       frontmatter: null,
@@ -181,12 +199,83 @@ describe("wikiFollowLink", () => {
 
   it("readPage 예외 → unknown", async () => {
     makeSelectChainWithLimit([
-      { path: "wiki/ws/err.md", sensitivity: "INTERNAL" },
+      {
+        path: "wiki/ws/err.md",
+        sensitivity: "INTERNAL",
+        requiredPermission: null,
+        publishedStatus: "published",
+      },
     ]);
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockReturnValue(true);
     (readPage as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("disk error"));
 
     const result = await wikiFollowLink.execute({ from_slug: "err-page" }, ctx);
     expect(result).toEqual({ ok: false, code: "unknown", error: "disk error" });
+  });
+
+  // new ACL tests
+  it("source가 draft면 forbidden", async () => {
+    makeSelectChainWithLimit([
+      {
+        path: "wiki/ws/draft.md",
+        sensitivity: "INTERNAL",
+        requiredPermission: null,
+        publishedStatus: "draft",
+      },
+    ]);
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+    const result = await wikiFollowLink.execute({ from_slug: "draft-page" }, ctx);
+    expect(result).toEqual({ ok: false, code: "forbidden", error: expect.any(String) });
+  });
+
+  it("target 중 requiredPermission 있는 것은 silent drop", async () => {
+    // source: published, 접근 가능
+    const sourceChain = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue([
+        {
+          path: "wiki/ws/source.md",
+          sensitivity: "INTERNAL",
+          requiredPermission: null,
+          publishedStatus: "published",
+        },
+      ]),
+    };
+    // targets: 하나는 requiredPermission='project.access:secret', 하나는 null
+    const targetChain = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockResolvedValue([
+        { slug: "open", title: "Open Page", sensitivity: "INTERNAL", requiredPermission: null, publishedStatus: "published" },
+        { slug: "secret", title: "Secret Page", sensitivity: "INTERNAL", requiredPermission: "project.access:secret", publishedStatus: "published" },
+      ]),
+    };
+    (db.select as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(sourceChain)
+      .mockReturnValueOnce(targetChain);
+
+    (canViewWikiPage as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(true)   // source OK
+      .mockReturnValueOnce(true)   // open OK
+      .mockReturnValueOnce(false); // secret blocked
+
+    (readPage as ReturnType<typeof vi.fn>).mockResolvedValue("[[open]][[secret]]");
+    (splitFrontmatter as ReturnType<typeof vi.fn>).mockReturnValue({
+      frontmatter: null,
+      body: "[[open]][[secret]]",
+    });
+    (parseWikilinks as ReturnType<typeof vi.fn>).mockReturnValue([
+      { target: "open", raw: "[[open]]" },
+      { target: "secret", raw: "[[secret]]" },
+    ]);
+
+    const result = await wikiFollowLink.execute({ from_slug: "source-page" }, ctx);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const slugs = result.data.links.map((l) => l.slug);
+      expect(slugs).toContain("open");
+      expect(slugs).not.toContain("secret");
+    }
   });
 });
