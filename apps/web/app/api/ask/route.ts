@@ -239,38 +239,40 @@ export async function POST(request: NextRequest) {
           const assistantTokens = streamSuccess ? totalTokens : null;
 
           try {
-            await db.insert(askMessage).values([
-              {
-                conversationId: convId,
-                role: 'user',
-                content: body.question,
-                sources: [],
-                lane: null,
-                totalTokens: null,
-                sortOrder: baseOrder,
-                createdAt: now,
-              },
-              {
-                conversationId: convId,
-                role: 'assistant',
-                content: assistantContent,
-                sources: collectedSources as unknown[],
-                lane: assistantLane,
-                totalTokens: assistantTokens,
-                sortOrder: baseOrder + 1,
-                createdAt: now,
-              },
-            ]);
+            await db.transaction(async (tx) => {
+              await tx.insert(askMessage).values([
+                {
+                  conversationId: convId,
+                  role: 'user',
+                  content: body.question,
+                  sources: [],
+                  lane: null,
+                  totalTokens: null,
+                  sortOrder: baseOrder,
+                  createdAt: now,
+                },
+                {
+                  conversationId: convId,
+                  role: 'assistant',
+                  content: assistantContent,
+                  sources: collectedSources as unknown[],
+                  lane: assistantLane,
+                  totalTokens: assistantTokens,
+                  sortOrder: baseOrder + 1,
+                  createdAt: now,
+                },
+              ]);
 
-            // conversation의 message_count 증분 + last_message_at 갱신
-            await db
-              .update(askConversation)
-              .set({
-                messageCount: sql`${askConversation.messageCount} + 2`,
-                lastMessageAt: now,
-                updatedAt: now,
-              })
-              .where(eq(askConversation.id, convId));
+              // conversation의 message_count 증분 + last_message_at 갱신
+              await tx
+                .update(askConversation)
+                .set({
+                  messageCount: sql`${askConversation.messageCount} + 2`,
+                  lastMessageAt: now,
+                  updatedAt: now,
+                })
+                .where(eq(askConversation.id, convId));
+            });
           } catch (dbErr) {
             // 메시지 저장 실패는 스트림에 영향 주지 않음 — 로그만 남김
             console.error('[ask/route] Failed to persist messages:', dbErr);

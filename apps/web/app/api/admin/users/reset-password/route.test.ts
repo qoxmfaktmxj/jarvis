@@ -30,11 +30,11 @@ function make(body: unknown) {
 }
 
 describe('POST /api/admin/users/reset-password', () => {
-  it('returns 200 with stub flag when user exists', async () => {
+  it('returns 501 with not_implemented error when user exists', async () => {
     const res = await POST(make({ id: '11111111-1111-1111-1111-111111111111' }));
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(501);
     const json = await res.json();
-    expect(json.stub).toBe(true);
+    expect(json.error).toBe('not_implemented');
   });
 
   it('returns 400 when id is missing', async () => {

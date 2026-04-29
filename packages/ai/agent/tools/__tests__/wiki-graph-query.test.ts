@@ -29,7 +29,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 vi.mock("@jarvis/auth/rbac", () => ({
-  canAccessKnowledgeSensitivityByPermissions: vi.fn(),
+  getAllowedWikiSensitivityValues: vi.fn().mockReturnValue(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]),
 }));
 
 // ---- import after mocks ---------------------------------------------------
@@ -37,7 +37,7 @@ vi.mock("@jarvis/auth/rbac", () => ({
 import { existsSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { db } from "@jarvis/db/client";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
 import { wikiGraphQuery } from "../wiki-graph-query.js";
 
 // ---- helpers -------------------------------------------------------------
@@ -66,7 +66,7 @@ function makeExecFileError(message: string) {
   );
 }
 
-function mockDbSelect(rows: Array<{ slug: string; sensitivity: string }>) {
+function mockDbSelect(rows: Array<{ slug: string; sensitivity?: string }>) {
   (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockResolvedValue(rows),
@@ -80,7 +80,7 @@ describe("wikiGraphQuery tool", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (getAllowedWikiSensitivityValues as ReturnType<typeof vi.fn>).mockReturnValue(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]);
     mockDbSelect([]);
   });
 
@@ -169,14 +169,10 @@ describe("wikiGraphQuery tool", () => {
     };
     makeExecFileOk(payload);
 
-    mockDbSelect([
-      { slug: "wiki-allowed", sensitivity: "INTERNAL" },
-      { slug: "wiki-forbidden", sensitivity: "SECRET_REF_ONLY" },
-    ]);
-
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockImplementation(
-      (_perms: string[], sensitivity: string) => sensitivity !== "SECRET_REF_ONLY"
-    );
+    // 새 패턴: DB WHERE inArray(sensitivity, allowedSensitivities)로 필터링
+    // → DB가 허용된 슬러그만 반환 (wiki-forbidden은 RESTRICTED라서 제외됨)
+    (getAllowedWikiSensitivityValues as ReturnType<typeof vi.fn>).mockReturnValue(["PUBLIC", "INTERNAL"]);
+    mockDbSelect([{ slug: "wiki-allowed" }]);
 
     const result = await wikiGraphQuery.execute({ mode: "search", query: "pages" }, ctx);
     expect(result.ok).toBe(true);

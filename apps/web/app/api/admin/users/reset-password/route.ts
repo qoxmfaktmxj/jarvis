@@ -29,9 +29,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    stub: true,
-    message: 'Password reset stub — auth system pending',
-  });
+  return NextResponse.json({ error: 'not_implemented' }, { status: 501 });
 }

@@ -74,6 +74,8 @@
       },
       "toast": {
         "passwordResetStub": "비밀번호 초기화 요청됨 (스텁 — 인증 시스템 연동 대기)",
+        "passwordResetNotImplemented": "비밀번호 초기화 기능이 아직 구현되지 않았습니다. 인증 시스템 연동 후 사용 가능합니다.",
+        "passwordResetFailed": "비밀번호 초기화 요청에 실패했습니다.",
         "lockChanged": "상태가 변경되었습니다",
         "exportStarted": "다운로드 중…"
       }

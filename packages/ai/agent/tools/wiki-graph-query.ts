@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
 import { ok, err, type ToolDefinition } from "./types.js";
 
 const execFileP = promisify(execFile);
@@ -141,25 +141,18 @@ export const wikiGraphQuery: ToolDefinition<WikiGraphQueryInput, WikiGraphQueryO
 
       let allowedSlugs = new Set<string>();
       if (wikiPageSlugs.length > 0) {
+        const allowedSensitivities = getAllowedWikiSensitivityValues([...ctx.permissions]);
         const rows = await db
-          .select({ slug: wikiPageIndex.slug, sensitivity: wikiPageIndex.sensitivity })
+          .select({ slug: wikiPageIndex.slug })
           .from(wikiPageIndex)
           .where(
             and(
               eq(wikiPageIndex.workspaceId, ctx.workspaceId),
               inArray(wikiPageIndex.slug, wikiPageSlugs),
+              inArray(wikiPageIndex.sensitivity, allowedSensitivities),
             ),
           );
-        allowedSlugs = new Set(
-          rows
-            .filter((r) =>
-              canAccessKnowledgeSensitivityByPermissions(
-                [...ctx.permissions],
-                r.sensitivity,
-              ),
-            )
-            .map((r) => r.slug),
-        );
+        allowedSlugs = new Set(rows.map((r) => r.slug));
       }
 
       // 6. 가시 노드 필터링: wiki-page 가 아닌 노드는 모두 통과
