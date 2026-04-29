@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { buildSessionCookieOptions } from "@jarvis/auth/cookie";
 import { createSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { role, user, userRole } from "@jarvis/db/schema";
@@ -79,13 +80,17 @@ export async function POST(request: NextRequest) {
   });
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set("sessionId", sessionId, {
-    httpOnly: true,
-    secure: false,
-    maxAge: Math.floor(sessionLifetimeMs / 1000),
-    sameSite: "lax",
-    path: "/",
-  });
+  response.cookies.set(
+    "sessionId",
+    sessionId,
+    buildSessionCookieOptions(
+      {
+        cookieDomain: process.env.COOKIE_DOMAIN,
+        isProduction: process.env.NODE_ENV === "production",
+      },
+      sessionLifetimeMs,
+    ),
+  );
 
   return response;
 }
