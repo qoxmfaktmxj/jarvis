@@ -13,7 +13,7 @@
 
 Yess는 Jarvis와 **같은 사내 직원 풀**을 대상으로 하는 별도 시스템(별도 레포·별도 서버)이다. Postgres DB만 공유한다. 본 변경의 목표:
 
-1. 사용자가 한 번 Jarvis에 로그인하면 `yess.회사.com`(서브도메인)에서도 추가 로그인 없이 접근 가능
+1. 사용자가 한 번 Jarvis에 로그인하면 `yess.isusystem.com`(서브도메인)에서도 추가 로그인 없이 접근 가능
 2. 로그인 UI/세션 발급 책임을 **Jarvis 한 곳에 응집** (Yess는 검증만)
 3. Yess 개발자가 cold-start로 받아 바로 작업할 수 있는 **인계 가이드 발행**
 4. Yess가 별도 레포라도 코드 의존성 0 — 인증 데이터는 DB SELECT, 타입만 복사
@@ -25,7 +25,7 @@ Yess는 Jarvis와 **같은 사내 직원 풀**을 대상으로 하는 별도 시
 - `apps/web/app/api/auth/login/route.ts` — 쿠키 발급 시 `domain` 옵션을 환경변수(`COOKIE_DOMAIN`) 기반으로 조건부 적용
 - `apps/web/app/api/auth/logout/route.ts` — 쿠키 클리어 시 같은 `domain` 적용 + `?return=` 화이트리스트 리다이렉트 지원
 - `apps/web/app/(auth)/login/_lib/safe-redirect.ts` — 새 함수 `safeReturnUrl(raw, allowedHosts, fallback)` 추가 (path 또는 화이트리스트 호스트의 풀 URL만 통과)
-- `apps/web/app/(auth)/login/page.tsx` — 로그인 성공 후 `safeReturnUrl()` 사용해 풀 URL redirect 허용 (`yess.회사.com/...` 등)
+- `apps/web/app/(auth)/login/page.tsx` — 로그인 성공 후 `safeReturnUrl()` 사용해 풀 URL redirect 허용 (`yess.isusystem.com/...` 등)
 - `packages/auth/cookie.ts` 신설 — `buildSessionCookieOptions(env, lifetimeMs)` 단일 소스 (login/logout이 공유)
 - `packages/auth/return-url.ts` 신설 — `validateReturnUrl(raw, allowedHosts, fallback)` 서버사이드 검증 (logout 라우트 등에서 사용)
 - `.env.example` — `COOKIE_DOMAIN`, `ALLOWED_RETURN_HOSTS` 신설 + 주석
@@ -38,20 +38,22 @@ Yess는 Jarvis와 **같은 사내 직원 풀**을 대상으로 하는 별도 시
 - Yess 레포 자체 코드 (별도 인계, 본 문서 §10 가이드 적용)
 - Yess READ-ONLY Postgres user 생성 (DBA 작업)
 - JWT 마이그레이션 (현행 DB 세션 유지 — 변경 이유 없음)
-- 통합 인증 도메인(`auth.회사.com`) 신설 (3번째 앱 추가 시 재검토)
+- 통합 인증 도메인(`auth.isusystem.com`) 신설 (3번째 앱 추가 시 재검토)
 - OAuth/SAML 외부 IDP 연동
 - Yess 메뉴별 권한 코드 추가 (Yess 자체 정의 — 본 PR 변경 0)
 - CSRF 토큰 도입 (현재 미구현, 본 PR 외)
 - 운영 비밀번호 해싱(bcrypt) 도입 (현재 임시 dev-accounts 기반, 별도 PR)
 
-## 3. Locked decisions (브레인스토밍 Q1–Q4)
+## 3. Locked decisions (브레인스토밍 Q1–Q6)
 
 | # | 결정 | 요약 |
 |---|---|---|
 | Q1 | **사용자 풀** | Jarvis `user` 테이블 100% 공유. Yess는 새 user 테이블/회원가입 신설 금지. 일부 직원이 일부 메뉴만 보는 차등 가시성은 RBAC 권한 추가로 해결 |
-| Q2 | **도메인 구조** | 같은 등록 도메인 하위 서브도메인 (`jarvis.회사.com` / `yess.회사.com`). 부모 도메인(`.회사.com`)에 쿠키 발급하여 자동 공유 |
-| Q3 | **로그인 진입점** | Jarvis 단독. Yess는 미인증 시 `jarvis.회사.com/login?redirect=<full-url>`로 302 |
+| Q2 | **도메인 구조** | 같은 등록 도메인 하위 서브도메인 (`jarvis.isusystem.com` / `yess.isusystem.com`). 부모 도메인(`.isusystem.com`)에 쿠키 발급하여 자동 공유 |
+| Q3 | **로그인 진입점** | Jarvis 단독. Yess는 미인증 시 `jarvis.isusystem.com/login?redirect=<full-url>`로 302 |
 | Q4 | **코드베이스** | Yess 별도 레포·별도 서버. `packages/auth` 직접 임포트 불가. 인증 데이터는 Postgres SELECT, `JarvisSession` 타입(~30줄) 복사 |
+| Q5 | **`COOKIE_DOMAIN` 검증** | 환경변수 자동 거부 채택. `validateCookieDomain()`에서 `startsWith('.')` + 도메인 라벨 ≥ 2 검사, 실패 시 throw. `.com` 같은 과확장 값을 운영자가 실수로 넣어도 부팅 단계에서 차단 |
+| Q6 | **로그아웃 흐름** | Yess 컨텍스트 유지(옵션 a). 로그아웃 후 재로그인하면 사용자가 떠난 자리로 자동 복귀. 흐름: `/api/auth/logout?redirect=<yess-url>` → 세션·쿠키 클리어 → `<yess-url>` 로 302 → Yess 미들웨어가 미인증 감지 → Jarvis `/login?redirect=<yess-url>` 로 다시 302 → 로그인 후 자동 복귀 |
 
 ## 4. Architecture
 
@@ -59,20 +61,20 @@ Yess는 Jarvis와 **같은 사내 직원 풀**을 대상으로 하는 별도 시
 
 ```
 [Browser]
-  | (1) yess.회사.com/dashboard 직접 접근 (쿠키 없음)
+  | (1) yess.isusystem.com/dashboard 직접 접근 (쿠키 없음)
   v
 [Yess App] 미들웨어
   | sessionId 쿠키 없음 → 인증 필요
-  | (2) 302 → jarvis.회사.com/login?redirect=https%3A%2F%2Fyess.회사.com%2Fdashboard
+  | (2) 302 → jarvis.isusystem.com/login?redirect=https%3A%2F%2Fyess.isusystem.com%2Fdashboard
   v
 [Jarvis App]
   | (3) 로그인 폼 (redirect 쿼리 보존)
   | (4) POST /api/auth/login → user_session INSERT
-  | (5) Set-Cookie: sessionId=<id>; Domain=.회사.com; Path=/; HttpOnly; SameSite=Lax
+  | (5) Set-Cookie: sessionId=<id>; Domain=.isusystem.com; Path=/; HttpOnly; SameSite=Lax
   | (6) 클라이언트가 safeReturnUrl(redirect, ALLOWED_RETURN_HOSTS) 통과 검증 후 location.assign
   v
 [Browser]
-  | (7) yess.회사.com/dashboard 재요청 (쿠키 자동 attach)
+  | (7) yess.isusystem.com/dashboard 재요청 (쿠키 자동 attach)
   v
 [Yess App] 미들웨어
   | SELECT user_session WHERE id=$1 AND expires_at > NOW()
@@ -123,7 +125,7 @@ export function buildSessionCookieOptions(
 }
 ```
 
-운영(`.회사.com` 설정 시) → `Domain=.회사.com` 포함 / 개발(`COOKIE_DOMAIN` 미설정) → `domain` 옵션 미포함 (호스트 한정 폴백, 기존 동작).
+운영(`.isusystem.com` 설정 시) → `Domain=.isusystem.com` 포함 / 개발(`COOKIE_DOMAIN` 미설정) → `domain` 옵션 미포함 (호스트 한정 폴백, 기존 동작).
 
 ### 4.4 Return URL 검증
 
@@ -173,12 +175,12 @@ export function validateReturnUrl(
 
 ```dotenv
 # === SSO (Yess 등 서브도메인 앱과 세션 공유) ===
-# 부모 도메인 쿠키 발급용. 운영 예: ".회사.com" (앞 점 필수)
+# 부모 도메인 쿠키 발급용. 운영 예: ".isusystem.com" (앞 점 필수)
 # 비워두면 호스트 한정 쿠키 (기존 동작 유지). 개발/단일 앱 운영 시 비워둔다.
 COOKIE_DOMAIN=
 
 # 로그인/로그아웃의 ?redirect= 파라미터 화이트리스트 (콤마 구분 host)
-# 운영 예: "jarvis.회사.com,yess.회사.com"
+# 운영 예: "jarvis.isusystem.com,yess.isusystem.com"
 # 비어 있으면 path-only redirect만 허용 (외부 호스트 거부, fallback)
 ALLOWED_RETURN_HOSTS=
 ```
@@ -301,7 +303,7 @@ export * from "./return-url.js";
 ## 6. 마이그레이션 / 호환성
 
 - DB 스키마 변경 **없음**
-- 기존 `sessionId` 쿠키는 호스트 한정으로 발급되어 있음. 운영 배포 후 첫 로그인부터 `Domain=.회사.com`로 발급, 기존 호스트 한정 쿠키는 만료 시 자연 정리
+- 기존 `sessionId` 쿠키는 호스트 한정으로 발급되어 있음. 운영 배포 후 첫 로그인부터 `Domain=.isusystem.com`로 발급, 기존 호스트 한정 쿠키는 만료 시 자연 정리
 - 강제 로그아웃 불필요
 - **개발 환경**: `COOKIE_DOMAIN` 미설정 → 기존 동작 그대로(호스트 한정 쿠키)
 - **레거시 `jarvis_session` 쿠키**: logout이 양쪽 다 클리어하던 기존 동작 유지
@@ -328,7 +330,7 @@ export * from "./return-url.js";
 
 - `packages/auth/__tests__/cookie.test.ts` 신설
   - `cookieDomain` 미설정 시 결과에 `domain` 키 없음
-  - `cookieDomain=".회사.com"` 시 결과 `domain === ".회사.com"`
+  - `cookieDomain=".isusystem.com"` 시 결과 `domain === ".isusystem.com"`
   - `isProduction=true`일 때 `secure: true`
   - `lifetimeMs` → `maxAge` 변환 (ms → s, floor)
 - `packages/auth/__tests__/return-url.test.ts` 신설
@@ -346,13 +348,13 @@ export * from "./return-url.js";
 ### 8.2 통합 테스트
 
 - `apps/web/app/api/auth/login/route.test.ts` 확장
-  - `COOKIE_DOMAIN` 환경변수 설정 시 응답 `Set-Cookie` 헤더에 `Domain=.회사.com` 포함
+  - `COOKIE_DOMAIN` 환경변수 설정 시 응답 `Set-Cookie` 헤더에 `Domain=.isusystem.com` 포함
   - 미설정 시 Domain 옵션 없음
   - `NODE_ENV=production` 시 `Secure` 플래그 포함
 - `apps/web/app/api/auth/logout/route.test.ts` 신설(없으면)
-  - `?redirect=https://yess.회사.com/foo` + 화이트리스트 매칭 시 해당 URL로 302
+  - `?redirect=https://yess.isusystem.com/foo` + 화이트리스트 매칭 시 해당 URL로 302
   - 비화이트리스트 호스트 시 `/login` fallback
-  - `Set-Cookie`로 `sessionId=; Max-Age=0; Domain=.회사.com` 발행 (도메인 일치)
+  - `Set-Cookie`로 `sessionId=; Max-Age=0; Domain=.isusystem.com` 발행 (도메인 일치)
 
 ### 8.3 E2E (Playwright, 선택)
 
@@ -396,18 +398,18 @@ export * from "./return-url.js";
 
 ### 10.2 도메인·쿠키
 
-- Jarvis: `https://jarvis.회사.com`
-- Yess: `https://yess.회사.com`
-- 쿠키 `sessionId`는 부모 도메인 `.회사.com`에 발급되어 양쪽 자동 공유
+- Jarvis: `https://jarvis.isusystem.com`
+- Yess: `https://yess.isusystem.com`
+- 쿠키 `sessionId`는 부모 도메인 `.isusystem.com`에 발급되어 양쪽 자동 공유
 
 ### 10.3 환경변수 (Yess 레포)
 
 ```dotenv
-DATABASE_URL=postgresql://...        # Jarvis와 동일 인스턴스, READ-ONLY user 권장
-COOKIE_DOMAIN=.회사.com              # 검증/리다이렉트 시 참조 (Yess가 발급은 안 함)
-JARVIS_LOGIN_URL=https://jarvis.회사.com/login
-JARVIS_LOGOUT_URL=https://jarvis.회사.com/api/auth/logout
-ALLOWED_RETURN_HOSTS=jarvis.회사.com,yess.회사.com
+DATABASE_URL=postgresql://...        # Jarvis와 동일 인스턴스
+COOKIE_DOMAIN=.isusystem.com              # 검증/리다이렉트 시 참조 (Yess가 발급은 안 함)
+JARVIS_LOGIN_URL=https://jarvis.isusystem.com/login
+JARVIS_LOGOUT_URL=https://jarvis.isusystem.com/api/auth/logout
+ALLOWED_RETURN_HOSTS=jarvis.isusystem.com,yess.isusystem.com
 ```
 
 ### 10.4 미들웨어 의사코드
@@ -455,9 +457,8 @@ export interface JarvisSession {
 
 ### 10.6 DB 접근 규칙
 
-- `user_session`, `user`, `user_role`, `role` 테이블에 **INSERT/UPDATE/DELETE 금지**. SSoT는 Jarvis.
+- `user_session`, `user`, `user_role`, `role` 테이블에 **INSERT/UPDATE/DELETE 금지**. SSoT는 Jarvis. (개발 규약 — DB-level 강제는 안 함)
 - Yess만의 활동 로그 등은 `yess_*` 접두 자체 테이블 신설.
-- 별도 DB user 생성 후 SELECT 권한만 grant 권장.
 
 ### 10.7 절대 만들지 말 것
 
@@ -475,7 +476,6 @@ export interface JarvisSession {
 
 - [ ] `redirect` 파라미터는 `ALLOWED_RETURN_HOSTS` 화이트리스트 검증 (open redirect 방지)
 - [ ] 미들웨어를 모든 보호 라우트 + RSC 컴포넌트 진입점에 적용
-- [ ] DB 커넥션은 READ-ONLY user 사용
 - [ ] 쿠키 직접 발급/수정 금지
 - [ ] `expires_at > NOW()` 조건 누락 금지
 
@@ -485,20 +485,21 @@ export interface JarvisSession {
 - `user`/`role` 컬럼 **추가**는 Yess가 무시하면 OK
 - 컬럼 **삭제**/타입 변경 → 사전 합의 필수
 
-## 11. Open questions (구현 전 확인 필요)
+## 11. Resolved decisions (사용자 확정 — 2026-04-29)
 
-1. **실제 회사 도메인** placeholder(`.회사.com`) → 운영 환경 진짜 값. (`isu.co.kr`? — login page에 `it-support@isu.co.kr` 있음. 확인 필요)
-2. **`COOKIE_DOMAIN` 형식 검증을 코드에 넣을지** — 현재는 운영 설정자 책임. 자동 검증(`startsWith('.')` + 도메인 토큰 ≥ 2)을 `buildSessionCookieOptions`에 넣을지?
-3. **Yess READ-ONLY DB user 생성 책임자** — DBA 작업. 본 PR과 별개로 진행.
-4. **로그아웃 후 return 동작** — 본 spec에선 지원으로 결정. 다만 사용자 의도가 "Yess에서 로그아웃 → Yess로 돌아옴"인지, "어디서 로그아웃 하든 Jarvis 로그인 페이지로"인지 한 번 더 확인.
-5. **개발 로컬에서 두 앱을 어떻게 띄우는지** — `localhost:3010`(Jarvis) / `localhost:3011`(Yess)면 부모 도메인 쿠키 안 됨. 개발에선 호스트 한정 쿠키로 폴백되니 SSO 동작 안 함 (각자 로그인 필요). 운영 배포에서만 SSO 동작 — 이게 OK인가?
+| # | 결정 |
+|---|---|
+| 1 | 실제 도메인: 부모 `.isusystem.com` / Jarvis `jarvis.isusystem.com` / Yess `yess.isusystem.com` |
+| 2 | `COOKIE_DOMAIN` 자동 거부 채택 (§3 Q5). 운영자 환경변수 오타가 보안 사고로 직결되지 않도록 부팅 시 throw |
+| 3 | 로그아웃 후 Yess 컨텍스트 유지 (§3 Q6, 옵션 a). 재로그인 시 사용자가 떠난 자리로 자동 복귀 |
+| 4 | 별도 PostgreSQL DB user 생성은 사용자가 별도 진행. 본 PR/후속 작업 모두 범위 외. Yess의 DB 쓰기 금지는 인계 가이드의 **개발 규약**으로만 명시(자동 강제 X) |
+| 5 | 개발 로컬에선 SSO 동작 안 함(호스트 한정 쿠키 폴백, 각자 로그인). 운영 배포에서만 SSO 동작 — OK |
 
 ## 12. 후속 작업 (이 PR 외)
 
 - Yess 레포 미들웨어 구현 + 인계 가이드 적용 (Yess 팀)
-- Yess READ-ONLY Postgres user 생성 (DBA)
 - 운영 배포 시 환경변수 설정 (`COOKIE_DOMAIN`, `ALLOWED_RETURN_HOSTS`, `NEXT_PUBLIC_ALLOWED_RETURN_HOSTS`)
-- 향후 3번째 앱 추가 시 통합 인증 도메인(`auth.회사.com`) 도입 검토
+- 향후 3번째 앱 추가 시 통합 인증 도메인(`auth.isusystem.com`) 도입 검토
 - CSRF 토큰 도입 (현재 미구현, 별도 PR)
 - 운영 비밀번호 해싱(bcrypt) 도입 (별도 PR)
 
