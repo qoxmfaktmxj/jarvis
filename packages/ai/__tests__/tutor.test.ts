@@ -7,7 +7,6 @@
  *   (a) sources 이벤트에 WikiPageSourceRef (kind='wiki-page') 포함
  *   (b) mode별 system prompt 주입 (guide/quiz/simulation)
  *   (c) multi-turn session.messages 전달
- *   (d) retrieveRelevantClaims 미호출
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -55,12 +54,6 @@ vi.mock("../case-context.js", () => ({
 vi.mock("../directory-context.js", () => ({
   searchDirectory: (...args: unknown[]) => mockSearchDirectory(...args),
   toDirectorySourceRef: (...args: unknown[]) => mockToDirectorySourceRef(...args),
-}));
-
-// ── ask.ts mock: ensure retrieveRelevantClaims is NOT called ──────────
-const mockRetrieveRelevantClaims = vi.fn();
-vi.mock("../ask.js", () => ({
-  retrieveRelevantClaims: (...args: unknown[]) => mockRetrieveRelevantClaims(...args),
 }));
 
 // ── OpenAI mock: stream a fixed answer ────────────────────────────────
@@ -175,7 +168,6 @@ function resetMocks() {
   });
   mockToCaseSourceRef.mockReset();
   mockToDirectorySourceRef.mockReset();
-  mockRetrieveRelevantClaims.mockReset();
   mockCreateChat.mockReset().mockImplementation(async () => fakeStream());
 }
 
@@ -229,11 +221,6 @@ describe("tutorAI — page-first pipeline", () => {
     expect(sourcesIdx).toBeGreaterThanOrEqual(0);
     expect(textIdx).toBeGreaterThan(sourcesIdx);
     expect(doneIdx).toBeGreaterThan(textIdx);
-  });
-
-  it("does NOT call retrieveRelevantClaims (legacy path)", async () => {
-    await collectEvents(makeQuery(), makeSession());
-    expect(mockRetrieveRelevantClaims).not.toHaveBeenCalled();
   });
 
   it("calls page-first retrieval pipeline (shortlist + expand + readTopPages)", async () => {
