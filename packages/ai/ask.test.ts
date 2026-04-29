@@ -1,102 +1,62 @@
 // packages/ai/ask.test.ts
-// Phase-Harness (2026-04-23): embedding 기반 retrieveRelevantClaims 테스트
-// 블록 제거. 함수는 ask.ts 에 빈 배열 반환 stub 으로만 남아 있으며, 호출처
-// 정리는 Phase G (ask.ts 전면 재작성) 에서 마무리한다.
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { askAI } from './ask.js';
-import * as graphContextModule from './graph-context.js';
+// 2026-04-29: legacy snapshotId→retrieveRelevantGraphContext propagation tests
+// removed with _legacyAskAI_unused. askAI() now unconditionally delegates to
+// the tool-use agent path (askAgentStream). Agent integration coverage is in
+// packages/ai/agent/__tests__/.
 
-vi.mock('@jarvis/db/client', () => ({
-  db: {
-    execute: vi.fn(),
-    insert: vi.fn(() => ({ values: vi.fn().mockResolvedValue(undefined) })),
-  },
+import { describe, it, expect, vi } from 'vitest';
+import { askAI } from './ask.js';
+
+vi.mock('./agent/ask-agent.js', () => ({
+  askAgentStream: vi.fn(async function* () {
+    // no-op: minimal stub so askAgentToSSE doesn't blow up
+  }),
 }));
 
-describe('askAI snapshotId propagation', () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let graphSpy: ReturnType<typeof vi.spyOn<any, any>>;
+vi.mock('./agent/sse-adapter.js', () => ({
+  askAgentToSSE: vi.fn(async function* () {
+    yield { type: 'text', content: 'agent answer' };
+    yield { type: 'sources', sources: [] };
+    yield { type: 'done', totalTokens: 5 };
+  }),
+}));
 
-  beforeEach(async () => {
-    const { db } = await import('@jarvis/db/client');
-    // Stub vector + fts queries with empty rows so retrieveRelevantClaims
-    // returns [] without hitting a real DB.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    vi.mocked(db.execute).mockResolvedValue({ rows: [] } as any);
+vi.mock('./budget.js', () => ({
+  assertBudget: vi.fn().mockResolvedValue(undefined),
+  BudgetExceededError: class extends Error {},
+  recordBlocked: vi.fn().mockResolvedValue(undefined),
+}));
 
-    // Stub graph retriever so the orchestrator doesn't hit graph_snapshot.
-    // We only care about the call shape, not the returned value.
-    graphSpy = vi
-      .spyOn(graphContextModule, 'retrieveRelevantGraphContext')
-      .mockResolvedValue(null);
-  });
+vi.mock('./logger.js', () => ({
+  logLlmCall: vi.fn().mockResolvedValue(undefined),
+}));
 
-  afterEach(async () => {
-    graphSpy.mockRestore();
-    const { db } = await import('@jarvis/db/client');
-    vi.mocked(db.execute).mockReset();
-  });
+vi.mock('./cache.js', () => ({
+  makeCacheKey: vi.fn().mockReturnValue('test-key'),
+  getCached: vi.fn().mockResolvedValue(null),
+  setCached: vi.fn().mockResolvedValue(undefined),
+}));
 
-  it('passes query.snapshotId into retrieveRelevantGraphContext options', async () => {
-    const generator = askAI({
-      question: 'architecture graph auth service dependency',
+vi.mock('openai', () => ({
+  default: vi.fn().mockImplementation(() => ({
+    chat: { completions: { create: vi.fn() } },
+  })),
+}));
+
+describe('askAI() — agent path (Phase B3+)', () => {
+  it('delegates to askAgentToSSE and yields agent events', async () => {
+    const events: unknown[] = [];
+    for await (const evt of askAI({
+      question: 'test query',
       workspaceId: 'ws-test',
-      userId: 'user-test',
+      userId: 'u1',
       userRoles: ['MEMBER'],
-      userPermissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ],
-      snapshotId: 'explicit-snap-1',
-    });
-
-    // Drain the generator. With both retrieval results empty, askAI emits the
-    // "no info found" fallback (text → sources → done) and never invokes the
-    // Anthropic SDK. That keeps the test hermetic.
-    for await (const _event of generator) {
-      // no-op — we just want the spy to register
+      userPermissions: ['knowledge:read'],
+    })) {
+      events.push(evt);
     }
 
-    expect(graphSpy).toHaveBeenCalledTimes(1);
-    expect(graphSpy).toHaveBeenCalledWith(
-      'architecture graph auth service dependency',
-      'ws-test',
-      { explicitSnapshotId: 'explicit-snap-1', permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ] },
-    );
-  });
-
-  it('still calls retrieveRelevantGraphContext with undefined explicitSnapshotId when query.snapshotId is omitted', async () => {
-    const generator = askAI({
-      question: 'architecture graph jarvis',
-      workspaceId: 'ws-test',
-      userId: 'user-test',
-      userRoles: ['MEMBER'],
-      userPermissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ],
-    });
-
-    for await (const _event of generator) {
-      // drain
-    }
-
-    expect(graphSpy).toHaveBeenCalledTimes(1);
-    expect(graphSpy).toHaveBeenCalledWith(
-      'architecture graph jarvis',
-      'ws-test',
-      { explicitSnapshotId: undefined, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.GRAPH_READ] },
-    );
-  });
-
-  it('does not call retrieveRelevantGraphContext without graph read permission', async () => {
-    const generator = askAI({
-      question: 'architecture graph jarvis',
-      workspaceId: 'ws-test',
-      userId: 'user-test',
-      userRoles: ['MEMBER'],
-      userPermissions: [PERMISSIONS.KNOWLEDGE_READ],
-    });
-
-    for await (const _event of generator) {
-      // drain
-    }
-
-    expect(graphSpy).not.toHaveBeenCalled();
+    expect(events).toContainEqual({ type: 'text', content: 'agent answer' });
+    expect(events).toContainEqual({ type: 'done', totalTokens: 5 });
   });
 });

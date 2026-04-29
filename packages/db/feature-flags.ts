@@ -6,23 +6,6 @@ export function featureTwoStepIngest(): boolean {
 }
 
 /**
- * Phase-W2 T2: page-first navigation for `askAI`.
- *
- * When true (default since B4 Phase 2), `packages/ai/ask.ts` routes the
- * query through the page-first pipeline (wiki_page_index lexical shortlist
- * → 1-hop wikilink expansion → disk read → LLM synthesis with
- * `[[page-slug]]` citations).
- *
- * When false, the legacy knowledge_claim hybrid retrieval path runs
- * unchanged.
- *
- * @defaultValue true (`FEATURE_PAGE_FIRST_QUERY !== 'false'`)
- */
-export function featurePageFirstQuery(): boolean {
-  return process.env['FEATURE_PAGE_FIRST_QUERY'] !== 'false';
-}
-
-/**
  * Phase-W2 T3: weekly wiki lint cron (`apps/worker/src/jobs/wiki-lint.ts`).
  *
  * When true, the worker registers the `wiki-lint-weekly` schedule (Sunday
