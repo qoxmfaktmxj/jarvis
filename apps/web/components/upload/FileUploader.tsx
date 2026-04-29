@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 const ACCEPTED_TYPES = [
@@ -40,6 +41,7 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploadState, setUploadState] = useState<UploadState>({ status: 'idle' });
   const [isDragOver, setIsDragOver] = useState(false);
+  const t = useTranslations('Upload.Errors');
 
   const uploadFile = useCallback(
     async (file: File) => {
@@ -95,6 +97,22 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
           xhr.send(file);
         });
 
+        // Step 2b: Finalize — verify magic bytes server-side before registering
+        const finalizeRes = await fetch('/api/upload/finalize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ objectKey, declaredMimeType: file.type }),
+        });
+
+        if (!finalizeRes.ok) {
+          const finalizeErr = await finalizeRes.json().catch(() => ({}));
+          const code = (finalizeErr as { error?: string }).error;
+          if (code === 'magic_byte_mismatch') {
+            throw new Error(t('magicMismatch', { declared: file.type }));
+          }
+          throw new Error(t('finalizeFailed'));
+        }
+
         // Step 3: Register file in raw_source table
         const registerRes = await fetch('/api/upload', {
           method: 'POST',
@@ -123,7 +141,7 @@ export function FileUploader({ resourceType, resourceId, onSuccess }: FileUpload
         setUploadState({ status: 'error', message });
       }
     },
-    [resourceType, resourceId, onSuccess],
+    [resourceType, resourceId, onSuccess, t],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
