@@ -286,7 +286,7 @@ describe("tutorAI — page-first pipeline", () => {
     expect(systemMessages[0]!.content).toContain("시뮬레이터");
   });
 
-  it("passes multi-turn session.messages to OpenAI", async () => {
+  it("passes multi-turn session.messages to OpenAI with ALL user turns nonce-wrapped", async () => {
     const session = makeSession({
       messages: [
         { role: "user", content: "휴가가 뭐야?" },
@@ -302,10 +302,23 @@ describe("tutorAI — page-first pipeline", () => {
 
     // system(tutor prompt) + system(context) + 3 history messages + 1 current user question
     expect(reqBody.messages).toHaveLength(6);
-    expect(reqBody.messages[2]!.content).toBe("휴가가 뭐야?");
+
+    // system prompt references a 32-hex nonce
+    expect(reqBody.messages[0]!.content).toMatch(/<USER_INPUT_[0-9a-f]{32}>/);
+    const nonceMatch = (reqBody.messages[0]!.content as string).match(/<USER_INPUT_([0-9a-f]{32})>/);
+    expect(nonceMatch).toBeTruthy();
+    const nonce = nonceMatch![1]!;
+
+    // history user turns MUST also be nonce-wrapped with the SAME nonce
+    expect(reqBody.messages[2]!.content).toContain(`<USER_INPUT_${nonce}>`);
+    expect(reqBody.messages[2]!.content).toContain("휴가가 뭐야?");
+    // assistant turn must NOT be wrapped
     expect(reqBody.messages[3]!.content).toBe("연차와 반차가 있습니다.");
-    expect(reqBody.messages[4]!.content).toBe("연차 몇 일이야?");
-    expect(reqBody.messages[5]!.content).toBe("더 자세히 알려줘");
+    // second history user turn also wrapped
+    expect(reqBody.messages[4]!.content).toContain(`<USER_INPUT_${nonce}>`);
+    expect(reqBody.messages[4]!.content).toContain("연차 몇 일이야?");
+    // current question is nonce-wrapped with the same nonce
+    expect(reqBody.messages[5]!.content).toContain(`<USER_INPUT_${nonce}>\n더 자세히 알려줘`);
   });
 
   it("degrades gracefully when expandOneHop fails", async () => {
