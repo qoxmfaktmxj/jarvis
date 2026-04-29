@@ -302,10 +302,17 @@ describe("tutorAI — page-first pipeline", () => {
 
     // system(tutor prompt) + system(context) + 3 history messages + 1 current user question
     expect(reqBody.messages).toHaveLength(6);
+    // session history is passed through unchanged (no nonce wrapping)
     expect(reqBody.messages[2]!.content).toBe("휴가가 뭐야?");
     expect(reqBody.messages[3]!.content).toBe("연차와 반차가 있습니다.");
     expect(reqBody.messages[4]!.content).toBe("연차 몇 일이야?");
-    expect(reqBody.messages[5]!.content).toBe("더 자세히 알려줘");
+    // current question is nonce-wrapped (prompt injection defense)
+    expect(reqBody.messages[5]!.content).toContain("더 자세히 알려줘");
+    expect(reqBody.messages[5]!.content).toMatch(/^<USER_INPUT_[0-9a-f]{32}>/);
+    // system prompt references the same nonce
+    expect(reqBody.messages[0]!.content).toMatch(/<USER_INPUT_[0-9a-f]{32}>/);
+    const nonceMatch = (reqBody.messages[0]!.content as string).match(/<USER_INPUT_([0-9a-f]{32})>/);
+    expect(reqBody.messages[5]!.content).toContain(`<USER_INPUT_${nonceMatch![1]}>\n더 자세히 알려줘`);
   });
 
   it("degrades gracefully when expandOneHop fails", async () => {
