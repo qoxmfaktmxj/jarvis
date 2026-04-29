@@ -18,7 +18,8 @@ const nextConfig: NextConfig = {
     "@jarvis/auth",
     "@jarvis/search",
     "@jarvis/ai",
-    "@jarvis/secret"
+    "@jarvis/secret",
+    "@jarvis/wiki-agent"
   ],
   // Sentry (and its import-in-the-middle hook) is Node-only. Keep it
   // external so webpack never tries to bundle worker_threads/module for
