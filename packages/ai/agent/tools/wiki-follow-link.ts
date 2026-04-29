@@ -1,11 +1,11 @@
 // packages/ai/agent/tools/wiki-follow-link.ts
 //
-// slug 에서 outbound wikilinks (1-hop) 을 반환. sensitivity 통과 못한 링크는 조용히 제외.
+// slug 에서 outbound wikilinks (1-hop) 을 반환. ACL 통과 못한 링크는 조용히 제외.
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { canViewWikiPage } from "@jarvis/auth";
 import { readPage } from "@jarvis/wiki-fs";
 import { splitFrontmatter } from "@jarvis/wiki-fs/frontmatter";
 import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
@@ -48,6 +48,8 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
         .select({
           path: wikiPageIndex.path,
           sensitivity: wikiPageIndex.sensitivity,
+          requiredPermission: wikiPageIndex.requiredPermission,
+          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -63,12 +65,16 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
       }
 
       if (
-        !canAccessKnowledgeSensitivityByPermissions(
-          [...ctx.permissions],
-          source.sensitivity,
+        !canViewWikiPage(
+          {
+            sensitivity: source.sensitivity,
+            requiredPermission: source.requiredPermission,
+            publishedStatus: source.publishedStatus,
+          },
+          ctx.permissions as string[],
         )
       ) {
-        return err("forbidden", "sensitivity restricted");
+        return err("forbidden", "access denied");
       }
 
       const raw = await readPage(ctx.workspaceId, source.path);
@@ -87,6 +93,8 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
           slug: wikiPageIndex.slug,
           title: wikiPageIndex.title,
           sensitivity: wikiPageIndex.sensitivity,
+          requiredPermission: wikiPageIndex.requiredPermission,
+          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -98,7 +106,14 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
 
       const visible = targets
         .filter((t) =>
-          canAccessKnowledgeSensitivityByPermissions([...ctx.permissions], t.sensitivity),
+          canViewWikiPage(
+            {
+              sensitivity: t.sensitivity,
+              requiredPermission: t.requiredPermission,
+              publishedStatus: t.publishedStatus,
+            },
+            ctx.permissions as string[],
+          ),
         )
         .map((t) => ({ slug: t.slug, title: t.title, direction: "outbound" as const }));
 
