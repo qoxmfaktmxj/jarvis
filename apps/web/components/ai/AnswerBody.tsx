@@ -56,20 +56,29 @@ interface AnswerBodyProps {
  *   [source:N]   — legacy 1-based index
  *   [[slug]]     — Phase B3/B4 agent format, resolved against wiki-page sources
  */
+// Aligned with packages/wiki-fs/src/wikilink.ts WIKILINK_REGEX (newline-excluding,
+// non-greedy). Drift here would render alias/anchor tokens like [[a|b]] or [[a#h]]
+// as broken links.
+const CITATION_SPLIT_RE = /(\[source:\d+\]|\[\[[^\]\n]+?\]\])/g;
+const LEGACY_CITATION_RE = /^\[source:(\d+)\]$/;
+const WIKILINK_CITATION_RE = /^\[\[([^\]\n]+?)\]\]$/;
+
 export function AnswerBody({ text, sources, workspaceId }: AnswerBodyProps) {
   const slugToIndex = new Map<string, number>();
+  // First-wins: if sse-adapter ever emits duplicate slugs, the earliest source
+  // index is the one a [[slug]] citation resolves to.
   sources.forEach((s, i) => {
-    if (s.kind === "wiki-page") {
+    if (s.kind === "wiki-page" && !slugToIndex.has(s.slug)) {
       slugToIndex.set(s.slug, i + 1);
     }
   });
 
-  const parts = text.split(/(\[source:\d+\]|\[\[[^\]]+\]\])/g);
+  const parts = text.split(CITATION_SPLIT_RE);
 
   return (
     <div className="prose prose-sm max-w-none text-sm leading-relaxed text-[--fg-primary]">
       {parts.map((part, index) => {
-        const legacyMatch = part.match(/^\[source:(\d+)\]$/);
+        const legacyMatch = part.match(LEGACY_CITATION_RE);
         if (legacyMatch?.[1]) {
           return (
             <ClaimBadge
@@ -79,7 +88,7 @@ export function AnswerBody({ text, sources, workspaceId }: AnswerBodyProps) {
             />
           );
         }
-        const wikilinkMatch = part.match(/^\[\[([^\]]+)\]\]$/);
+        const wikilinkMatch = part.match(WIKILINK_CITATION_RE);
         if (wikilinkMatch?.[1]) {
           const slug = wikilinkMatch[1];
           const sourceNumber = slugToIndex.get(slug);
