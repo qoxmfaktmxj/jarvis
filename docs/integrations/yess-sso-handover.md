@@ -58,11 +58,12 @@ function redirectToJarvisLogin(req: Request) {
 
 ```ts
 export interface JarvisSession {
+  id: string;               // 세션 ID (= 쿠키 sessionId 값)
   userId: string;
   workspaceId: string;
-  employeeId: string | null;
-  email: string;
-  name?: string;
+  employeeId: string;
+  name: string;
+  email?: string;           // 일부 사용자에서 누락 가능
   roles: string[];          // ["ADMIN" | "MANAGER" | "DEVELOPER" | "VIEWER" | "CONTRACTOR"]
   permissions: string[];    // 예: ["knowledge:read", "project:write"] — Jarvis 글로벌 권한 34개 중 일부
   orgId?: string;
@@ -71,7 +72,7 @@ export interface JarvisSession {
 }
 ```
 
-> ⚠️ Jarvis 측에서 변경되면 PR/공지를 통해 동기화. `user_session.data` JSONB 구조 변경은 Yess에 직접 영향.
+> ⚠️ 위 타입은 `packages/auth/types.ts`의 `jarvisSessionSchema` (zod) 와 1:1 일치. Jarvis 측에서 변경되면 PR/공지를 통해 동기화. `user_session.data` JSONB 구조 변경은 Yess에 직접 영향.
 
 ## 6. DB 접근 규칙 (개발 규약)
 
