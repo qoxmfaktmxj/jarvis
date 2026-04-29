@@ -22,3 +22,37 @@ export function safeRedirectPath(
   if (/[\x00-\x1f]/.test(redirectTo)) return fallback;
   return redirectTo;
 }
+
+/**
+ * Path 또는 화이트리스트 호스트의 풀 URL만 허용.
+ *
+ * - "/foo" 같은 path는 safeRedirectPath()로 위임
+ * - "https://yess.isusystem.com/foo" 같은 풀 URL은 host가 allowedHosts에 있을 때만 허용
+ * - 그 외(`javascript:`, `//host`, malformed 등)는 모두 fallback
+ *
+ * Isomorphic — 브라우저와 Node 모두에서 동작.
+ *
+ * 서버사이드 동등 함수: `@jarvis/auth/return-url` 의 `validateReturnUrl`.
+ * 두 곳에 두는 이유는 클라이언트 번들에 packages/auth 전체를 끌어들이지 않기 위함.
+ */
+export function safeReturnUrl(
+  raw: string | null | undefined,
+  allowedHosts: readonly string[],
+  fallback: string,
+): string {
+  if (!raw || raw.length === 0) return fallback;
+
+  if (raw.startsWith("/")) {
+    return safeRedirectPath(raw, fallback);
+  }
+
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return fallback;
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return fallback;
+  if (!allowedHosts.includes(url.host)) return fallback;
+  return url.toString();
+}
