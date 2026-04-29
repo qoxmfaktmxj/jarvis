@@ -5,7 +5,7 @@
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq } from "drizzle-orm";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { canViewWikiPage } from "@jarvis/auth";
 import { readPage } from "@jarvis/wiki-fs";
 import { splitFrontmatter } from "@jarvis/wiki-fs/frontmatter";
 import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
@@ -51,6 +51,8 @@ export const wikiRead: ToolDefinition<WikiReadInput, WikiReadOutput> = {
           title: wikiPageIndex.title,
           path: wikiPageIndex.path,
           sensitivity: wikiPageIndex.sensitivity,
+          requiredPermission: wikiPageIndex.requiredPermission,
+          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -66,12 +68,16 @@ export const wikiRead: ToolDefinition<WikiReadInput, WikiReadOutput> = {
       }
 
       if (
-        !canAccessKnowledgeSensitivityByPermissions(
-          [...ctx.permissions],
-          row.sensitivity,
+        !canViewWikiPage(
+          {
+            sensitivity: row.sensitivity,
+            requiredPermission: row.requiredPermission,
+            publishedStatus: row.publishedStatus,
+          },
+          ctx.permissions as string[],
         )
       ) {
-        return err("forbidden", "sensitivity restricted");
+        return err("forbidden", "access denied");
       }
 
       const raw = await readPage(ctx.workspaceId, row.path);
