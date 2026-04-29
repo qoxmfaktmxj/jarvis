@@ -19,7 +19,7 @@
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 import { pgArray } from "../sql-utils.js";
 
 import type { ShortlistHit } from "./shortlist.js";
@@ -57,12 +57,9 @@ export async function expandOneHop(
   const shortlistIds = shortlist.map((s) => s.id);
   const shortlistIdSet = new Set(shortlistIds);
 
-  const sensitivityFilter = buildWikiSensitivitySqlFilter(userPermissions, {
+  const sensitivityClause = buildWikiSensitivitySqlFragment(userPermissions, {
     column: "wpi.sensitivity",
-  }).trim();
-  const sensitivityClause = sensitivityFilter
-    ? sql.raw(` ${sensitivityFilter}`)
-    : sql.empty();
+  });
 
   // Aggregate the 1-hop neighbors (either direction) with inbound count.
   // inbound_count is across ALL links in the workspace, not just from the

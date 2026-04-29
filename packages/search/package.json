@@ -18,7 +18,8 @@
     "./fallback-chain": "./fallback-chain.ts"
   },
   "scripts": {
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@jarvis/auth": "workspace:*",

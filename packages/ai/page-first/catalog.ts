@@ -7,7 +7,7 @@
  */
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFilter } from "@jarvis/auth/rbac";
+import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 
 export interface CatalogRow {
   path: string;
@@ -28,10 +28,7 @@ export interface CatalogOptions {
 
 export async function getCatalog(opts: CatalogOptions): Promise<CatalogRow[]> {
   const limit = Math.min(opts.limit ?? 500, 1500);
-  const sensitivityFilterStr = buildWikiSensitivitySqlFilter(opts.userPermissions);
-  const sensitivityClause = sensitivityFilterStr
-    ? sql.raw(` ${sensitivityFilterStr}`)
-    : sql.empty();
+  const sensitivityClause = buildWikiSensitivitySqlFragment(opts.userPermissions);
 
   const result = await db.execute<{
     path: string;

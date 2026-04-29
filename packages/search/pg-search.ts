@@ -5,10 +5,10 @@
 // 더 이상 존재하지 않는다. FTS(tsvector) + pg_trgm fallback 만 남는다.
 // 기존 `mergeByRRF`, `assertValidEmbedding`, `runVectorSearch`, `embedQuery`
 // 옵션 등은 전부 제거.
-import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFragment } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
-import { sql } from 'drizzle-orm';
+import { sql, type SQL } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
 import type { SearchQuery, SearchResult, SearchHit, ResourceType } from './types.js';
 import { parseQuery, extractTerm } from './query-parser.js';
@@ -101,7 +101,7 @@ export class PgSearchAdapter implements SearchAdapter {
     const sanitizedPrefix = prefix.trim().replace(/[^\w\s]/g, '').substring(0, 100);
     // Escape LIKE wildcards (_ is a word char, so it passes the regex above)
     const escapedPrefix = sanitizedPrefix.replace(/[%_\\]/g, '\\$&');
-    const sensitivityFilter = this.buildSecretFilter(userPermissions);
+    const sensitivityFragment = this.buildSecretFilter(userPermissions);
 
     const [titleRows, popularRows] = await Promise.all([
       // Match page titles with prefix — apply same sensitivity filter as main search
@@ -112,7 +112,7 @@ export class PgSearchAdapter implements SearchAdapter {
           workspace_id = ${workspaceId}::uuid
           AND publish_status != 'deleted'
           AND title ILIKE ${escapedPrefix + '%'}
-          ${sql.raw(sensitivityFilter)}
+          ${sensitivityFragment}
         ORDER BY title
         LIMIT 6
       `),
@@ -175,11 +175,16 @@ export class PgSearchAdapter implements SearchAdapter {
     const parsed = opts?.parsed ?? parseQuery(query.q);
     const term = extractTerm(query.q);
 
-    // Build optional permission filter clause
-    const secretFilter = this.buildSecretFilter(query.userPermissions);
+    // Build optional permission filter clause (returns Drizzle SQL fragment)
+    const secretFragment = this.buildSecretFilter(query.userPermissions);
 
-    // Build optional page type / sensitivity / date range filters
-    const extraFilters = this.buildExtraFilters(query);
+    // Build optional page type / sensitivity / date range filters (returns Drizzle SQL fragment)
+    const extraFragment = this.buildExtraFilters(query);
+
+    // tsquery is a safe PG function call string (escaped by query-parser.ts).
+    // sql.raw() is permitted here because parsed.tsquery is a closed static PG
+    // function call with apostrophes doubled — no user string escapes the call.
+    const tsquerySql = sql.raw(parsed.tsquery);
 
     const rows = await db.execute<{
       id: string;
@@ -199,10 +204,10 @@ export class PgSearchAdapter implements SearchAdapter {
         page_type,
         sensitivity,
         updated_at,
-        ts_rank_cd(search_vector, ${sql.raw(parsed.tsquery)}, 4)   AS fts_rank,
-        similarity(title, ${term})                                   AS trgm_sim,
+        ts_rank_cd(search_vector, ${tsquerySql}, 4)   AS fts_rank,
+        similarity(title, ${term})                     AS trgm_sim,
         (
-          ts_rank_cd(search_vector, ${sql.raw(parsed.tsquery)}, 4) * 0.6 +
+          ts_rank_cd(search_vector, ${tsquerySql}, 4) * 0.6 +
           similarity(title, ${term}) * 0.3 +
           CASE
             WHEN updated_at > now() - interval '7 days' THEN 1.0
@@ -210,22 +215,22 @@ export class PgSearchAdapter implements SearchAdapter {
             WHEN updated_at > now() - interval '90 days' THEN 0.5
             ELSE 0.2
           END * 0.1
-        )                                                            AS hybrid_score,
+        )                                              AS hybrid_score,
         ts_headline(
           'simple',
           coalesce(summary, ''),
-          ${sql.raw(parsed.tsquery)},
+          ${tsquerySql},
           ${HEADLINE_OPTIONS}
-        )                                                            AS headline,
-        COUNT(*) OVER ()::text                                       AS total_count
+        )                                              AS headline,
+        COUNT(*) OVER ()::text                         AS total_count
       FROM knowledge_page
       WHERE
         workspace_id = ${query.workspaceId}::uuid
         AND publish_status != 'deleted'
-        AND search_vector @@ ${sql.raw(parsed.tsquery)}
-        ${sql.raw(secretFilter)}
-        ${sql.raw(extraFilters)}
-      ORDER BY ${sql.raw(this.buildOrderBy(query.sortBy ?? 'relevance'))}
+        AND search_vector @@ ${tsquerySql}
+        ${secretFragment}
+        ${extraFragment}
+      ORDER BY ${this.buildOrderBy(query.sortBy ?? 'relevance')}
       LIMIT ${limit} OFFSET ${offset}
     `);
 
@@ -256,8 +261,8 @@ export class PgSearchAdapter implements SearchAdapter {
     const offset = opts?.offset ?? 0;
     const term = extractTerm(query.q);
 
-    const secretFilter = this.buildSecretFilter(query.userPermissions);
-    const extraFilters = this.buildExtraFilters(query);
+    const secretFragment = this.buildSecretFilter(query.userPermissions);
+    const extraFragment = this.buildExtraFilters(query);
 
     const rows = await db.execute<{
       id: string;
@@ -283,8 +288,8 @@ export class PgSearchAdapter implements SearchAdapter {
         workspace_id = ${query.workspaceId}::uuid
         AND publish_status != 'deleted'
         AND similarity(title, ${term}) > 0.3
-        ${sql.raw(secretFilter)}
-        ${sql.raw(extraFilters)}
+        ${secretFragment}
+        ${extraFragment}
       ORDER BY trgm_sim DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
@@ -361,23 +366,25 @@ export class PgSearchAdapter implements SearchAdapter {
   }
 
   /**
-   * Returns SQL WHERE fragment to exclude pages the user cannot access,
+   * Returns Drizzle SQL fragment to exclude pages the user cannot access,
    * based on session.permissions (mirrors legacyCanAccessSensitivity in packages/auth/rbac.ts).
    *
-   * - SYSTEM_ACCESS_SECRET or ADMIN_ALL → no filter (can see everything)
+   * - SYSTEM_ACCESS_SECRET or ADMIN_ALL → empty fragment (can see everything)
    * - SYSTEM_READ only                  → exclude SECRET_REF_ONLY
-   * - no elevated permission            → exclude RESTRICTED + SECRET_REF_ONLY
+   * - no elevated permission            → AND 1 = 0
    */
-  private buildSecretFilter(userPermissions: string[]): string {
-    return buildLegacyKnowledgeSensitivitySqlFilter(userPermissions);
+  private buildSecretFilter(userPermissions: string[]): SQL {
+    return buildLegacyKnowledgeSensitivitySqlFragment(userPermissions);
   }
 
   /**
-   * Build SQL WHERE fragments for optional filters: pageType, sensitivity, dateRange.
-   * All user-supplied values are validated/whitelisted before interpolation to prevent SQL injection.
+   * Build Drizzle SQL fragments for optional filters: pageType, sensitivity, dateRange.
+   * All user-supplied values are validated/whitelisted before binding to prevent SQL injection.
+   * - pageType / sensitivity: only whitelisted enum values are accepted; unknown values are dropped.
+   * - dates: parameter-bound via Drizzle (no sql.raw); must match strict ISO_DATE_RE.
    */
-  private buildExtraFilters(query: SearchQuery): string {
-    const parts: string[] = [];
+  private buildExtraFilters(query: SearchQuery): SQL {
+    const parts: SQL[] = [];
 
     // Whitelist known page types — reject anything not in the list
     const VALID_PAGE_TYPES = new Set([
@@ -385,39 +392,42 @@ export class PgSearchAdapter implements SearchAdapter {
       'hr-policy', 'tool-guide', 'faq', 'decision', 'incident', 'analysis', 'glossary',
     ]);
     if (query.pageType && VALID_PAGE_TYPES.has(query.pageType)) {
-      parts.push(`AND page_type = '${query.pageType}'`);
+      // pageType is a whitelisted enum — safe to bind as a parameter
+      parts.push(sql` AND page_type = ${query.pageType}`);
     }
 
     // Whitelist known sensitivity values
     const VALID_SENSITIVITIES = new Set(['PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY']);
     if (query.sensitivity && VALID_SENSITIVITIES.has(query.sensitivity)) {
-      parts.push(`AND sensitivity = '${query.sensitivity}'`);
+      // sensitivity is a whitelisted enum — safe to bind as a parameter
+      parts.push(sql` AND sensitivity = ${query.sensitivity}`);
     }
 
     // Strict ISO date validation — only allow YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ patterns
-    // This regex allows no SQL special characters
+    // Values are parameter-bound by Drizzle (no sql.raw) even after validation
     const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?)?$/;
     if (query.dateFrom && ISO_DATE_RE.test(query.dateFrom)) {
-      parts.push(`AND updated_at >= '${query.dateFrom}'::timestamptz`);
+      parts.push(sql` AND updated_at >= ${query.dateFrom}::timestamptz`);
     }
     if (query.dateTo && ISO_DATE_RE.test(query.dateTo)) {
-      parts.push(`AND updated_at <= '${query.dateTo}'::timestamptz`);
+      parts.push(sql` AND updated_at <= ${query.dateTo}::timestamptz`);
     }
 
-    return parts.join(' ');
+    return parts.length === 0 ? sql`` : sql.join(parts, sql.raw(''));
   }
 
   /**
    * Build ORDER BY clause based on sortBy selection.
+   * Returns a static Drizzle SQL literal from a closed switch — no user input reaches raw SQL.
    */
-  private buildOrderBy(sortBy: string): string {
+  private buildOrderBy(sortBy: string): SQL {
     switch (sortBy) {
       case 'date':     // legacy alias
       case 'newest':
-        return 'updated_at DESC';
+        return sql.raw('updated_at DESC');
       case 'freshness':
         // Tie-breaker: updated_at DESC ensures stable pagination within each bucket
-        return `
+        return sql.raw(`
           CASE
             WHEN updated_at > now() - interval '7 days' THEN 1.0
             WHEN updated_at > now() - interval '30 days' THEN 0.8
@@ -425,16 +435,16 @@ export class PgSearchAdapter implements SearchAdapter {
             ELSE 0.2
           END DESC,
           updated_at DESC
-        `;
+        `);
       case 'relevance':
-        return 'fts_rank DESC, trgm_sim DESC';
+        return sql.raw('fts_rank DESC, trgm_sim DESC');
       case 'popularity': // legacy alias
       case 'hybrid':
       default:
         // hybrid_score is computed in the SELECT as the weighted formula
         // (fts*0.6 + trgm*0.3 + freshness*0.1). Referencing a standalone alias
         // in ORDER BY is valid PostgreSQL — only alias arithmetic is disallowed.
-        return 'hybrid_score DESC';
+        return sql.raw('hybrid_score DESC');
     }
   }
 
