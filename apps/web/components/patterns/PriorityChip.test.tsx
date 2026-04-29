@@ -5,22 +5,22 @@ import { PriorityChip } from "./PriorityChip";
 describe("PriorityChip", () => {
   it("P1 renders with red palette and border", () => {
     const html = renderToStaticMarkup(<PriorityChip priority="P1" />);
-    expect(html).toContain("bg-[--color-red-50]");
-    expect(html).toContain("text-[--color-red-500]");
-    expect(html).toContain("border-[--color-red-200]");
+    expect(html).toContain("bg-(--color-red-50)");
+    expect(html).toContain("text-(--color-red-500)");
+    expect(html).toContain("border-(--color-red-200)");
     expect(html).toContain(">P1<");
   });
 
   it("P2 renders with orange palette", () => {
     const html = renderToStaticMarkup(<PriorityChip priority="P2" />);
-    expect(html).toContain("bg-[--color-orange-50]");
-    expect(html).toContain("text-[--color-orange]");
+    expect(html).toContain("bg-(--color-orange-50)");
+    expect(html).toContain("text-(--color-orange)");
   });
 
   it("P3 renders with neutral palette", () => {
     const html = renderToStaticMarkup(<PriorityChip priority="P3" />);
-    expect(html).toContain("bg-[--bg-surface]");
-    expect(html).toContain("text-[--fg-secondary]");
+    expect(html).toContain("bg-(--bg-surface)");
+    expect(html).toContain("text-(--fg-secondary)");
   });
 
   it("uses uppercase tracking-wide typography (not StatusChip shape)", () => {

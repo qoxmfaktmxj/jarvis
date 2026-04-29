@@ -5,7 +5,7 @@ import type { DashboardNoticeRow } from "@/lib/queries/dashboard-notices";
 function badgeClassFor(n: DashboardNoticeRow): string {
   if (n.pinned) return "bg-danger-subtle text-danger border-danger/30";
   if (n.sensitivity === "PUBLIC") return "bg-warning-subtle text-warning border-warning/30";
-  return "bg-[--bg-surface] text-[--fg-secondary] border-[--border-default]";
+  return "bg-(--bg-surface) text-(--fg-secondary) border-(--border-default)";
 }
 
 function rel(d: Date, now: Date): string {
@@ -25,15 +25,15 @@ export async function NoticesWidget({
 }) {
   const t = await getTranslations("Dashboard.notices");
   return (
-    <section className="flex max-h-[220px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
+    <section className="flex max-h-[220px] flex-col rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex shrink-0 items-center justify-between">
-        <h2 className="text-sm font-semibold text-[--fg-primary]">{t("title")}</h2>
-        <Link href="/notices" className="text-xs text-[--fg-secondary] hover:text-[--brand-primary]">
+        <h2 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h2>
+        <Link href="/notices" className="text-xs text-(--fg-secondary) hover:text-(--brand-primary)">
           {t("viewAll")} →
         </Link>
       </header>
       {items.length === 0 ? (
-        <p className="text-sm text-[--fg-secondary]">{t("empty")}</p>
+        <p className="text-sm text-(--fg-secondary)">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2 overflow-y-auto">
           {items.map((n) => (
@@ -44,8 +44,8 @@ export async function NoticesWidget({
                   {n.pinned ? t("badgePinned") : n.sensitivity === "PUBLIC" ? t("badgeEvent") : t("badgeNotice")}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-[--fg-primary]">{n.title}</div>
-                  <div className="text-xs text-[--fg-secondary]">
+                  <div className="truncate text-sm text-(--fg-primary)">{n.title}</div>
+                  <div className="text-xs text-(--fg-secondary)">
                     {n.authorName} · {n.publishedAt ? rel(n.publishedAt, now) : "—"}
                   </div>
                 </div>

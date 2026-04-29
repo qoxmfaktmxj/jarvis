@@ -21,21 +21,21 @@ export type StatusKey =
 type StyleMap = { chip: string; dot: string };
 
 const STATUS_STYLES: Record<StatusKey, StyleMap> = {
-  neutral:              { chip: "bg-[--status-neutral-bg] text-[--status-neutral-fg]",                 dot: "bg-[--fg-muted]" },
-  todo:                 { chip: "bg-[--status-neutral-bg] text-[--status-neutral-fg]",                 dot: "bg-[--fg-muted]" },
-  active:               { chip: "bg-[--status-active-bg] text-[--status-active-fg]",                   dot: "bg-[--brand-primary]" },
-  progress:             { chip: "bg-[--status-success-bg] text-[--status-success-fg]",                 dot: "bg-[--color-teal]" },
-  review:               { chip: "bg-[--status-active-bg] text-[--status-active-fg]",                   dot: "bg-[--brand-primary]" },
-  done:                 { chip: "bg-[--status-done-bg] text-[--status-done-fg]",                       dot: "bg-[--color-green]" },
-  success:              { chip: "bg-[--status-success-bg] text-[--status-success-fg]",                 dot: "bg-[--color-teal]" },
-  warning:              { chip: "bg-[--status-warn-bg] text-[--status-warn-fg]",                       dot: "bg-[--color-orange]" },
-  hold:                 { chip: "bg-[--status-warn-bg] text-[--status-warn-fg]",                       dot: "bg-[--color-orange]" },
-  danger:               { chip: "bg-[--status-danger-bg] text-[--status-danger-fg] border border-[--color-red-200]", dot: "bg-[--color-red-500]" },
-  urgent:               { chip: "bg-[--status-danger-bg] text-[--status-danger-fg] border border-[--color-red-200]", dot: "bg-[--color-red-500]" },
-  blocked:              { chip: "bg-[--status-danger-bg] text-[--status-danger-fg] border border-[--color-red-200]", dot: "bg-[--color-red-500]" },
-  "decorative-pink":    { chip: "bg-[--status-decorative-pink-bg] text-[--status-decorative-pink-fg]",     dot: "bg-[--color-pink]" },
-  "decorative-purple":  { chip: "bg-[--status-decorative-purple-bg] text-[--status-decorative-purple-fg]", dot: "bg-[--color-purple]" },
-  "decorative-brown":   { chip: "bg-[--status-decorative-brown-bg] text-[--status-decorative-brown-fg]",   dot: "bg-[--color-brown]" },
+  neutral:              { chip: "bg-(--status-neutral-bg) text-(--status-neutral-fg)",                 dot: "bg-(--fg-muted)" },
+  todo:                 { chip: "bg-(--status-neutral-bg) text-(--status-neutral-fg)",                 dot: "bg-(--fg-muted)" },
+  active:               { chip: "bg-(--status-active-bg) text-(--status-active-fg)",                   dot: "bg-(--brand-primary)" },
+  progress:             { chip: "bg-(--status-success-bg) text-(--status-success-fg)",                 dot: "bg-(--color-teal)" },
+  review:               { chip: "bg-(--status-active-bg) text-(--status-active-fg)",                   dot: "bg-(--brand-primary)" },
+  done:                 { chip: "bg-(--status-done-bg) text-(--status-done-fg)",                       dot: "bg-(--color-green)" },
+  success:              { chip: "bg-(--status-success-bg) text-(--status-success-fg)",                 dot: "bg-(--color-teal)" },
+  warning:              { chip: "bg-(--status-warn-bg) text-(--status-warn-fg)",                       dot: "bg-(--color-orange)" },
+  hold:                 { chip: "bg-(--status-warn-bg) text-(--status-warn-fg)",                       dot: "bg-(--color-orange)" },
+  danger:               { chip: "bg-(--status-danger-bg) text-(--status-danger-fg) border border-(--color-red-200)", dot: "bg-(--color-red-500)" },
+  urgent:               { chip: "bg-(--status-danger-bg) text-(--status-danger-fg) border border-(--color-red-200)", dot: "bg-(--color-red-500)" },
+  blocked:              { chip: "bg-(--status-danger-bg) text-(--status-danger-fg) border border-(--color-red-200)", dot: "bg-(--color-red-500)" },
+  "decorative-pink":    { chip: "bg-(--status-decorative-pink-bg) text-(--status-decorative-pink-fg)",     dot: "bg-(--color-pink)" },
+  "decorative-purple":  { chip: "bg-(--status-decorative-purple-bg) text-(--status-decorative-purple-fg)", dot: "bg-(--color-purple)" },
+  "decorative-brown":   { chip: "bg-(--status-decorative-brown-bg) text-(--status-decorative-brown-fg)",   dot: "bg-(--color-brown)" },
 };
 
 export const STATUS_LABELS: Record<StatusKey, string> = {

@@ -21,30 +21,30 @@ export async function LatestWikiWidget({
 }) {
   const t = await getTranslations("Dashboard.latestWiki");
   return (
-    <section className="flex max-h-[320px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
+    <section className="flex max-h-[320px] flex-col rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex shrink-0 items-center justify-between">
-        <h2 className="text-sm font-semibold text-[--fg-primary]">{t("title")}</h2>
-        <Link href="/wiki" className="text-xs text-[--fg-secondary] hover:text-[--brand-primary]">
+        <h2 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h2>
+        <Link href="/wiki" className="text-xs text-(--fg-secondary) hover:text-(--brand-primary)">
           {t("viewAll")} →
         </Link>
       </header>
       {items.length === 0 ? (
-        <p className="text-sm text-[--fg-secondary]">{t("empty")}</p>
+        <p className="text-sm text-(--fg-secondary)">{t("empty")}</p>
       ) : (
         <ul className="flex flex-col gap-2 overflow-y-auto">
           {items.map((w) => (
             <li key={w.id} className="flex flex-col">
               <Link
                 href={`/wiki/${workspaceId}/${w.path}`}
-                className="truncate text-sm font-medium text-[--fg-primary] hover:text-[--brand-primary]"
+                className="truncate text-sm font-medium text-(--fg-primary) hover:text-(--brand-primary)"
               >
                 {w.title}
               </Link>
-              <div className="flex items-center gap-1 text-xs text-[--fg-secondary]">
+              <div className="flex items-center gap-1 text-xs text-(--fg-secondary)">
                 {w.tags.slice(0, 2).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded bg-[--bg-surface] px-1.5 py-0.5 text-[10px] font-semibold uppercase text-[--fg-secondary]"
+                    className="rounded bg-(--bg-surface) px-1.5 py-0.5 text-[10px] font-semibold uppercase text-(--fg-secondary)"
                   >
                     {tag}
                   </span>

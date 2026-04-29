@@ -83,24 +83,24 @@ export function WikiPanel({ workspaceId, slug, onClose }: WikiPanelProps) {
 
   return (
     <section aria-label="위키 페이지" className="flex h-full w-full flex-col bg-white">
-      <header className="flex shrink-0 items-center gap-2 border-b border-[--border-default] px-4 py-2.5">
+      <header className="flex shrink-0 items-center gap-2 border-b border-(--border-default) px-4 py-2.5">
         <button
           type="button"
           onClick={onBack}
           disabled={!canGoBack}
           aria-label="뒤로"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-surface] hover:text-[--fg-primary] disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-surface) hover:text-(--fg-primary) disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
         </button>
-        <span className="flex-1 truncate text-sm font-medium text-[--fg-primary]">
+        <span className="flex-1 truncate text-sm font-medium text-(--fg-primary)">
           {status.kind === 'ready' ? status.data.page.title : '위키 페이지'}
         </span>
         <button
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[--fg-secondary] transition-colors duration-150 hover:bg-[--bg-surface] hover:text-[--fg-primary]"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-surface) hover:text-(--fg-primary)"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -108,10 +108,10 @@ export function WikiPanel({ workspaceId, slug, onClose }: WikiPanelProps) {
 
       <div className="flex-1 overflow-y-auto px-6 py-4">
         {status.kind === 'loading' && (
-          <p className="text-sm text-[--fg-muted]">불러오는 중…</p>
+          <p className="text-sm text-(--fg-muted)">불러오는 중…</p>
         )}
         {status.kind === 'error' && (
-          <p className="text-sm text-[--color-red-500]">{status.message}</p>
+          <p className="text-sm text-(--color-red-500)">{status.message}</p>
         )}
         {status.kind === 'ready' && (
           <WikiPageView

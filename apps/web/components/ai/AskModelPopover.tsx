@@ -38,16 +38,16 @@ export function AskModelPopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border border-[--border-default] bg-[--bg-page] px-2 py-1 text-xs font-medium text-[--fg-primary] transition-colors duration-150 hover:border-[--border-default] hover:bg-[--bg-surface] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--border-focus]",
+          "inline-flex items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-page) px-2 py-1 text-xs font-medium text-(--fg-primary) transition-colors duration-150 hover:border-(--border-default) hover:bg-(--bg-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)",
           className,
         )}
         aria-label={`모델: ${current.label}`}
       >
         {TriggerIcon ? (
-          <TriggerIcon className="h-3 w-3 text-[--brand-primary]" />
+          <TriggerIcon className="h-3 w-3 text-(--brand-primary)" />
         ) : null}
         <span>{current.label}</span>
-        <ChevronUp className="h-3 w-3 text-[--fg-muted]" aria-hidden />
+        <ChevronUp className="h-3 w-3 text-(--fg-muted)" aria-hidden />
       </PopoverTrigger>
       <PopoverContent
         side="top"
@@ -72,8 +72,8 @@ export function AskModelPopover({
                   className={cn(
                     "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150",
                     selected
-                      ? "bg-[--brand-primary-bg] text-[--brand-primary-text]"
-                      : "text-[--fg-primary] hover:bg-[--bg-surface]",
+                      ? "bg-(--brand-primary-bg) text-(--brand-primary-text)"
+                      : "text-(--fg-primary) hover:bg-(--bg-surface)",
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">
@@ -81,7 +81,7 @@ export function AskModelPopover({
                       <Icon
                         className={cn(
                           "h-3 w-3 shrink-0",
-                          selected ? "text-[--brand-primary-text]" : "text-[--fg-secondary]",
+                          selected ? "text-(--brand-primary-text)" : "text-(--fg-secondary)",
                         )}
                       />
                     ) : null}
@@ -90,7 +90,7 @@ export function AskModelPopover({
                         {option.label}
                       </span>
                       {option.description ? (
-                        <span className="truncate text-[11px] text-[--fg-muted]">
+                        <span className="truncate text-[11px] text-(--fg-muted)">
                           {option.description}
                         </span>
                       ) : null}
@@ -98,7 +98,7 @@ export function AskModelPopover({
                   </span>
                   {selected ? (
                     <Check
-                      className="h-3.5 w-3.5 shrink-0 text-[--brand-primary-text]"
+                      className="h-3.5 w-3.5 shrink-0 text-(--brand-primary-text)"
                       aria-hidden
                     />
                   ) : null}

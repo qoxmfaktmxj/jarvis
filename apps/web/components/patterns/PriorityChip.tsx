@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils";
 export type PriorityKey = "P1" | "P2" | "P3";
 
 const PRIORITY_STYLE: Record<PriorityKey, string> = {
-  P1: "bg-[--color-red-50] text-[--color-red-500] border border-[--color-red-200]",
-  P2: "bg-[--color-orange-50] text-[--color-orange]",
-  P3: "bg-[--bg-surface] text-[--fg-secondary]",
+  P1: "bg-(--color-red-50) text-(--color-red-500) border border-(--color-red-200)",
+  P2: "bg-(--color-orange-50) text-(--color-orange)",
+  P3: "bg-(--bg-surface) text-(--fg-secondary)",
 };
 
 export interface PriorityChipProps {

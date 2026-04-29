@@ -37,8 +37,8 @@ describe("NativeSelect", () => {
     const html = renderToStaticMarkup(
       <NativeSelect value="todo" onChange={() => {}} options={opts} />
     );
-    expect(html).toContain("bg-[--bg-page]");
-    expect(html).toContain("border-[--border-default]");
+    expect(html).toContain("bg-(--bg-page)");
+    expect(html).toContain("border-(--border-default)");
   });
 
   it("shows disabled state styling", () => {

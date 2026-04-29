@@ -19,9 +19,9 @@ interface SourceRefCardProps {
 }
 
 function confidenceTone(score: number): { label: string; dot: string; text: string } {
-  if (score >= 0.85) return { label: '높음', dot: 'bg-[--status-success-fg]', text: 'text-[--status-success-fg]' };
-  if (score >= 0.65) return { label: '보통', dot: 'bg-[--brand-primary]', text: 'text-[--brand-primary-text]' };
-  return { label: '낮음', dot: 'bg-[--fg-muted]', text: 'text-[--fg-secondary]' };
+  if (score >= 0.85) return { label: '높음', dot: 'bg-(--status-success-fg)', text: 'text-(--status-success-fg)' };
+  if (score >= 0.65) return { label: '보통', dot: 'bg-(--brand-primary)', text: 'text-(--brand-primary-text)' };
+  return { label: '낮음', dot: 'bg-(--fg-muted)', text: 'text-(--fg-secondary)' };
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -56,13 +56,13 @@ function SourceRow({
 
   const body = (
     <>
-      <span className="text-display w-8 shrink-0 text-center text-[11px] font-semibold tabular-nums text-[--fg-muted]">
+      <span className="text-display w-8 shrink-0 text-center text-[11px] font-semibold tabular-nums text-(--fg-muted)">
         {label}
       </span>
       <Icon className={`h-3.5 w-3.5 shrink-0 ${accentText} opacity-70`} aria-hidden />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
-          <p className={`truncate text-sm font-medium ${href ? `${accentText} group-hover:underline decoration-current decoration-1 underline-offset-4` : 'text-[--fg-primary]'}`}>
+          <p className={`truncate text-sm font-medium ${href ? `${accentText} group-hover:underline decoration-current decoration-1 underline-offset-4` : 'text-(--fg-primary)'}`}>
             {title}
           </p>
           {typeof confidence === 'number' ? (
@@ -74,11 +74,11 @@ function SourceRow({
             </span>
           ) : null}
         </div>
-        {meta ? <p className="truncate text-xs text-[--fg-secondary]">{meta}</p> : null}
-        {subMeta ? <p className="truncate text-[11px] text-[--fg-muted]">{subMeta}</p> : null}
+        {meta ? <p className="truncate text-xs text-(--fg-secondary)">{meta}</p> : null}
+        {subMeta ? <p className="truncate text-[11px] text-(--fg-muted)">{subMeta}</p> : null}
       </div>
       {href ? (
-        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[--border-default] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[--brand-primary]" aria-hidden />
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-(--border-default) transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-(--brand-primary)" aria-hidden />
       ) : null}
     </>
   );
@@ -90,7 +90,7 @@ function SourceRow({
     return (
       <Link
         href={href}
-        className={`${baseCls} hover:bg-[--bg-surface]`}
+        className={`${baseCls} hover:bg-(--bg-surface)`}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
         {body}
@@ -120,7 +120,7 @@ function TextSourceRow({ source, index }: { source: TextSourceRef; index: number
       index={index}
       kindLetter={null}
       icon={FileText}
-      accentText="text-[--brand-primary-text]"
+      accentText="text-(--brand-primary-text)"
       title={source.title}
       href={source.url}
       meta={source.excerpt}
@@ -143,7 +143,7 @@ function GraphSourceRow({ source, index }: { source: GraphSourceRef; index: numb
       index={index}
       kindLetter="G"
       icon={Network}
-      accentText="text-[--brand-primary-text]"
+      accentText="text-(--brand-primary-text)"
       title={source.nodeLabel}
       href={source.url}
       meta={metaParts.join(' · ') || undefined}
@@ -176,7 +176,7 @@ function CaseSourceRow({ source, index }: { source: CaseSourceRef; index: number
       index={index}
       kindLetter="C"
       icon={Briefcase}
-      accentText="text-[--fg-primary]"
+      accentText="text-(--fg-primary)"
       title={source.title}
       meta={metaParts.join(' · ') || undefined}
       subMeta={subParts.join(' · ') || undefined}
@@ -202,7 +202,7 @@ function DirectorySourceRow({ source, index }: { source: DirectorySourceRef; ind
       index={index}
       kindLetter="D"
       icon={ExternalLink}
-      accentText="text-[--fg-primary]"
+      accentText="text-(--fg-primary)"
       title={source.nameKo ?? source.name}
       href={source.url ?? null}
       external={!!source.url}
@@ -245,7 +245,7 @@ function WikiPageSourceRow({
       index={index}
       kindLetter="W"
       icon={BookOpen}
-      accentText="text-[--brand-primary-text]"
+      accentText="text-(--brand-primary-text)"
       title={source.title}
       href={href}
       subMeta={sub}

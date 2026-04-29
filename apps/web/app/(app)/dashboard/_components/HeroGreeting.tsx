@@ -5,7 +5,7 @@ export async function HeroGreeting({ name }: { name: string }) {
   const t = await getTranslations("Dashboard");
   return (
     <div className="flex items-center gap-3">
-      <h1 className="text-2xl font-bold tracking-tight text-[--fg-primary]">
+      <h1 className="text-2xl font-bold tracking-tight text-(--fg-primary)">
         {t("greeting", { name })}
       </h1>
       <Image

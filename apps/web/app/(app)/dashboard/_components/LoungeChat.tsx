@@ -94,20 +94,20 @@ export function LoungeChat({
   }
 
   return (
-    <section className="flex h-full min-h-[520px] flex-col rounded-xl border border-[--border-default] bg-[--bg-surface]">
-      <header className="flex items-center justify-between border-b border-[--border-default] px-4 py-3">
+    <section className="flex h-full min-h-[520px] flex-col rounded-xl border border-(--border-default) bg-(--bg-surface)">
+      <header className="flex items-center justify-between border-b border-(--border-default) px-4 py-3">
         <div>
-          <div className="text-sm font-semibold text-[--fg-primary]">
+          <div className="text-sm font-semibold text-(--fg-primary)">
             {t("title")}
           </div>
-          <div className="text-xs text-[--fg-secondary]">
+          <div className="text-xs text-(--fg-secondary)">
             {t("subtitle", { online })}
           </div>
         </div>
       </header>
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-[--fg-secondary]">{t("empty")}</p>
+          <p className="px-4 py-6 text-sm text-(--fg-secondary)">{t("empty")}</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
             {messages.map((m) => (

@@ -21,12 +21,12 @@ export function DataTableShell({
   return (
     <section className="space-y-4">
       {filters ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[--border-default] bg-[--bg-surface] p-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-(--border-default) bg-(--bg-surface) p-3">
           {filters}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-xl border border-[--border-default] bg-card">
+      <div className="overflow-hidden rounded-xl border border-(--border-default) bg-card">
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -41,7 +41,7 @@ export function DataTableShell({
       </div>
 
       {pagination ? (
-        <div className="flex items-center justify-between text-sm text-[--fg-secondary]">
+        <div className="flex items-center justify-between text-sm text-(--fg-secondary)">
           {pagination}
         </div>
       ) : null}

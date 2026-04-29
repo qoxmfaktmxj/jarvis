@@ -57,7 +57,7 @@ function AskShellInner({
           {children}
         </div>
         {showPanel && panel.active && (
-          <div className="hidden lg:flex lg:w-1/2 border-l border-[--border-default]">
+          <div className="hidden lg:flex lg:w-1/2 border-l border-(--border-default)">
             <WikiPanel
               workspaceId={workspaceId}
               slug={panel.active.slug}

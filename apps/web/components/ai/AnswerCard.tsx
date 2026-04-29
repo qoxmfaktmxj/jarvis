@@ -81,16 +81,16 @@ function SectionHeader({
 }) {
   return (
     <div className="mb-2.5 flex items-baseline gap-2">
-      <Icon className="h-3.5 w-3.5 text-[--fg-muted]" aria-hidden />
-      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
+      <Icon className="h-3.5 w-3.5 text-(--fg-muted)" aria-hidden />
+      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-(--fg-secondary)">
         {label}
       </span>
       {typeof count === 'number' && count > 0 ? (
-        <span className="text-display text-[11px] font-semibold tabular-nums text-[--fg-muted]">
+        <span className="text-display text-[11px] font-semibold tabular-nums text-(--fg-muted)">
           {count}
         </span>
       ) : null}
-      <span className="h-px flex-1 bg-[--border-default]" aria-hidden />
+      <span className="h-px flex-1 bg-(--border-default)" aria-hidden />
     </div>
   );
 }
@@ -110,9 +110,9 @@ function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
 
   const tone =
     avg >= 0.85
-      ? { label: '높은 신뢰도', dot: 'bg-[--status-success-fg]', text: 'text-[--status-success-fg]' }
+      ? { label: '높은 신뢰도', dot: 'bg-(--status-success-fg)', text: 'text-(--status-success-fg)' }
       : avg >= 0.65
-        ? { label: '보통 신뢰도', dot: 'bg-[--brand-primary]', text: 'text-[--brand-primary-text]' }
+        ? { label: '보통 신뢰도', dot: 'bg-(--brand-primary)', text: 'text-(--brand-primary-text)' }
         : { label: '낮은 신뢰도', dot: 'bg-warning', text: 'text-warning' };
 
   return (
@@ -120,7 +120,7 @@ function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
       <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} aria-hidden />
       <Shield className="h-3 w-3" aria-hidden />
       {tone.label}
-      <span className="tabular-nums text-[--fg-muted]">· {pct}%</span>
+      <span className="tabular-nums text-(--fg-muted)">· {pct}%</span>
     </span>
   );
 }
@@ -133,20 +133,20 @@ function DocumentSection({ sources }: { sources: TextSourceRef[] }) {
   return (
     <div>
       <SectionHeader icon={FileText} label="근거 문서" count={sources.length} />
-      <ul className="divide-y divide-[--border-soft]">
+      <ul className="divide-y divide-(--border-soft)">
         {sources.map((s, i) => (
           <li key={`${s.pageId}-${i}`}>
             <Link
               href={s.url}
-              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-[--bg-surface] -mx-2 px-2 rounded-md"
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-surface) -mx-2 px-2 rounded-md"
             >
-              <span className="text-display w-5 shrink-0 text-center text-[11px] font-semibold tabular-nums text-[--fg-muted]">
+              <span className="text-display w-5 shrink-0 text-center text-[11px] font-semibold tabular-nums text-(--fg-muted)">
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <span className="flex-1 truncate text-sm text-[--fg-primary] group-hover:text-[--brand-primary-text]">
+              <span className="flex-1 truncate text-sm text-(--fg-primary) group-hover:text-(--brand-primary-text)">
                 {s.title}
               </span>
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[--border-default] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[--brand-primary]" aria-hidden />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-(--border-default) transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-(--brand-primary)" aria-hidden />
             </Link>
           </li>
         ))}
@@ -178,8 +178,8 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
           const type = typeLabel[s.entryType] ?? s.entryType;
           const inner = (
             <>
-              <span className="text-[--fg-primary] group-hover:text-[--brand-primary-text]">{label}</span>
-              <span className="text-display text-[10px] uppercase tracking-wide text-[--fg-muted]">
+              <span className="text-(--fg-primary) group-hover:text-(--brand-primary-text)">{label}</span>
+              <span className="text-display text-[10px] uppercase tracking-wide text-(--fg-muted)">
                 {type}
               </span>
             </>
@@ -191,7 +191,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
                   href={s.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[--brand-primary-bg]"
+                  className="group inline-flex items-center gap-2 rounded-md border border-(--border-default) bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-(--brand-primary-bg)"
                 >
                   {inner}
                 </Link>
@@ -201,7 +201,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
           return (
             <li
               key={`${s.entryId}-${i}`}
-              className="inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-[--bg-surface] px-2.5 py-1 text-xs"
+              className="inline-flex items-center gap-2 rounded-md border border-(--border-default) bg-(--bg-surface) px-2.5 py-1 text-xs"
             >
               {inner}
             </li>
@@ -227,11 +227,11 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
   };
 
   const resultTone: Record<string, string> = {
-    resolved: 'bg-[--status-done-fg]',
-    workaround: 'bg-[--brand-primary]',
+    resolved: 'bg-(--status-done-fg)',
+    workaround: 'bg-(--brand-primary)',
     escalated: 'bg-warning',
     no_fix: 'bg-danger',
-    info_only: 'bg-[--fg-muted]',
+    info_only: 'bg-(--fg-muted)',
   };
 
   const visible = sources.slice(0, 3);
@@ -239,17 +239,17 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
   return (
     <div>
       <SectionHeader icon={Briefcase} label="유사 사례" count={sources.length} />
-      <ul className="divide-y divide-[--border-soft]">
+      <ul className="divide-y divide-(--border-soft)">
         {visible.map((s, i) => (
           <li key={`${s.caseId}-${i}`} className="py-2">
             <div className="mb-1 flex items-start justify-between gap-3">
-              <p className="flex-1 truncate text-sm font-medium text-[--fg-primary]">
+              <p className="flex-1 truncate text-sm font-medium text-(--fg-primary)">
                 {s.title}
               </p>
               {s.result ? (
-                <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-[--fg-secondary]">
+                <span className="inline-flex shrink-0 items-center gap-1.5 text-[11px] text-(--fg-secondary)">
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${resultTone[s.result] ?? 'bg-[--fg-muted]'}`}
+                    className={`h-1.5 w-1.5 rounded-full ${resultTone[s.result] ?? 'bg-(--fg-muted)'}`}
                     aria-hidden
                   />
                   {resultLabel[s.result] ?? s.result}
@@ -257,14 +257,14 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
               ) : null}
             </div>
             {s.symptom ? (
-              <p className="truncate text-xs text-[--fg-secondary]">
-                <span className="text-display font-semibold uppercase tracking-wide text-[--fg-muted]">증상</span>{' '}
+              <p className="truncate text-xs text-(--fg-secondary)">
+                <span className="text-display font-semibold uppercase tracking-wide text-(--fg-muted)">증상</span>{' '}
                 {s.symptom}
               </p>
             ) : null}
             {s.action ? (
-              <p className="truncate text-xs text-[--fg-secondary]">
-                <span className="text-display font-semibold uppercase tracking-wide text-[--fg-muted]">조치</span>{' '}
+              <p className="truncate text-xs text-(--fg-secondary)">
+                <span className="text-display font-semibold uppercase tracking-wide text-(--fg-muted)">조치</span>{' '}
                 {s.action}
               </p>
             ) : null}
@@ -272,7 +272,7 @@ function CaseSection({ sources }: { sources: CaseSourceRef[] }) {
         ))}
       </ul>
       {sources.length > 3 ? (
-        <p className="mt-1.5 text-xs text-[--fg-muted]">
+        <p className="mt-1.5 text-xs text-(--fg-muted)">
           외 {sources.length - 3}건 더
         </p>
       ) : null}
@@ -293,23 +293,23 @@ function WikiPageSection({ sources, workspaceId }: { sources: WikiPageSourceRef[
   return (
     <div>
       <SectionHeader icon={FileText} label="위키 페이지" count={visible.length} />
-      <ul className="divide-y divide-[--border-soft]">
+      <ul className="divide-y divide-(--border-soft)">
         {visible.map((s, i) => (
           <li key={`${s.pageId}-${i}`}>
             <WikiLink
               workspaceId={workspaceId}
               slug={s.slug}
-              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-[--bg-surface] -mx-2 px-2 rounded-md"
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-surface) -mx-2 px-2 rounded-md"
             >
               <span className="flex-1 min-w-0">
-                <span className="block truncate text-sm text-[--fg-primary] group-hover:text-[--brand-primary-text]">
+                <span className="block truncate text-sm text-(--fg-primary) group-hover:text-(--brand-primary-text)">
                   {s.title}
                 </span>
-                <span className="block truncate text-[11px] text-[--fg-muted]">
+                <span className="block truncate text-[11px] text-(--fg-muted)">
                   {s.path}
                 </span>
               </span>
-              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[--border-default] transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-[--brand-primary]" aria-hidden />
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-(--border-default) transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-(--brand-primary)" aria-hidden />
             </WikiLink>
           </li>
         ))}
@@ -331,12 +331,12 @@ function GraphSection({ sources }: { sources: GraphSourceRef[] }) {
           <li key={`${s.nodeId}-${i}`}>
             <Link
               href={s.url}
-              className="group inline-flex items-center gap-2 rounded-md border border-[--border-default] bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-[--brand-primary-bg]"
+              className="group inline-flex items-center gap-2 rounded-md border border-(--border-default) bg-card px-2.5 py-1 text-xs transition-colors duration-150 hover:bg-(--brand-primary-bg)"
             >
-              <Network className="h-3 w-3 text-[--fg-muted] group-hover:text-[--brand-primary]" aria-hidden />
-              <span className="text-[--fg-primary] group-hover:text-[--brand-primary-text]">{s.nodeLabel}</span>
+              <Network className="h-3 w-3 text-(--fg-muted) group-hover:text-(--brand-primary)" aria-hidden />
+              <span className="text-(--fg-primary) group-hover:text-(--brand-primary-text)">{s.nodeLabel}</span>
               {s.communityLabel ? (
-                <span className="text-[10px] text-[--fg-muted]">{s.communityLabel}</span>
+                <span className="text-[10px] text-(--fg-muted)">{s.communityLabel}</span>
               ) : null}
             </Link>
           </li>
@@ -360,14 +360,14 @@ function OwnerTeamSection({ sources }: { sources: SourceRef[] }) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <Users className="h-3.5 w-3.5 text-[--fg-muted]" aria-hidden />
-      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-[--fg-secondary]">
+      <Users className="h-3.5 w-3.5 text-(--fg-muted)" aria-hidden />
+      <span className="text-display text-[11px] font-semibold uppercase tracking-[0.14em] text-(--fg-secondary)">
         담당 팀
       </span>
       {[...teams].map((team) => (
         <span
           key={team}
-          className="inline-flex items-center rounded-md bg-[--bg-surface] px-2 py-0.5 text-xs text-[--fg-primary]"
+          className="inline-flex items-center rounded-md bg-(--bg-surface) px-2 py-0.5 text-xs text-(--fg-primary)"
         >
           {team}
         </span>
@@ -389,12 +389,12 @@ function NextActionSection({ sources }: { sources: DirectorySourceRef[] }) {
       <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm">
         {actionable.slice(0, 3).map((s, i) => (
           <span key={s.entryId} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight className="h-3 w-3 text-[--border-default]" aria-hidden />}
+            {i > 0 && <ChevronRight className="h-3 w-3 text-(--border-default)" aria-hidden />}
             <Link
               href={s.url!}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[--brand-primary-text] underline decoration-[--brand-primary-bg] underline-offset-4 transition-colors duration-150 hover:decoration-[--brand-primary]"
+              className="text-(--brand-primary-text) underline decoration-(--brand-primary-bg) underline-offset-4 transition-colors duration-150 hover:decoration-(--brand-primary)"
             >
               {s.nameKo ?? s.name}
             </Link>

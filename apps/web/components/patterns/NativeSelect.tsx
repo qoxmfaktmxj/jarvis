@@ -31,10 +31,10 @@ export function NativeSelect({
       <select
         aria-label={ariaLabel}
         className={cn(
-          "flex w-full appearance-none rounded-md border border-[--border-default]",
-          "bg-[--bg-page] pr-8 pl-3 text-[--fg-primary]",
+          "flex w-full appearance-none rounded-md border border-(--border-default)",
+          "bg-(--bg-page) pr-8 pl-3 text-(--fg-primary)",
           "shadow-[0_1px_2px_rgba(15,23,42,0.02)] tabular-nums",
-          "focus:border-[--brand-primary] focus:outline-none focus:ring-2 focus:ring-[--brand-primary-bg]",
+          "focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)",
           compact ? "h-7 text-[12px] min-w-[120px]" : "h-8 text-[13px]",
         )}
         value={value}
@@ -48,7 +48,7 @@ export function NativeSelect({
         ))}
       </select>
       <svg
-        className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-[--fg-muted]"
+        className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-(--fg-muted)"
         viewBox="0 0 12 12"
         fill="none"
         aria-hidden

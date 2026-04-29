@@ -76,7 +76,7 @@ export function AnswerBody({ text, sources, workspaceId }: AnswerBodyProps) {
   const parts = text.split(CITATION_SPLIT_RE);
 
   return (
-    <div className="prose prose-sm max-w-none text-sm leading-relaxed text-[--fg-primary]">
+    <div className="prose prose-sm max-w-none text-sm leading-relaxed text-(--fg-primary)">
       {parts.map((part, index) => {
         const legacyMatch = part.match(LEGACY_CITATION_RE);
         if (legacyMatch?.[1]) {
@@ -106,7 +106,7 @@ export function AnswerBody({ text, sources, workspaceId }: AnswerBodyProps) {
               key={index}
               workspaceId={workspaceId}
               slug={slug}
-              className="text-[--brand-primary-text] underline decoration-[--brand-primary-bg] underline-offset-2 hover:decoration-[--brand-primary]"
+              className="text-(--brand-primary-text) underline decoration-(--brand-primary-bg) underline-offset-2 hover:decoration-(--brand-primary)"
             >
               {slug}
             </WikiLink>

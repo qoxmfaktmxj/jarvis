@@ -15,16 +15,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:   "bg-[--brand-primary] text-white shadow-[var(--shadow-flat)] hover:bg-[--brand-primary-hover] focus-visible:ring-2 focus-visible:ring-[--border-focus] focus-visible:ring-offset-2",
-        secondary: "bg-[--bg-surface] text-[--fg-primary] border border-[--border-default] hover:bg-white hover:border-[rgba(0,0,0,0.16)]",
-        ghost:     "bg-transparent text-[--fg-primary] hover:bg-[--bg-surface]",
-        outline:   "bg-[--bg-page] border border-[--border-default] text-[--fg-primary] hover:bg-[--bg-surface]",
-        danger:    "bg-transparent text-[--color-red-500] hover:bg-[--color-red-50]",
-        link:      "text-[--brand-primary-text] underline-offset-2 hover:underline bg-transparent",
+        default:   "bg-(--brand-primary) text-white shadow-[var(--shadow-flat)] hover:bg-(--brand-primary-hover) focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-offset-2",
+        secondary: "bg-(--bg-surface) text-(--fg-primary) border border-(--border-default) hover:bg-white hover:border-[rgba(0,0,0,0.16)]",
+        ghost:     "bg-transparent text-(--fg-primary) hover:bg-(--bg-surface)",
+        outline:   "bg-(--bg-page) border border-(--border-default) text-(--fg-primary) hover:bg-(--bg-surface)",
+        danger:    "bg-transparent text-(--color-red-500) hover:bg-(--color-red-50)",
+        link:      "text-(--brand-primary-text) underline-offset-2 hover:underline bg-transparent",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         // DEPRECATED: Phase 2에서 전 호출부 제거 예정
-        accent:    "bg-[--brand-primary] text-white shadow-[var(--shadow-flat)] hover:bg-[--brand-primary-hover] focus-visible:ring-2 focus-visible:ring-[--border-focus] focus-visible:ring-offset-2",
+        accent:    "bg-(--brand-primary) text-white shadow-[var(--shadow-flat)] hover:bg-(--brand-primary-hover) focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-offset-2",
       },
       size: {
         default: "h-9 px-4 py-2 text-[14px]",

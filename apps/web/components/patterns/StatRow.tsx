@@ -10,8 +10,8 @@ export type StatRowProps = {
 };
 
 const emphasisStyles: Record<NonNullable<StatRowItem["emphasis"]>, string> = {
-  normal: "text-[--fg-primary]",
-  success: "text-[--brand-primary-text]",
+  normal: "text-(--fg-primary)",
+  success: "text-(--brand-primary-text)",
   warning: "text-warning",
   danger: "text-danger",
 };
@@ -34,7 +34,7 @@ export function StatRow({ items, align = "left" }: StatRowProps) {
     >
       {items.map((item) => (
         <div key={item.label}>
-          <dt className="text-xs text-[--fg-secondary]">{item.label}</dt>
+          <dt className="text-xs text-(--fg-secondary)">{item.label}</dt>
           <dd className={`text-display text-lg font-semibold ${emphasisStyles[item.emphasis ?? "normal"]}`}>
             {item.value}
           </dd>

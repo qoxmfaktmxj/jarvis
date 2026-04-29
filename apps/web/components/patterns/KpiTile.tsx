@@ -38,9 +38,9 @@ const toneVar: Record<KpiTone, string> = {
 };
 
 const legacyAccent: Record<NonNullable<KpiTileProps["accent"]>, string> = {
-  brand: "text-[--brand-primary-text]",
-  lime: "text-[--brand-primary-text]",
-  surface: "text-[--fg-primary]",
+  brand: "text-(--brand-primary-text)",
+  lime: "text-(--brand-primary-text)",
+  surface: "text-(--fg-primary)",
 };
 
 const trendIcons = { up: TrendingUp, down: TrendingDown, flat: Minus };
@@ -118,8 +118,8 @@ export function KpiTile(props: KpiTileProps) {
   const trendObj = (trend as TrendObject | undefined) ?? undefined;
   const TrendIcon = trendObj ? trendIcons[trendObj.direction] : null;
   return (
-    <section className="flex flex-col gap-2 rounded-xl border border-[--border-default] bg-card p-5">
-      <p className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-[--fg-secondary]">
+    <section className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-card p-5">
+      <p className="text-display text-xs font-semibold uppercase tracking-[0.12em] text-(--fg-secondary)">
         {label}
       </p>
       <p
@@ -128,21 +128,21 @@ export function KpiTile(props: KpiTileProps) {
         {value}
       </p>
       {trendObj && TrendIcon ? (
-        <p className="flex items-center gap-1 text-xs text-[--fg-secondary]">
+        <p className="flex items-center gap-1 text-xs text-(--fg-secondary)">
           <TrendIcon
             className={`h-3.5 w-3.5 ${
               trendObj.direction === "up"
-                ? "text-[--brand-primary-text]"
+                ? "text-(--brand-primary-text)"
                 : trendObj.direction === "down"
                   ? "text-danger"
-                  : "text-[--fg-muted]"
+                  : "text-(--fg-muted)"
             }`}
             aria-hidden
           />
           <span>{trendObj.pct}%</span>
         </p>
       ) : null}
-      {footnote ? <p className="text-xs text-[--fg-muted]">{footnote}</p> : null}
+      {footnote ? <p className="text-xs text-(--fg-muted)">{footnote}</p> : null}
     </section>
   );
 }

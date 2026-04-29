@@ -16,24 +16,24 @@ export function WeatherCard() {
   });
   const snap = data?.status === "ok" ? data.data : undefined;
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-[--border-default] bg-[--bg-surface] p-4">
-      <span className="text-xs font-medium text-[--fg-secondary]">
+    <div className="flex flex-col gap-1 rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+      <span className="text-xs font-medium text-(--fg-secondary)">
         {snap
           ? `${snap.regionLabel} · ${snap.condition}`
           : t("weatherLabel")}
       </span>
       {snap ? (
         <>
-          <span className="text-lg font-semibold text-[--fg-primary]">
+          <span className="text-lg font-semibold text-(--fg-primary)">
             {snap.tempC}°
           </span>
-          <span className="text-xs text-[--fg-secondary]">
+          <span className="text-xs text-(--fg-secondary)">
             {t("weatherHiLo", { hi: snap.hiC, lo: snap.loC })} ·{" "}
             {t("weatherParticulate", { level: snap.particulate })}
           </span>
         </>
       ) : (
-        <span className="text-xs text-[--fg-muted]">—</span>
+        <span className="text-xs text-(--fg-muted)">—</span>
       )}
     </div>
   );

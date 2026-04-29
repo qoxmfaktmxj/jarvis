@@ -40,7 +40,7 @@ describe("Field", () => {
       </Field>
     );
     expect(html).toContain("이메일 형식이 올바르지 않습니다");
-    expect(html).toContain("text-[--color-red-500]");
+    expect(html).toContain("text-(--color-red-500)");
   });
 
   it("does not render error slot when error is undefined", () => {
@@ -49,7 +49,7 @@ describe("Field", () => {
         <input />
       </Field>
     );
-    expect(html).not.toContain("text-[--color-red-500]");
+    expect(html).not.toContain("text-(--color-red-500)");
   });
 
   it("label gets --fg-secondary color", () => {
@@ -58,6 +58,6 @@ describe("Field", () => {
         <input />
       </Field>
     );
-    expect(html).toContain("text-[--fg-secondary]");
+    expect(html).toContain("text-(--fg-secondary)");
   });
 });

@@ -4,6 +4,7 @@ import { Plus } from 'lucide-react';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { listNotices } from '@/lib/queries/notices';
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { NoticeList } from './_components/NoticeList';
 
@@ -36,14 +37,12 @@ export default async function NoticesPage() {
         title={t('title')}
         meta={
           canCreate ? (
-            <Link
-              href="/notices/new"
-              aria-label={t('new')}
-              className="inline-flex h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-(--brand-primary) px-4 text-[14px] font-medium text-white shadow-sm transition-colors hover:bg-(--brand-primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-offset-2"
-            >
-              <Plus aria-hidden="true" className="size-4 shrink-0" />
-              {t('new')}
-            </Link>
+            <Button asChild>
+              <Link href="/notices/new" aria-label={t('new')}>
+                <Plus aria-hidden="true" />
+                {t('new')}
+              </Link>
+            </Button>
           ) : null
         }
       />

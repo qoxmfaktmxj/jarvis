@@ -35,7 +35,7 @@ function getSourceMeta(source: SourceRef): {
         hoverTitle: source.title,
         hoverDetail: source.excerpt,
         href: source.url,
-        textClass: 'text-[--brand-primary-text] hover:text-[--brand-primary-text]',
+        textClass: 'text-(--brand-primary-text) hover:text-(--brand-primary-text)',
       };
     case 'graph':
       return {
@@ -43,7 +43,7 @@ function getSourceMeta(source: SourceRef): {
         hoverTitle: `Graph · ${source.nodeLabel}`,
         hoverDetail: source.snapshotTitle,
         href: source.url,
-        textClass: 'text-[--brand-primary-text] hover:text-[--brand-primary-text]',
+        textClass: 'text-(--brand-primary-text) hover:text-(--brand-primary-text)',
       };
     case 'case':
       return {
@@ -51,7 +51,7 @@ function getSourceMeta(source: SourceRef): {
         hoverTitle: `사례 · ${source.title}`,
         hoverDetail: source.symptom,
         href: null,
-        textClass: 'text-[--fg-primary]',
+        textClass: 'text-(--fg-primary)',
       };
     case 'directory':
       return {
@@ -59,7 +59,7 @@ function getSourceMeta(source: SourceRef): {
         hoverTitle: source.nameKo ?? source.name,
         hoverDetail: source.ownerTeam ?? null,
         href: source.url,
-        textClass: 'text-[--fg-primary] hover:text-[--fg-primary]',
+        textClass: 'text-(--fg-primary) hover:text-(--fg-primary)',
       };
     case 'wiki-page':
       return {
@@ -67,7 +67,7 @@ function getSourceMeta(source: SourceRef): {
         hoverTitle: source.title,
         hoverDetail: `${source.citation} · ${source.path}`,
         href: `/wiki/default/${encodeURIComponent(source.slug)}`,
-        textClass: 'text-[--brand-primary-text] hover:text-[--brand-primary-text]',
+        textClass: 'text-(--brand-primary-text) hover:text-(--brand-primary-text)',
       };
   }
 }
@@ -76,13 +76,13 @@ export function ClaimBadge({ sourceNumber, sources }: ClaimBadgeProps) {
   const source = sources[sourceNumber - 1];
 
   if (!source) {
-    return <sup className="text-[10px] text-[--fg-muted]">[{sourceNumber}]</sup>;
+    return <sup className="text-[10px] text-(--fg-muted)">[{sourceNumber}]</sup>;
   }
 
   const { letter, hoverTitle, hoverDetail, href, textClass } = getSourceMeta(source);
   const display = letter ? `${letter}${sourceNumber}` : String(sourceNumber);
 
-  const pillCls = `text-display mx-0.5 inline-flex h-[14px] items-center rounded-[3px] border border-[--border-default] bg-card px-1 align-[1px] text-[10px] font-semibold leading-none tabular-nums transition-colors duration-150 ${textClass} hover:border-current`;
+  const pillCls = `text-display mx-0.5 inline-flex h-[14px] items-center rounded-[3px] border border-(--border-default) bg-card px-1 align-[1px] text-[10px] font-semibold leading-none tabular-nums transition-colors duration-150 ${textClass} hover:border-current`;
 
   return (
     <TooltipProvider delayDuration={200}>

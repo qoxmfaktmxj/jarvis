@@ -5,22 +5,22 @@ import { StatusChip, STATUS_LABELS } from "./StatusChip";
 describe("StatusChip", () => {
   it("renders done with green palette tokens", () => {
     const html = renderToStaticMarkup(<StatusChip status="done" />);
-    expect(html).toContain("bg-[--status-done-bg]");
-    expect(html).toContain("text-[--status-done-fg]");
+    expect(html).toContain("bg-(--status-done-bg)");
+    expect(html).toContain("text-(--status-done-fg)");
     expect(html).toContain(STATUS_LABELS.done);
   });
 
   it("renders danger with red palette tokens and border", () => {
     const html = renderToStaticMarkup(<StatusChip status="danger" />);
-    expect(html).toContain("bg-[--status-danger-bg]");
-    expect(html).toContain("text-[--status-danger-fg]");
-    expect(html).toContain("border-[--color-red-200]");
+    expect(html).toContain("bg-(--status-danger-bg)");
+    expect(html).toContain("text-(--status-danger-fg)");
+    expect(html).toContain("border-(--color-red-200)");
   });
 
   it("treats unknown status as neutral", () => {
     // @ts-expect-error intentionally wrong
     const html = renderToStaticMarkup(<StatusChip status="mystery" />);
-    expect(html).toContain("bg-[--status-neutral-bg]");
+    expect(html).toContain("bg-(--status-neutral-bg)");
   });
 
   it("respects size='lg' (T1) padding", () => {

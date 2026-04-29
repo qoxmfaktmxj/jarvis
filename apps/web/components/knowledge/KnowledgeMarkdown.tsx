@@ -36,7 +36,7 @@ export function KnowledgeMarkdown({
   if (!content.trim()) {
     return (
       <div className={`mdx-content ${className ?? ''}`}>
-        <p className="text-[--fg-muted] italic">No content available.</p>
+        <p className="text-(--fg-muted) italic">No content available.</p>
       </div>
     );
   }
