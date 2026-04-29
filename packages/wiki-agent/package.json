@@ -13,12 +13,18 @@
     "./parsers/review-block": "./src/parsers/review-block.ts",
     "./maintain-index": "./src/maintain-index.ts",
     "./append-log": "./src/append-log.ts",
-    "./constants": "./src/constants.ts"
+    "./constants": "./src/constants.ts",
+    "./projection": "./src/projection.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@jarvis/db": "workspace:*",
+    "@jarvis/wiki-fs": "workspace:*",
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "@types/node": "^22.19.17",
