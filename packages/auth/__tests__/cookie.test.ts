@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { validateCookieDomain } from "../cookie.js";
-import { buildSessionCookieOptions } from "../cookie.js";
+import { buildSessionCookieOptions, validateCookieDomain } from "../cookie.js";
 
 describe("validateCookieDomain", () => {
   test("returns undefined for undefined input", () => {
