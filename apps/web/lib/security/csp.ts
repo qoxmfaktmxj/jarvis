@@ -18,9 +18,15 @@ export function buildCsp({ nonce, isProd }: BuildCspOptions): string {
     ? "'self'"
     : "'self' ws://localhost:*";
 
+  // Dev: webpack HMR / react-refresh use eval() — must allow unsafe-eval.
+  // Prod: strict-dynamic alone is sufficient.
+  const scriptSrc = isProd
+    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
+    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
+
   const directives: string[] = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    scriptSrc,
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
     "img-src 'self' data: blob:",
     "font-src 'self' data: https://cdn.jsdelivr.net",
