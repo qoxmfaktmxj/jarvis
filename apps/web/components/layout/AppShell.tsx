@@ -23,9 +23,12 @@ export async function AppShell({
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      {/* FOUC 방지: hydration 전 data-sidebar/data-theme 세팅. CSP strict-dynamic 환경에서 nonce 필수. */}
+      {/* FOUC 방지: hydration 전 data-sidebar/data-theme 세팅. CSP strict-dynamic 환경에서 nonce 필수.
+          suppressHydrationWarning: 브라우저가 CSP 검증 후 nonce 속성을 DOM에서 strip하므로,
+          React hydration 시 서버 HTML(nonce="...")과 클라이언트 DOM(nonce="") 비교에서 mismatch가 발생함. */}
       <script
         nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: UI_PREFS_BOOTSTRAP }}
       />
       <Sidebar />
