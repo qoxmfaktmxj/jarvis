@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
@@ -29,14 +30,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const messages = await getMessages();
-  // NOTE: CSP nonce is injected by middleware via x-csp-nonce request header.
-  // When an inline <Script> is added, read it with:
-  //   const nonce = (await headers()).get("x-csp-nonce") ?? "";
-  // and pass nonce={nonce} to <Script nonce={nonce}>.
-  // Currently no inline scripts exist; strict-dynamic + per-script nonce is
-  // sufficient for Next.js 15 RSC bundle loading.
+  // Read the nonce that middleware injected via x-csp-nonce request header.
+  // Required for 'strict-dynamic': browsers only trust scripts whose nonce
+  // matches the CSP nonce. Next.js 15 needs the nonce on <html> so its
+  // bootstrap scripts are trusted.
+  // See: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
+  const nonce = (await headers()).get("x-csp-nonce") ?? "";
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="ko" suppressHydrationWarning nonce={nonce}>
       <head>
         <link
           rel="stylesheet"
