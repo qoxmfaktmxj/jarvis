@@ -112,21 +112,21 @@ describe("/api/auth/login", () => {
     vi.unstubAllEnvs();
   });
 
-  // ── P0-2: production → always 404 ────────────────────────────────────────
+  // ── P0-2: production → dev-accounts 비활성, DB 인증만 허용 ──────────────
 
-  it("TC1: NODE_ENV=production → 404 (env override 무시)", async () => {
+  it("TC1: NODE_ENV=production + dev-account 자격증명 → 401 (dev-accounts 비활성)", async () => {
     vi.stubEnv("NODE_ENV", "production");
-
+    // production에서는 userLookupQueue가 빈 상태(DB 사용자 없음) → 401
     const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(401);
   });
 
-  it("TC2: NODE_ENV=production + JARVIS_ENABLE_TEMP_LOGIN=true → 404 (완전 제거됨)", async () => {
+  it("TC2: NODE_ENV=production + JARVIS_ENABLE_TEMP_LOGIN=true → 401 (env 플래그 무관, dev-accounts 비활성)", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("JARVIS_ENABLE_TEMP_LOGIN", "true");
 
     const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(401);
   });
 
   // ── Happy path (NODE_ENV=development) ────────────────────────────────────
