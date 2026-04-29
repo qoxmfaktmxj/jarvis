@@ -91,6 +91,8 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
       : eq(wikiPageIndex.publishedStatus, "published");
 
     // aliases는 frontmatter->'aliases' (jsonb array of string)
+    // alias는 jsonb 배열 정확 일치 매칭이라 ILIKE wildcard escape 불필요
+    // (drizzle parameterized binding으로 SQLi 차단).
     const aliasMatch = sql`(${wikiPageIndex.frontmatter} -> 'aliases') ?| ARRAY[${q}]`;
 
     try {
