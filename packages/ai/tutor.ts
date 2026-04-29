@@ -169,12 +169,14 @@ export async function* tutorAI(
   const nonce = generateNonce();
 
   // 3. 메시지 히스토리 구성
+  // history user turns도 동일 nonce로 래핑: 과거 user 입력에 주입된 페이로드가
+  // 현재 system prompt의 nonce 지시를 우회하지 못하도록 방어한다.
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: 'system', content: buildTutorPrompt(mode, nonce) },
     { role: 'system', content: context },
     ...session.messages.map((m) => ({
       role: m.role as 'user' | 'assistant',
-      content: m.content,
+      content: m.role === 'user' ? wrapUserContent(m.content, nonce) : m.content,
     })),
     { role: 'user', content: wrapUserContent(question, nonce) },
   ];
