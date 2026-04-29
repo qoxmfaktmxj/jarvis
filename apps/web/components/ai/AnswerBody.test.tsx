@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-/// <reference types="vitest" />
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import type { SourceRef, WikiPageSourceRef } from "@jarvis/ai/types";
