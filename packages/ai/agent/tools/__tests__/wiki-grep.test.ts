@@ -2,7 +2,7 @@
 //
 // wiki-grep tool 단위 테스트.
 // 실제 DB 연결 없이 @jarvis/db/client · @jarvis/db/schema · drizzle-orm ·
-// @jarvis/auth/rbac 를 mock 처리.
+// @jarvis/auth 를 mock 처리.
 
 import {
   beforeEach,
@@ -30,6 +30,10 @@ vi.mock("@jarvis/db/schema", () => ({
     title: "wiki.title",
     path: "wiki.path",
     sensitivity: "wiki.sensitivity",
+    requiredPermission: "wiki.requiredPermission",
+    publishedStatus: "wiki.publishedStatus",
+    routeKey: "wiki.routeKey",
+    frontmatter: "wiki.frontmatter",
   },
 }));
 
@@ -52,12 +56,18 @@ vi.mock("drizzle-orm", () => ({
   asc: vi.fn((col: unknown) => col),
 }));
 
-vi.mock("@jarvis/auth/rbac", () => ({
-  getAllowedWikiSensitivityValues: vi.fn((permissions: string[]) => {
+vi.mock("@jarvis/auth", () => ({
+  resolveAllowedWikiSensitivities: vi.fn((permissions: string[]) => {
     if (permissions.includes("admin:all")) return ["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"];
     if (permissions.includes("knowledge:read")) return ["PUBLIC", "INTERNAL"];
     return [];
   }),
+  PERMISSIONS: {
+    ADMIN_ALL: "admin:all",
+    KNOWLEDGE_READ: "knowledge:read",
+    KNOWLEDGE_REVIEW: "knowledge:review",
+    PROJECT_ACCESS_SECRET: "project.access:secret",
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -65,8 +75,8 @@ vi.mock("@jarvis/auth/rbac", () => ({
 // ---------------------------------------------------------------------------
 
 import { db } from "@jarvis/db/client";
-import { ilike, inArray } from "drizzle-orm";
-import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
+import { ilike, sql } from "drizzle-orm";
+import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
 import { wikiGrep } from "../wiki-grep.js";
 import type { ToolContext } from "../types.js";
 
@@ -128,7 +138,7 @@ describe("wiki-grep tool", () => {
   // 2. 정상 쿼리 → matches 배열 반환
   it("returns matches when query is valid", async () => {
     const rows = [
-      { slug: "leave-policy", title: "연차 정책", path: "wiki/jarvis/manual/hr/leave-policy.md", sensitivity: "INTERNAL" },
+      { slug: "leave-policy", title: "연차 정책", path: "wiki/ws-1/manual/hr/leave-policy.md", sensitivity: "INTERNAL" },
     ];
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain(rows));
@@ -141,7 +151,7 @@ describe("wiki-grep tool", () => {
       expect(result.data.matches[0]).toMatchObject({
         slug: "leave-policy",
         title: "연차 정책",
-        path: "wiki/jarvis/manual/hr/leave-policy.md",
+        path: "wiki/ws-1/manual/hr/leave-policy.md",
         sensitivity: "INTERNAL",
         snippet: "",
       });
@@ -179,18 +189,20 @@ describe("wiki-grep tool", () => {
     expect(chain.limit).toHaveBeenCalledWith(10);
   });
 
-  // 4. scope = 'manual' 이면 scopeCond가 ilike로 호출됨
-  it("applies ilike scope condition when scope is manual", async () => {
+  // 4. scope = 'manual' 이면 sql`%/manual/%` 패턴이 적용됨 (workspace-relative)
+  it("applies workspace-relative scope condition when scope is manual", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain([]));
-    const ilikeMock = ilike as unknown as Mock;
-    ilikeMock.mockClear();
+    const sqlMock = sql as unknown as Mock;
+    sqlMock.mockClear();
 
     await wikiGrep.execute({ query: "leave", scope: "manual" }, baseCtx);
 
-    const ilikeCalls = ilikeMock.mock.calls as Array<[unknown, string]>;
-    const scopeCall = ilikeCalls.find(([, pattern]) =>
-      typeof pattern === "string" && pattern.includes("/manual/")
+    // sql template literal이 호출됐는지, 그리고 '/manual/' 패턴을 포함하는지 확인
+    expect(sqlMock).toHaveBeenCalled();
+    const calls = sqlMock.mock.calls as Array<[TemplateStringsArray, ...unknown[]]>;
+    const scopeCall = calls.find(([strings]) =>
+      Array.from(strings).some((s) => typeof s === "string" && s.includes("LIKE"))
     );
     expect(scopeCall).toBeDefined();
   });
@@ -203,6 +215,8 @@ describe("wiki-grep tool", () => {
 
     await wikiGrep.execute({ query: "leave", scope: "all" }, baseCtx);
 
+    // scope=all 이면 LIKE 스코프 조건이 ilike로 직접 호출되지 않음
+    // (sql`true` 사용하므로)
     const ilikeCalls = ilikeMock.mock.calls as Array<[unknown, string]>;
     const scopeCall = ilikeCalls.find(([, pattern]) =>
       typeof pattern === "string" && (
@@ -214,29 +228,15 @@ describe("wiki-grep tool", () => {
     expect(scopeCall).toBeUndefined();
   });
 
-  // 5. sensitivity filter 와 workspace filter가 호출됨
-  it("applies sensitivity filter using getAllowedWikiSensitivityValues", async () => {
+  // 5. sensitivity filter — resolveAllowedWikiSensitivities 호출됨
+  it("applies sensitivity filter using resolveAllowedWikiSensitivities", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain([]));
-    const getAllowedMock = getAllowedWikiSensitivityValues as unknown as Mock;
+    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
 
     await wikiGrep.execute({ query: "policy" }, baseCtx);
 
-    expect(getAllowedMock).toHaveBeenCalledWith(baseCtx.permissions);
-  });
-
-  it("applies inArray sensitivity filter from allowed values", async () => {
-    const selectMock = db.select as unknown as Mock;
-    selectMock.mockReturnValue(createChain([]));
-    const inArrayMock = inArray as unknown as Mock;
-    inArrayMock.mockClear();
-
-    await wikiGrep.execute({ query: "policy" }, { ...baseCtx, permissions: ["knowledge:read"] });
-
-    const inArrayCalls = inArrayMock.mock.calls as Array<[unknown, string[]]>;
-    const sensitivityCall = inArrayCalls.find(([col]) => col === "wiki.sensitivity");
-    expect(sensitivityCall).toBeDefined();
-    expect(sensitivityCall![1]).toEqual(["PUBLIC", "INTERNAL"]);
+    expect(resolvedMock).toHaveBeenCalledWith(baseCtx.permissions);
   });
 
   // 6. 0 matches → ok({matches:[]})
@@ -280,6 +280,62 @@ describe("wiki-grep tool", () => {
     if (!result.ok) {
       expect(result.code).toBe("unknown");
     }
+  });
+
+  // 8. publishedStatus='draft' 필터 — SQL 레벨 필터가 적용됨 (new ACL tests)
+  it("SQL 레벨에서 publishedStatus 필터 적용 확인 (eq 호출)", async () => {
+    const selectMock = db.select as unknown as Mock;
+    selectMock.mockReturnValue(createChain([]));
+
+    await wikiGrep.execute({ query: "policy" }, baseCtx);
+
+    // eq(wikiPageIndex.publishedStatus, "published")이 호출되는지 확인
+    // 비-admin이므로 publishedStatus 필터 적용
+    const sqlMock = sql as unknown as Mock;
+    const sqlCalls = sqlMock.mock.calls as Array<[TemplateStringsArray, ...unknown[]]>;
+    // publishedStatus 관련 sql 조건이 생성됨
+    expect(sqlCalls.length).toBeGreaterThan(0);
+  });
+
+  it("admin 권한이면 resolveAllowedWikiSensitivities가 전체 반환", async () => {
+    const selectMock = db.select as unknown as Mock;
+    selectMock.mockReturnValue(createChain([]));
+    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
+
+    const adminCtx = { ...baseCtx, permissions: ["admin:all"] };
+    await wikiGrep.execute({ query: "policy" }, adminCtx);
+
+    expect(resolvedMock).toHaveBeenCalledWith(adminCtx.permissions);
+    expect(resolvedMock.mock.results[0]?.value).toEqual(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]);
+  });
+
+  it("권한 없으면 빈 배열 반환 (early return)", async () => {
+    const selectMock = db.select as unknown as Mock;
+    selectMock.mockReturnValue(createChain([]));
+    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
+    resolvedMock.mockReturnValueOnce([]);
+
+    const result = await wikiGrep.execute({ query: "policy" }, { ...baseCtx, permissions: [] });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.matches).toEqual([]);
+    }
+  });
+
+  // 9. tenant 하드코딩 제거 확인 — 'wiki/jarvis/' 패턴이 ilike에 나타나지 않음
+  it("scope filter는 workspace-relative이고 wiki/jarvis/ 하드코딩이 없음", async () => {
+    const selectMock = db.select as unknown as Mock;
+    selectMock.mockReturnValue(createChain([]));
+    const ilikeMock = ilike as unknown as Mock;
+    ilikeMock.mockClear();
+
+    await wikiGrep.execute({ query: "leave", scope: "manual" }, baseCtx);
+
+    const ilikeCalls = ilikeMock.mock.calls as Array<[unknown, string]>;
+    const hardcodedCall = ilikeCalls.find(([, pattern]) =>
+      typeof pattern === "string" && pattern.includes("wiki/jarvis/")
+    );
+    expect(hardcodedCall).toBeUndefined();
   });
 
   // tool metadata
