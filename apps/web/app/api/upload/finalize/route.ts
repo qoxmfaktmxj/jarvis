@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { type Readable } from 'node:stream';
 import { Client } from 'minio';
 import { requireApiSession } from '@/lib/server/api-auth';
+import { db } from '@jarvis/db/client';
+import { auditLog } from '@jarvis/db/schema/audit';
 import { verifyMagicBytes } from '@/lib/upload/magic-bytes';
 
 const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
@@ -90,7 +92,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       try {
         await minio.removeObject(BUCKET, objectKey);
       } catch (removeErr) {
-        // Log but don't surface the internal error
+        // Best-effort audit log for orphan object — do not block response
+        db.insert(auditLog).values({
+          workspaceId: session.workspaceId,
+          userId: session.userId,
+          action: 'upload.magic_mismatch_orphan',
+          resourceType: 'upload',
+          details: { objectKey, reason: String(removeErr) },
+          success: false,
+        }).catch(() => undefined);
         console.error('[finalize] removeObject failed after magic mismatch:', removeErr);
       }
 

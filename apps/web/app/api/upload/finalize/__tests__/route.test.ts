@@ -14,6 +14,23 @@ vi.mock('@/lib/server/api-auth', () => ({
   requireApiSession: vi.fn().mockResolvedValue({ session: mockSession }),
 }));
 
+// ── Mock: DB (for audit_log) ──────────────────────────────────────────────────
+const mockAuditInsertValues = vi.fn().mockReturnThis();
+const mockAuditInsertCatch = vi.fn().mockReturnThis();
+
+vi.mock('@jarvis/db/client', () => ({
+  db: {
+    insert: vi.fn().mockReturnValue({
+      values: mockAuditInsertValues,
+      catch: mockAuditInsertCatch,
+    }),
+  },
+}));
+
+vi.mock('@jarvis/db/schema/audit', () => ({
+  auditLog: {},
+}));
+
 // ── Mock: MinIO Client ────────────────────────────────────────────────────────
 const mockGetPartialObject = vi.fn();
 const mockRemoveObject = vi.fn();
@@ -180,6 +197,38 @@ describe('POST /api/upload/finalize', () => {
     expect(res.status).toBe(400);
     const json = await res.json();
     expect(json.error).toBe('Invalid request');
+  });
+
+  // ── MEDIUM 3: removeObject failure → audit_log written (best-effort) ─────
+  it('writes audit_log when removeObject fails after magic mismatch', async () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    mockGetPartialObject.mockResolvedValue(streamFromBytes(pngBytes));
+    // Simulate removeObject throwing
+    mockRemoveObject.mockRejectedValueOnce(new Error('S3 connection timeout'));
+
+    const req = makeRequest({
+      objectKey: 'ws-xyz/user-abc/spoof.pdf',
+      declaredMimeType: 'application/pdf',
+    });
+
+    const res = await POST(req);
+    // Response must still be 400 (orphan removal failure does not change the response)
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toBe('magic_byte_mismatch');
+
+    // Audit log must have been written
+    const { db } = await import('@jarvis/db/client');
+    expect(vi.mocked(db.insert)).toHaveBeenCalled();
+    expect(mockAuditInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: 'ws-xyz',
+        userId: 'user-abc',
+        action: 'upload.magic_mismatch_orphan',
+        resourceType: 'upload',
+        success: false,
+      })
+    );
   });
 
   // ── MinIO getPartialObject failure → 500 ─────────────────────────────────
