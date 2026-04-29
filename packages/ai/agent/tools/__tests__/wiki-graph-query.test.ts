@@ -19,7 +19,13 @@ vi.mock("@jarvis/db/client", () => ({
 }));
 
 vi.mock("@jarvis/db/schema", () => ({
-  wikiPageIndex: { slug: "slug", sensitivity: "sensitivity", workspaceId: "workspace_id" },
+  wikiPageIndex: {
+    slug: "slug",
+    sensitivity: "sensitivity",
+    workspaceId: "workspace_id",
+    requiredPermission: "requiredPermission",
+    publishedStatus: "publishedStatus",
+  },
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -28,8 +34,9 @@ vi.mock("drizzle-orm", () => ({
   inArray: vi.fn((a: unknown, b: unknown) => ({ inArray: [a, b] })),
 }));
 
-vi.mock("@jarvis/auth/rbac", () => ({
-  canAccessKnowledgeSensitivityByPermissions: vi.fn(),
+vi.mock("@jarvis/auth", () => ({
+  canViewWikiPage: vi.fn(),
+  PERMISSIONS: { ADMIN_ALL: "admin:all" },
 }));
 
 // ---- import after mocks ---------------------------------------------------
@@ -37,7 +44,7 @@ vi.mock("@jarvis/auth/rbac", () => ({
 import { existsSync } from "node:fs";
 import { execFile } from "node:child_process";
 import { db } from "@jarvis/db/client";
-import { canAccessKnowledgeSensitivityByPermissions } from "@jarvis/auth/rbac";
+import { canViewWikiPage } from "@jarvis/auth";
 import { wikiGraphQuery } from "../wiki-graph-query.js";
 
 // ---- helpers -------------------------------------------------------------
@@ -66,7 +73,7 @@ function makeExecFileError(message: string) {
   );
 }
 
-function mockDbSelect(rows: Array<{ slug: string; sensitivity: string }>) {
+function mockDbSelect(rows: Array<{ slug: string; sensitivity: string; requiredPermission?: string | null; publishedStatus?: string }>) {
   (db.select as ReturnType<typeof vi.fn>).mockReturnValue({
     from: vi.fn().mockReturnValue({
       where: vi.fn().mockResolvedValue(rows),
@@ -80,7 +87,7 @@ describe("wikiGraphQuery tool", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (existsSync as ReturnType<typeof vi.fn>).mockReturnValue(true);
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockReturnValue(true);
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockReturnValue(true);
     mockDbSelect([]);
   });
 
@@ -153,8 +160,8 @@ describe("wikiGraphQuery tool", () => {
     }
   });
 
-  // 4. wiki-page kind 중 sensitivity forbidden → 해당 node 와 관련 edge 제외
-  it("filters out wiki-page nodes with forbidden sensitivity and their edges", async () => {
+  // 4. wiki-page kind 중 ACL forbidden → 해당 node 와 관련 edge 제외
+  it("filters out wiki-page nodes with forbidden ACL and their edges", async () => {
     const payload = {
       nodes: [
         { id: "wiki-allowed", label: "Allowed Page", kind: "wiki-page" },
@@ -170,12 +177,12 @@ describe("wikiGraphQuery tool", () => {
     makeExecFileOk(payload);
 
     mockDbSelect([
-      { slug: "wiki-allowed", sensitivity: "INTERNAL" },
-      { slug: "wiki-forbidden", sensitivity: "SECRET_REF_ONLY" },
+      { slug: "wiki-allowed", sensitivity: "INTERNAL", requiredPermission: null, publishedStatus: "published" },
+      { slug: "wiki-forbidden", sensitivity: "SECRET_REF_ONLY", requiredPermission: null, publishedStatus: "published" },
     ]);
 
-    (canAccessKnowledgeSensitivityByPermissions as ReturnType<typeof vi.fn>).mockImplementation(
-      (_perms: string[], sensitivity: string) => sensitivity !== "SECRET_REF_ONLY"
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockImplementation(
+      (subject: { sensitivity: string }) => subject.sensitivity !== "SECRET_REF_ONLY"
     );
 
     const result = await wikiGraphQuery.execute({ mode: "search", query: "pages" }, ctx);
@@ -189,6 +196,45 @@ describe("wikiGraphQuery tool", () => {
       // wiki-forbidden 관련 edge 모두 제거됨
       expect(result.data.edges).toHaveLength(1);
       expect(result.data.edges[0]).toMatchObject({ source: "wiki-allowed", target: "concept-x" });
+    }
+  });
+
+  // 4b. draft wiki-page는 visible 집합에서 제외
+  it("그래프 노드 중 draft인 wiki-page는 visible 집합에서 제외", async () => {
+    const payload = {
+      nodes: [
+        { id: "wiki-published", label: "Published", kind: "wiki-page" },
+        { id: "wiki-draft", label: "Draft Page", kind: "wiki-page" },
+        { id: "concept-y", label: "Concept", kind: "concept" },
+      ],
+      edges: [
+        { source: "wiki-published", target: "concept-y", relation: "mentions" },
+        { source: "wiki-draft", target: "concept-y", relation: "mentions" },
+      ],
+    };
+    makeExecFileOk(payload);
+
+    mockDbSelect([
+      { slug: "wiki-published", sensitivity: "INTERNAL", requiredPermission: null, publishedStatus: "published" },
+      { slug: "wiki-draft", sensitivity: "INTERNAL", requiredPermission: null, publishedStatus: "draft" },
+    ]);
+
+    // published는 true, draft는 false
+    (canViewWikiPage as ReturnType<typeof vi.fn>).mockImplementation(
+      (subject: { publishedStatus: string }) => subject.publishedStatus === "published"
+    );
+
+    const result = await wikiGraphQuery.execute({ mode: "search", query: "pages" }, ctx);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const nodeIds = result.data.nodes.map((n) => n.id);
+      expect(nodeIds).toContain("wiki-published");
+      expect(nodeIds).toContain("concept-y");
+      expect(nodeIds).not.toContain("wiki-draft");
+
+      // wiki-draft 관련 edge 제거됨
+      expect(result.data.edges).toHaveLength(1);
+      expect(result.data.edges[0]).toMatchObject({ source: "wiki-published", target: "concept-y" });
     }
   });
 
