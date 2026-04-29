@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, Suspense, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { User, Lock, CircleAlert, ArrowRight } from 'lucide-react';
 import { LoadingOverlay } from '@/components/layout/LoadingOverlay';
@@ -170,13 +171,13 @@ function LoginContent() {
                 />
                 <span>로그인 상태 유지</span>
               </label>
-              <a
-                href="mailto:it-support@isu.co.kr"
+              <Link
+                href="/reset-password"
                 className="inline-flex items-center gap-1 text-[--fg-secondary] hover:text-[--brand-primary-text] hover:underline underline-offset-2"
               >
-                비밀번호 재설정
+                비밀번호 변경
                 <ArrowRight aria-hidden className="h-3 w-3" />
-              </a>
+              </Link>
             </div>
 
             {/* Inline submit error */}

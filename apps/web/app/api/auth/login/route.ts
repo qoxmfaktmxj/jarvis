@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { buildSessionCookieOptions } from "@jarvis/auth/cookie";
+import { verifyPassword } from "@jarvis/auth/password";
 import { createSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
 import { auditLog, role, user, userRole } from "@jarvis/db/schema";
@@ -25,17 +26,12 @@ function extractClientIp(req: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
-  // dev-account 경로는 production에서 무조건 404.
-  if ((process.env.NODE_ENV as string) === "production") {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
+  const isProduction = (process.env.NODE_ENV as string) === "production";
   const ip = extractClientIp(request);
   const rl = checkRateLimit(`login:${ip}`, LOGIN_RATE_MAX, LOGIN_RATE_WINDOW_SEC);
 
   if (!rl.allowed) {
     const retryAfterSec = rl.retryAfterSec ?? LOGIN_RATE_WINDOW_SEC;
-    // audit_log: rate-limit 발동. fail-safe — 실패해도 429 응답은 반환.
     await db
       .insert(auditLog)
       .values({
@@ -76,9 +72,44 @@ export async function POST(request: NextRequest) {
       ? 30 * 24 * 60 * 60 * 1000
       : 8 * 60 * 60 * 1000;
 
-  const account = findTempDevAccount(payload.username, payload.password);
-  if (!account) {
-    // audit_log: 인증 실패.
+  // DB 비밀번호 우선: employeeId 또는 email로 사용자 조회
+  const [dbUser] = await db
+    .select()
+    .from(user)
+    .where(
+      or(
+        eq(user.employeeId, payload.username),
+        eq(user.email, payload.username),
+      ),
+    )
+    .limit(1);
+
+  let authenticated = false;
+
+  if (dbUser?.passwordHash) {
+    // DB에 passwordHash가 있으면 scrypt로 검증
+    authenticated = await verifyPassword(payload.password, dbUser.passwordHash);
+  } else if (!isProduction) {
+    // dev 전용: dev-accounts.ts 폴백 (DB에 hash 없는 경우만)
+    const account = findTempDevAccount(payload.username, payload.password);
+    if (account) {
+      authenticated = true;
+      // dev-account email로 dbUser를 다시 찾기 (위에서 못 찾은 경우)
+      if (!dbUser) {
+        const [devDbUser] = await db
+          .select()
+          .from(user)
+          .where(eq(user.email, account.email))
+          .limit(1);
+        if (!devDbUser) {
+          return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
+        }
+        return buildLoginResponse(devDbUser, sessionLifetimeMs, ip);
+      }
+    }
+  }
+
+  if (!authenticated) {
     await db
       .insert(auditLog)
       .values({
@@ -102,18 +133,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
-  const loginEmail = account.email;
-
-  const [dbUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, loginEmail))
-    .limit(1);
-
   if (!dbUser) {
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
+  return buildLoginResponse(dbUser, sessionLifetimeMs, ip);
+}
+
+async function buildLoginResponse(
+  dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null },
+  sessionLifetimeMs: number,
+  ip: string,
+) {
   const userRoleRows = await db
     .select({ roleCode: role.code })
     .from(userRole)
@@ -134,7 +165,7 @@ export async function POST(request: NextRequest) {
     workspaceId: dbUser.workspaceId,
     employeeId: dbUser.employeeId,
     name: dbUser.name ?? "User",
-    email: dbUser.email ?? loginEmail,
+    email: dbUser.email ?? "",
     roles,
     permissions,
     orgId: dbUser.orgId ?? undefined,
@@ -154,6 +185,20 @@ export async function POST(request: NextRequest) {
       sessionLifetimeMs,
     ),
   );
+
+  // audit_log: 로그인 성공 — fire-and-forget
+  void db
+    .insert(auditLog)
+    .values({
+      workspaceId: dbUser.workspaceId,
+      userId: dbUser.id,
+      action: "auth.login.success",
+      resourceType: "login",
+      ipAddress: ip === "unknown" ? null : ip,
+      details: { ip },
+      success: true,
+    })
+    .catch(() => undefined);
 
   return response;
 }
