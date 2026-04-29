@@ -6,10 +6,8 @@
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
-import {
-  resolveAllowedWikiSensitivities,
-  PERMISSIONS,
-} from "@jarvis/auth";
+import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   ok,
   err,
