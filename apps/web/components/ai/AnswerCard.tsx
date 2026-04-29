@@ -2,7 +2,6 @@
 // 구조화된 답변 카드 — flow layout, hairline sections, single-tone accents.
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   FileText,
@@ -22,53 +21,7 @@ import type {
   DirectorySourceRef,
   WikiPageSourceRef,
 } from '@jarvis/ai/types';
-import { ClaimBadge } from './ClaimBadge';
-import { useWikiPanel } from './WikiPanelContext';
-
-// ---------------------------------------------------------------------------
-// WikiLink — progressive enhancement: <a href> fallback + panel intercept on lg
-// ---------------------------------------------------------------------------
-function WikiLink({
-  workspaceId,
-  slug,
-  className,
-  children,
-}: {
-  workspaceId: string;
-  slug: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  const panel = useWikiPanel();
-  const [isLargeScreen, setIsLargeScreen] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 1024px)');
-    setIsLargeScreen(mq.matches);
-    const listener = (e: MediaQueryListEvent) => setIsLargeScreen(e.matches);
-    mq.addEventListener('change', listener);
-    return () => mq.removeEventListener('change', listener);
-  }, []);
-
-  const href = `/wiki/${workspaceId}/${encodeURIComponent(slug)}`;
-
-  return (
-    <a
-      href={href}
-      className={className}
-      onClick={(e) => {
-        if (!isLargeScreen || !panel.hasProvider) return; // lg 미만 또는 Provider 없음: 풀페이지 nav
-        // Allow Ctrl/Cmd-click, Shift-click, middle-click to escape the panel
-        // and use the default <a> behavior (open in new tab/window).
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-        e.preventDefault();
-        panel.open({ slug });
-      }}
-    >
-      {children}
-    </a>
-  );
-}
+import { AnswerBody, WikiLink } from './AnswerBody';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -169,70 +122,6 @@ function ConfidenceInline({ sources }: { sources: SourceRef[] }) {
       {tone.label}
       <span className="tabular-nums text-[--fg-muted]">· {pct}%</span>
     </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Answer body — inline citations preserved.
-// Supports two citation formats:
-//   [source:N]   — legacy 1-based index format (backward compat)
-//   [[slug]]     — Phase B3/B4 agent format (matches wiki-page SourceRef by slug)
-// ---------------------------------------------------------------------------
-function AnswerBody({ text, sources, workspaceId }: { text: string; sources: SourceRef[]; workspaceId: string }) {
-  // Build slug → sourceNumber map from wiki-page sources for [[slug]] resolution.
-  const slugToIndex = new Map<string, number>();
-  sources.forEach((s, i) => {
-    if (s.kind === 'wiki-page') {
-      slugToIndex.set(s.slug, i + 1); // 1-based to match ClaimBadge
-    }
-  });
-
-  // Split on both legacy [source:N] and wikilink [[slug]] citation patterns.
-  const parts = text.split(/(\[source:\d+\]|\[\[[^\]]+\]\])/g);
-
-  return (
-    <div className="prose prose-sm max-w-none text-sm leading-relaxed text-[--fg-primary]">
-      {parts.map((part, index) => {
-        // Legacy [source:N] format.
-        const legacyMatch = part.match(/^\[source:(\d+)\]$/);
-        if (legacyMatch?.[1]) {
-          return (
-            <ClaimBadge
-              key={index}
-              sourceNumber={parseInt(legacyMatch[1], 10)}
-              sources={sources}
-            />
-          );
-        }
-        // [[slug]] wikilink format — resolve to wiki-page source by slug.
-        const wikilinkMatch = part.match(/^\[\[([^\]]+)\]\]$/);
-        if (wikilinkMatch?.[1]) {
-          const slug = wikilinkMatch[1];
-          const sourceNumber = slugToIndex.get(slug);
-          if (sourceNumber !== undefined) {
-            return (
-              <ClaimBadge
-                key={index}
-                sourceNumber={sourceNumber}
-                sources={sources}
-              />
-            );
-          }
-          // Slug not found in sources — render as plain wikilink text.
-          return (
-            <WikiLink
-              key={index}
-              workspaceId={workspaceId}
-              slug={slug}
-              className="text-[--brand-primary-text] underline decoration-[--brand-primary-bg] underline-offset-2 hover:decoration-[--brand-primary]"
-            >
-              {slug}
-            </WikiLink>
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
-    </div>
   );
 }
 

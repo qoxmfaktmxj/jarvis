@@ -5,7 +5,7 @@ import type { SourceRef } from "@jarvis/ai/types";
 import { ClaimBadge } from "./ClaimBadge";
 import { useWikiPanel } from "./WikiPanelContext";
 
-function WikiLink({
+export function WikiLink({
   workspaceId,
   slug,
   className,
