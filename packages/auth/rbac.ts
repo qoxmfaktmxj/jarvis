@@ -122,16 +122,22 @@ export function buildLegacyKnowledgeSensitivitySqlFragment(
   return sql.raw("AND 1 = 0");
 }
 
+/** Allowed column references for `buildWikiSensitivitySqlFragment`. */
+export type WikiSensitivityColumn = "sensitivity" | "wpi.sensitivity";
+
 /**
  * SQL fragment version of `buildWikiSensitivitySqlFilter`.
  * Returns a Drizzle `SQL` fragment so callers can drop `sql.raw()` at call site.
  *
  * Usage:  `${buildWikiSensitivitySqlFragment(perms)}`
  * or:     `${buildWikiSensitivitySqlFragment(perms, { column: 'wpi.sensitivity' })}`
+ *
+ * `column` is restricted to a literal union (`WikiSensitivityColumn`) to prevent
+ * SQL injection via an arbitrary string being interpolated into `sql.raw()`.
  */
 export function buildWikiSensitivitySqlFragment(
   permissions: string[],
-  options: { column?: string } = {}
+  options: { column?: WikiSensitivityColumn } = {}
 ): SQL {
   const col = options.column ?? "sensitivity";
 
