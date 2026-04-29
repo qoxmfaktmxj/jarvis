@@ -554,11 +554,40 @@ async function processIngest(
     const durationMs = Date.now() - startMs;
     const message = err instanceof Error ? err.message : String(err);
     logger.error({ rawSourceId, durationMs, err }, '[ingest] failed');
+
+    // Preserve existing metadata (piiHits, wikiIngest, provenance, etc.)
+    // by re-reading the row. If the SELECT itself fails (e.g. DB outage),
+    // fall back to a minimal record with metadataReadFailed:true so the
+    // update still proceeds and audit trail is not silently dropped.
+    let existingMetadata: Record<string, unknown> = {};
+    let metadataReadFailed = false;
+    try {
+      const [row] = await db
+        .select({ metadata: rawSource.metadata })
+        .from(rawSource)
+        .where(eq(rawSource.id, rawSourceId))
+        .limit(1);
+      existingMetadata = (row?.metadata ?? {}) as Record<string, unknown>;
+    } catch (readErr) {
+      metadataReadFailed = true;
+      logger.warn(
+        { rawSourceId, err: readErr },
+        '[ingest] failed to read existing metadata for error merge',
+      );
+    }
+
+    const mergedMetadata: Record<string, unknown> = {
+      ...existingMetadata,
+      error: message,
+      errorAt: new Date().toISOString(),
+    };
+    if (metadataReadFailed) mergedMetadata['metadataReadFailed'] = true;
+
     await db
       .update(rawSource)
       .set({
         ingestStatus: 'error',
-        metadata: { error: message },
+        metadata: mergedMetadata,
         updatedAt: new Date(),
       })
       .where(eq(rawSource.id, rawSourceId));

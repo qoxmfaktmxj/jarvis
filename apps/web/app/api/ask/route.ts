@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
   } else {
     // 새 대화 — eviction + INSERT
     isNewConversation = true;
-    await evictOldConversations(session.workspaceId, session.userId);
+    await evictOldConversations();
 
     const now = new Date();
     const rows = await db
