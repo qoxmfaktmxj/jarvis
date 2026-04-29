@@ -86,17 +86,17 @@ function LoginContent() {
           <div className="w-full rounded-2xl border border-white/20 bg-white/95 p-8 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.5)] backdrop-blur-xl sm:p-10">
             {/* Heading */}
             <div className="space-y-2 text-center">
-              <h2 className="text-display text-[26px] font-bold tracking-tight text-[--fg-primary]">
+              <h2 className="text-display text-[26px] font-bold tracking-tight text-(--fg-primary)">
                 로그인
               </h2>
-              <p className="text-[14px] leading-relaxed text-[--fg-secondary]">
+              <p className="text-[14px] leading-relaxed text-(--fg-secondary)">
                 발급된 계정으로 로그인 할 수 있습니다.
               </p>
             </div>
 
           {/* Redirect error strip */}
           {error && (
-            <div className="mt-5 flex items-start gap-2 rounded-md border border-[--color-red-200] bg-[--color-red-50] px-3 py-2 text-[12.5px] text-[--color-red-500]">
+            <div className="mt-5 flex items-start gap-2 rounded-md border border-(--color-red-200) bg-(--color-red-50) px-3 py-2 text-[12.5px] text-(--color-red-500)">
               <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{ERROR_MESSAGES[error] ?? `로그인 오류: ${error}`}</span>
             </div>
@@ -107,14 +107,14 @@ function LoginContent() {
             <div className="space-y-1.5">
               <label
                 htmlFor="username"
-                className="block text-display text-[10px] font-semibold uppercase tracking-[0.12em] text-[--fg-secondary]"
+                className="block text-display text-[10px] font-semibold uppercase tracking-[0.12em] text-(--fg-secondary)"
               >
                 아이디
               </label>
               <div className="relative">
                 <User
                   aria-hidden
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[--fg-muted]"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--fg-muted)"
                 />
                 <input
                   id="username"
@@ -124,7 +124,7 @@ function LoginContent() {
                   onChange={(event) => setUsername(event.target.value)}
                   disabled={isLoading}
                   placeholder="admin"
-                  className="flex h-10 w-full rounded-md border border-[--border-default] bg-white pl-9 pr-3 text-sm text-[--fg-primary] placeholder:text-[--fg-muted] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--brand-primary-bg] focus-visible:border-[--brand-primary] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
@@ -132,14 +132,14 @@ function LoginContent() {
             <div className="space-y-1.5">
               <label
                 htmlFor="password"
-                className="block text-display text-[10px] font-semibold uppercase tracking-[0.12em] text-[--fg-secondary]"
+                className="block text-display text-[10px] font-semibold uppercase tracking-[0.12em] text-(--fg-secondary)"
               >
                 비밀번호
               </label>
               <div className="relative">
                 <Lock
                   aria-hidden
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[--fg-muted]"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-(--fg-muted)"
                 />
                 <input
                   id="password"
@@ -150,7 +150,7 @@ function LoginContent() {
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={isLoading}
                   placeholder="••••••••"
-                  className="flex h-10 w-full rounded-md border border-[--border-default] bg-white pl-9 pr-3 text-sm text-[--fg-primary] placeholder:text-[--fg-muted] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--brand-primary-bg] focus-visible:border-[--brand-primary] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
@@ -159,7 +159,7 @@ function LoginContent() {
             <div className="flex items-center justify-between text-[12.5px]">
               <label
                 htmlFor="keep-signed-in"
-                className="inline-flex cursor-pointer items-center gap-2 text-[--fg-secondary]"
+                className="inline-flex cursor-pointer items-center gap-2 text-(--fg-secondary)"
               >
                 <input
                   id="keep-signed-in"
@@ -167,13 +167,13 @@ function LoginContent() {
                   checked={keepSignedIn}
                   onChange={(event) => setKeepSignedIn(event.target.checked)}
                   disabled={isLoading}
-                  className="h-3.5 w-3.5 rounded border-[--border-default] text-[--brand-primary-text] focus-visible:ring-[--brand-primary-bg] focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  className="h-3.5 w-3.5 rounded border-(--border-default) text-(--brand-primary-text) focus-visible:ring-(--brand-primary-bg) focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 <span>로그인 상태 유지</span>
               </label>
               <Link
                 href="/reset-password"
-                className="inline-flex items-center gap-1 text-[--fg-secondary] hover:text-[--brand-primary-text] hover:underline underline-offset-2"
+                className="inline-flex items-center gap-1 text-(--fg-secondary) hover:text-(--brand-primary-text) hover:underline underline-offset-2"
               >
                 비밀번호 변경
                 <ArrowRight aria-hidden className="h-3 w-3" />
@@ -182,7 +182,7 @@ function LoginContent() {
 
             {/* Inline submit error */}
             {loginError && (
-              <div className="flex items-start gap-2 rounded-md border border-[--color-red-200] bg-[--color-red-50] px-3 py-2 text-[12.5px] text-[--color-red-500]">
+              <div className="flex items-start gap-2 rounded-md border border-(--color-red-200) bg-(--color-red-50) px-3 py-2 text-[12.5px] text-(--color-red-500)">
                 <CircleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{loginError}</span>
               </div>
@@ -192,7 +192,7 @@ function LoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-[--brand-primary] text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-[--brand-primary-hover] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[--border-focus] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md bg-(--brand-primary) text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-(--brand-primary-hover) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span>{isLoading ? '로그인 중…' : '로그인'}</span>
             </button>
