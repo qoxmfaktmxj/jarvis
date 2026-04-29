@@ -1,5 +1,5 @@
 // packages/search/facet-counter.ts
-import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFragment } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchFacets } from './types.js';
@@ -15,7 +15,10 @@ export async function countFacets(
   tsqueryExpr: string,
   userPermissions: string[] = [],
 ): Promise<SearchFacets> {
-  const sensitivityFilter = buildLegacyKnowledgeSensitivitySqlFilter(userPermissions);
+  const sensitivityFragment = buildLegacyKnowledgeSensitivitySqlFragment(userPermissions);
+  // tsqueryExpr is the output of query-parser.ts (PG function call with escaped args).
+  // sql.raw() is permitted here: tsqueryExpr is a closed static PG function call.
+  const tsquerySql = sql.raw(tsqueryExpr);
 
   const [pageTypeRows, sensitivityRows] = await Promise.all([
     db.execute<{ page_type: string; count: string }>(sql`
@@ -25,9 +28,9 @@ export async function countFacets(
       FROM knowledge_page
       WHERE
         workspace_id = ${workspaceId}::uuid
-        AND search_vector @@ ${sql.raw(tsqueryExpr)}
+        AND search_vector @@ ${tsquerySql}
         AND publish_status != 'deleted'
-        ${sql.raw(sensitivityFilter)}
+        ${sensitivityFragment}
       GROUP BY page_type
       ORDER BY count DESC
     `),
@@ -38,9 +41,9 @@ export async function countFacets(
       FROM knowledge_page
       WHERE
         workspace_id = ${workspaceId}::uuid
-        AND search_vector @@ ${sql.raw(tsqueryExpr)}
+        AND search_vector @@ ${tsquerySql}
         AND publish_status != 'deleted'
-        ${sql.raw(sensitivityFilter)}
+        ${sensitivityFragment}
       GROUP BY sensitivity
       ORDER BY count DESC
     `),

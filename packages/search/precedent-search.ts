@@ -10,7 +10,7 @@
 //
 // 격리 원칙은 유지: 이 adapter 는 절대 knowledge_page 를 조회하지 않는다.
 
-import { buildLegacyKnowledgeSensitivitySqlFilter } from '@jarvis/auth/rbac';
+import { buildLegacyKnowledgeSensitivitySqlFragment } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
@@ -42,7 +42,7 @@ export class PrecedentSearchAdapter implements SearchAdapter {
     const offset = ((query.page ?? 1) - 1) * limit;
 
     // Apply same sensitivity-based RBAC as Lane A.
-    const secretFilter = buildLegacyKnowledgeSensitivitySqlFilter(query.userPermissions);
+    const secretFragment = buildLegacyKnowledgeSensitivitySqlFragment(query.userPermissions);
 
     // BM25-like 근사: title + symptom + cluster_label 에 pg_trgm similarity 사용.
     // precedent_case 는 search_vector 컬럼이 없어 FTS 대신 trigram 유사도로 대체.
@@ -94,7 +94,7 @@ export class PrecedentSearchAdapter implements SearchAdapter {
           OR symptom ILIKE ${likePattern}
           OR cluster_label ILIKE ${likePattern}
         )
-        ${sql.raw(secretFilter)}
+        ${secretFragment}
       ORDER BY trgm_sim DESC, updated_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
