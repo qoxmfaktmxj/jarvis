@@ -8,25 +8,16 @@ vi.mock('openai', () => {
   return { default: OpenAI };
 });
 
-// Mock heavy dependencies that are not needed for pure rrfMerge tests
-vi.mock('@jarvis/db/client', () => ({ db: {} }));
-// 레거시 경로 테스트용 — 프로덕션 기본값은 true
-vi.mock('@jarvis/db/feature-flags', () => ({
-  featurePageFirstQuery: () => false,
-}));
-vi.mock('../embed.js', () => ({ generateEmbedding: vi.fn() }));
+// Mock dependencies that are not needed for pure rrfMerge tests
+vi.mock('../agent/ask-agent.js', () => ({ askAgentStream: vi.fn() }));
+vi.mock('../agent/sse-adapter.js', () => ({ askAgentToSSE: vi.fn() }));
 vi.mock('../logger.js', () => ({ logLlmCall: vi.fn() }));
 vi.mock('../budget.js', () => ({
   assertBudget: vi.fn(),
   BudgetExceededError: class extends Error {},
   recordBlocked: vi.fn(),
 }));
-vi.mock('../graph-context.js', () => ({ retrieveRelevantGraphContext: vi.fn(), toGraphSourceRefs: vi.fn() }));
-vi.mock('../case-context.js', () => ({ retrieveRelevantCases: vi.fn(), toCaseSourceRef: vi.fn() }));
-vi.mock('../directory-context.js', () => ({ searchDirectory: vi.fn(), toDirectorySourceRef: vi.fn() }));
-vi.mock('../router.js', () => ({ routeQuestion: vi.fn(), LANE_SOURCE_WEIGHTS: {} }));
 vi.mock('../cache.js', () => ({ makeCacheKey: vi.fn(), getCached: vi.fn(), setCached: vi.fn() }));
-vi.mock('@jarvis/auth/rbac', () => ({ buildLegacyKnowledgeSensitivitySqlFilter: () => '' }));
 
 import { rrfMerge } from '../ask.js';
 
