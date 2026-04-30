@@ -14,6 +14,7 @@ import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
 import { setTheme, useTheme } from "./uiPrefs";
 import { ROUTE_LABELS } from "@/lib/routes";
+import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 function routeLabel(pathname: string): string {
   for (const [prefix, label] of ROUTE_LABELS) {
@@ -22,7 +23,15 @@ function routeLabel(pathname: string): string {
   return "";
 }
 
-export function Topbar({ userName }: { userName: string }) {
+export function Topbar({
+  userName,
+  menus,
+  actions,
+}: {
+  userName: string;
+  menus: MenuTreeNode[];
+  actions: MenuTreeNode[];
+}) {
   const pathname = usePathname();
   const theme = useTheme();
   const isDark = theme === "dark";
@@ -142,7 +151,7 @@ export function Topbar({ userName }: { userName: string }) {
         <UserMenu userName={userName} />
       </header>
 
-      <CommandPalette />
+      <CommandPalette menus={menus} actions={actions} />
     </>
   );
 }

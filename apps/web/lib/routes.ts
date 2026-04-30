@@ -1,3 +1,14 @@
+/**
+ * @deprecated 메뉴 데이터는 DB(`menu_item` 테이블)로 마이그레이션됨.
+ * 이 파일의 NAV_ITEMS / ADMIN_ITEMS / ACTION_ITEMS는 테스트 호환과 시드 참조용으로만 유지된다.
+ * 새 메뉴 추가는 `packages/db/seed/menus.ts`의 `MENU_SEEDS` 또는 admin/menus 화면에서.
+ *
+ * - ROUTE_LABELS / LEGACY_REDIRECTS는 이 파일이 삭제될 때까지 유지(라우트 라벨 lookup 및 리디렉트 용).
+ * - 아이콘 컴포넌트 타입은 CommandPalette 이전 버전과 호환성을 위해 유지.
+ *
+ * @see packages/db/seed/menus.ts — MENU_SEEDS (source of truth)
+ * @see apps/web/lib/server/menu-tree.ts — getVisibleMenuTree (런타임 RBAC 필터)
+ */
 import {
   Activity,
   BarChart3,

@@ -4,8 +4,12 @@
  * CommandPalette — ⌘K 글로벌 네비게이션 + 퀵 액션
  *
  * 트리거: ⌘K / Ctrl+K / "/" (검색박스 포커스 없을 때).
- * 섹션: Navigate / Actions / Recent.
- * 퍼지 매칭(간이): 소문자 포함 비교, 알파벳 순서 유지.
+ * 섹션: Navigate / Actions.
+ * 퍼지 매칭(간이): 소문자 포함 비교.
+ *
+ * 데이터 소스: 상위 RSC(AppShell → Topbar)에서 `getVisibleMenuTree(session, "menu")`와
+ * `getVisibleMenuTree(session, "action")` 결과를 props로 받는다. RBAC 필터링은 서버에서
+ * 이미 완료된 상태이므로 여기서는 검색 필터링만 수행한다.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,20 +18,35 @@ import { Search } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, ACTION_ITEMS, type NavItem, type ActionItem } from "@/lib/routes";
+import { resolveIcon } from "./icon-map";
+import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
-type PaletteItem = (NavItem | ActionItem) & {
+type PaletteItem = {
+  id: string;
+  href: string;
+  label: string;
+  icon: ReturnType<typeof resolveIcon>;
+  description?: string;
   section: "navigate" | "actions";
 };
 
-function toPaletteItems(): PaletteItem[] {
-  return [
-    ...NAV_ITEMS.map((n) => ({ ...n, section: "navigate" as const })),
-    ...ACTION_ITEMS.map((a) => ({ ...a, section: "actions" as const })),
-  ];
+function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): PaletteItem | null {
+  if (!node.routePath) return null;
+  return {
+    id: node.code,
+    href: node.routePath,
+    label: node.label,
+    icon: resolveIcon(node.icon),
+    section,
+  };
 }
 
-export function CommandPalette() {
+type Props = {
+  menus: MenuTreeNode[];
+  actions: MenuTreeNode[];
+};
+
+export function CommandPalette({ menus, actions }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
@@ -58,13 +77,21 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  const items = useMemo(() => toPaletteItems(), []);
+  const items = useMemo<PaletteItem[]>(() => {
+    const navItems = menus
+      .map((n) => toPaletteItem(n, "navigate"))
+      .filter((x): x is PaletteItem => x !== null);
+    const actionItems = actions
+      .map((a) => toPaletteItem(a, "actions"))
+      .filter((x): x is PaletteItem => x !== null);
+    return [...navItems, ...actionItems];
+  }, [menus, actions]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
     return items.filter((it) => {
-      const hay = [it.label, it.description ?? "", ...(it.keywords ?? [])]
-        .join(" ").toLowerCase();
+      const hay = [it.label, it.description ?? ""].join(" ").toLowerCase();
       return hay.includes(q);
     });
   }, [items, query]);
@@ -83,7 +110,7 @@ export function CommandPalette() {
   const flat = useMemo(() => [...bySection.navigate, ...bySection.actions], [bySection]);
 
   const run = (it: PaletteItem) => {
-    if (it.href) router.push(it.href);
+    router.push(it.href);
     setOpen(false);
   };
 

@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@jarvis/auth/session";
 import { AppShell } from "@/components/layout/AppShell";
+import { getVisibleMenuTree } from "@/lib/server/menu-tree";
 
 export default async function AppLayout({
   children
@@ -25,5 +26,16 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return <AppShell userName={session.name}>{children}</AppShell>;
+  // RBAC menu tree (Task 4/5) — sidebar + CommandPalette 데이터를 RSC 단계에서 한 번만 가져온다.
+  // 헬퍼는 DB 오류 시 빈 배열로 graceful degrade하므로 상단 try/catch 불필요.
+  const [menus, actions] = await Promise.all([
+    getVisibleMenuTree(session, "menu"),
+    getVisibleMenuTree(session, "action"),
+  ]);
+
+  return (
+    <AppShell userName={session.name} menus={menus} actions={actions}>
+      {children}
+    </AppShell>
+  );
 }
