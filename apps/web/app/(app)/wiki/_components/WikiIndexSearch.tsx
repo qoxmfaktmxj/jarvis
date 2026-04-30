@@ -428,8 +428,10 @@ function WikiPageRow({
 }) {
   const sens = SENSITIVITY_STYLES[page.sensitivity] ?? SENSITIVITY_STYLES.internal;
   const panel = useWikiPanel();
+  const isActive = panel.hasProvider && panel.active?.slug === page.slug;
 
   // lg 미만에서는 Link 기본 navigate를 그대로 두고, lg 이상이면 우측 패널로 intercept.
+  // 같은 카드를 다시 누르면 패널 close(toggle).
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!panel.hasProvider) return;
     if (e.defaultPrevented) return;
@@ -437,14 +439,25 @@ function WikiPageRow({
     if (typeof window === 'undefined') return;
     if (!window.matchMedia('(min-width: 1024px)').matches) return;
     e.preventDefault();
-    panel.open({ slug: page.slug });
+    if (panel.active?.slug === page.slug) {
+      panel.close();
+    } else {
+      panel.open({ slug: page.slug });
+    }
   };
 
   return (
     <Link
       href={`/wiki/${workspaceId}/${page.slug}`}
       onClick={onClick}
-      className="group relative flex items-center gap-3 overflow-hidden rounded-md border border-surface-200 bg-white px-4 py-2.5 transition-all hover:border-isu-200 hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]"
+      aria-current={isActive ? 'page' : undefined}
+      data-active={isActive ? 'true' : undefined}
+      className={cn(
+        'group relative flex items-center gap-3 overflow-hidden rounded-md border bg-white px-4 py-2.5 transition-all',
+        isActive
+          ? 'border-isu-400 bg-isu-50/40 shadow-[0_4px_14px_-8px_rgba(28,77,167,0.25)]'
+          : 'border-surface-200 hover:border-isu-200 hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]',
+      )}
     >
       {/* Sensitivity accent stripe */}
       <span
@@ -452,12 +465,24 @@ function WikiPageRow({
         aria-hidden
       />
 
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-50 text-surface-500 ring-1 ring-inset ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200">
+      <span
+        className={cn(
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-colors',
+          isActive
+            ? 'bg-isu-50 text-isu-600 ring-isu-200'
+            : 'bg-surface-50 text-surface-500 ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200',
+        )}
+      >
         <FileText className="h-3.5 w-3.5" />
       </span>
 
       <div className="flex min-w-0 flex-1 items-baseline gap-2">
-        <h3 className="truncate text-[14px] font-semibold text-surface-900 group-hover:text-isu-700">
+        <h3
+          className={cn(
+            'truncate text-[14px] font-semibold transition-colors',
+            isActive ? 'text-isu-700' : 'text-surface-900 group-hover:text-isu-700',
+          )}
+        >
           {page.title}
         </h3>
         <span className="text-display hidden truncate text-[11px] text-surface-400 sm:inline">
