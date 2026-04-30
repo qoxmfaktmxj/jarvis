@@ -111,3 +111,18 @@ data/tsvd999.json
 
 # Superpowers brainstorm artifacts (local only)
 .superpowers/
+data/manual-ingest/*
+
+# Local-only assets / dev data — drop files here that the AI can read
+# but should never reach git (Excels, PDFs, sample data, scratch notes).
+# Keep .gitkeep and README.md so the directory itself ships.
+.local/*
+!.local/.gitkeep
+!.local/README.md
+
+# Per-task handoff memos (not shared)
+docs/handoff/
+
+# Graphify pipeline output (regenerated)
+graphify-out/
+.graphify_uncached.txt
