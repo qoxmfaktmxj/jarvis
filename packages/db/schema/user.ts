@@ -6,6 +6,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
@@ -47,23 +48,38 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });
 
-export const role = pgTable("role", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspace.id),
-  code: varchar("code", { length: 50 }).notNull(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  isSystem: boolean("is_system").default(false).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
-});
+export const role = pgTable(
+  "role",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id),
+    code: varchar("code", { length: 50 }).notNull(),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    isSystem: boolean("is_system").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull()
+  },
+  (table) => ({
+    wsCodeUnique: uniqueIndex("role_ws_code_unique").on(table.workspaceId, table.code)
+  })
+);
 
-export const permission = pgTable("permission", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  resource: varchar("resource", { length: 100 }).notNull(),
-  action: varchar("action", { length: 50 }).notNull()
-});
+export const permission = pgTable(
+  "permission",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    resource: varchar("resource", { length: 100 }).notNull(),
+    action: varchar("action", { length: 50 }).notNull()
+  },
+  (table) => ({
+    resourceActionUnique: uniqueIndex("permission_resource_action_unique").on(
+      table.resource,
+      table.action
+    )
+  })
+);
 
 export const userRole = pgTable(
   "user_role",
