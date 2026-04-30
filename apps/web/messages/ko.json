@@ -139,13 +139,57 @@
       }
     },
     "Companies": {
-      "title": "회사",
-      "description": "고객사, 협력사, 파트너사를 관리합니다.",
-      "searchPlaceholder": "회사 검색...",
-      "total": "전체: {count}",
+      "title": "회사관리",
+      "description": "고객사·외부 파트너·인프라를 포함한 회사 마스터를 관리합니다.",
+      "searchPlaceholder": "회사명 또는 코드 검색",
+      "total": "전체 {count}건",
+      "actions": {
+        "insert": "입력",
+        "copy": "복사",
+        "save": "저장",
+        "delete": "삭제",
+        "cancel": "취소"
+      },
+      "columns": {
+        "no": "No",
+        "delete": "삭제",
+        "status": "상태",
+        "objectDiv": "대상구분",
+        "groupCode": "그룹사",
+        "code": "회사코드",
+        "name": "회사명",
+        "representCompany": "대표회사",
+        "startDate": "시작일자",
+        "industryCode": "업종",
+        "zip": "우편번호"
+      },
+      "status": {
+        "new": "신규",
+        "dirty": "수정",
+        "deleted": "삭제예정",
+        "clean": ""
+      },
+      "filters": {
+        "all": "전체",
+        "representCompanyTrue": "대표만",
+        "representCompanyFalse": "일반만"
+      },
+      "errors": {
+        "codeRequired": "회사코드는 필수입니다.",
+        "nameRequired": "회사명은 필수입니다.",
+        "objectDivRequired": "대상구분은 필수입니다.",
+        "duplicate": "동일 회사코드+대상구분 조합이 이미 있습니다."
+      },
+      "dialog": {
+        "unsavedTitle": "저장하지 않은 변경 사항이 있습니다",
+        "unsavedDescription": "{count}건의 변경이 있습니다. 저장하시겠습니까?",
+        "saveAndContinue": "저장 후 이동",
+        "discardAndContinue": "변경 취소하고 이동"
+      },
       "pagination": {
         "previous": "이전",
-        "next": "다음"
+        "next": "다음",
+        "pageSizeLabel": "페이지당"
       }
     },
     "ReviewQueue": {
