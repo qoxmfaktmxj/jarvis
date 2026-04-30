@@ -323,6 +323,13 @@
       "when": 1777900200000,
       "tag": "0045_heavy_multiple_man",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1777521345797,
+      "tag": "0046_mean_toad_men",
+      "breakpoints": true
     }
   ]
 }

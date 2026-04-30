@@ -11,6 +11,7 @@ export const company = pgTable(
     code: varchar("code", { length: 50 }).notNull(),
     name: varchar("name", { length: 300 }).notNull(),
     groupCode: varchar("group_code", { length: 50 }),
+    // '001' = OBJECT_DIV(C10100, 대상구분) 기본값(고객사). code_item에서 lookup.
     objectDiv: varchar("object_div", { length: 10 }).notNull().default("001"),
     manageDiv: varchar("manage_div", { length: 50 }),
     representCompany: boolean("represent_company").notNull().default(false),
