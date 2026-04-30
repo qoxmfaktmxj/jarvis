@@ -7,6 +7,15 @@ import {
   user
 } from "@jarvis/db/schema";
 
+// P1 #7 — quiz_season_score / mascot_unlock 테이블엔 workspace_id 축이 없다.
+// 단기 차단(A안): leaderboard 쿼리에 quiz_season 을 join 해서 workspace_id 로
+// 필터링한다. seasonId 가 다른 테넌트의 것이면 결과는 빈 배열.
+//
+// TODO(multi-tenant, B안): quiz_season_score / mascot_unlock 에 workspace_id
+// 컬럼 추가 + 복합 unique 마이그레이션. 본격 멀티테넌트 도입 시 score 업데이트
+// 경로(quiz attempt 처리)에도 workspaceId 검증 추가 필요.
+// (Code review P1 #7, 2026-04-30)
+
 type DbLike = typeof db;
 type DbOrTx = DbLike | Parameters<Parameters<DbLike["transaction"]>[0]>[0];
 
@@ -40,6 +49,7 @@ const TOP_N = 20;
 
 export async function getCurrentLeaderboard(
   seasonId: string,
+  workspaceId: string,
   database: DbOrTx = db
 ): Promise<LeaderboardEntry[]> {
   const rows = await database
@@ -53,9 +63,15 @@ export async function getCurrentLeaderboard(
       correct: quizSeasonScore.correct
     })
     .from(quizSeasonScore)
+    .innerJoin(quizSeason, eq(quizSeasonScore.seasonId, quizSeason.id))
     .leftJoin(user, eq(quizSeasonScore.userId, user.id))
     .leftJoin(organization, eq(quizSeasonScore.orgId, organization.id))
-    .where(eq(quizSeasonScore.seasonId, seasonId))
+    .where(
+      and(
+        eq(quizSeasonScore.seasonId, seasonId),
+        eq(quizSeason.workspaceId, workspaceId)
+      )
+    )
     .orderBy(desc(quizSeasonScore.score))
     .limit(TOP_N);
   return rows.map((r, i) => ({
@@ -72,6 +88,7 @@ export async function getCurrentLeaderboard(
 
 export async function getOrgLeaderboard(
   seasonId: string,
+  workspaceId: string,
   database: DbOrTx = db
 ): Promise<OrgLeaderboardEntry[]> {
   const rows = await database
@@ -82,10 +99,12 @@ export async function getOrgLeaderboard(
       members: sql<number>`COUNT(*)::int`
     })
     .from(quizSeasonScore)
+    .innerJoin(quizSeason, eq(quizSeasonScore.seasonId, quizSeason.id))
     .leftJoin(organization, eq(quizSeasonScore.orgId, organization.id))
     .where(
       and(
         eq(quizSeasonScore.seasonId, seasonId),
+        eq(quizSeason.workspaceId, workspaceId),
         isNotNull(quizSeasonScore.orgId)
       )
     )
@@ -130,6 +149,7 @@ export async function listPastSeasons(
  */
 export async function getPastSeasonLeaderboard(
   seasonId: string,
+  workspaceId: string,
   database: DbOrTx = db
 ): Promise<{ snapshot: unknown | null; name: string; endedAt: Date | null }> {
   const rows = await database
@@ -139,7 +159,9 @@ export async function getPastSeasonLeaderboard(
       endedAt: quizSeason.endedAt
     })
     .from(quizSeason)
-    .where(eq(quizSeason.id, seasonId))
+    .where(
+      and(eq(quizSeason.id, seasonId), eq(quizSeason.workspaceId, workspaceId))
+    )
     .limit(1);
   const row = rows[0];
   if (!row) return { snapshot: null, name: "", endedAt: null };

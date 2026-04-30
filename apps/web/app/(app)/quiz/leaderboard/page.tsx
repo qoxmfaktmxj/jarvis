@@ -35,8 +35,8 @@ export default async function QuizLeaderboardPage({ searchParams }: PageProps) {
 
   const [individual, organizations, cumulativeScore] = selectedId
     ? await Promise.all([
-        getCurrentLeaderboard(selectedId),
-        getOrgLeaderboard(selectedId),
+        getCurrentLeaderboard(selectedId, session.workspaceId),
+        getOrgLeaderboard(selectedId, session.workspaceId),
         active ? getCumulativeScore(active.id, session.userId) : Promise.resolve(0)
       ])
     : [[], [], 0];
