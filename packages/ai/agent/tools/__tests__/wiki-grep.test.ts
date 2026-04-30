@@ -51,6 +51,9 @@ vi.mock("drizzle-orm", () => ({
     })),
     {
       raw: vi.fn((s: string) => ({ raw: s, op: "sql.raw" })),
+      // sql.join: pgTextArray가 사용. 실제 drizzle은 SQL chunk를 separator로 합치지만
+      // 테스트에서는 입력 보존만 하면 충분.
+      join: vi.fn((items: unknown[], sep: unknown) => ({ items, sep, op: "sql.join" })),
     }
   ),
   asc: vi.fn((col: unknown) => col),

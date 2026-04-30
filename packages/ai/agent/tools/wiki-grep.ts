@@ -8,6 +8,7 @@ import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { pgTextArray } from "../../sql-utils.js";
 import {
   ok,
   err,
@@ -82,9 +83,11 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
         : sql`${wikiPageIndex.path} LIKE ${`%/${scope}/%`}`;
 
     // ACL: requiredPermission이 null이거나, caller가 보유, 또는 ADMIN_ALL
+    // pgTextArray: drizzle이 plain JS array를 row literal `($1,$2,...)`로 인라인하는 걸
+    // 회피하고 `ARRAY[$1,$2,...]::text[]`로 emit (sql-utils.ts 주석 참조).
     const requiredPermissionCond = isAdmin
       ? sql`true`
-      : sql`(${wikiPageIndex.requiredPermission} IS NULL OR ${wikiPageIndex.requiredPermission} = ANY(${perms}))`;
+      : sql`(${wikiPageIndex.requiredPermission} IS NULL OR ${wikiPageIndex.requiredPermission} = ANY(${pgTextArray(perms)}))`;
 
     const publishedCond = isAdmin
       ? sql`true`
@@ -114,7 +117,7 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
               aliasMatch,
             ),
             scopeCond,
-            sql`${wikiPageIndex.sensitivity} = ANY(${allowedSensitivities})`,
+            sql`${wikiPageIndex.sensitivity} = ANY(${pgTextArray(allowedSensitivities)})`,
             requiredPermissionCond,
             publishedCond,
           ),
