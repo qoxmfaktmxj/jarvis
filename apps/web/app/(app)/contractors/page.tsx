@@ -33,7 +33,7 @@ export default async function ContractorsSchedulePage({
   const isAdmin = hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
   const userIdFilter = isAdmin ? undefined : session.userId;
 
-  const [leaves, holidays, contractors] = await Promise.all([
+  const [leaves, holidays, contractors, currentUserRow] = await Promise.all([
     listLeaveRequests({
       workspaceId: session.workspaceId,
       userId: userIdFilter,
@@ -49,7 +49,12 @@ export default async function ContractorsSchedulePage({
           eq(user.workspaceId, session.workspaceId),
           eq(user.employmentType, "contractor")
         )
-      )
+      ),
+    db
+      .select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, session.userId))
+      .limit(1)
   ]);
 
   const userName = new Map(contractors.map((c) => [c.id, c.name]));
@@ -71,7 +76,10 @@ export default async function ContractorsSchedulePage({
     startDate: l.startDate,
     endDate: l.endDate,
     hours: l.hours,
-    reason: l.reason ?? null
+    reason: l.reason ?? null,
+    status: l.status,
+    timeFrom: l.timeFrom,
+    timeTo: l.timeTo
   }));
 
   return (
@@ -80,6 +88,7 @@ export default async function ContractorsSchedulePage({
       leaves={calendarLeaves}
       holidays={holidays.map((h) => ({ date: h.date, name: h.name }))}
       currentUserId={session.userId}
+      currentUserName={currentUserRow[0]?.name ?? "—"}
       isAdmin={isAdmin}
     />
   );

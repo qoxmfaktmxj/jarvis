@@ -864,7 +864,45 @@
       "appliedToast": "{type} {hours}시간 신청됨",
       "undo": "실행취소",
       "insufficientWarning": "잔여 시간 부족 — 신청 후 잔여 {remaining}시간",
-      "hoursBreakdown": "{totalDays}일 중 휴일 {holidayDays}일 제외 → 실효 {effectiveDays}일({hours}시간)"
+      "hoursBreakdown": "{totalDays}일 중 휴일 {holidayDays}일 제외 → 실효 {effectiveDays}일({hours}시간)",
+      "dragHint": "달력에서 날짜를 클릭하거나 드래그해 신청 범위를 선택하세요.",
+      "today": "오늘",
+      "savedToast": "{type} 저장됨",
+      "cancelledToast": "신청이 취소되었습니다",
+      "deletedToast": "신청이 삭제되었습니다"
+    },
+    "modal": {
+      "newTitle": "근태 신청",
+      "editTitle": "근태 수정",
+      "applicantLabel": "신청자",
+      "periodLabel": "기간",
+      "singleDayLabel": "일자",
+      "rangeLabel": "신청 범위",
+      "typeLabel": "근태 종류",
+      "timeLabel": "시간",
+      "timeFromLabel": "시작 시간",
+      "timeToLabel": "종료 시간",
+      "reasonLabel": "사유",
+      "reasonPlaceholder": "선택 입력 — 사유나 비고를 적어주세요.",
+      "summaryLabel": "차감",
+      "submit": "신청",
+      "save": "저장",
+      "cancel": "취소",
+      "close": "닫기",
+      "cancelRequest": "신청 취소",
+      "deleteRequest": "삭제",
+      "confirmCancel": "이 근태 신청을 취소하시겠습니까? 취소된 신청은 복구할 수 없습니다.",
+      "confirmDelete": "이 신청을 영구 삭제하시겠습니까? 관리자만 가능한 작업이며 되돌릴 수 없습니다.",
+      "alreadyCancelled": "이미 취소된 신청입니다.",
+      "switchToHourly": "시간차로 전환",
+      "applyToSingleDay": "{date} 하루"
+    },
+    "validation": {
+      "hourlyMustBeSingleDay": "시간차는 같은 날짜 안에서만 신청할 수 있습니다. 첫 일자({date})로 자동 조정합니다.",
+      "timeOrderInvalid": "종료 시간이 시작 시간보다 빠를 수 없습니다.",
+      "timeRangeMin": "최소 1시간 이상 신청해야 합니다.",
+      "timeRangeMax": "한 번에 최대 8시간까지 신청할 수 있습니다.",
+      "rangeWeekendOnly": "선택한 범위가 모두 휴일/주말입니다. 신청할 근무일이 없습니다."
     },
     "summary": {
       "remaining": "잔여 {days}일 ({hours}시간)"
