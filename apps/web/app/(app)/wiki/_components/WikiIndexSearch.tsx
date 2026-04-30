@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Search, Loader2, X, FileText, ArrowUpRight, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { Search, Loader2, X, FileText, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { buttonVariants } from '@/components/ui/button';
 import { mapDbSensitivity, type WikiPageMeta } from '@/components/WikiPageView';
+import { useWikiPanel } from '@/components/ai/WikiPanelContext';
 import { cn } from '@/lib/utils';
 
 const SENSITIVITY_STYLES: Record<
@@ -210,9 +211,9 @@ export function WikiIndexSearch({
           <p className="mt-1 text-[12px] text-surface-500">{t('noResultsHint')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="flex flex-col gap-2">
           {filtered.map((page) => (
-            <WikiPageCard key={page.slug} page={page} workspaceId={workspaceId} t={t} />
+            <WikiPageRow key={page.slug} page={page} workspaceId={workspaceId} t={t} />
           ))}
         </div>
       )}
@@ -416,7 +417,7 @@ function FilterTab({
   );
 }
 
-function WikiPageCard({
+function WikiPageRow({
   page,
   workspaceId,
   t,
@@ -426,10 +427,24 @@ function WikiPageCard({
   t: ReturnType<typeof useTranslations<'Wiki'>>;
 }) {
   const sens = SENSITIVITY_STYLES[page.sensitivity] ?? SENSITIVITY_STYLES.internal;
+  const panel = useWikiPanel();
+
+  // lg 미만에서는 Link 기본 navigate를 그대로 두고, lg 이상이면 우측 패널로 intercept.
+  const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!panel.hasProvider) return;
+    if (e.defaultPrevented) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    if (typeof window === 'undefined') return;
+    if (!window.matchMedia('(min-width: 1024px)').matches) return;
+    e.preventDefault();
+    panel.open({ slug: page.slug });
+  };
+
   return (
     <Link
       href={`/wiki/${workspaceId}/${page.slug}`}
-      className="group relative block overflow-hidden rounded-md border border-surface-200 bg-white p-4 transition-all hover:-translate-y-[1px] hover:border-isu-200 hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]"
+      onClick={onClick}
+      className="group relative flex items-center gap-3 overflow-hidden rounded-md border border-surface-200 bg-white px-4 py-2.5 transition-all hover:border-isu-200 hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]"
     >
       {/* Sensitivity accent stripe */}
       <span
@@ -437,53 +452,44 @@ function WikiPageCard({
         aria-hidden
       />
 
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-50 text-surface-500 ring-1 ring-inset ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200">
-          <FileText className="h-3.5 w-3.5" />
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-surface-50 text-surface-500 ring-1 ring-inset ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200">
+        <FileText className="h-3.5 w-3.5" />
+      </span>
+
+      <div className="flex min-w-0 flex-1 items-baseline gap-2">
+        <h3 className="truncate text-[14px] font-semibold text-surface-900 group-hover:text-isu-700">
+          {page.title}
+        </h3>
+        <span className="text-display hidden truncate text-[11px] text-surface-400 sm:inline">
+          {page.slug}
         </span>
+      </div>
 
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-1 text-[14px] font-semibold text-surface-900 group-hover:text-isu-700">
-              {page.title}
-            </h3>
-            <span
-              className={cn(
-                'shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
-                sens.chip,
-              )}
-            >
-              {t(`sensitivity.${page.sensitivity}`)}
-            </span>
-          </div>
-
-          <p className="text-display mt-0.5 truncate text-[11px] text-surface-400">
-            {page.slug}
-          </p>
-
-          {(page.tags.length > 0 || page.updatedAt) && (
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              {page.tags.slice(0, 4).map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center rounded-full bg-surface-50 px-2 py-0.5 text-[10px] font-medium text-surface-600 ring-1 ring-inset ring-surface-200"
-                >
-                  #{tag}
-                </span>
-              ))}
-              {page.updatedAt && (
-                <span className="text-display ml-auto text-[11px] tabular-nums text-surface-400">
-                  {new Date(page.updatedAt).toLocaleDateString('ko-KR', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </span>
-              )}
-            </div>
+      <div className="flex shrink-0 items-center gap-1.5">
+        {page.tags.slice(0, 3).map((tag) => (
+          <span
+            key={tag}
+            className="hidden items-center rounded-full bg-surface-50 px-2 py-0.5 text-[10px] font-medium text-surface-600 ring-1 ring-inset ring-surface-200 md:inline-flex"
+          >
+            #{tag}
+          </span>
+        ))}
+        <span
+          className={cn(
+            'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
+            sens.chip,
           )}
-        </div>
-
-        <ArrowUpRight className="absolute right-3 top-3 h-3.5 w-3.5 text-surface-300 opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100 group-hover:text-isu-500" />
+        >
+          {t(`sensitivity.${page.sensitivity}`)}
+        </span>
+        {page.updatedAt && (
+          <span className="text-display text-[11px] tabular-nums text-surface-400">
+            {new Date(page.updatedAt).toLocaleDateString('ko-KR', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+        )}
       </div>
     </Link>
   );

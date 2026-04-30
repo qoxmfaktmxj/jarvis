@@ -10,6 +10,7 @@ import { mapDbSensitivity } from '@/components/WikiPageView';
 import type { WikiPageMeta } from '@/components/WikiPageView';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { WikiIndexSearch } from './_components/WikiIndexSearch';
+import { WikiIndexShell } from './_components/WikiIndexShell';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: '위키' };
@@ -109,19 +110,21 @@ export default async function WikiHomePage({
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader
-        kicker="Wiki"
-        title={t('title')}
-      />
+    <WikiIndexShell workspaceId={workspaceId}>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <PageHeader
+          kicker="Wiki"
+          title={t('title')}
+        />
 
-      <WikiIndexSearch
-        pages={pages}
-        workspaceId={workspaceId}
-        total={total}
-        currentPage={currentPage}
-        totalPages={totalPages}
-      />
-    </div>
+        <WikiIndexSearch
+          pages={pages}
+          workspaceId={workspaceId}
+          total={total}
+          currentPage={currentPage}
+          totalPages={totalPages}
+        />
+      </div>
+    </WikiIndexShell>
   );
 }

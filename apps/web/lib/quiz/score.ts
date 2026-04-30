@@ -1,4 +1,4 @@
-import type { QuizDifficulty } from "@jarvis/shared/validation";
+import type { QuizDifficulty } from "@jarvis/shared/validation/quiz";
 
 export const SCORE_TABLE: Record<QuizDifficulty, number> = {
   easy: 10,
@@ -8,5 +8,5 @@ export const SCORE_TABLE: Record<QuizDifficulty, number> = {
 
 export function scoreFor(difficulty: QuizDifficulty, correct: boolean): number {
   if (!correct) return 0;
-  return SCORE_TABLE[difficulty];
+  return SCORE_TABLE[difficulty] ?? 0;
 }
