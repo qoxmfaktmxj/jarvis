@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
 import { createNoticeSchema } from '@jarvis/shared/validation';
@@ -59,5 +60,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     session.userId,
     session.workspaceId,
   );
+  revalidatePath('/notices');
   return NextResponse.json({ notice: created }, { status: 201 });
 }

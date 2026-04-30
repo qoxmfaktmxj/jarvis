@@ -569,7 +569,12 @@
       "codeBlock": "코드 블록",
       "heading": "제목",
       "bulletList": "불릿 목록",
-      "orderedList": "번호 목록"
+      "orderedList": "번호 목록",
+      "underline": "밑줄",
+      "color": "글자 색",
+      "fontSize": "글자 크기",
+      "fontSizeReset": "기본",
+      "colorReset": "기본"
     },
     "frontmatter": {
       "title": "제목",

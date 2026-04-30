@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
 import { updateNoticeSchema } from '@jarvis/shared/validation';
@@ -61,6 +62,8 @@ export async function PATCH(
       { id: session.userId, role: pickActorRole(session.roles) },
       session.workspaceId,
     );
+    revalidatePath('/notices');
+    revalidatePath(`/notices/${id}`);
     return NextResponse.json({ notice: updated });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -89,6 +92,8 @@ export async function DELETE(
       { id: session.userId, role: pickActorRole(session.roles) },
       session.workspaceId,
     );
+    revalidatePath('/notices');
+    revalidatePath(`/notices/${id}`);
     return NextResponse.json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

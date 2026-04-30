@@ -20,6 +20,10 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import Underline from "@tiptap/extension-underline";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Color } from "@tiptap/extension-text-style/color";
+import { FontSize } from "@tiptap/extension-text-style/font-size";
 import { Markdown } from "tiptap-markdown";
 import { common, createLowlight } from "lowlight";
 import { Toolbar, type ToolbarFeature } from "./Toolbar";
@@ -41,10 +45,13 @@ export interface RichTextEditorProps {
 const DEFAULT_FEATURES: RichTextEditorFeature[] = [
   "bold",
   "italic",
+  "underline",
   "link",
   "heading",
   "list",
   "codeBlock",
+  "color",
+  "fontSize",
 ];
 
 /**
@@ -78,8 +85,14 @@ export function RichTextEditor({
         HTMLAttributes: { class: "text-isu-600 underline" },
       }),
       CodeBlockLowlight.configure({ lowlight }),
+      Underline,
+      // TextStyle base + Color/FontSize는 textStyle mark에 attribute를 얹는 official extensions.
+      // markdown 표준이 없어 inline `<span style="...">`로 round-trip (Markdown html:true에 의존).
+      TextStyle,
+      Color,
+      FontSize,
       Markdown.configure({
-        html: false,
+        html: true,
         linkify: true,
         breaks: false,
         transformPastedText: true,
@@ -90,9 +103,9 @@ export function RichTextEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
+        // ProseMirror 자체에는 scroll/resize를 두지 않는다 — 외부 wrapper가 담당.
         class: "prose prose-sm max-w-none px-4 py-3 focus:outline-none dark:prose-invert",
         "data-testid": "rich-text-editor",
-        style: `min-height: ${minHeight}`,
       },
     },
     onUpdate: ({ editor: ed }) => {
@@ -117,9 +130,25 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="rounded-lg border border-surface-200 bg-card">
+    <div className="overflow-hidden rounded-lg border border-(--line) bg-card">
       <Toolbar editor={editor} features={features} readOnly={readOnly} />
-      <EditorContent editor={editor} />
+      {/* Body wrapper:
+       *  - min-height: prop으로 받은 값 (기본 200px)
+       *  - max-height: clamp(360px, 60vh, 720px) — 너무 길어지면 스크롤
+       *  - resize: vertical — 우측 하단 핸들로 사용자가 늘릴 수 있음
+       *  - overflow-y: auto — max-height 넘으면 자동 스크롤
+       *  Note: resize/overflow는 ProseMirror가 아닌 외부 wrapper에 둬야 cursor 추적 정상.
+       */}
+      <div
+        className="overflow-y-auto"
+        style={{
+          minHeight,
+          maxHeight: "clamp(360px, 60vh, 720px)",
+          resize: "vertical",
+        }}
+      >
+        <EditorContent editor={editor} />
+      </div>
     </div>
   );
 }
