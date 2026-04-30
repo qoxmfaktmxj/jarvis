@@ -5,6 +5,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
@@ -35,12 +36,24 @@ export const searchSynonym = pgTable("search_synonym", {
   synonyms: varchar("synonyms", { length: 200 }).array().notNull()
 });
 
-export const popularSearch = pgTable("popular_search", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id")
-    .notNull()
-    .references(() => workspace.id),
-  query: varchar("query", { length: 500 }).notNull(),
-  count: integer("count").default(0).notNull(),
-  period: date("period").notNull()
-});
+export const popularSearch = pgTable(
+  "popular_search",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspace.id),
+    query: varchar("query", { length: 500 }).notNull(),
+    count: integer("count").default(0).notNull(),
+    period: date("period").notNull()
+  },
+  (table) => ({
+    // Code review HIGH G — aggregate-popular cron 이 onConflict 대상으로 사용.
+    // UNIQUE 가 없으면 conflict 없이 매 실행마다 중복 row 가 누적됨.
+    wsQueryPeriodUnique: uniqueIndex("popular_search_ws_query_period_unique").on(
+      table.workspaceId,
+      table.query,
+      table.period
+    )
+  })
+);
