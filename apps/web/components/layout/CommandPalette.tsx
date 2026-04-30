@@ -26,12 +26,30 @@ type PaletteItem = {
   href: string;
   label: string;
   icon: ReturnType<typeof resolveIcon>;
-  description?: string;
   section: "navigate" | "actions";
 };
 
+/**
+ * Same scheme allowlist as Sidebar.toRenderItem — defense-in-depth against
+ * `javascript:` / `data:` URI injection via `menu_item.routePath`.
+ */
+function isSafeInternalPath(path: string | null | undefined): path is string {
+  if (!path) return false;
+  if (path.length === 0 || path.length > 300) return false;
+  if (!path.startsWith("/")) return false;
+  if (path.startsWith("//")) return false;
+  return true;
+}
+
 function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): PaletteItem | null {
-  if (!node.routePath) return null;
+  if (!isSafeInternalPath(node.routePath)) {
+    if (node.routePath && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[CommandPalette] dropping action with unsafe routePath: code=${node.code} routePath=${JSON.stringify(node.routePath)}`,
+      );
+    }
+    return null;
+  }
   return {
     id: node.code,
     href: node.routePath,
@@ -77,6 +95,16 @@ export function CommandPalette({ menus, actions }: Props) {
     }
   }, [open]);
 
+  // Dev-only: Sidebar warns the same; surfacing here too because actions might
+  // be authored separately and arrive nested even when sidebar menus are flat.
+  if (process.env.NODE_ENV !== "production") {
+    if ([...menus, ...actions].some((m) => m.children.length > 0)) {
+      console.warn(
+        "[CommandPalette] menu/action tree contains nested children but palette renders flat. Hierarchical entries will be lost.",
+      );
+    }
+  }
+
   const items = useMemo<PaletteItem[]>(() => {
     const navItems = menus
       .map((n) => toPaletteItem(n, "navigate"))
@@ -90,10 +118,7 @@ export function CommandPalette({ menus, actions }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((it) => {
-      const hay = [it.label, it.description ?? ""].join(" ").toLowerCase();
-      return hay.includes(q);
-    });
+    return items.filter((it) => it.label.toLowerCase().includes(q));
   }, [items, query]);
 
   useEffect(() => { setActiveIdx(0); }, [query]);
@@ -175,9 +200,6 @@ export function CommandPalette({ menus, actions }: Props) {
                             aria-hidden
                           />
                           <span className="flex-1 text-sm font-medium">{it.label}</span>
-                          {it.description ? (
-                            <span className="truncate text-xs text-surface-400">{it.description}</span>
-                          ) : null}
                         </button>
                       </li>
                     );
@@ -189,7 +211,9 @@ export function CommandPalette({ menus, actions }: Props) {
 
           {flat.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-surface-500">
-              &quot;{query}&quot;에 해당하는 결과가 없습니다.
+              {query.trim().length > 0
+                ? <>&quot;{query}&quot;에 해당하는 결과가 없습니다.</>
+                : "표시할 항목이 없습니다."}
             </div>
           ) : null}
         </div>

@@ -2,7 +2,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { menuItem } from "@jarvis/db/schema/menu";
 import { menuPermission } from "@jarvis/db/schema/menu-permission";
-import { rolePermission, userRole } from "@jarvis/db/schema/user";
+import { role, rolePermission, userRole } from "@jarvis/db/schema/user";
 import type { JarvisSession } from "@jarvis/auth/types";
 
 /**
@@ -74,7 +74,14 @@ export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
   function sortAndPrune(nodes: MenuTreeNode[], path: Set<string>): MenuTreeNode[] {
     const result: MenuTreeNode[] = [];
     for (const n of nodes) {
-      if (path.has(n.id)) continue; // cycle — prune cyclic descendant
+      if (path.has(n.id)) {
+        // Cycle detected — prune cyclic descendant. Log so ops can audit
+        // the offending parent_id graph (DB schema doesn't enforce acyclic).
+        console.warn(
+          `[menu-tree] parent_id cycle pruned at node id=${n.id} code=${n.code}; check menu_item.parent_id in DB`,
+        );
+        continue;
+      }
       path.add(n.id);
       const pruned: MenuTreeNode = { ...n, children: sortAndPrune(n.children, path) };
       path.delete(n.id);
@@ -119,7 +126,17 @@ export async function getVisibleMenuTree(
         rolePermission,
         eq(rolePermission.permissionId, menuPermission.permissionId),
       )
-      .innerJoin(userRole, eq(userRole.roleId, rolePermission.roleId))
+      // Tenant-isolate the role: a user_role row pointing to a role in
+      // workspace B must not surface workspace A's menus, even if their
+      // permission_id collides via menu_permission.
+      .innerJoin(
+        role,
+        and(
+          eq(role.id, rolePermission.roleId),
+          eq(role.workspaceId, session.workspaceId),
+        ),
+      )
+      .innerJoin(userRole, eq(userRole.roleId, role.id))
       .where(
         and(
           eq(userRole.userId, session.userId),

@@ -1,10 +1,15 @@
 /**
  * @deprecated 메뉴 데이터는 DB(`menu_item` 테이블)로 마이그레이션됨.
- * 이 파일의 NAV_ITEMS / ADMIN_ITEMS / ACTION_ITEMS는 테스트 호환과 시드 참조용으로만 유지된다.
- * 새 메뉴 추가는 `packages/db/seed/menus.ts`의 `MENU_SEEDS` 또는 admin/menus 화면에서.
  *
- * - ROUTE_LABELS / LEGACY_REDIRECTS는 이 파일이 삭제될 때까지 유지(라우트 라벨 lookup 및 리디렉트 용).
- * - 아이콘 컴포넌트 타입은 CommandPalette 이전 버전과 호환성을 위해 유지.
+ * 현재 잔존 export의 실제 사용처:
+ * - `NAV_ITEMS` / `ADMIN_ITEMS` / `ACTION_ITEMS`, `ADMIN_ITEM`,
+ *   `NavItem` / `ActionItem`: `apps/web/lib/routes.test.ts`만 참조 (uniqueness/legacy
+ *   redirect 검증용 픽스처 역할). 새 메뉴 추가는 절대 여기에 하지 말 것 —
+ *   `packages/db/seed/menus.ts`의 `MENU_SEEDS`가 SoT.
+ * - `ROUTE_LABELS`: `Topbar`가 breadcrumb 라벨에 사용 중. 후속 task에서
+ *   `apps/web/lib/route-labels.ts`로 분리하여 routes.ts 삭제 가능하게 한다.
+ * - `LEGACY_REDIRECTS`: `apps/web/middleware.ts`가 직접 사용하지는 않으며(미들웨어
+ *   import 제약 때문에 in-line 처리), `routes.test.ts`에서 미들웨어 동작을 검증하는 용도.
  *
  * @see packages/db/seed/menus.ts — MENU_SEEDS (source of truth)
  * @see apps/web/lib/server/menu-tree.ts — getVisibleMenuTree (런타임 RBAC 필터)

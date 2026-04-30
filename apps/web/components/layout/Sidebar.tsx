@@ -48,13 +48,38 @@ type RenderItem = {
 };
 
 /**
+ * Defense-in-depth: only accept paths that are unambiguously same-origin
+ * absolute paths. Rejects:
+ * - empty / null
+ * - `javascript:` / `data:` / other non-path schemes
+ * - protocol-relative `//evil.com`
+ * - relative `foo` (would resolve against current page — surprising)
+ *
+ * Anyone with write access to `menu_item.routePath` (seed scripts today,
+ * future admin/menus UI) MUST NOT be able to inject scripted hrefs.
+ */
+function isSafeInternalPath(path: string | null | undefined): path is string {
+  if (!path) return false;
+  if (path.length === 0 || path.length > 300) return false;
+  if (!path.startsWith("/")) return false;
+  if (path.startsWith("//")) return false;
+  return true;
+}
+
+/**
  * Adapt a `MenuTreeNode` into the shape NavButton consumes. Returns null for
- * nodes without a `routePath` (group-only rows) so the caller can filter them
- * out — `getVisibleMenuTree` already cascade-prunes such nodes when they have
- * no visible descendants, but defensive in case the tree shape evolves.
+ * nodes without a `routePath` (group-only rows) and for nodes whose route is
+ * not a safe internal path.
  */
 function toRenderItem(node: MenuTreeNode): RenderItem | null {
-  if (!node.routePath) return null;
+  if (!isSafeInternalPath(node.routePath)) {
+    if (node.routePath && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[Sidebar] dropping menu item with unsafe routePath: code=${node.code} routePath=${JSON.stringify(node.routePath)}`,
+      );
+    }
+    return null;
+  }
   return {
     code: node.code,
     href: node.routePath,
@@ -119,6 +144,16 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
   const pathname = usePathname();
   const mode = useSidebar();
   const expanded = mode === "expanded";
+
+  // Dev-only: warn if MENU_SEEDS ever introduces `parent_id` rows. Sidebar
+  // currently renders flat (no submenu UI). Children would be silently dropped.
+  if (process.env.NODE_ENV !== "production") {
+    if (menus.some((m) => m.children.length > 0)) {
+      console.warn(
+        "[Sidebar] menu tree contains nested children but Sidebar renders flat. Hierarchical menus will be lost until submenu UI is added.",
+      );
+    }
+  }
 
   // Convention: code-prefix split. `nav.*` renders in the main nav; `admin.*`
   // renders below the separator. Matches the seed in `packages/db/seed/menus.ts`.
