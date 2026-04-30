@@ -4,8 +4,12 @@
  * CommandPalette — ⌘K 글로벌 네비게이션 + 퀵 액션
  *
  * 트리거: ⌘K / Ctrl+K / "/" (검색박스 포커스 없을 때).
- * 섹션: Navigate / Actions / Recent.
- * 퍼지 매칭(간이): 소문자 포함 비교, 알파벳 순서 유지.
+ * 섹션: Navigate / Actions.
+ * 퍼지 매칭(간이): 소문자 포함 비교.
+ *
+ * 데이터 소스: 상위 RSC(AppShell → Topbar)에서 `getVisibleMenuTree(session, "menu")`와
+ * `getVisibleMenuTree(session, "action")` 결과를 props로 받는다. RBAC 필터링은 서버에서
+ * 이미 완료된 상태이므로 여기서는 검색 필터링만 수행한다.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,20 +18,53 @@ import { Search } from "lucide-react";
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS, ACTION_ITEMS, type NavItem, type ActionItem } from "@/lib/routes";
+import { resolveIcon } from "./icon-map";
+import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
-type PaletteItem = (NavItem | ActionItem) & {
+type PaletteItem = {
+  id: string;
+  href: string;
+  label: string;
+  icon: ReturnType<typeof resolveIcon>;
   section: "navigate" | "actions";
 };
 
-function toPaletteItems(): PaletteItem[] {
-  return [
-    ...NAV_ITEMS.map((n) => ({ ...n, section: "navigate" as const })),
-    ...ACTION_ITEMS.map((a) => ({ ...a, section: "actions" as const })),
-  ];
+/**
+ * Same scheme allowlist as Sidebar.toRenderItem — defense-in-depth against
+ * `javascript:` / `data:` URI injection via `menu_item.routePath`.
+ */
+function isSafeInternalPath(path: string | null | undefined): path is string {
+  if (!path) return false;
+  if (path.length === 0 || path.length > 300) return false;
+  if (!path.startsWith("/")) return false;
+  if (path.startsWith("//")) return false;
+  return true;
 }
 
-export function CommandPalette() {
+function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): PaletteItem | null {
+  if (!isSafeInternalPath(node.routePath)) {
+    if (node.routePath && process.env.NODE_ENV !== "production") {
+      console.warn(
+        `[CommandPalette] dropping action with unsafe routePath: code=${node.code} routePath=${JSON.stringify(node.routePath)}`,
+      );
+    }
+    return null;
+  }
+  return {
+    id: node.code,
+    href: node.routePath,
+    label: node.label,
+    icon: resolveIcon(node.icon),
+    section,
+  };
+}
+
+type Props = {
+  menus: MenuTreeNode[];
+  actions: MenuTreeNode[];
+};
+
+export function CommandPalette({ menus, actions }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
@@ -58,15 +95,30 @@ export function CommandPalette() {
     }
   }, [open]);
 
-  const items = useMemo(() => toPaletteItems(), []);
+  // Dev-only: Sidebar warns the same; surfacing here too because actions might
+  // be authored separately and arrive nested even when sidebar menus are flat.
+  if (process.env.NODE_ENV !== "production") {
+    if ([...menus, ...actions].some((m) => m.children.length > 0)) {
+      console.warn(
+        "[CommandPalette] menu/action tree contains nested children but palette renders flat. Hierarchical entries will be lost.",
+      );
+    }
+  }
+
+  const items = useMemo<PaletteItem[]>(() => {
+    const navItems = menus
+      .map((n) => toPaletteItem(n, "navigate"))
+      .filter((x): x is PaletteItem => x !== null);
+    const actionItems = actions
+      .map((a) => toPaletteItem(a, "actions"))
+      .filter((x): x is PaletteItem => x !== null);
+    return [...navItems, ...actionItems];
+  }, [menus, actions]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((it) => {
-      const hay = [it.label, it.description ?? "", ...(it.keywords ?? [])]
-        .join(" ").toLowerCase();
-      return hay.includes(q);
-    });
+    return items.filter((it) => it.label.toLowerCase().includes(q));
   }, [items, query]);
 
   useEffect(() => { setActiveIdx(0); }, [query]);
@@ -83,7 +135,7 @@ export function CommandPalette() {
   const flat = useMemo(() => [...bySection.navigate, ...bySection.actions], [bySection]);
 
   const run = (it: PaletteItem) => {
-    if (it.href) router.push(it.href);
+    router.push(it.href);
     setOpen(false);
   };
 
@@ -148,9 +200,6 @@ export function CommandPalette() {
                             aria-hidden
                           />
                           <span className="flex-1 text-sm font-medium">{it.label}</span>
-                          {it.description ? (
-                            <span className="truncate text-xs text-surface-400">{it.description}</span>
-                          ) : null}
                         </button>
                       </li>
                     );
@@ -162,7 +211,9 @@ export function CommandPalette() {
 
           {flat.length === 0 ? (
             <div className="px-6 py-10 text-center text-sm text-surface-500">
-              &quot;{query}&quot;에 해당하는 결과가 없습니다.
+              {query.trim().length > 0
+                ? <>&quot;{query}&quot;에 해당하는 결과가 없습니다.</>
+                : "표시할 항목이 없습니다."}
             </div>
           ) : null}
         </div>

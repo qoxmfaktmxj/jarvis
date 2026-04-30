@@ -109,7 +109,9 @@
     },
     "Menus": {
       "title": "메뉴 설정",
-      "description": "메뉴 순서, 표시 여부, 역할 요구사항을 관리합니다.",
+      "description": "DB 기반 메뉴 트리를 조회합니다. 메뉴 추가·수정은 packages/db/seed/menus.ts 를 통해 시드하거나 후속 편집 UI에서 처리합니다.",
+      "kindMenu": "사이드바 메뉴",
+      "kindAction": "빠른 액션 (CommandPalette)",
       "visible": "표시",
       "anyRole": "모든 역할",
       "anyRoleOption": "— 모든 역할 —",

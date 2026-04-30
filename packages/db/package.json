@@ -21,6 +21,7 @@
     "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts ./__tests__/schema/user-global-unique.test.ts"
   },
   "dependencies": {
+    "@jarvis/shared": "workspace:*",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.13.3"

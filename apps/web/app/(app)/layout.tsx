@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@jarvis/auth/session";
 import { AppShell } from "@/components/layout/AppShell";
 import { SessionRefresher } from "./_components/SessionRefresher";
+import { getVisibleMenuTree } from "@/lib/server/menu-tree";
 
 export default async function AppLayout({
   children
@@ -26,10 +27,17 @@ export default async function AppLayout({
     redirect("/login");
   }
 
+  const [menus, actions] = await Promise.all([
+    getVisibleMenuTree(session, "menu"),
+    getVisibleMenuTree(session, "action"),
+  ]);
+
   return (
     <>
       <SessionRefresher />
-      <AppShell userName={session.name}>{children}</AppShell>
+      <AppShell userName={session.name} menus={menus} actions={actions}>
+        {children}
+      </AppShell>
     </>
   );
 }

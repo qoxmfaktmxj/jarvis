@@ -5,6 +5,7 @@ export * from "./project.js";
 export * from "./company.js";
 export * from "./file.js";
 export * from "./menu.js";
+export * from "./menu-permission.js";
 export * from "./code.js";
 export * from "./search.js";
 export * from "./audit.js";
