@@ -15,6 +15,27 @@ function escapeLike(s: string): string {
   return s.replace(/[\\%_]/g, '\\$&');
 }
 
+// P1 #6 — Drizzle .returning() 이 전체 row 를 돌려주면 passwordHash/preferences 가
+// 응답에 노출된다. 모든 mutation 응답(POST/PUT)은 반드시 이 화이트리스트를 거칠 것.
+// 새 컬럼이 추가될 때 의식적으로 노출 여부를 결정하도록 명시.
+const userResponseColumns = {
+  id:             user.id,
+  workspaceId:    user.workspaceId,
+  employeeId:     user.employeeId,
+  name:           user.name,
+  email:          user.email,
+  orgId:          user.orgId,
+  position:       user.position,
+  jobTitle:       user.jobTitle,
+  status:         user.status,
+  isOutsourced:   user.isOutsourced,
+  employmentType: user.employmentType,
+  avatarUrl:      user.avatarUrl,
+  createdAt:      user.createdAt,
+  updatedAt:      user.updatedAt,
+  // 의도적 제외: passwordHash (인증 비밀), preferences (개인 설정 — 응답에 불필요).
+} as const;
+
 // ── Schemas ──────────────────────────────────────────────────────────────────
 
 const statusEnum = z.enum(['active', 'inactive', 'locked']);
@@ -175,7 +196,7 @@ export async function POST(req: NextRequest) {
         jobTitle: jobTitle ?? null,
         workspaceId: session.workspaceId,
       })
-      .returning();
+      .returning(userResponseColumns);
     const newUser = inserted[0];
     if (!newUser) {
       return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
@@ -226,7 +247,7 @@ export async function PUT(req: NextRequest) {
         updatedAt: new Date(),
       })
       .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
-      .returning();
+      .returning(userResponseColumns);
 
     if (!updated) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
