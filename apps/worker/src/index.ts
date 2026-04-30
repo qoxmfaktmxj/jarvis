@@ -31,8 +31,7 @@ import {
 import {
   externalSignalFetchHandler,
   EXTERNAL_SIGNAL_FETCH_QUEUE,
-  EXTERNAL_SIGNAL_FETCH_CRON_DAY,
-  EXTERNAL_SIGNAL_FETCH_CRON_NIGHT,
+  EXTERNAL_SIGNAL_FETCH_CRON,
 } from './jobs/external-signal-fetch.js';
 import { featureWikiLintCron } from '@jarvis/db/feature-flags';
 import { ensureBucket } from './lib/minio-client.js';
@@ -81,9 +80,9 @@ async function main() {
   await boss.work(QUIZ_SEASON_ROTATE_QUEUE, quizSeasonRotateHandler);
 
   // Phase-Dashboard (2026-04-30) — 외부 시그널(FX + 날씨) 캐시.
-  // KST 07-19시 매시 + KST 21·00·03시 = 하루 16회.
-  await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON_DAY, {});
-  await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON_NIGHT, {});
+  // KST 07-19시 매시 + KST 21·00·03시 = 하루 16회 (단일 cron 표현식으로 등록).
+  // pg-boss schedule()은 큐 이름을 PK로 사용하므로 두 번 호출하면 마지막 값만 남는다.
+  await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON, {});
   await boss.work(EXTERNAL_SIGNAL_FETCH_QUEUE, externalSignalFetchHandler);
 
   // Phase-W2 T3 — weekly wiki lint (Sunday 03:00 KST = Saturday 18:00 UTC).

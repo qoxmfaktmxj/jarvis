@@ -320,7 +320,12 @@ export function defaultDeps(): ExternalSignalDeps {
 
 export const EXTERNAL_SIGNAL_FETCH_QUEUE = "external-signal-fetch";
 
-/** KST 07-19시 매시 (UTC 22-23 + 00-10). */
-export const EXTERNAL_SIGNAL_FETCH_CRON_DAY = "0 22-23,0-10 * * *";
-/** KST 21·00·03시 (UTC 12·15·18). */
-export const EXTERNAL_SIGNAL_FETCH_CRON_NIGHT = "0 12,15,18 * * *";
+/**
+ * KST 기준 하루 16회: 07-19시 매시(낮) + 21·00·03시(야간).
+ * UTC 환산: 22,23,0-10(낮) + 12,15,18(야간) → 단일 표현식으로 병합.
+ *
+ * NOTE: pg-boss schedule() 은 큐 이름(name)을 PK로 사용하므로
+ * 같은 큐에 schedule()을 두 번 호출하면 두 번째가 첫 번째를 덮어쓴다.
+ * 두 개의 cron 시간대를 한 표현식에 담아 단일 호출로 등록해야 한다.
+ */
+export const EXTERNAL_SIGNAL_FETCH_CRON = "0 22,23,0-10,12,15,18 * * *";
