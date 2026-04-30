@@ -29,3 +29,8 @@ export * from "./user-session.js";
 export * from "./additional-development.js";
 export * from "./contractor.js";
 export * from "./chat.js";
+// Phase-Dashboard (2026-04-30): 외부 시그널(환율/날씨) + 위키 퀴즈 + 시즌제
+export * from "./region-grid.js";
+export * from "./external-signal.js";
+export * from "./wiki-quiz.js";
+export * from "./quiz-season.js";

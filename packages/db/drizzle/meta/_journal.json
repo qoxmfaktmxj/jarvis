@@ -302,6 +302,20 @@
       "when": 1777209600000,
       "tag": "0042_add_user_password_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1777900000000,
+      "tag": "0043_dashboard_phase0",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1777900100000,
+      "tag": "0044_seed_region_grid",
+      "breakpoints": true
     }
   ]
 }
