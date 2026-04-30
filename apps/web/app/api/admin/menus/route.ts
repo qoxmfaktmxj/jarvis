@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
   const { session } = auth;
 
   const createSchema = z.object({
+    code:         z.string().min(1).max(100),
     label:        z.string().min(1).max(200),
     icon:         z.string().optional(),
     routePath:    z.string().optional(),

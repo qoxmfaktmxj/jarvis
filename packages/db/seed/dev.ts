@@ -150,11 +150,14 @@ async function seed() {
   console.log(`[seed] Created ${knowledgeData.length} knowledge pages with versions and claims`);
 
   // ---- Menu Items ----
+  // RBAC menu tree (Phase: rbac-menu-tree, Task 1/9): code is now NOT NULL.
+  // Final menu seed will be replaced by Task 2's RBAC bootstrap. These rows are
+  // kept minimal so dev seed continues to pass type-check.
   await db.insert(menuItem).values([
-    { workspaceId: wsId, label: 'Dashboard', routePath: '/dashboard', icon: 'LayoutDashboard', sortOrder: 1 },
-    { workspaceId: wsId, label: 'Systems', routePath: '/systems', icon: 'Server', sortOrder: 3 },
-    { workspaceId: wsId, label: 'Knowledge', routePath: '/knowledge', icon: 'BookOpen', sortOrder: 4 },
-    { workspaceId: wsId, label: 'Ask AI', routePath: '/ask', icon: 'Sparkles', sortOrder: 5 },
+    { workspaceId: wsId, code: 'dashboard',  label: 'Dashboard', routePath: '/dashboard', icon: 'LayoutDashboard', sortOrder: 1 },
+    { workspaceId: wsId, code: 'systems',    label: 'Systems',   routePath: '/systems',   icon: 'Server',          sortOrder: 3 },
+    { workspaceId: wsId, code: 'knowledge',  label: 'Knowledge', routePath: '/knowledge', icon: 'BookOpen',        sortOrder: 4 },
+    { workspaceId: wsId, code: 'ask',        label: 'Ask AI',    routePath: '/ask',       icon: 'Sparkles',        sortOrder: 5 },
   ]);
 
   console.log('[seed] Created menu items');
