@@ -261,4 +261,58 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
     expect(dbTransactionMock).not.toHaveBeenCalled();
     expect(projectLinksMock).not.toHaveBeenCalled();
   });
+
+  // Code review HIGH E — onConflictDoUpdate.set 가 frontmatter 파생 컬럼들을 모두
+  // 갱신해야 ACL/projection 정합성이 유지된다. 누락 시 frontmatter 의 권한 강화가
+  // DB projection 에 반영되지 않아 검색·page-first·Ask AI 에서 약한 권한이 그대로 사용됨.
+  it("onConflictDoUpdate.set includes type/requiredPermission/publishedStatus/sensitivity (HIGH E)", async () => {
+    parseFrontmatterMock
+      .mockReset()
+      .mockReturnValueOnce({
+        body: "body",
+        data: {
+          title: "Sensitive Page",
+          type: "runbook",
+          sensitivity: "RESTRICTED",
+          requiredPermission: "project.access:secret",
+        },
+      })
+      .mockReturnValueOnce({
+        body: "body",
+        data: {
+          title: "Sensitive Page",
+          type: "runbook",
+          sensitivity: "RESTRICTED",
+          requiredPermission: "project.access:secret",
+        },
+      });
+
+    let capturedSet: Record<string, unknown> | null = null;
+    dbTransactionMock.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
+      const tx = {
+        insert: vi.fn().mockReturnValue({
+          values: vi.fn().mockReturnValue({
+            onConflictDoUpdate: vi.fn((cfg: { set: Record<string, unknown> }) => {
+              capturedSet = cfg.set;
+              return Promise.resolve(undefined);
+            }),
+          }),
+        }),
+      };
+      await fn(tx);
+    });
+
+    await saveWikiPage(VALID_PAYLOAD);
+
+    expect(capturedSet).not.toBeNull();
+    const set = capturedSet as unknown as Record<string, unknown>;
+    expect(set.type).toBe("runbook");
+    expect(set.sensitivity).toBe("RESTRICTED");
+    expect(set.requiredPermission).toBe("project.access:secret");
+    expect(set.publishedStatus).toBe("published");
+    expect(set.authority).toBe("manual");
+    expect(set.gitSha).toBe("abc123");
+    expect(set.frontmatter).toBeDefined();
+    expect(set.updatedAt).toBeInstanceOf(Date);
+  });
 });

@@ -162,38 +162,38 @@ export async function saveWikiPage(
   // wikiPageIndex projection upsert + wiki_page_link projection (body 미포함 — body-column-guard 준수)
   try {
     const { data: fmData } = parseFrontmatter(fileContent);
+    // Code review HIGH E — frontmatter 에서 파생되는 컬럼들은 insert/update 양쪽에 동일하게
+    // 적용되어야 한다. 이전엔 set 에 type/requiredPermission/publishedStatus 가 누락돼 있어
+    // 사용자가 frontmatter 의 requiredPermission 을 강화해도 projection 은 약한 권한을 유지 →
+    // 검색·page-first·Ask AI 에서 ACL 우회 발생.
+    const projectionColumns = {
+      title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
+      slug: pageSlugClean,
+      type: (fmData.type ?? "concept") as string,
+      authority: "manual" as const,
+      sensitivity: (fmData.sensitivity ?? "INTERNAL") as string,
+      requiredPermission:
+        typeof fmData.requiredPermission === "string"
+          ? fmData.requiredPermission
+          : "knowledge:read",
+      frontmatter: fmData as Record<string, unknown>,
+      gitSha: sha,
+      stale: false,
+      publishedStatus: "published" as const,
+      freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
+    };
     await db.transaction(async (tx) => {
       await tx
         .insert(wikiPageIndex)
         .values({
           workspaceId: parsed.data.workspaceId,
           path: repoRelPath,
-          title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
-          slug: pageSlugClean,
-          type: fmData.type ?? "concept",
-          authority: "manual",
-          sensitivity: fmData.sensitivity ?? "INTERNAL",
-          requiredPermission:
-            typeof fmData.requiredPermission === "string"
-              ? fmData.requiredPermission
-              : "knowledge:read",
-          frontmatter: fmData as Record<string, unknown>,
-          gitSha: sha,
-          stale: false,
-          publishedStatus: "published",
-          freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
+          ...projectionColumns,
         })
         .onConflictDoUpdate({
           target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
           set: {
-            title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
-            slug: pageSlugClean,
-            authority: "manual",
-            sensitivity: fmData.sensitivity ?? "INTERNAL",
-            frontmatter: fmData as Record<string, unknown>,
-            gitSha: sha,
-            stale: false,
-            freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
+            ...projectionColumns,
             updatedAt: new Date(),
           },
         });
