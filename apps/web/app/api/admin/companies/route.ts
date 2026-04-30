@@ -4,18 +4,21 @@ import { db } from '@jarvis/db/client';
 import { company } from '@jarvis/db/schema';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { and, eq, ilike, desc, count } from 'drizzle-orm';
+import { and, eq, ilike, or, desc, count } from 'drizzle-orm';
 
 const companySchema = z.object({
-  code:           z.string().min(1).max(50),
-  name:           z.string().min(1).max(300),
-  groupCode:      z.string().max(50).optional(),
-  category:       z.string().max(50).optional(),
-  representative: z.string().max(100).optional(),
-  address:        z.string().optional(),
-  homepage:       z.string().max(500).optional(),
-  industryCode:   z.string().max(50).optional(),
-  startDate:      z.string().optional(),
+  code:             z.string().min(1).max(50),
+  name:             z.string().min(1).max(300),
+  groupCode:        z.string().max(50).optional().nullable(),
+  objectDiv:        z.string().max(10).default("001"),
+  manageDiv:        z.string().max(50).optional().nullable(),
+  representCompany: z.boolean().default(false),
+  category:         z.string().max(50).optional().nullable(),
+  startDate:        z.string().optional().nullable(),
+  industryCode:     z.string().max(50).optional().nullable(),
+  zip:              z.string().max(10).optional().nullable(),
+  address:          z.string().optional().nullable(),
+  homepage:         z.string().max(500).optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
   const q      = searchParams.get('q');
 
   const conditions = [eq(company.workspaceId, session.workspaceId)];
-  if (q) conditions.push(ilike(company.name, `%${q}%`));
+  if (q) conditions.push(or(ilike(company.name, `%${q}%`), ilike(company.code, `%${q}%`))!);
 
   const where = and(...conditions);
 
