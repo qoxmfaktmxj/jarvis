@@ -67,10 +67,14 @@ export async function saveMailPersons(rawInput: z.input<typeof saveMailPersonsIn
       }
       for (const u of input.updates) {
         await tx.update(salesMailPerson).set({ ...u.patch, updatedAt: new Date() }).where(and(eq(salesMailPerson.id, u.id), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.update", resourceType: "sales_mail_person", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {
         await tx.delete(salesMailPerson).where(and(inArray(salesMailPerson.id, input.deletes), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
+        for (const id of input.deletes) {
+          await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.delete", resourceType: "sales_mail_person", resourceId: id, details: {} as Record<string, unknown>, success: true });
+        }
         deleted.push(...input.deletes);
       }
     });

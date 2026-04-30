@@ -16,7 +16,7 @@ export default async function SalesLicensesPage() {
   const limit = 50;
   const [listResult, licenseKindOptions] = await Promise.all([
     listLicenses({ page: 1, limit }),
-    listLicenseCodes(session.workspaceId),
+    listLicenseCodes(),
   ]);
 
   const initialRows = !("error" in listResult) ? listResult.rows : [];

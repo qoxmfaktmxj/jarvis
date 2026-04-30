@@ -62,14 +62,11 @@ export async function listLicenses(rawInput: z.input<typeof listLicensesInput>) 
   });
 }
 
-export async function listLicenseCodes(workspaceId?: string) {
-  // Used to populate licenseKindCd options
-  if (!workspaceId) {
-    const ctx = await resolveSalesContext();
-    if (!ctx.ok) return [];
-    workspaceId = ctx.workspaceId;
-  }
-  const rows = await db.select().from(salesLicenseCode).where(eq(salesLicenseCode.workspaceId, workspaceId)).orderBy(salesLicenseCode.code);
+export async function listLicenseCodes() {
+  // Used to populate licenseKindCd options — always resolves workspaceId from session
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return [];
+  const rows = await db.select().from(salesLicenseCode).where(eq(salesLicenseCode.workspaceId, ctx.workspaceId)).orderBy(salesLicenseCode.code);
   return rows.map((r) => ({ value: r.code, label: r.name }));
 }
 

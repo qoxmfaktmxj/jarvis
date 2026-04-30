@@ -1010,13 +1010,15 @@
       "title": "담당자관리",
       "description": "고객사별 담당자 연락처를 관리합니다.",
       "columns": {
-        "custCd": "고객코드",
-        "chargerNm": "담당자명",
-        "dept": "부서",
-        "position": "직위",
+        "custMcd": "마스터코드",
+        "custName": "이름",
+        "jikweeNm": "직위",
+        "orgNm": "부서",
         "telNo": "전화번호",
+        "hpNo": "휴대폰",
         "email": "이메일",
-        "remark": "비고"
+        "statusYn": "활성",
+        "sabun": "담당사번"
       }
     },
     "ProductTypes": {

@@ -95,11 +95,15 @@ export async function saveCustomerContacts(rawInput: z.input<typeof saveCustomer
         created.push(c.id);
       }
       for (const u of input.updates) {
-        await tx.update(salesCustomerContact).set({ ...u.patch, updatedAt: new Date() }).where(and(eq(salesCustomerContact.id, u.id), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
+        await tx.update(salesCustomerContact).set({ ...u.patch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined }).where(and(eq(salesCustomerContact.id, u.id), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.update", resourceType: "sales_customer_contact", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {
         await tx.delete(salesCustomerContact).where(and(inArray(salesCustomerContact.id, input.deletes), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
+        for (const id of input.deletes) {
+          await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.delete", resourceType: "sales_customer_contact", resourceId: id, details: {} as Record<string, unknown>, success: true });
+        }
         deleted.push(...input.deletes);
       }
     });

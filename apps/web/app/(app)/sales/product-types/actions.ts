@@ -67,10 +67,14 @@ export async function saveProductTypes(rawInput: z.input<typeof saveProductTypes
       }
       for (const u of input.updates) {
         await tx.update(salesProductType).set({ ...u.patch, updatedAt: new Date() }).where(and(eq(salesProductType.id, u.id), eq(salesProductType.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.product_type.update", resourceType: "sales_product_type", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {
         await tx.delete(salesProductType).where(and(inArray(salesProductType.id, input.deletes), eq(salesProductType.workspaceId, ctx.workspaceId)));
+        for (const id of input.deletes) {
+          await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.product_type.delete", resourceType: "sales_product_type", resourceId: id, details: {} as Record<string, unknown>, success: true });
+        }
         deleted.push(...input.deletes);
       }
     });
