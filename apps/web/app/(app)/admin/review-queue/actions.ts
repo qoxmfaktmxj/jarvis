@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
+import { hasPermission } from "@jarvis/auth/rbac";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { db } from "@jarvis/db/client";
 import { auditLog, reviewRequest } from "@jarvis/db/schema";
 import {
@@ -25,6 +27,9 @@ async function resolveSessionId(): Promise<string | null> {
   );
 }
 
+// P1 #5 — review-queue legacy server action 은 KNOWLEDGE_REVIEW 또는 ADMIN_ALL
+// 권한이 있어야만 approve/reject/defer 를 수행할 수 있어야 한다.
+// 이전엔 세션만 확인하고 권한 검증이 없어서 일반 직원이 review 결정을 내릴 수 있었음.
 async function resolveContext(): Promise<
   | { ok: true; userId: string; workspaceId: string; ipAddress: string | null; userAgent: string | null }
   | { ok: false; error: string }
@@ -34,6 +39,13 @@ async function resolveContext(): Promise<
 
   const session = await getSession(sessionId);
   if (!session) return { ok: false, error: "Unauthorized" };
+
+  if (
+    !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW) &&
+    !hasPermission(session, PERMISSIONS.ADMIN_ALL)
+  ) {
+    return { ok: false, error: "forbidden" };
+  }
 
   const headerStore = await headers();
   return {
