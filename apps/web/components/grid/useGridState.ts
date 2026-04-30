@@ -1,15 +1,21 @@
 "use client";
+/**
+ * apps/web/components/grid/useGridState.ts
+ *
+ * 공통 그리드 행 상태 훅.
+ * 기존 apps/web/app/(app)/admin/companies/_components/useCompaniesGridState.ts
+ * 에서 추출·일반화. 의미론적으로 동일한 API를 유지하되 generic <T>.
+ */
 import { useCallback, useMemo, useState } from "react";
-
-export type GridRowState = "clean" | "new" | "dirty" | "deleted";
+import type { RowStatus, GridChanges } from "./types";
 
 export type GridRow<T extends { id: string }> = {
   data: T;
-  state: GridRowState;
+  state: RowStatus;
   original?: T;
 };
 
-export function useCompaniesGridState<T extends { id: string }>(initial: T[]) {
+export function useGridState<T extends { id: string }>(initial: T[]) {
   const [rows, setRows] = useState<GridRow<T>[]>(() =>
     initial.map((d) => ({ data: d, state: "clean" as const })),
   );
@@ -64,14 +70,30 @@ export function useCompaniesGridState<T extends { id: string }>(initial: T[]) {
     [rows],
   );
 
-  const toBatch = useCallback(
-    () => ({
-      creates: rows.filter((r) => r.state === "new").map((r) => r.data),
-      updates: rows.filter((r) => r.state === "dirty").map((r) => r.data),
-      deletes: rows.filter((r) => r.state === "deleted").map((r) => r.data.id),
-    }),
-    [rows],
-  );
+  const toBatch = useCallback((): GridChanges<T> => {
+    const creates: T[] = [];
+    const updates: { id: string; patch: Partial<T> }[] = [];
+    const deletes: string[] = [];
+
+    for (const r of rows) {
+      if (r.state === "new") {
+        creates.push(r.data);
+      } else if (r.state === "dirty") {
+        const original = r.original ?? r.data;
+        const patch: Partial<T> = {};
+        for (const k in r.data) {
+          if ((r.data as Record<string, unknown>)[k] !== (original as Record<string, unknown>)[k]) {
+            (patch as Record<string, unknown>)[k] = (r.data as Record<string, unknown>)[k];
+          }
+        }
+        updates.push({ id: r.data.id, patch });
+      } else if (r.state === "deleted") {
+        deletes.push(r.data.id);
+      }
+    }
+
+    return { creates, updates, deletes };
+  }, [rows]);
 
   return {
     rows,
