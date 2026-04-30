@@ -16,7 +16,7 @@ import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Capy } from "./Capy";
 import { setSidebar, useSidebar } from "./uiPrefs";
-import { NAV_ITEMS, ADMIN_ITEM, type NavItem } from "@/lib/routes";
+import { NAV_ITEMS, ADMIN_ITEMS, type NavItem } from "@/lib/routes";
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
 // more specific sub-route nav item is also in the sidebar (e.g. /wiki vs
@@ -164,19 +164,31 @@ export function Sidebar() {
             expanded={expanded}
           />
         ))}
-      </nav>
 
-      {/* Footer (Admin) */}
-      <div
-        className="border-t"
-        style={{ padding: 8, borderColor: "var(--line)" }}
-      >
-        <NavButton
-          item={ADMIN_ITEM}
-          active={isActive(pathname, ADMIN_ITEM.href)}
-          expanded={expanded}
+        {/* Admin group separator + heading */}
+        <div
+          aria-hidden
+          className="mt-2 border-t"
+          style={{ borderColor: "var(--line)", marginInline: -8 }}
         />
-      </div>
+        {expanded ? (
+          <div
+            className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
+            style={{ color: "var(--muted)" }}
+          >
+            관리자
+          </div>
+        ) : null}
+
+        {ADMIN_ITEMS.map((item) => (
+          <NavButton
+            key={item.href}
+            item={item}
+            active={isActive(pathname, item.href)}
+            expanded={expanded}
+          />
+        ))}
+      </nav>
     </aside>
   );
 }
