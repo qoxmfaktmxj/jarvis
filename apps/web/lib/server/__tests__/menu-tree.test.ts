@@ -69,4 +69,29 @@ describe("buildMenuTree", () => {
     const tree = buildMenuTree(flat);
     expect(tree).toHaveLength(0);
   });
+
+  it("does not infinite-loop on a 2-cycle (A↔B); prunes the cyclic descendant", () => {
+    // A.parentId = B and B.parentId = A. byId puts each in the other's children
+    // array, so neither becomes a root via the null check. The cycle is broken
+    // by path-tracking inside sortAndPrune so the call returns instead of
+    // recursing forever.
+    const flat: FlatMenuItem[] = [
+      { id: "a", parentId: "b", code: "a", kind: "menu", label: "A", routePath: "/a", icon: null, sortOrder: 1 },
+      { id: "b", parentId: "a", code: "b", kind: "menu", label: "B", routePath: "/b", icon: null, sortOrder: 2 },
+    ];
+    // A node whose parentId references another non-null id in the map gets
+    // attached as a child. Both nodes are children of each other; neither hits
+    // the `roots` push branch. Result: empty tree. The crucial property is
+    // "returns without infinite recursion".
+    const tree = buildMenuTree(flat);
+    expect(Array.isArray(tree)).toBe(true);
+  });
+
+  it("does not infinite-loop on self-parent (A.parentId = A.id)", () => {
+    const flat: FlatMenuItem[] = [
+      { id: "a", parentId: "a", code: "a", kind: "menu", label: "A", routePath: "/a", icon: null, sortOrder: 1 },
+    ];
+    const tree = buildMenuTree(flat);
+    expect(Array.isArray(tree)).toBe(true);
+  });
 });

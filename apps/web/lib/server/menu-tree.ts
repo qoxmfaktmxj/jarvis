@@ -1,5 +1,8 @@
-import { sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
+import { menuItem } from "@jarvis/db/schema/menu";
+import { menuPermission } from "@jarvis/db/schema/menu-permission";
+import { rolePermission, userRole } from "@jarvis/db/schema/user";
 import type { JarvisSession } from "@jarvis/auth/types";
 
 /**
@@ -11,17 +14,20 @@ import type { JarvisSession } from "@jarvis/auth/types";
  *
  * - `buildMenuTree(flat)` is a pure function (no IO): assemble flat rows into
  *   a tree, sort by `sortOrder`, prune nodes lacking both `routePath` and
- *   visible descendants (cascade), and treat orphan children as roots so RLS
- *   filtering of a parent does not remove the entire subtree from the user's
- *   navigation.
- * - `getVisibleMenuTree(session, kind)` issues a single UNION query through
+ *   visible descendants (cascade), treat orphan children as roots so RLS
+ *   filtering of a parent does not remove the entire subtree, and detect
+ *   parent_id cycles (defensive — DB schema does not currently enforce
+ *   acyclic parents). Cyclic nodes are pruned with no infinite recursion.
+ * - `getVisibleMenuTree(session, kind)` issues a single OR-match join through
  *   `role_permission` and `user_role`, returning DISTINCT `menu_item` rows
- *   the user is allowed to see, then delegates to `buildMenuTree`.
+ *   the user is allowed to see, then delegates to `buildMenuTree`. DB errors
+ *   are caught and logged so the global app shell does not 500 if this query
+ *   fails for any reason — callers receive an empty tree instead.
  */
 
 export type MenuKind = "menu" | "action";
 
-export interface FlatMenuItem {
+export type FlatMenuItem = {
   id: string;
   parentId: string | null;
   code: string;
@@ -30,18 +36,22 @@ export interface FlatMenuItem {
   icon: string | null;
   routePath: string | null;
   sortOrder: number;
-}
+};
 
 export type MenuTreeNode = FlatMenuItem & { children: MenuTreeNode[] };
 
 /**
  * Pure function: assemble a flat list into a tree.
- * - Roots are nodes with `parentId === null` OR whose parentId isn't in the
- *   flat set (orphans — RLS may have filtered the parent; promote child to
- *   root so the user still sees the leaf).
- * - Sort by `sortOrder` ascending at every level.
- * - Prune nodes that have no `routePath` AND no children after pruning
+ *
+ * Behavior:
+ * - Roots: nodes with `parentId === null` OR whose parentId isn't in the flat
+ *   set (orphans — RLS may have filtered the parent; promote child to root).
+ * - Sort: every level by `sortOrder` ascending. Ties broken by input order
+ *   (Array.sort is stable per ES2019).
+ * - Prune: nodes with no `routePath` AND no surviving children are removed
  *   (cascade — recurses bottom-up).
+ * - Cycle: if `parent_id` graph contains a cycle, the cyclic nodes that would
+ *   recurse are pruned (path-tracking set); no infinite recursion.
  * - Empty input returns empty array.
  */
 export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
@@ -51,60 +61,84 @@ export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
   const roots: MenuTreeNode[] = [];
   for (const node of byId.values()) {
     if (node.parentId !== null && byId.has(node.parentId)) {
-      byId.get(node.parentId)!.children.push(node);
+      const parent = byId.get(node.parentId);
+      if (parent) parent.children.push(node);
     } else {
       // Treat both null parentId AND orphan-with-missing-parent as root.
       roots.push(node);
     }
   }
 
-  function sortAndPrune(nodes: MenuTreeNode[]): MenuTreeNode[] {
-    return nodes
-      .map((n) => ({ ...n, children: sortAndPrune(n.children) }))
-      .filter((n) => n.routePath !== null || n.children.length > 0)
-      .sort((a, b) => a.sortOrder - b.sortOrder);
+  // Path-tracking set: a node id present in `path` is currently on the
+  // recursion stack from this DFS root, so revisiting it would be a cycle.
+  function sortAndPrune(nodes: MenuTreeNode[], path: Set<string>): MenuTreeNode[] {
+    const result: MenuTreeNode[] = [];
+    for (const n of nodes) {
+      if (path.has(n.id)) continue; // cycle — prune cyclic descendant
+      path.add(n.id);
+      const pruned: MenuTreeNode = { ...n, children: sortAndPrune(n.children, path) };
+      path.delete(n.id);
+      if (pruned.routePath !== null || pruned.children.length > 0) {
+        result.push(pruned);
+      }
+    }
+    return result.sort((a, b) => a.sortOrder - b.sortOrder);
   }
 
-  return sortAndPrune(roots);
+  return sortAndPrune(roots, new Set());
 }
 
 /**
- * UNION model: any permission held by any of the user's roles → menu visible.
- * `DISTINCT mi.id` collapses duplicates from multiple matching permissions.
+ * Returns the menu tree visible to `session` for the given `kind`. Empty array
+ * is returned (without throwing) if the session is missing required ids or if
+ * the DB query fails. Callers fetching both kinds should issue two calls in
+ * `Promise.all` — the cost is two short index-driven JOINs.
  */
 export async function getVisibleMenuTree(
   session: JarvisSession,
   kind: MenuKind = "menu",
 ): Promise<MenuTreeNode[]> {
-  const result = await db.execute<{
-    id: string;
-    parentId: string | null;
-    code: string;
-    kind: MenuKind;
-    label: string;
-    icon: string | null;
-    routePath: string | null;
-    sortOrder: number;
-  }>(sql`
-    SELECT DISTINCT
-      mi.id,
-      mi.parent_id  AS "parentId",
-      mi.code,
-      mi.kind,
-      mi.label,
-      mi.icon,
-      mi.route_path AS "routePath",
-      mi.sort_order AS "sortOrder"
-    FROM menu_item mi
-    JOIN menu_permission mp ON mp.menu_item_id = mi.id
-    JOIN role_permission rp ON rp.permission_id = mp.permission_id
-    JOIN user_role       ur ON ur.role_id = rp.role_id
-    WHERE ur.user_id = ${session.userId}
-      AND mi.workspace_id = ${session.workspaceId}
-      AND mi.kind = ${kind}
-      AND mi.is_visible = true
-    ORDER BY mi.sort_order
-  `);
+  // Fail-closed: invalid session shape → no menus, do not query.
+  if (!session.userId || !session.workspaceId) return [];
 
-  return buildMenuTree(result.rows);
+  try {
+    const rows = await db
+      .selectDistinct({
+        id: menuItem.id,
+        parentId: menuItem.parentId,
+        code: menuItem.code,
+        kind: menuItem.kind,
+        label: menuItem.label,
+        icon: menuItem.icon,
+        routePath: menuItem.routePath,
+        sortOrder: menuItem.sortOrder,
+      })
+      .from(menuItem)
+      .innerJoin(menuPermission, eq(menuPermission.menuItemId, menuItem.id))
+      .innerJoin(
+        rolePermission,
+        eq(rolePermission.permissionId, menuPermission.permissionId),
+      )
+      .innerJoin(userRole, eq(userRole.roleId, rolePermission.roleId))
+      .where(
+        and(
+          eq(userRole.userId, session.userId),
+          eq(menuItem.workspaceId, session.workspaceId),
+          eq(menuItem.kind, kind),
+          eq(menuItem.isVisible, true),
+        ),
+      )
+      .orderBy(asc(menuItem.sortOrder));
+
+    return buildMenuTree(rows);
+  } catch (err) {
+    // The sidebar lives in the global app shell; a DB hiccup here must not
+    // 500 the entire page. Log and degrade to "no menus" so navigation
+    // disappears but the rest of the page still renders.
+    console.warn(
+      `[menu-tree] getVisibleMenuTree failed (user=${session.userId}, ws=${session.workspaceId}, kind=${kind}):`,
+      err,
+    );
+    return [];
+  }
 }
