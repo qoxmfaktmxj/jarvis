@@ -101,6 +101,58 @@ df7eba9 fix(notices): apply sensitivity filter to list/getById (P1 #10)
 - **`isOutsourced` 를 JarvisSession 에 노출**: P1 #10 픽스에서 role 기반 프록시로 short-circuit 했으나, 외주 인력이 DEVELOPER role 을 부여받는 케이스가 생기면 INTERNAL 노출됨. 정확한 차단을 위해 `employmentType` 또는 `isOutsourced` 를 session 에 주입 + notice 가드 강화. 후속 plan.
 - **`NOTICE_READ_INTERNAL` PERMISSION 신설**: role 매핑 대신 명시 권한으로 바꾸는 것이 RBAC 모델 일관성에 부합. 마이그레이션 + 시드 동반 작업으로 별도 진행.
 
-## 다음 단계 (대기)
+## Phase 5 — 전체 소스 종합 리뷰 (post-fix, 사용자 추가 지시)
 
-- task #4: 전체 소스 코드 리뷰 (post-fix). 보안 외 일반 품질(아키텍처 일관성, 데드 코드, 타입 안전성, RSC 경계, 위키 Karpathy 원칙 준수, i18n 누락, 워커 잡 idempotency 등) 종합 리뷰.
+`general-purpose` 에이전트로 비-보안 종합 리뷰 실행 (HEAD `10eb259` 기준).
+결과: **15건 (HIGH 3 / MEDIUM 7 / LOW 5)**.
+
+### 즉시 처리한 HIGH 2건
+
+| ID | 카테고리 | 파일 | 커밋 |
+|----|---------|------|------|
+| HIGH G | 워커 idempotency | `apps/worker/src/jobs/aggregate-popular.ts` + `popular_search` UNIQUE migration | `1441023` |
+| HIGH E | Wiki Karpathy / ACL projection 정합성 | `apps/web/app/(app)/wiki/manual/[workspaceId]/edit/[...path]/actions.ts` | `788cfb7` |
+
+**HIGH G** — `onConflictDoNothing()` 가 PK(id) 기준으로만 conflict 를 잡아 중복 row 누적 + count freeze. (workspaceId, query, period) UNIQUE 인덱스 신설(migration 0048) + onConflictDoUpdate 로 교체 + currentWeekStart Date mutation 도 정리(LOW I 보너스). 회귀 테스트 5건 신설. popular_search 0건이라 backfill 불필요.
+
+**HIGH E** — manual save 의 wikiPageIndex projection upsert 에서 set 에 `type/requiredPermission/publishedStatus` 누락 → frontmatter 권한 강화가 DB projection 에 반영 안 되는 ACL 우회. projectionColumns 객체로 insert/update 컬럼셋 통일. 회귀 테스트 1건 (강화 frontmatter 캡처).
+
+### 사용자 결정 대기 항목 (autonomous 처리하지 않음)
+
+- **HIGH B — page-first/tutor 폐기** (`packages/ai/page-first/*`, `packages/ai/tutor.ts`): Karpathy 피벗 직후 1주 burn-in 권장 (사용자 의도 확인 필요). 자동 삭제 보류. → 다음 plan
+- **MEDIUM B — `KNOWLEDGE_ADMIN`/`AUDIT_READ`/`USER_WRITE` 권한 정리**: nominal-effective gap 해소 위해 라우트 게이트 추가 또는 PERMISSIONS 삭제. 변경 표면 큼.
+- **MEDIUM B — `routes.ts` deprecated 표기**: RBAC 메뉴 트리 plan 진행 시 자연스럽게 처리.
+- **MEDIUM C — ask-agent ToolDefinition 더블 캐스팅**: registry 패턴 도입 권장. 큰 리팩토링.
+- **MEDIUM J — `company` 테이블 code lookup FK 누락**: 마이그레이션 + 시드 검증 필요.
+- **MEDIUM F — i18n 누락 (additional-dev/holidays/contractors)**: `jarvis-i18n` 스킬 따라 일괄 작업 필요.
+- **MEDIUM I — audit `.catch(() => undefined)` silent swallow**: console.error fallback 권장.
+- **MEDIUM D — `ASK_SYSTEM_PROMPT`/`SYSTEM_PROMPT_PAGE_FIRST` deprecated const**: page-first 폐기와 묶음.
+- **LOW (5건)**: wiki path normalization, aggregate-popular test 부재(이미 해결), repo root clutter (`_workspace_prev_*`, 미사용 PNG 등 + `jarvis_openai_key.txt` — git untracked + .gitignore 패턴 등록 확인됨, leak 아님), client type-only import.
+
+### "전체 건강도" (리뷰어 의견)
+
+> P1 #1~#10 직후라 보안 게이트는 견고. Karpathy 피벗으로 도입된 ask-agent 와 legacy page-first/tutor 가 공존 — prompt/sensitivity 가드가 두 경로에 분산. 데이터 무결성: company FK 누락 + (이번 PR 로 해결된) wiki manual projection set 누락. 워커는 대체로 idempotent — `aggregate-popular` 만 명백한 버그였고 이번에 처리. RBAC dictionary 는 정의-사용 mismatch 누적 (nominal vs effective gap).
+
+→ **종합: healthy core, accumulated tech debt around legacy AI pipeline + RBAC nominal vs effective gap**.
+
+### 권장 다음 cycle (리뷰어 우선순위)
+
+1. ~~HIGH G aggregate-popular UPSERT~~ ✅ 완료 (`1441023`)
+2. ~~HIGH E wiki manual projection 컬럼 보강~~ ✅ 완료 (`788cfb7`)
+3. **HIGH B page-first/tutor 폐기** — 1주 burn-in 후 폴더·exports·테스트·deprecated const 일괄 삭제
+4. **MEDIUM B routes.ts ↔ menu_tree 마이그레이션 plan 진행** — 사이드바 분리 commit 누적 전에
+5. **MEDIUM J + B company FK + dead permission 정리** — 같은 마이그레이션에 묶어서
+
+## 최종 commit 시퀀스
+
+```
+788cfb7 fix(wiki/manual): include type/requiredPermission/publishedStatus in onConflictDoUpdate.set (review HIGH E)
+1441023 fix(worker/aggregate-popular): proper UPSERT + UNIQUE on (ws, query, period) (review HIGH G)
+10eb259 docs(handoff): record P1 #8/#9/#10 security re-audit + fixes
+df7eba9 fix(notices): apply sensitivity filter to list/getById (P1 #10)
+03264c4 fix(api/admin/codes): verify codeGroup workspace ownership on POST (P1 #9)
+4872872 fix(actions/profile): require ADMIN_ALL for updateQuickMenuOrder (P1 #8)
+34b6470 docs(plan): RBAC menu tree handoff — DB-driven sidebar/CommandPalette  ← 시작 baseline
+```
+
+총 5건 픽스 + 1건 핸드오프 doc. Push 는 사용자 결정.
