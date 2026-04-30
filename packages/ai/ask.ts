@@ -78,8 +78,13 @@ export async function* askAI(
 
   // -------------------------------------------------------------------------
   // Cache-through (in-memory LRU; see packages/ai/cache.ts).
-  // sensitivityScope encodes both knowledge clearance and graph access so that
-  // users with different permission profiles never share a cache entry.
+  //
+  // sensitivityScope encodes clearance + graph access bucket but NOT the
+  // user's per-page ACL (e.g. requiredPermission gates). Two users with the
+  // same clearance can still see different page-level data, so the cache key
+  // must additionally include a deterministic fingerprint of the user's
+  // permissions — otherwise a cached answer for user A may surface to user B
+  // who lacks one of A's restricted-page permissions (P1 #2).
   // -------------------------------------------------------------------------
   const sensitivityScope =
     query.sensitivityScope ??
@@ -88,10 +93,15 @@ export async function* askAI(
   // 요청별 모델 오버라이드 — undefined면 env default (ASK_MODEL).
   const resolvedModel = query.model ?? ASK_MODEL;
 
+  // Sorted, comma-joined permission strings — order independent so that
+  // user roles producing the same permission set cache as one entry.
+  const permissionFingerprint = [...(userPermissions ?? [])].sort().join(',');
+
   const cacheKey = makeCacheKey({
     promptVersion: PROMPT_VERSION,
     workspaceId,
     sensitivityScope,
+    permissionFingerprint,
     input: question,
     model: resolvedModel,
   });

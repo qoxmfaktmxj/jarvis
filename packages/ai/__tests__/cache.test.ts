@@ -46,6 +46,21 @@ describe('makeCacheKey', () => {
     );
   });
 
+  // P1 #2 — permissionFingerprint 누락 회귀 방지.
+  // 같은 sensitivityScope 안에서 permission profile 이 다른 두 사용자가 같은 캐시
+  // 엔트리를 공유하지 않도록, fingerprint 가 키에 반영돼야 한다.
+  it('differs by permissionFingerprint (P1 #2 — ACL leak guard)', () => {
+    const userA = { ...base, permissionFingerprint: 'knowledge:read,knowledge:update' };
+    const userB = { ...base, permissionFingerprint: 'knowledge:read,wiki:restricted_read' };
+    expect(makeCacheKey(userA)).not.toBe(makeCacheKey(userB));
+  });
+
+  it('treats undefined permissionFingerprint distinctly from defined one', () => {
+    const noPerm = { ...base }; // permissionFingerprint undefined
+    const withPerm = { ...base, permissionFingerprint: 'knowledge:read' };
+    expect(makeCacheKey(noPerm)).not.toBe(makeCacheKey(withPerm));
+  });
+
   it('is stable across serialization orderings', () => {
     const reordered = {
       model: base.model,
