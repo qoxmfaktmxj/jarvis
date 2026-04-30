@@ -1,0 +1,22 @@
+{
+  "name": "@jarvis/external-signals",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./exchangerate": "./src/exchangerate.ts",
+    "./kma": "./src/kma.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "typescript": "^5.7.3",
+    "vitest": "^3.1.1"
+  }
+}

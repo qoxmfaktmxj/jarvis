@@ -16,6 +16,7 @@
   "dependencies": {
     "@jarvis/ai": "workspace:*",
     "@jarvis/db": "workspace:*",
+    "@jarvis/external-signals": "workspace:*",
     "@jarvis/shared": "workspace:*",
     "@jarvis/wiki-agent": "workspace:*",
     "@jarvis/wiki-fs": "workspace:*",

@@ -1,40 +1,45 @@
 /**
  * dashboard-signals.ts — RSC 진입점에서 환율·날씨 시그널을 조회.
  *
- * Phase-Dashboard (2026-04-30) 인스턴스 분할 작업 계약:
- *  - Instance 1 (이 파일): interface stub만 제공.
- *  - Instance 2 (별도 worktree, claude/dashboard-phase1-signals 브랜치):
- *    · `external_signal` 테이블에서 latest payload select
- *    · user.preferences.weatherGrid override 반영 (없으면 워크스페이스 default = 서초구 nx=60, ny=125)
- *    · cache age > 90min이면 stale flag 반환
- *    · exchangerate-api / KMA 단기예보 fetch는 worker(apps/worker)가 cron으로 처리
+ * Phase-Dashboard (2026-04-30) 인스턴스 분할 작업:
+ *  - Instance 1: schema + interface stub (commit 8f89279)
+ *  - Instance 2 (이 파일): 본문 구현
+ *  - 카드 UI: 별도 instance
  *
- * 본 파일의 시그니처가 Instance 2의 구현 계약이다. 변경 시 Instance 2와 사전 합의.
+ * 데이터 흐름: worker가 `external_signal` 테이블에 cron 으로 fetch+upsert →
+ * 본 RSC query 가 read-only로 select. cache age > 90min 이면 stale=true.
  */
+
+import { and, desc, eq } from "drizzle-orm";
+import { db } from "@jarvis/db/client";
+import { externalSignal, user, workspace } from "@jarvis/db/schema";
 
 export interface FxSignal {
   base: "KRW";
   rates: { USD: number; EUR: number; JPY: number };
-  /** 직전 fetch 대비 변화율 (소수, 양수 = 원화 약세). */
   change: { USD: number; EUR: number; JPY: number };
   fetchedAt: Date;
   stale: boolean;
 }
 
+export type SkyLabel = "맑음" | "구름많음" | "흐림";
+export type PtyLabel = "없음" | "비" | "눈" | "비/눈" | "소나기";
+export type DustLabel = "좋음" | "보통" | "나쁨" | "매우나쁨";
+
+export interface WeatherRegion {
+  nx: number;
+  ny: number;
+  label: string;
+}
+
 export interface WeatherSignal {
-  /** 격자좌표 + 표시용 라벨. */
-  region: { nx: number; ny: number; label: string };
-  /** 현재 기온 (°C). */
+  region: WeatherRegion;
   temp: number;
-  /** 최고/최저 기온 (°C). */
   hi: number;
   lo: number;
-  /** 하늘 상태 한국어 라벨. */
-  sky: "맑음" | "구름많음" | "흐림";
-  /** 강수 형태. */
-  pty: "없음" | "비" | "눈" | "비/눈" | "소나기";
-  /** 미세먼지 등급 (선택). */
-  dust?: "좋음" | "보통" | "나쁨" | "매우나쁨";
+  sky: SkyLabel;
+  pty: PtyLabel;
+  dust?: DustLabel;
   fetchedAt: Date;
   stale: boolean;
 }
@@ -44,23 +49,195 @@ export interface DashboardSignals {
   weather: WeatherSignal | null;
 }
 
-/**
- * Instance 2가 본문 구현. Instance 1의 카드 컴포넌트는 이 시그니처에 의존.
- *
- * 동작 계약:
- *  1. user.preferences.weatherGrid가 있으면 그 격자, 없으면 워크스페이스 default 격자(서초구).
- *  2. external_signal 테이블에서 (workspaceId, kind, key) 조합으로 최근 payload 조회.
- *  3. fetchedAt이 90분 이상 지난 경우 stale=true (UI에서 표시 가능).
- *  4. 데이터가 아예 없으면 null 반환 (UI는 "데이터 준비 중" empty state 노출).
- */
+/** 90분 이상 된 데이터는 stale 표시 — UI에서 "데이터 갱신 중" 등 표시 가능. */
+export const STALE_THRESHOLD_MS = 90 * 60 * 1000;
+
+/** 워크스페이스 default 격자 (Phase 0 seed 기준): 서울 서초구. */
+const SEOCHO_FALLBACK: WeatherRegion = { nx: 60, ny: 125, label: "서초구" };
+
+const SKY_VALUES: SkyLabel[] = ["맑음", "구름많음", "흐림"];
+const PTY_VALUES: PtyLabel[] = ["없음", "비", "눈", "비/눈", "소나기"];
+const DUST_VALUES: DustLabel[] = ["좋음", "보통", "나쁨", "매우나쁨"];
+
+interface SignalRow {
+  payload: unknown;
+  fetchedAt: Date;
+}
+
+export function isStale(fetchedAt: Date, now: Date): boolean {
+  return now.getTime() - fetchedAt.getTime() > STALE_THRESHOLD_MS;
+}
+
+export function resolveWeatherRegion(
+  preferences: unknown,
+  workspaceSettings: unknown
+): WeatherRegion {
+  const fromUser = readGrid(preferences);
+  if (fromUser) return fromUser;
+  const fromWs = readGrid(
+    isObject(workspaceSettings) ? workspaceSettings.defaults : null
+  );
+  if (fromWs) return fromWs;
+  return SEOCHO_FALLBACK;
+}
+
+function readGrid(source: unknown): WeatherRegion | null {
+  if (!isObject(source)) return null;
+  const grid = source.weatherGrid;
+  if (!isObject(grid)) return null;
+  const nx = grid.nx;
+  const ny = grid.ny;
+  if (typeof nx !== "number" || typeof ny !== "number") return null;
+  if (!Number.isFinite(nx) || !Number.isFinite(ny)) return null;
+  const label =
+    typeof grid.label === "string" && grid.label.trim()
+      ? grid.label
+      : `격자 ${nx},${ny}`;
+  return { nx, ny, label };
+}
+
+export function buildFxSignal(
+  row: SignalRow | null,
+  now: Date
+): FxSignal | null {
+  if (!row) return null;
+  const payload = row.payload;
+  if (!isObject(payload)) return null;
+  if (payload.base !== "KRW") return null;
+
+  const rates = parseRateTriple(payload.rates);
+  if (!rates) return null;
+
+  const change =
+    parseRateTriple(payload.change) ?? { USD: 0, EUR: 0, JPY: 0 };
+
+  return {
+    base: "KRW",
+    rates,
+    change,
+    fetchedAt: row.fetchedAt,
+    stale: isStale(row.fetchedAt, now)
+  };
+}
+
+function parseRateTriple(
+  v: unknown
+): { USD: number; EUR: number; JPY: number } | null {
+  if (!isObject(v)) return null;
+  const usd = v.USD;
+  const eur = v.EUR;
+  const jpy = v.JPY;
+  if (typeof usd !== "number" || !Number.isFinite(usd)) return null;
+  if (typeof eur !== "number" || !Number.isFinite(eur)) return null;
+  if (typeof jpy !== "number" || !Number.isFinite(jpy)) return null;
+  return { USD: usd, EUR: eur, JPY: jpy };
+}
+
+export function buildWeatherSignal(
+  row: SignalRow | null,
+  region: WeatherRegion,
+  now: Date
+): WeatherSignal | null {
+  if (!row) return null;
+  const payload = row.payload;
+  if (!isObject(payload)) return null;
+
+  const temp = numericField(payload.temp);
+  const hi = numericField(payload.hi);
+  const lo = numericField(payload.lo);
+  if (temp === null || hi === null || lo === null) return null;
+
+  const sky = enumField(payload.sky, SKY_VALUES);
+  const pty = enumField(payload.pty, PTY_VALUES);
+  if (!sky || !pty) return null;
+
+  const dust = enumField(payload.dust, DUST_VALUES) ?? undefined;
+
+  return {
+    region,
+    temp,
+    hi,
+    lo,
+    sky,
+    pty,
+    ...(dust ? { dust } : {}),
+    fetchedAt: row.fetchedAt,
+    stale: isStale(row.fetchedAt, now)
+  };
+}
+
+function numericField(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+function enumField<T extends string>(v: unknown, allowed: T[]): T | null {
+  return typeof v === "string" && (allowed as string[]).includes(v)
+    ? (v as T)
+    : null;
+}
+
+function isObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+
 export async function getDailySignals(
   workspaceId: string,
-  userId: string
+  userId: string,
+  now: Date = new Date(),
+  database: typeof db = db
 ): Promise<DashboardSignals> {
-  // STUB — Instance 2(claude/dashboard-phase1-signals)에서 구현.
-  // 본 stub은 카드 컴포넌트가 import 가능하도록 시그니처만 보장한다.
-  // 의도적으로 빈 결과 반환: UI는 "데이터 준비 중" 또는 mock 표시로 graceful degrade.
-  void workspaceId;
-  void userId;
-  return { fx: null, weather: null };
+  const [userRow] = await database
+    .select({ preferences: user.preferences })
+    .from(user)
+    .where(and(eq(user.id, userId), eq(user.workspaceId, workspaceId)))
+    .limit(1);
+
+  const [wsRow] = await database
+    .select({ settings: workspace.settings })
+    .from(workspace)
+    .where(eq(workspace.id, workspaceId))
+    .limit(1);
+
+  const region = resolveWeatherRegion(
+    userRow?.preferences,
+    wsRow?.settings
+  );
+
+  const [fxRow] = await database
+    .select({
+      payload: externalSignal.payload,
+      fetchedAt: externalSignal.fetchedAt
+    })
+    .from(externalSignal)
+    .where(
+      and(
+        eq(externalSignal.workspaceId, workspaceId),
+        eq(externalSignal.kind, "fx"),
+        eq(externalSignal.key, "KRW")
+      )
+    )
+    .orderBy(desc(externalSignal.fetchedAt))
+    .limit(1);
+
+  const weatherKey = `${region.nx},${region.ny}`;
+  const [weatherRow] = await database
+    .select({
+      payload: externalSignal.payload,
+      fetchedAt: externalSignal.fetchedAt
+    })
+    .from(externalSignal)
+    .where(
+      and(
+        eq(externalSignal.workspaceId, workspaceId),
+        eq(externalSignal.kind, "weather"),
+        eq(externalSignal.key, weatherKey)
+      )
+    )
+    .orderBy(desc(externalSignal.fetchedAt))
+    .limit(1);
+
+  return {
+    fx: buildFxSignal(fxRow ?? null, now),
+    weather: buildWeatherSignal(weatherRow ?? null, region, now)
+  };
 }
