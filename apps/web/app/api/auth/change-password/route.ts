@@ -48,6 +48,11 @@ export async function POST(request: NextRequest) {
   }
 
   // 사용자 조회 (employeeId 또는 email)
+  //
+  // TODO(multi-tenant, B안): 현재는 단일 테넌트 운영 + user.employee_id / user.email 의
+  // 글로벌 unique 제약(0047 마이그레이션)으로 cross-tenant 충돌이 데이터 레벨에서 차단된다.
+  // 멀티테넌트 운영 전환 시 login/route.ts 와 동일하게 workspace_id 필터를 추가할 것.
+  // (Code review P1 #1, 2026-04-30)
   const [dbUser] = await db
     .select()
     .from(user)

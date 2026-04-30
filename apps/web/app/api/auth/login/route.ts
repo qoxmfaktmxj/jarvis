@@ -72,7 +72,15 @@ export async function POST(request: NextRequest) {
       ? 30 * 24 * 60 * 60 * 1000
       : 8 * 60 * 60 * 1000;
 
-  // DB 비밀번호 우선: employeeId 또는 email로 사용자 조회
+  // DB 비밀번호 우선: employeeId 또는 email로 사용자 조회.
+  //
+  // TODO(multi-tenant, B안): 현재는 단일 테넌트 운영 + user.employee_id / user.email 의
+  // 글로벌 unique 제약(0047 마이그레이션)으로 cross-tenant 충돌이 데이터 레벨에서 차단된다.
+  // 멀티테넌트 운영 전환 시:
+  //   1) host→workspaceId 라우팅을 미들웨어에 추가
+  //   2) 아래 where 에 `eq(user.workspaceId, resolvedWorkspaceId)` 를 함께 박을 것
+  //   3) 글로벌 unique 를 (workspace_id, employee_id) / (workspace_id, email) 복합 unique 로 교체
+  // (Code review P1 #1, 2026-04-30)
   const [dbUser] = await db
     .select()
     .from(user)

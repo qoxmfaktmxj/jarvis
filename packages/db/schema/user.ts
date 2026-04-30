@@ -19,9 +19,14 @@ export const user = pgTable("user", {
   workspaceId: uuid("workspace_id")
     .notNull()
     .references(() => workspace.id),
-  employeeId: varchar("employee_id", { length: 50 }).notNull(),
+  // TODO(multi-tenant, B안): 멀티테넌트 운영 시작 시 글로벌 unique 를 제거하고
+  // (workspace_id, employee_id) / (workspace_id, email) 복합 unique 로 전환할 것.
+  // 동시에 로그인/비밀번호 변경 라우트는 host→workspaceId 라우팅을 추가해
+  // 쿼리에 workspace_id 필터를 박아야 한다.
+  // 현재는 단일 테넌트 운영 — A안 단기차단으로 글로벌 unique 사용. (Code review P1 #1, 2026-04-30)
+  employeeId: varchar("employee_id", { length: 50 }).notNull().unique(),
   name: varchar("name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }),
+  email: varchar("email", { length: 255 }).unique(),
   phone: varchar("phone", { length: 50 }),
   orgId: uuid("org_id").references(() => organization.id),
   position: varchar("position", { length: 100 }),

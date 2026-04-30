@@ -18,7 +18,7 @@
     "studio": "drizzle-kit studio",
     "seed": "tsx seed/dev.ts",
     "type-check": "tsc --noEmit",
-    "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts"
+    "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts ./__tests__/schema/user-global-unique.test.ts"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
