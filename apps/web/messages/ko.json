@@ -528,6 +528,53 @@
       "cancel": "취소"
     }
   },
+  "Quiz": {
+    "Card": {
+      "title": "오늘의 위키 퀴즈",
+      "scoreSuffix": "점",
+      "todayCount": "오늘 남은 문제 {count}개",
+      "cta": "5문제 풀기",
+      "leaderboardLink": "리더보드",
+      "emptyToday": "오늘 분량을 모두 푸셨어요. 내일 다시 만나요!",
+      "emptyAllDone": "이번 주 문제가 다 끝났어요. 다음 월요일을 기다려주세요"
+    },
+    "Play": {
+      "title": "위키 퀴즈",
+      "noSeason": "시즌 준비 중",
+      "cumulative": "누적 {score}점",
+      "progress": "{current} / {total}",
+      "difficulty": {
+        "easy": "쉬움",
+        "medium": "보통",
+        "hard": "어려움"
+      },
+      "correct": "정답",
+      "wrong": "오답",
+      "scoreDelta": "+{delta}점",
+      "viewSource": "출처 페이지 보기",
+      "next": "다음 문제",
+      "finish": "결과 보기",
+      "summaryTitle": "오늘의 결과",
+      "summaryBody": "{correct}/{total}개 정답 · 이번 회차 +{delta}점 · 누적 {score}점",
+      "backToDashboard": "대시보드로",
+      "seeLeaderboard": "리더보드 보기",
+      "submitError": "잠시 후 다시 시도해 주세요.",
+      "emptyToday": "오늘 풀 문제가 없어요. 내일 다시 만나요!",
+      "emptyAllDone": "이번 주 문제가 다 끝났어요. 다음 월요일을 기다려주세요"
+    },
+    "Leaderboard": {
+      "title": "리더보드",
+      "currentSeason": "이번 시즌",
+      "noSeason": "시즌 없음",
+      "activeLabel": "진행 중 · 내 점수 {score}점",
+      "frozenLabel": "종료된 시즌",
+      "individualTitle": "개인 TOP 20",
+      "orgTitle": "부서 평균",
+      "empty": "데이터가 아직 없어요.",
+      "attemptsLine": "{attempts}회 시도 · {correct}회 정답",
+      "memberLine": "참여자 {count}명"
+    }
+  },
   "Wiki": {
     "title": "위키",
     "search": "페이지 검색...",

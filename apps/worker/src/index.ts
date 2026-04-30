@@ -18,6 +18,22 @@ import {
   WIKI_LINT_QUEUE,
   WIKI_LINT_CRON,
 } from './jobs/wiki-lint.js';
+import {
+  quizGenerateHandler,
+  QUIZ_GENERATE_QUEUE,
+  QUIZ_GENERATE_CRON,
+} from './jobs/wiki-quiz-generate.js';
+import {
+  quizSeasonRotateHandler,
+  QUIZ_SEASON_ROTATE_QUEUE,
+  QUIZ_SEASON_ROTATE_CRON,
+} from './jobs/quiz-season-rotate.js';
+import {
+  externalSignalFetchHandler,
+  EXTERNAL_SIGNAL_FETCH_QUEUE,
+  EXTERNAL_SIGNAL_FETCH_CRON_DAY,
+  EXTERNAL_SIGNAL_FETCH_CRON_NIGHT,
+} from './jobs/external-signal-fetch.js';
 import { featureWikiLintCron } from '@jarvis/db/feature-flags';
 import { ensureBucket } from './lib/minio-client.js';
 import { registerBossForHealthcheck, startHealthServer } from './health.js';
@@ -36,7 +52,7 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup']) {
+  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE]) {
     await boss.createQueue(q);
   }
 
@@ -57,6 +73,18 @@ async function main() {
   // 6시간마다 만료 세션 청소 (Phase-Harness 이후 embed_cache 제거로 세션만)
   await boss.schedule('cache-cleanup', '0 */6 * * *', {});
   await boss.work('cache-cleanup', cacheCleanupHandler);
+
+  // Phase-Dashboard (2026-04-30) — 위키 퀴즈 주간 batch + 시즌 rotate.
+  await boss.schedule(QUIZ_GENERATE_QUEUE, QUIZ_GENERATE_CRON, {});
+  await boss.work(QUIZ_GENERATE_QUEUE, quizGenerateHandler);
+  await boss.schedule(QUIZ_SEASON_ROTATE_QUEUE, QUIZ_SEASON_ROTATE_CRON, {});
+  await boss.work(QUIZ_SEASON_ROTATE_QUEUE, quizSeasonRotateHandler);
+
+  // Phase-Dashboard (2026-04-30) — 외부 시그널(FX + 날씨) 캐시.
+  // KST 07-19시 매시 + KST 21·00·03시 = 하루 16회.
+  await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON_DAY, {});
+  await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON_NIGHT, {});
+  await boss.work(EXTERNAL_SIGNAL_FETCH_QUEUE, externalSignalFetchHandler);
 
   // Phase-W2 T3 — weekly wiki lint (Sunday 03:00 KST = Saturday 18:00 UTC).
   // Only register when the feature flag is ON so the cron does not fire
@@ -81,6 +109,9 @@ async function main() {
     'aggregate-popular',
     'cleanup', 'cache-cleanup',
     WIKI_LINT_QUEUE,
+    QUIZ_GENERATE_QUEUE,
+    QUIZ_SEASON_ROTATE_QUEUE,
+    EXTERNAL_SIGNAL_FETCH_QUEUE,
   ];
   const queueMetricsTimer = setInterval(async () => {
     try {
