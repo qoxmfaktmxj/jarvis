@@ -53,9 +53,20 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const auth = await requireApiSession(req, PERMISSIONS.ADMIN_ALL);
   if (auth.response) return auth.response;
+  const { session } = auth;
 
   const parsed = createItemSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+
+  // P1 #9 — PUT/DELETE 와 동일하게 codeGroup 의 워크스페이스 소속을 검증한다.
+  // 이전엔 ADMIN_ALL 게이트만 있고 본문의 groupId 가 다른 워크스페이스의 group 일
+  // 가능성을 차단하지 않았음 (cross-workspace insert).
+  const [ownerGroup] = await db
+    .select({ id: codeGroup.id })
+    .from(codeGroup)
+    .where(and(eq(codeGroup.id, parsed.data.groupId), eq(codeGroup.workspaceId, session.workspaceId)))
+    .limit(1);
+  if (!ownerGroup) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const [created] = await db.insert(codeItem).values(parsed.data).returning();
   return NextResponse.json(created, { status: 201 });
