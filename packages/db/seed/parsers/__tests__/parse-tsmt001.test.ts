@@ -47,19 +47,19 @@ describe("parseTsmt001", () => {
 
   it("converts SDATE 'YYYYMMDD' to ISO date string", () => {
     const rows = parseTsmt001(FIXTURE);
-    assert.equal(rows[2].startDate, "2016-05-01");
+    assert.equal(rows[2]!.startDate, "2016-05-01");
   });
 
   it("converts REPRESENT_COMPANY '1'/'0'/null to boolean", () => {
     const rows = parseTsmt001(FIXTURE);
-    assert.equal(rows[0].representCompany, true);
-    assert.equal(rows[1].representCompany, true);
+    assert.equal(rows[0]!.representCompany, true);
+    assert.equal(rows[1]!.representCompany, true);
   });
 
   it("preserves Korean characters in name and address", () => {
     const rows = parseTsmt001(FIXTURE);
-    assert.equal(rows[1].name, "에쓰오일토탈윤활유");
-    assert.equal(rows[1].address, "서울특별시 중구 통일로 92");
+    assert.equal(rows[1]!.name, "에쓰오일토탈윤활유");
+    assert.equal(rows[1]!.address, "서울특별시 중구 통일로 92");
   });
 
   it("skips REM and SET DEFINE lines", () => {
@@ -69,7 +69,7 @@ describe("parseTsmt001", () => {
   it("handles null REPRESENT_COMPANY as false", () => {
     const sql = `Insert into EXPORT_TABLE (ENTER_CD,COMPANY_CD,COMPANY_NM,COMPANY_GRP_CD,OBJECT_DIV,MANAGE_DIV,REPRESENT_COMPANY,SDATE,INDUTY_CD,ZIP,ADDRESS,HOMEPAGE,COMPANY_FILE_SEQ,ETC1,ETC2,ETC3,ETC4,ETC5,ETC6,ETC7,ETC8,ETC9,ETC10,CHKID,CHKDATE) values ('SSMS','DSEC','대성전기공업','EXT','001',null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,'05001',to_date('2015-04-06 19:04:00','YYYY-MM-DD HH24:MI:SS'));\n`;
     const rows = parseTsmt001(sql);
-    assert.equal(rows[0].representCompany, false);
+    assert.equal(rows[0]!.representCompany, false);
   });
 });
 
