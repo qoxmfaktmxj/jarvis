@@ -21,11 +21,11 @@ import { getConversationTokenUsageAction } from "@/app/(app)/ask/actions";
 
 type AskModel = "gpt-5.4-mini" | "gpt-5.5";
 const ASK_MODEL_STORAGE_KEY = "jarvis.ask.model";
-const ASK_MODEL_DEFAULT: AskModel = "gpt-5.5";
+const ASK_MODEL_DEFAULT: AskModel = "gpt-5.4-mini";
 
 const ASK_MODEL_OPTIONS: AskModelOption[] = [
-  { value: "gpt-5.5", label: "GPT-5.5", description: "최고 정밀 · 기본", icon: Sparkles },
-  { value: "gpt-5.4-mini", label: "Mini", description: "빠름", icon: Zap },
+  { value: "gpt-5.4-mini", label: "GPT-5.4-mini", description: "빠름 · 기본", icon: Zap },
+  { value: "gpt-5.5", label: "GPT-5.5", description: "최고 정밀", icon: Sparkles },
 ];
 
 function isAskModel(v: string): v is AskModel {

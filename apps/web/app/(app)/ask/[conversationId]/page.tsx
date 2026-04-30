@@ -53,10 +53,14 @@ async function getPopularQuestions(workspaceId: string): Promise<string[]> {
         cnt: count(searchLog.id),
       })
       .from(searchLog)
+      // noise 필터: length > 5 + 완성형 한글/알파벳 3자 이상 연속.
+      // 한글 자모만 입력된 IME 사고("ㄴㅇㄹㄴㅇㄹ")나 무의미 입력 제외.
       .where(
-        sql`workspace_id = ${workspaceId}::uuid AND query IS NOT NULL AND length(query) > 5`,
+        sql`workspace_id = ${workspaceId}::uuid AND query IS NOT NULL AND length(query) > 5 AND query ~ '[가-힣a-zA-Z]{3,}'`,
       )
       .groupBy(searchLog.query)
+      // 최소 3회 이상 검색된 query만.
+      .having(sql`count(*) >= 3`)
       .orderBy(desc(count(searchLog.id)))
       .limit(5);
 
