@@ -18,7 +18,8 @@ function makeSession(permissions: string[], roles: string[] = ["VIEWER"]): Jarvi
     roles,
     permissions,
     createdAt: Date.now(),
-    expiresAt: Date.now() + 60_000
+    expiresAt: Date.now() + 60_000,
+    keepSignedIn: false,
   };
 }
 

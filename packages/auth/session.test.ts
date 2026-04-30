@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createSession, getSession, deleteSession } from "./session.js";
+import { createSession, getSession, deleteSession, renewSession } from "./session.js";
 import type { JarvisSession } from "./types.js";
 
 const dbMock = vi.hoisted(() => ({
@@ -22,6 +22,7 @@ function makeSession(overrides: Partial<JarvisSession> = {}): JarvisSession {
     permissions: ["knowledge:read"],
     createdAt: Date.now(),
     expiresAt: Date.now() + 60_000,
+    keepSignedIn: false,
     ...overrides,
   };
 }
@@ -116,4 +117,53 @@ describe("session (PG-backed)", () => {
     expect(where).toHaveBeenCalledOnce();
   });
 
+});
+
+describe("renewSession", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns null when session row not found", async () => {
+    mockSelect([]);
+    const result = await renewSession("missing");
+    expect(result).toBeNull();
+  });
+
+  it("returns null when keepSignedIn is false", async () => {
+    const s = makeSession({ keepSignedIn: false });
+    mockSelect([{ id: s.id, data: s, expiresAt: new Date(Date.now() + 5_000) }]);
+
+    const result = await renewSession("sess-1");
+    expect(result).toBeNull();
+    expect(dbMock.update).not.toHaveBeenCalled();
+  });
+
+  it("returns null when keepSignedIn is absent (treated as false)", async () => {
+    const { keepSignedIn: _, ...sWithout } = makeSession();
+    mockSelect([{ id: "sess-1", data: sWithout, expiresAt: new Date(Date.now() + 5_000) }]);
+
+    const result = await renewSession("sess-1");
+    expect(result).toBeNull();
+    expect(dbMock.update).not.toHaveBeenCalled();
+  });
+
+  it("updates expiresAt by 30 days and returns newExpiresAt when keepSignedIn is true", async () => {
+    const s = makeSession({ keepSignedIn: true });
+    mockSelect([{ id: s.id, data: s, expiresAt: new Date(Date.now() + 10_000) }]);
+
+    const set = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+    dbMock.update.mockReturnValue({ set });
+
+    const before = Date.now();
+    const result = await renewSession("sess-1");
+    const after = Date.now();
+
+    expect(result).not.toBeNull();
+    const expectedMin = before + 30 * 24 * 60 * 60 * 1000;
+    const expectedMax = after + 30 * 24 * 60 * 60 * 1000;
+    expect(result!.newExpiresAt).toBeGreaterThanOrEqual(expectedMin);
+    expect(result!.newExpiresAt).toBeLessThanOrEqual(expectedMax);
+    expect(dbMock.update).toHaveBeenCalledOnce();
+  });
 });
