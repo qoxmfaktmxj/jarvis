@@ -18,6 +18,7 @@ export const jarvisSessionSchema = z.object({
   orgId: z.string().optional(),
   createdAt: z.number(),
   expiresAt: z.number(),
+  keepSignedIn: z.boolean().optional().default(false),
 });
 
 export type JarvisSession = z.infer<typeof jarvisSessionSchema>;

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         if (!devDbUser) {
           return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
         }
-        return buildLoginResponse(devDbUser, sessionLifetimeMs, ip);
+        return buildLoginResponse(devDbUser, sessionLifetimeMs, ip, payload.keepSignedIn === true);
       }
     }
   }
@@ -145,13 +145,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
-  return buildLoginResponse(dbUser, sessionLifetimeMs, ip);
+  return buildLoginResponse(dbUser, sessionLifetimeMs, ip, payload.keepSignedIn === true);
 }
 
 async function buildLoginResponse(
   dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null },
   sessionLifetimeMs: number,
   ip: string,
+  keepSignedIn = false,
 ) {
   const userRoleRows = await db
     .select({ roleCode: role.code })
@@ -179,6 +180,7 @@ async function buildLoginResponse(
     orgId: dbUser.orgId ?? undefined,
     createdAt: now,
     expiresAt: now + sessionLifetimeMs,
+    keepSignedIn,
   });
 
   const response = NextResponse.json({ ok: true });

@@ -2,6 +2,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@jarvis/auth/session";
 import { AppShell } from "@/components/layout/AppShell";
+import { SessionRefresher } from "./_components/SessionRefresher";
 
 export default async function AppLayout({
   children
@@ -25,5 +26,10 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return <AppShell userName={session.name}>{children}</AppShell>;
+  return (
+    <>
+      <SessionRefresher />
+      <AppShell userName={session.name}>{children}</AppShell>
+    </>
+  );
 }
