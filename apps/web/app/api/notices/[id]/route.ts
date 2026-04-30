@@ -4,6 +4,7 @@ import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
 import { updateNoticeSchema } from '@jarvis/shared/validation';
 import {
+  canViewInternalNotice,
   deleteNotice,
   getNoticeById,
   updateNotice,
@@ -27,13 +28,16 @@ export async function GET(
   const { session } = auth;
 
   const { id } = await ctx.params;
-  const found = await getNoticeById(id, session.workspaceId);
+  // P1 #10 — INTERNAL 공지는 내부 직원 role 보유자만 열람. 미보유자에겐 404 동등.
+  const found = await getNoticeById(
+    id,
+    session.workspaceId,
+    canViewInternalNotice(session.roles),
+  );
   if (!found) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  // sensitivity: INTERNAL은 동일 workspace 멤버만 — 이미 workspaceId 매칭으로 보장됨.
-  // PUBLIC도 현재 모델에선 workspace-scoped로 노출.
   return NextResponse.json({ notice: found });
 }
 

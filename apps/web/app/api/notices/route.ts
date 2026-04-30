@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
 import { createNoticeSchema } from '@jarvis/shared/validation';
-import { createNotice, listNotices } from '@/lib/queries/notices';
+import { canViewInternalNotice, createNotice, listNotices } from '@/lib/queries/notices';
 
 function pickActorRole(roles: string[]): string {
   if (roles.includes('ADMIN')) return 'ADMIN';
@@ -28,6 +28,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     limit,
     actorId: session.userId,
     actorRole: pickActorRole(session.roles),
+    // P1 #10 — INTERNAL 공지는 내부 직원 role 보유자만.
+    canViewInternal: canViewInternalNotice(session.roles),
   });
 
   return NextResponse.json({
