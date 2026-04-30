@@ -21,7 +21,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Jarvis",
-  description: "Enterprise Internal Portal"
+  description: "Enterprise Internal Portal",
+  icons: {
+    icon: "/capybara/basic.png",
+    apple: "/capybara/basic.png",
+  },
 };
 
 export default async function RootLayout({
