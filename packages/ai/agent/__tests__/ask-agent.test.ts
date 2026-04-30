@@ -199,3 +199,61 @@ describe("askAgent — tool-use loop", () => {
     expect(r.toolCalls[0]?.ok).toBe(false);
   });
 });
+
+// P1 #3 — wiki_graph_query 는 GRAPH_READ 권한 보유자에게만 노출된다.
+// 권한 없는 사용자의 세션에서는 (1) tools 목록에서 제외되고, (2) LLM 이 우회
+// 호출을 시도해도 ok:false 로 차단되어야 한다.
+describe("askAgent — P1 #3 graph tool permission gate", () => {
+  it("GRAPH_READ 없는 ctx 에서 wiki_graph_query 가 노출되지 않는다 (LLM 호출 시 unknown tool 으로 차단)", async () => {
+    const ctxNoGraph: ToolContext = {
+      workspaceId: "ws-1",
+      userId: "u-1",
+      permissions: ["wiki:read", "knowledge:read"],
+    };
+    const client = makeClient([
+      { toolCalls: [{ id: "c1", name: "wiki_graph_query", args: { startSlug: "x" } }] },
+      { content: "안전하게 차단됨" },
+    ]);
+    const r = await askAgent("?", ctxNoGraph, { client: client as never });
+
+    // graphExec 은 절대 호출되어선 안 된다
+    expect(graphExec).not.toHaveBeenCalled();
+    // 호출 시도는 ok:false 로 기록
+    expect(r.toolCalls[0]).toMatchObject({ name: "wiki_graph_query", ok: false });
+  });
+
+  it("GRAPH_READ 보유 ctx 에서 wiki_graph_query 가 정상 호출된다", async () => {
+    graphExec.mockResolvedValue({ ok: true, data: { nodes: [], edges: [] } });
+    const ctxWithGraph: ToolContext = {
+      workspaceId: "ws-1",
+      userId: "u-1",
+      permissions: ["wiki:read", "graph:read"],
+    };
+    const client = makeClient([
+      { toolCalls: [{ id: "c1", name: "wiki_graph_query", args: { startSlug: "x" } }] },
+      { content: "[[x]] 그래프 결과" },
+    ]);
+    const r = await askAgent("?", ctxWithGraph, { client: client as never });
+
+    expect(graphExec).toHaveBeenCalledTimes(1);
+    expect(graphExec).toHaveBeenCalledWith({ startSlug: "x" }, ctxWithGraph);
+    expect(r.toolCalls[0]).toMatchObject({ name: "wiki_graph_query", ok: true });
+  });
+
+  it("ADMIN_ALL 권한 보유자도 wiki_graph_query 사용 가능", async () => {
+    graphExec.mockResolvedValue({ ok: true, data: { nodes: [], edges: [] } });
+    const ctxAdmin: ToolContext = {
+      workspaceId: "ws-1",
+      userId: "u-1",
+      permissions: ["admin:all"],
+    };
+    const client = makeClient([
+      { toolCalls: [{ id: "c1", name: "wiki_graph_query", args: { startSlug: "x" } }] },
+      { content: "OK" },
+    ]);
+    const r = await askAgent("?", ctxAdmin, { client: client as never });
+
+    expect(graphExec).toHaveBeenCalledTimes(1);
+    expect(r.toolCalls[0]?.ok).toBe(true);
+  });
+});

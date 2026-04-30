@@ -86,15 +86,39 @@ export type AskAgentEvent =
 // ---------------------------------------------------------------------------
 // Tool registry — Phase A 에서 만든 tool 들을 sensitivity wrapper 로 감싸
 // 한 곳에서 이름→ToolDefinition 매핑.
+//
+// withSensitivityFilter 는 결과 행 단위 sensitivity 필터링이고, *권한* 게이팅이
+// 아니다. 도구 자체의 등록 여부(=LLM 노출 여부)는 ctx.permissions 를 기준으로
+// 별도 결정해야 한다 — P1 #3.
 // ---------------------------------------------------------------------------
 
-function buildToolDict(): Record<string, ToolDefinition<unknown, unknown>> {
-  const list = [wikiGrep, wikiRead, wikiFollowLink, wikiGraphQuery] as const;
+const GRAPH_READ = "graph:read";
+const ADMIN_ALL = "admin:all";
+
+function hasGraphAccess(permissions: readonly string[]): boolean {
+  return permissions.includes(GRAPH_READ) || permissions.includes(ADMIN_ALL);
+}
+
+function buildToolDict(
+  ctx: ToolContext,
+): Record<string, ToolDefinition<unknown, unknown>> {
+  // 모든 사용자에게 노출되는 기본 도구
+  const list: Array<ToolDefinition<unknown, unknown>> = [
+    wikiGrep as unknown as ToolDefinition<unknown, unknown>,
+    wikiRead as unknown as ToolDefinition<unknown, unknown>,
+    wikiFollowLink as unknown as ToolDefinition<unknown, unknown>,
+  ];
+
+  // P1 #3 — wiki_graph_query 는 GRAPH_READ 또는 ADMIN_ALL 보유자에게만.
+  // 권한 없는 사용자는 LLM 의 도구 목록에서 보이지 않으며, 우회 호출 시도는
+  // ask-agent 메인 루프의 unknown-tool 분기로 ok:false 차단된다.
+  if (hasGraphAccess(ctx.permissions)) {
+    list.push(wikiGraphQuery as unknown as ToolDefinition<unknown, unknown>);
+  }
+
   const out: Record<string, ToolDefinition<unknown, unknown>> = {};
   for (const t of list) {
-    const wrapped = withSensitivityFilter(
-      t as unknown as ToolDefinition<unknown, unknown>,
-    );
+    const wrapped = withSensitivityFilter(t);
     out[wrapped.name] = wrapped;
   }
   return out;
@@ -138,7 +162,7 @@ export async function askAgent(
 ): Promise<AskAgentResult> {
   const model = options.model ?? "gpt-5.4-mini";
   const nonce = generateNonce();
-  const tools = buildToolDict();
+  const tools = buildToolDict(ctx);
   const openaiTools = toOpenAITools(tools);
 
   const messages: ChatMessage[] = [
@@ -230,7 +254,7 @@ export async function* askAgentStream(
 ): AsyncGenerator<AskAgentEvent> {
   const model = options.model ?? "gpt-5.4-mini";
   const nonce = generateNonce();
-  const tools = buildToolDict();
+  const tools = buildToolDict(ctx);
   const openaiTools = toOpenAITools(tools);
 
   const messages: ChatMessage[] = [
