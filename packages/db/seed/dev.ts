@@ -42,6 +42,8 @@ async function seed() {
     await seedCodeGroups(wsId);
     const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
     await seedCompaniesFromTsmt001(wsId);
+    const { seedSalesCodes } = await import('./sales-codes.js');
+    await seedSalesCodes(wsId);
     console.log('[seed] Dev seed complete (codes + companies only — workspace already existed)');
     return;
   }
@@ -166,6 +168,10 @@ async function seed() {
   // ---- Companies (TSMT001) ----
   const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
   await seedCompaniesFromTsmt001(wsId);
+
+  // ---- Sales Code Groups (영업관리모듈 Phase 1) ----
+  const { seedSalesCodes } = await import('./sales-codes.js');
+  await seedSalesCodes(wsId);
 
   console.log('[seed] Dev seed complete!');
 }
