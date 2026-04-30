@@ -79,6 +79,26 @@ describe("updateQuickMenuOrder", () => {
     });
   });
 
+  it("rejects when caller is missing ADMIN_ALL (P1 #8)", async () => {
+    headersMock.mockResolvedValue(new Headers({ "x-session-id": "session-1" }));
+    cookiesMock.mockResolvedValue({
+      get: vi.fn(() => undefined)
+    });
+    getSessionMock.mockResolvedValue({
+      id: "session-1",
+      workspaceId: "ws-1",
+      permissions: ["knowledge:read"]
+    });
+
+    await expect(updateQuickMenuOrder(["menu-1"])).resolves.toEqual({
+      success: false,
+      error: "forbidden"
+    });
+
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(revalidatePathMock).not.toHaveBeenCalled();
+  });
+
   it("updates menu sort order and revalidates related pages", async () => {
     headersMock.mockResolvedValue(new Headers({ "x-session-id": "session-1" }));
     cookiesMock.mockResolvedValue({
@@ -86,7 +106,8 @@ describe("updateQuickMenuOrder", () => {
     });
     getSessionMock.mockResolvedValue({
       id: "session-1",
-      workspaceId: "ws-1"
+      workspaceId: "ws-1",
+      permissions: ["admin:all"]
     });
 
     const chain = createUpdateChain();
