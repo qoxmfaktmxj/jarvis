@@ -39,6 +39,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   }
 
   // Decode each segment so DB lookup matches stored routeKeys (한글 등).
+  // ingest write-and-commit는 routeKey를 `.md` 없이 저장하므로 caller가 `.md`를 붙여 보내도 strip한다.
   const routeKey = rawPath
     .split('/')
     .map((seg) => {
@@ -48,7 +49,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         return seg;
       }
     })
-    .join('/');
+    .join('/')
+    .replace(/\.md$/, '');
 
   const loaded = await loadWikiPageForView(workspaceId, routeKey);
   if (!loaded) {

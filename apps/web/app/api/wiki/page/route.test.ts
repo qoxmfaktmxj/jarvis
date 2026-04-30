@@ -97,12 +97,14 @@ describe('GET /api/wiki/page', () => {
     expect(res.status).toBe(403);
   });
 
-  it('decodes encoded path segments before lookup', async () => {
+  it('decodes encoded path segments and strips .md before lookup', async () => {
     mockLoad.mockResolvedValue({
       meta: { id: 'p1', title: 'Foo', sensitivity: 'INTERNAL', path: '한글/page.md', slug: 'page' },
       bodyOnly: '...',
     });
+    // ingest worker는 routeKey를 `.md` 없이 db에 저장하므로 (write-and-commit.ts:340),
+    // API도 caller가 `.md`를 붙여 보내든 안 보내든 strip 후 lookup 한다.
     await GET(makeReq('workspaceId=ws1&path=' + encodeURIComponent('한글/page.md')));
-    expect(mockLoad).toHaveBeenCalledWith('ws1', '한글/page.md');
+    expect(mockLoad).toHaveBeenCalledWith('ws1', '한글/page');
   });
 });
