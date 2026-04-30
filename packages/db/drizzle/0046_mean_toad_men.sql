@@ -1,0 +1,2 @@
+-- 0046_mean_toad_men: journal entry exists but migration was never committed.
+-- Empty placeholder so drizzle-kit migrate can proceed past this entry.
