@@ -7,6 +7,7 @@ loadEnv({ path: path.resolve(here, '../../../.env') });
 loadEnv();
 
 const { db } = await import('../client.js');
+const { eq } = await import('drizzle-orm');
 const { workspace, organization } = await import('../schema/tenant.js');
 const { user, role, userRole } = await import('../schema/user.js');
 const { projectAccess } = await import('../schema/project.js');
@@ -23,13 +24,25 @@ async function seed() {
     .onConflictDoNothing()
     .returning();
 
-  if (!ws) {
-    console.log('[seed] Workspace already exists, skipping...');
+  let wsId: string;
+  if (ws) {
+    wsId = ws.id;
+    console.log(`[seed] Created workspace: ${wsId}`);
+  } else {
+    // Already exists — fetch id and run company seed only (other seeds are not idempotent)
+    const [existing] = await db
+      .select()
+      .from(workspace)
+      .where(eq(workspace.code, 'default'))
+      .limit(1);
+    if (!existing) throw new Error('[seed] workspace not created and not found');
+    wsId = existing.id;
+    console.log(`[seed] Using existing workspace: ${wsId}`);
+    const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
+    await seedCompaniesFromTsmt001(wsId);
+    console.log('[seed] Dev seed complete (companies only — workspace already existed)');
     return;
   }
-
-  const wsId = ws.id;
-  console.log(`[seed] Created workspace: ${wsId}`);
 
   // ---- Users ----
   const users = await db
@@ -143,6 +156,11 @@ async function seed() {
   ]);
 
   console.log('[seed] Created menu items');
+
+  // ---- Companies (TSMT001) ----
+  const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
+  await seedCompaniesFromTsmt001(wsId);
+
   console.log('[seed] Dev seed complete!');
 }
 
