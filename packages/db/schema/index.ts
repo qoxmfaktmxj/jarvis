@@ -34,3 +34,8 @@ export * from "./region-grid.js";
 export * from "./external-signal.js";
 export * from "./wiki-quiz.js";
 export * from "./quiz-season.js";
+// Phase-Sales (2026-04-30): 영업관리모듈 Phase 1 — 10 테이블
+export * from "./sales-customer.js";
+export * from "./sales-product-type.js";
+export * from "./sales-mail-person.js";
+export * from "./sales-license.js";
