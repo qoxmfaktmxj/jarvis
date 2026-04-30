@@ -4,7 +4,7 @@ import {
   menuItem, codeGroup, codeItem,
   auditLog, searchLog, popularSearch,
 } from '@jarvis/db/schema';
-import { and, eq, asc, desc, count, gte, lte, sql } from 'drizzle-orm';
+import { and, eq, asc, desc, count, gte, lte, sql, inArray } from 'drizzle-orm';
 import type { PaginatedResponse } from '@jarvis/shared/types/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -69,6 +69,12 @@ export type SearchAnalytics = {
   zeroResultTerms: Array<{ term: string; count: number }>;
 };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function escapeLike(s: string): string {
+  return s.replace(/[\\%_]/g, '\\$&');
+}
+
 // ── Users ─────────────────────────────────────────────────────────────────────
 
 export type UserFilters = {
@@ -88,8 +94,9 @@ export async function getUsers(
 
   const conditions = [eq(user.workspaceId, workspaceId)];
   if (q) {
+    const escaped = escapeLike(q);
     conditions.push(
-      sql`(${user.name} ilike ${`%${q}%`} or ${user.employeeId} ilike ${`%${q}%`} or ${user.email} ilike ${`%${q}%`})`,
+      sql`(${user.name} ilike ${`%${escaped}%`} or ${user.employeeId} ilike ${`%${escaped}%`} or ${user.email} ilike ${`%${escaped}%`})`,
     );
   }
   if (orgId !== undefined) conditions.push(eq(user.orgId, orgId));
@@ -178,10 +185,14 @@ export async function getCodeGroups(workspaceId: string): Promise<CodeGroup[]> {
     .where(eq(codeGroup.workspaceId, workspaceId))
     .orderBy(asc(codeGroup.code));
 
-  const items = await db
-    .select()
-    .from(codeItem)
-    .orderBy(asc(codeItem.sortOrder));
+  const groupIds = groups.map((g) => g.id);
+  const items = groupIds.length > 0
+    ? await db
+        .select()
+        .from(codeItem)
+        .where(inArray(codeItem.groupId, groupIds))
+        .orderBy(asc(codeItem.sortOrder))
+    : [];
 
   return groups.map((g) => ({
     ...g,
