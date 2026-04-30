@@ -128,9 +128,9 @@ export function WikiIndexSearch({
 
   return (
     <div className="space-y-5">
-      {/* Search + filter row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-full max-w-md">
+      {/* Search + filter row — 같은 행에서 폭 공유. 검색은 grow + max-cap, 필터는 shrink-0. */}
+      <div className="flex flex-nowrap items-center gap-3">
+        <div className="relative min-w-0 flex-1 max-w-md">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-surface-400" />
           <Input
             type="search"
@@ -153,7 +153,7 @@ export function WikiIndexSearch({
           ) : null}
         </div>
 
-        <div className="ml-auto inline-flex rounded-md bg-surface-100 p-0.5 ring-1 ring-inset ring-surface-200">
+        <div className="ml-auto inline-flex shrink-0 rounded-md bg-surface-100 p-0.5 ring-1 ring-inset ring-surface-200">
           <FilterTab
             active={activeFilter === 'all'}
             onClick={() => setActiveFilter('all')}
@@ -166,7 +166,7 @@ export function WikiIndexSearch({
                 key={sens}
                 active={activeFilter === sens}
                 onClick={() => setActiveFilter(sens)}
-                label={SENSITIVITY_STYLES[sens].label}
+                label={t(`sensitivity.${sens}`)}
                 count={facets[sens]}
                 dotClass={SENSITIVITY_STYLES[sens].dot}
               />
