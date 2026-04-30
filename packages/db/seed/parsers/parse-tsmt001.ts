@@ -32,11 +32,11 @@ export function parseTsmt001(sql: string): Tsmt001Record[] {
   let match: RegExpExecArray | null;
 
   while ((match = insertRe.exec(sql)) !== null) {
-    const valuesStr = match[1];
+    const valuesStr = match[1] ?? "";
     const values = splitOracleValues(valuesStr);
     if (values.length !== COLUMN_COUNT) continue;
 
-    const v = (i: number) => values[i];
+    const v = (i: number): string => values[i] ?? "";
 
     rows.push({
       enterCd: requireString(v(0)),
@@ -131,7 +131,7 @@ function unquote(token: string): string | null {
   if (token === "null") return null;
   const m = token.match(/^'(.*)'$/s);
   if (!m) return null;
-  return m[1].replace(/''/g, "'");
+  return (m[1] ?? "").replace(/''/g, "'");
 }
 
 function parseSdate(token: string): string | null {
@@ -143,6 +143,6 @@ function parseSdate(token: string): string | null {
 function parseToDate(token: string): Date {
   // to_date('2018-02-14 09:43:00','YYYY-MM-DD HH24:MI:SS')
   const m = token.match(/to_date\('([^']+)'\s*,/i);
-  if (!m) return new Date(0);
-  return new Date(m[1].replace(" ", "T") + "Z");
+  if (!m) throw new Error(`parseToDate: invalid token: ${token}`);
+  return new Date((m[1] ?? "").replace(" ", "T") + "Z");
 }
