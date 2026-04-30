@@ -38,9 +38,11 @@ async function seed() {
     if (!existing) throw new Error('[seed] workspace not created and not found');
     wsId = existing.id;
     console.log(`[seed] Using existing workspace: ${wsId}`);
+    const { seedCodeGroups } = await import('./code-groups.js');
+    await seedCodeGroups(wsId);
     const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
     await seedCompaniesFromTsmt001(wsId);
-    console.log('[seed] Dev seed complete (companies only — workspace already existed)');
+    console.log('[seed] Dev seed complete (codes + companies only — workspace already existed)');
     return;
   }
 
@@ -156,6 +158,10 @@ async function seed() {
   ]);
 
   console.log('[seed] Created menu items');
+
+  // ---- Code Groups (C10100, C10005, C10002) ----
+  const { seedCodeGroups } = await import('./code-groups.js');
+  await seedCodeGroups(wsId);
 
   // ---- Companies (TSMT001) ----
   const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
