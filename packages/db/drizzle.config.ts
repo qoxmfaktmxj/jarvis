@@ -1,8 +1,12 @@
 import { defineConfig } from "drizzle-kit";
 import * as dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-dotenv.config({ path: path.resolve(process.cwd(), "../../.env") });
+// Use import.meta.url so the .env path is resolved relative to this file,
+// not process.cwd() which drizzle-kit may override.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 export default defineConfig({
   schema: "./schema/index.ts",
