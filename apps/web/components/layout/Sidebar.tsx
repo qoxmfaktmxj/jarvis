@@ -161,6 +161,10 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
     .filter((m) => m.code.startsWith("nav."))
     .map(toRenderItem)
     .filter((x): x is RenderItem => x !== null);
+  const salesItems = menus
+    .filter((m) => m.code.startsWith("sales."))
+    .map(toRenderItem)
+    .filter((x): x is RenderItem => x !== null);
   const adminItems = menus
     .filter((m) => m.code.startsWith("admin."))
     .map(toRenderItem)
@@ -237,6 +241,33 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
             expanded={expanded}
           />
         ))}
+
+        {/* Sales group separator + heading — only when at least one sales item visible */}
+        {salesItems.length > 0 ? (
+          <>
+            <div
+              aria-hidden
+              className="mt-2 border-t"
+              style={{ borderColor: "var(--line)", marginInline: -8 }}
+            />
+            {expanded ? (
+              <div
+                className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: "var(--muted)" }}
+              >
+                영업관리
+              </div>
+            ) : null}
+            {salesItems.map((item) => (
+              <NavButton
+                key={item.code}
+                item={item}
+                active={isActive(pathname, item.href)}
+                expanded={expanded}
+              />
+            ))}
+          </>
+        ) : null}
 
         {/* Admin group separator + heading — only render when at least one
             admin item is visible (viewer roles otherwise see an orphan

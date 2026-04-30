@@ -1,17 +1,22 @@
 "use client";
-import { useTranslations } from "next-intl";
-import type { GridRowState } from "./useCompaniesGridState";
 import { cn } from "@/lib/utils";
+import type { RowStatus } from "./types";
 
-const STYLES: Record<GridRowState, string> = {
+const STYLES: Record<RowStatus, string> = {
   clean: "",
   new: "bg-blue-100 text-blue-700",
   dirty: "bg-amber-100 text-amber-700",
   deleted: "bg-rose-100 text-rose-700",
 };
 
-export function RowStatusBadge({ state }: { state: GridRowState }) {
-  const t = useTranslations("Admin.Companies.status");
+const LABELS: Record<RowStatus, string> = {
+  clean: "",
+  new: "신규",
+  dirty: "변경됨",
+  deleted: "삭제됨",
+};
+
+export function RowStatusBadge({ state }: { state: RowStatus }) {
   if (state === "clean") return null;
   return (
     <span
@@ -20,7 +25,7 @@ export function RowStatusBadge({ state }: { state: GridRowState }) {
         STYLES[state],
       )}
     >
-      {t(state)}
+      {LABELS[state]}
     </span>
   );
 }

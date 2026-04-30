@@ -9,7 +9,7 @@ import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { CompaniesGrid } from "./_components/CompaniesGrid";
+import { CompaniesGridContainer } from "./_components/CompaniesGridContainer";
 import { listCompanies } from "./actions";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
@@ -49,7 +49,7 @@ export default async function AdminCompaniesPage() {
         title={t("title")}
         description={t("description")}
       />
-      <CompaniesGrid
+      <CompaniesGridContainer
         initial={initialRows}
         total={initialTotal}
         objectDivOptions={objectDivOptions}

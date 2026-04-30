@@ -23,15 +23,18 @@ import {
   CalendarX,
   ClipboardList,
   Coins,
+  Contact,
   FilePlus,
   FileText,
   GitFork,
   HardDrive,
   Hash,
   Inbox,
+  Key,
   Library,
   ListChecks,
   ListTree,
+  Mail,
   Megaphone,
   MessageSquare,
   Network,
@@ -42,6 +45,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldCheck,
+  ShoppingBag,
   User,
   Users,
   type LucideIcon,
@@ -72,6 +76,24 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { id: "nav-contractors",  href: "/contractors",        label: "외주인력관리",  icon: Users,           description: "외주 인력",          keywords: ["contractor", "outsourcing"] },
   { id: "nav-holidays",     href: "/holidays",           label: "공휴일 관리",   icon: CalendarX,       description: "공휴일 설정",        keywords: ["holiday"] },
   { id: "nav-profile",      href: "/profile",            label: "프로필",        icon: User,            description: "내 계정",            keywords: ["profile", "me"] },
+];
+
+export const SALES_ITEM: NavItem = {
+  id: "nav-sales",
+  href: "/sales",
+  label: "영업관리",
+  icon: ShoppingBag,
+  description: "영업 마스터 관리",
+  keywords: ["sales", "영업"],
+};
+
+export const SALES_ITEMS: readonly NavItem[] = [
+  { id: "nav-sales-companies",         href: "/admin/companies",              label: "거래처관리",   icon: Building2, description: "회사 마스터 (거래처)", keywords: ["company", "거래처"] },
+  { id: "nav-sales-customers",         href: "/sales/customers",              label: "고객사관리",   icon: Users,     description: "고객사 마스터",       keywords: ["customer", "고객사"] },
+  { id: "nav-sales-customer-contacts", href: "/sales/customer-contacts",      label: "담당자관리",   icon: Contact,   description: "고객 담당자 연락처",  keywords: ["contact", "담당자"] },
+  { id: "nav-sales-product-types",     href: "/sales/product-types",          label: "제품군관리",   icon: ShoppingBag, description: "제품군 마스터",     keywords: ["product", "제품"] },
+  { id: "nav-sales-mail-persons",      href: "/sales/mail-persons",           label: "메일담당자",   icon: Mail,      description: "메일 수신 담당자",    keywords: ["mail", "메일"] },
+  { id: "nav-sales-licenses",          href: "/sales/licenses",               label: "라이센스관리", icon: Key,       description: "고객사별 라이센스",   keywords: ["license", "라이센스"] },
 ];
 
 export const ADMIN_ITEM: NavItem = {
@@ -127,9 +149,14 @@ export const ROUTE_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["/infra",        "인프라"],
   ["/architecture", "아키텍처"],
   ["/add-dev",      "추가개발"],
-  ["/contractors",  "외주인력관리"],
-  ["/holidays",     "공휴일 관리"],
-  ["/profile",      "프로필"],
+  ["/contractors",              "외주인력관리"],
+  ["/holidays",                 "공휴일 관리"],
+  ["/profile",                  "프로필"],
+  ["/sales/customers",          "고객사관리"],
+  ["/sales/customer-contacts",  "담당자관리"],
+  ["/sales/product-types",      "제품군관리"],
+  ["/sales/mail-persons",       "메일담당자"],
+  ["/sales/licenses",           "라이센스관리"],
 ];
 
 export const LEGACY_REDIRECTS: Record<string, string> = {

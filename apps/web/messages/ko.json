@@ -10,7 +10,8 @@
     "admin": "관리자",
     "additionalDev": "추가개발",
     "contractors": "외주인력관리",
-    "holidays": "공휴일 관리"
+    "holidays": "공휴일 관리",
+    "sales": "영업관리"
   },
   "Admin": {
     "nav": {
@@ -978,6 +979,82 @@
       "magicMismatch": "파일 내용이 선언된 형식과 일치하지 않습니다. ({declared}로 선언되었으나 실제 파일 형식이 다릅니다.)",
       "finalizeFailed": "파일 업로드 검증에 실패했습니다. 다시 시도해주세요.",
       "pathTraversal": "허용되지 않은 파일 경로입니다."
+    }
+  },
+  "Sales": {
+    "nav": {
+      "title": "영업관리",
+      "companies": "거래처관리",
+      "customers": "고객사관리",
+      "customerContacts": "담당자관리",
+      "productTypes": "제품군관리",
+      "mailPersons": "메일담당자",
+      "licenses": "라이센스관리"
+    },
+    "Customers": {
+      "title": "고객사관리",
+      "description": "고객사 마스터 정보를 관리합니다.",
+      "columns": {
+        "custCd": "고객코드",
+        "custNm": "고객명",
+        "ceoNm": "대표자명",
+        "businessNo": "사업자번호",
+        "telNo": "전화번호",
+        "custKindCd": "고객구분",
+        "custDivCd": "고객분류",
+        "exchangeTypeCd": "거래유형",
+        "businessKind": "업종",
+        "homepage": "홈페이지",
+        "addr1": "주소"
+      }
+    },
+    "CustomerContacts": {
+      "title": "담당자관리",
+      "description": "고객사별 담당자 연락처를 관리합니다.",
+      "columns": {
+        "custMcd": "마스터코드",
+        "custName": "이름",
+        "jikweeNm": "직위",
+        "orgNm": "부서",
+        "telNo": "전화번호",
+        "hpNo": "휴대폰",
+        "email": "이메일",
+        "statusYn": "활성",
+        "sabun": "담당사번"
+      }
+    },
+    "ProductTypes": {
+      "title": "제품군관리",
+      "description": "영업 제품 유형 마스터를 관리합니다.",
+      "columns": {
+        "productCd": "제품코드",
+        "productNm": "제품명",
+        "productTypeCd": "제품군",
+        "remark": "비고"
+      }
+    },
+    "MailPersons": {
+      "title": "메일담당자",
+      "description": "영업·인사 메일 수신 담당자를 관리합니다.",
+      "columns": {
+        "sabun": "사번",
+        "name": "이름",
+        "salesYn": "영업",
+        "insaYn": "인사"
+      }
+    },
+    "Licenses": {
+      "title": "라이센스관리",
+      "description": "고객사별 라이센스 발급·만료를 관리합니다.",
+      "columns": {
+        "licenseNo": "라이센스 번호",
+        "productCd": "제품코드",
+        "licenseKindCd": "라이센스 종류",
+        "sdate": "시작일",
+        "edate": "종료일",
+        "qty": "수량",
+        "remark": "비고"
+      }
     }
   }
 }

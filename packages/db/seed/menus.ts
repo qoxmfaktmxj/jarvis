@@ -60,6 +60,13 @@ const MENU_SEEDS: MenuSeed[] = [
   // Per original plan; revisit in a follow-up if every logged-in user should see profile.
   { code: "nav.profile",      kind: "menu", label: "프로필",         icon: "User",          routePath: "/profile",            sortOrder: 140, permissions: [PERMISSIONS.ADMIN_ALL] },
 
+  // SALES (150 ≤ sortOrder < 200)
+  { code: "sales.customers",         kind: "menu", label: "고객사관리",   icon: "Users",       routePath: "/sales/customers",         sortOrder: 150, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.customer-contacts", kind: "menu", label: "담당자관리",   icon: "Contact",     routePath: "/sales/customer-contacts", sortOrder: 155, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.product-types",     kind: "menu", label: "제품군관리",   icon: "ShoppingBag", routePath: "/sales/product-types",     sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.mail-persons",      kind: "menu", label: "메일담당자",   icon: "Mail",        routePath: "/sales/mail-persons",      sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.licenses",          kind: "menu", label: "라이센스관리", icon: "Key",         routePath: "/sales/licenses",          sortOrder: 170, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL] },
   { code: "admin.users",              kind: "menu", label: "사용자",       icon: "Users",       routePath: "/admin/users",                    sortOrder: 210, permissions: [PERMISSIONS.ADMIN_ALL] },

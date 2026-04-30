@@ -1,5 +1,4 @@
 "use client";
-import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -25,23 +24,23 @@ export function UnsavedChangesDialog({
   onDiscardAndContinue,
   onCancel,
 }: Props) {
-  const t = useTranslations("Admin.Companies.dialog");
-  const ta = useTranslations("Admin.Companies.actions");
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("unsavedTitle")}</DialogTitle>
-          <DialogDescription>{t("unsavedDescription", { count })}</DialogDescription>
+          <DialogTitle>저장되지 않은 변경사항</DialogTitle>
+          <DialogDescription>
+            저장되지 않은 변경사항이 {count}건 있습니다. 계속하시겠습니까?
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter className="gap-2 sm:justify-end">
           <Button variant="ghost" onClick={onCancel}>
-            {ta("cancel")}
+            취소
           </Button>
           <Button variant="outline" onClick={onDiscardAndContinue}>
-            {t("discardAndContinue")}
+            변경사항 무시하고 계속
           </Button>
-          <Button onClick={onSaveAndContinue}>{t("saveAndContinue")}</Button>
+          <Button onClick={onSaveAndContinue}>저장 후 계속</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

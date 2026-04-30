@@ -32,7 +32,10 @@ export const PERMISSIONS = {
   NOTICE_READ: "notice:read",
   NOTICE_CREATE: "notice:create",
   NOTICE_UPDATE: "notice:update",
-  NOTICE_DELETE: "notice:delete"
+  NOTICE_DELETE: "notice:delete",
+
+  // Phase-Sales (2026-04-30): 영업관리모듈 Phase 1
+  SALES_ALL: "sales:all",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -59,7 +62,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.NOTICE_CREATE,
     PERMISSIONS.NOTICE_UPDATE,
     PERMISSIONS.CONTRACTOR_READ,
-    PERMISSIONS.CONTRACTOR_ADMIN
+    PERMISSIONS.CONTRACTOR_ADMIN,
+    PERMISSIONS.SALES_ALL,
   ],
   // Phase-W3 RBAC 참고:
   // DEVELOPER는 KNOWLEDGE_REVIEW가 없으므로, wiki_page_index의 sensitivity='RESTRICTED'
