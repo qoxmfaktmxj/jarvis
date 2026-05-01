@@ -41,7 +41,9 @@ async function loadDevGbOptions(workspaceId: string) {
     : DEV_GB_FALLBACK;
 }
 
-export default async function AdminInfraLicensesPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function AdminInfraLicensesPage(props: { searchParams?: SearchParams }) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -49,9 +51,19 @@ export default async function AdminInfraLicensesPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const sp = props.searchParams ? await props.searchParams : {};
+  const searchDevGbCd = typeof sp.searchDevGbCd === "string" ? sp.searchDevGbCd : "";
+  const q = typeof sp.q === "string" ? sp.q : "";
+  const page = typeof sp.page === "string" ? Math.max(1, parseInt(sp.page, 10) || 1) : 1;
+
   const limit = 50;
   const [listResult, companyOptions, devGbOptions] = await Promise.all([
-    listInfraLicenses({ page: 1, limit }),
+    listInfraLicenses({
+      page,
+      limit,
+      q: q || undefined,
+      searchDevGbCd: searchDevGbCd || undefined,
+    }),
     listCompanyOptions(session.workspaceId),
     loadDevGbOptions(session.workspaceId),
   ]);
@@ -69,10 +81,12 @@ export default async function AdminInfraLicensesPage() {
       <InfraLicensesGrid
         initialRows={initialRows}
         initialTotal={initialTotal}
-        page={1}
+        page={page}
         limit={limit}
         companyOptions={companyOptions}
         devGbOptions={devGbOptions}
+        initialSearchDevGbCd={searchDevGbCd}
+        initialQ={q}
       />
     </div>
   );

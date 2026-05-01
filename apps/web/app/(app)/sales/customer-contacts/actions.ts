@@ -1,6 +1,6 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray, max } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, lte, max } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -57,8 +57,31 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
 
   const conditions = [eq(salesCustomerContact.workspaceId, ctx.workspaceId)];
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
+  // custName covers both direct "담당자명" search AND the legacy "chargerNm" search alias.
+  // The UI "담당자명" input writes to the custName URL key directly (Approach A from spec review).
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
+  // New search filters (Task 6 / P2-A):
+  // hpNo → ILIKE on hpNo (휴대폰)
+  if (input.hpNo) {
+    conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));
+  }
+  // email → ILIKE on email (이메일)
+  if (input.email) {
+    conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
+  }
+  // Date range on createdAt (legacy: searchFromInsdate / searchToInsdate — 등록일자)
+  // Use explicit KST offset to avoid UTC midnight being 09:00 KST, which would
+  // exclude records created between 00:00–08:59 KST on the start date.
+  if (input.searchYmdFrom) {
+    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom + "T00:00:00+09:00")));
+  }
+  if (input.searchYmdTo) {
+    // Include the full end date day by using start of next day
+    const toDate = new Date(input.searchYmdTo);
+    toDate.setDate(toDate.getDate() + 1);
+    conditions.push(lte(salesCustomerContact.createdAt, toDate));
+  }
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([

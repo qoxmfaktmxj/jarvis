@@ -3,10 +3,9 @@
  *
  * 영업 제품군 × 코스트 매핑 (sales_product_type_cost / TBIZ024 row mapping).
  * Phase-Sales P1.5 Task 6 (2026-05-01).
+ * Phase-Sales P2-A Task 7.6 (2026-05-01): searchParams (searchYmd, searchCostNm, page).
  *
  * 권한: SALES_ALL — 다른 sales/* 라우트와 동일.
- *
- * 메뉴 노출 (menu_item) 은 Task 10에서 시드한다. 현재는 직접 URL로만 접근 가능.
  */
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -21,7 +20,13 @@ import {
 import { listProductCostMapping } from "./actions";
 import { ProductCostMappingGrid } from "./_components/ProductCostMappingGrid";
 
-export default async function SalesProductCostMappingPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+export default async function SalesProductCostMappingPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -29,9 +34,17 @@ export default async function SalesProductCostMappingPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const sp = await searchParams;
   const limit = 50;
+  const page = Math.max(1, Number(sp.page ?? 1));
+  const searchYmd = typeof sp.searchYmd === "string" ? sp.searchYmd : undefined;
+  const searchCostNm = typeof sp.searchCostNm === "string" ? sp.searchCostNm : undefined;
+  const productTypeId = typeof sp.productTypeId === "string" ? sp.productTypeId : undefined;
+  const costId = typeof sp.costId === "string" ? sp.costId : undefined;
+  const q = typeof sp.q === "string" ? sp.q : undefined;
+
   const [listResult, productTypeOptions, costOptions] = await Promise.all([
-    listProductCostMapping({ page: 1, limit }),
+    listProductCostMapping({ page, limit, searchYmd, searchCostNm, productTypeId, costId, q }),
     listProductTypeOptions(session.workspaceId),
     listCostMasterOptions(session.workspaceId),
   ]);
@@ -49,8 +62,10 @@ export default async function SalesProductCostMappingPage() {
       <ProductCostMappingGrid
         initialRows={initialRows}
         initialTotal={initialTotal}
-        page={1}
+        page={page}
         limit={limit}
+        initialSearchYmd={searchYmd ?? ""}
+        initialSearchCostNm={searchCostNm ?? ""}
         productTypeOptions={productTypeOptions}
         costOptions={costOptions}
       />

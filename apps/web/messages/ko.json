@@ -1205,6 +1205,9 @@
         "empty": "등록된 의견이 없습니다.",
         "memoLabel": "의견",
         "memoPlaceholder": "의견을 입력하세요"
+      },
+      "errors": {
+        "duplicateCustCd": "중복된 고객코드가 있습니다: {codes}"
       }
     },
     "CustomerContacts": {
@@ -1284,6 +1287,24 @@
         "mailId": "메일 ID",
         "memo": "메모",
         "insdate": "등록일자"
+      }
+    },
+    "Common": {
+      "Excel": {
+        "button": "엑셀 다운로드",
+        "filename": "{screen}_{date}.xlsx",
+        "downloadStarted": "다운로드를 시작했습니다."
+      },
+      "Search": {
+        "chargerNm": "담당자명",
+        "searchYmd": "기준일자",
+        "searchYmdFrom": "기준일자(시작)",
+        "searchYmdTo": "기준일자(종료)",
+        "hpNo": "휴대폰",
+        "email": "이메일",
+        "searchMail": "메일주소",
+        "searchCostNm": "코스트명",
+        "searchDevGbCd": "구분"
       }
     }
   }
