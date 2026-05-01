@@ -88,6 +88,23 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
     db.select({ count: count() }).from(salesCustomerContact).where(where),
   ]);
 
+  const total = Number(countRows[0]?.count ?? 0);
+
+  // Batch-fetch tab counts for all rows on this page (N+1 accepted per plan §14.2;
+  // LATERAL JOIN optimisation deferred to follow-up).
+  const contactIds = rows.map((r) => r.id);
+  const countsMap =
+    contactIds.length > 0
+      ? new Map(
+          await Promise.all(
+            contactIds.map(
+              async (id) =>
+                [id, await queryContactTabCounts(ctx.workspaceId, id)] as const,
+            ),
+          ),
+        )
+      : new Map<string, Awaited<ReturnType<typeof queryContactTabCounts>>>();
+
   return listCustomerContactsOutput.parse({
     rows: rows.map((r) => ({
       id: r.id,
@@ -103,8 +120,16 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
       sabun: r.sabun ?? null,
       custNm: r.custNm ?? null,
       createdAt: r.createdAt.toISOString(),
+      counts: countsMap.get(r.id)
+        ? {
+            custCompany: countsMap.get(r.id)!.custCompanyCnt,
+            op: countsMap.get(r.id)!.opCnt,
+            act: countsMap.get(r.id)!.actCnt,
+            comt: countsMap.get(r.id)!.comtCnt,
+          }
+        : null,
     })),
-    total: Number(countRows[0]?.count ?? 0),
+    total,
   });
 }
 

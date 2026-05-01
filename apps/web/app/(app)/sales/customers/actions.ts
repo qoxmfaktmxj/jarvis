@@ -100,6 +100,21 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
 
   const total = Number(countRows[0]?.count ?? 0);
 
+  // Batch-fetch tab counts for all rows on this page (N+1 accepted per plan §14.2;
+  // LATERAL JOIN optimisation deferred to follow-up).
+  const customerIds = rows.map((r) => r.id);
+  const countsMap =
+    customerIds.length > 0
+      ? new Map(
+          await Promise.all(
+            customerIds.map(
+              async (id) =>
+                [id, await queryCustomerTabCounts(ctx.workspaceId, id)] as const,
+            ),
+          ),
+        )
+      : new Map<string, Awaited<ReturnType<typeof queryCustomerTabCounts>>>();
+
   return listCustomersOutput.parse({
     rows: rows.map((r) => ({
       id: r.id,
@@ -122,6 +137,14 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
       addr1: r.addr1 ?? null,
       addr2: r.addr2 ?? null,
       createdAt: r.createdAt.toISOString(),
+      counts: countsMap.get(r.id)
+        ? {
+            customer: countsMap.get(r.id)!.customerCnt,
+            op: countsMap.get(r.id)!.opCnt,
+            act: countsMap.get(r.id)!.actCnt,
+            comt: countsMap.get(r.id)!.comtCnt,
+          }
+        : null,
     })),
     total,
   });
