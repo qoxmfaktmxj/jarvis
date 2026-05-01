@@ -1054,6 +1054,9 @@
         "addr1": "주소",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "errors": {
+        "duplicateCustCd": "중복된 고객코드가 있습니다: {codes}"
       }
     },
     "CustomerContacts": {

@@ -160,6 +160,9 @@
         "addr1": "Address",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "errors": {
+        "duplicateCustCd": "Duplicate customer codes: {codes}"
       }
     },
     "CustomerContacts": {

@@ -289,7 +289,7 @@ export function CustomersGridContainer({
           if (dups.length > 0) {
             return {
               ok: false,
-              errors: [{ message: `중복된 고객코드가 있습니다: ${dups.join(", ")}` }],
+              errors: [{ message: t("Customers.errors.duplicateCustCd", { codes: dups.join(", ") }) }],
             };
           }
 
