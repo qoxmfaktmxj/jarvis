@@ -60,12 +60,13 @@ export function ProductTypesGridContainer({
   // URL-synced filter state (replaces local useState filterValues).
   // useUrlFilters keeps searchParams in sync so page.tsx re-runs on navigation,
   // providing SSR-rendered initial rows (parity with legacy ibSheet searchXxx map).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const FILTER_DEFAULTS: FilterDefaults = useMemo(
     () => ({
       productCd: initialFilters?.productCd ?? "",
       productNm: initialFilters?.productNm ?? "",
     }),
-    [initialFilters?.productCd, initialFilters?.productNm],
+    [],
   );
 
   const { values, setValue } = useUrlFilters<FilterDefaults>({ defaults: FILTER_DEFAULTS });
