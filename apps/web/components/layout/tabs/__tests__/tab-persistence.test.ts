@@ -51,7 +51,7 @@ describe("saveToSession + loadFromSession", () => {
 
     expect(loaded).not.toBeNull();
     expect(loaded!.tabs).toHaveLength(2);
-    expect(loaded!.tabs[1].pinned).toBe(true);
+    expect(loaded!.tabs[1]?.pinned).toBe(true);
     expect(loaded!.activeKey).toBe("/a");
     expect(loaded!.tabStates.get("/a")?.get("grid")).toEqual({ dirtyRows: { x: 1 } });
   });
