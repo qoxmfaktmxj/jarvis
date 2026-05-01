@@ -16,6 +16,8 @@
 import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
 import { EditableTextAreaCell } from "@/components/grid/cells/EditableTextAreaCell";
@@ -203,88 +205,73 @@ export function MenuGrid({
 
   return (
     <div className="space-y-2">
+      {/* Search form */}
+      <GridSearchForm
+        onSearch={onApplyFilters}
+        isSearching={saving}
+        searchLabel={t("filter.search")}
+      >
+        <GridFilterField label={t("filter.code")} className="w-[140px]">
+          <input
+            type="text"
+            value={draftFilters.q}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          />
+        </GridFilterField>
+        <GridFilterField label={t("filter.label")} className="w-[210px]">
+          <input
+            type="text"
+            value={draftFilters.qLabel}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, qLabel: e.target.value })}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          />
+        </GridFilterField>
+        <GridFilterField label={t("filter.kind")} className="w-[140px]">
+          <select
+            value={draftFilters.kind}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, kind: e.target.value })}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">{t("filter.kindAll")}</option>
+            {KIND_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label={t("filter.parent")} className="w-[140px]">
+          <select
+            value={draftFilters.parentCode}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, parentCode: e.target.value })}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">{t("filter.parentAll")}</option>
+            <option value="__root__">{t("filter.parentRoot")}</option>
+            {parentOptions.map((o) => (
+              <option key={o.code} value={o.code}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+      </GridSearchForm>
+
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">
+        <span className="text-sm text-(--fg-secondary)">
           {t("title")} — {total.toLocaleString()}
         </span>
-        <div className="flex items-center gap-2">
-          <GridToolbar
-            dirtyCount={grid.dirtyCount}
-            saving={saving}
-            onInsert={onInsert}
-            onCopy={onCopy}
-            onSave={onSave}
-          />
-          <Button size="sm" variant="outline" onClick={onExport} disabled={saving}>
-            {t("toolbar.export")}
-          </Button>
-        </div>
+        <GridToolbar
+          dirtyCount={grid.dirtyCount}
+          saving={saving}
+          onInsert={onInsert}
+          onCopy={onCopy}
+          onSave={onSave}
+          onExport={onExport}
+          exportLabel={t("toolbar.export")}
+        />
       </div>
-
-      {/* Filter row */}
-      <form
-        className="flex flex-wrap items-center gap-2 rounded border border-slate-200 bg-slate-50/50 px-2 py-2 text-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onApplyFilters();
-        }}
-      >
-        <input
-          type="text"
-          placeholder={t("filter.code")}
-          value={draftFilters.q}
-          onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
-          className="h-8 w-40 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder={t("filter.label")}
-          value={draftFilters.qLabel}
-          onChange={(e) =>
-            onDraftFilterChange({ ...draftFilters, qLabel: e.target.value })
-          }
-          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          value={draftFilters.kind}
-          onChange={(e) =>
-            onDraftFilterChange({ ...draftFilters, kind: e.target.value })
-          }
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">
-            {t("filter.kind")} ({t("filter.kindAll")})
-          </option>
-          {KIND_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={draftFilters.parentCode}
-          onChange={(e) =>
-            onDraftFilterChange({ ...draftFilters, parentCode: e.target.value })
-          }
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">
-            {t("filter.parent")} ({t("filter.parentAll")})
-          </option>
-          <option value="__root__">{t("filter.parentRoot")}</option>
-          {parentOptions.map((o) => (
-            <option key={o.code} value={o.code}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" size="sm">
-          {t("filter.search")}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
-          {t("filter.reset")}
-        </Button>
-      </form>
 
       <div className="overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">

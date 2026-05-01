@@ -13,6 +13,10 @@ import {
   saveCustomerContactsOutput,
 } from "@jarvis/shared/validation/sales/customer-contact";
 import {
+  getContactInput,
+  getContactOutput,
+} from "@jarvis/shared/validation/sales/customer-detail";
+import {
   customerContactMemoListInput, customerContactMemoListOutput,
   customerContactMemoCreateInput, customerContactMemoCreateOutput,
   customerContactMemoDeleteInput, customerContactMemoDeleteOutput,
@@ -325,4 +329,65 @@ export async function deleteContactMemo(rawInput: z.input<typeof customerContact
   });
 
   return customerContactMemoDeleteOutput.parse({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// getContact — single-record fetch for master-detail edit (Task 13)
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function getContact(rawInput: z.input<typeof getContactInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, contact: null };
+
+  const { id } = getContactInput.parse(rawInput);
+
+  const rows = await db
+    .select({
+      id: salesCustomerContact.id,
+      custMcd: salesCustomerContact.custMcd,
+      customerId: salesCustomerContact.customerId,
+      custName: salesCustomerContact.custName,
+      jikweeNm: salesCustomerContact.jikweeNm,
+      orgNm: salesCustomerContact.orgNm,
+      hpNo: salesCustomerContact.hpNo,
+      telNo: salesCustomerContact.telNo,
+      email: salesCustomerContact.email,
+      statusYn: salesCustomerContact.statusYn,
+      switComp: salesCustomerContact.switComp,
+      // joined from sales_customer for read-only display
+      custNm: salesCustomer.custNm,
+    })
+    .from(salesCustomerContact)
+    .leftJoin(salesCustomer, eq(salesCustomer.id, salesCustomerContact.customerId))
+    .where(
+      and(
+        eq(salesCustomerContact.id, id),
+        eq(salesCustomerContact.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .limit(1);
+
+  const row = rows[0] ?? null;
+
+  return {
+    ok: true as const,
+    ...getContactOutput.parse({
+      contact: row
+        ? {
+            id: row.id,
+            custMcd: row.custMcd,
+            customerId: row.customerId ?? null,
+            custNm: row.custNm ?? null,
+            custName: row.custName ?? null,
+            jikweeNm: row.jikweeNm ?? null,
+            orgNm: row.orgNm ?? null,
+            hpNo: row.hpNo ?? null,
+            telNo: row.telNo ?? null,
+            email: row.email ?? null,
+            statusYn: row.statusYn ?? null,
+            switComp: row.switComp ?? null,
+          }
+        : null,
+    }),
+  };
 }

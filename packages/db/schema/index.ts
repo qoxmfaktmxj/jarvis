@@ -41,3 +41,6 @@ export * from "./sales-product-type.js";
 export * from "./sales-mail-person.js";
 // Phase-Sales P1.5 Task 5: 인프라 운영 라이선스 (TBIZ500) — admin/infra/licenses
 export * from "./infra-license.js";
+// Phase-Sales P2: 영업기회 (TBIZ110/112) + 영업활동 (TBIZ115/116)
+export * from "./sales-opportunity.js";
+export * from "./sales-activity.js";

@@ -127,6 +127,29 @@
         "passwordResetFailed": "비밀번호 초기화 요청에 실패했습니다.",
         "lockChanged": "상태가 변경되었습니다",
         "exportStarted": "다운로드 중…"
+      },
+      "Grid": {
+        "columns": {
+          "employeeId": "사번",
+          "name": "성명",
+          "email": "이메일",
+          "phone": "휴대폰",
+          "org": "부서",
+          "position": "직위",
+          "jobTitle": "직책",
+          "status": "상태",
+          "isOutsourced": "외주",
+          "updatedBy": "최종 수정자",
+          "updatedAt": "최종 수정일시"
+        },
+        "status": {
+          "active": "활성",
+          "inactive": "비활성",
+          "locked": "잠금"
+        },
+        "filters": {
+          "search": "사번/이름/이메일 검색"
+        }
       }
     },
     "Audit": {
@@ -1172,7 +1195,57 @@
       "customerContacts": "담당자관리",
       "productTypes": "제품군관리",
       "productCostMapping": "제품-코스트 매핑",
-      "mailPersons": "메일담당자"
+      "mailPersons": "메일담당자",
+      "opportunities": "영업기회",
+      "activities": "영업활동",
+      "dashboard": "영업기회현황"
+    },
+    "Opportunities": {
+      "title": "영업기회",
+      "description": "영업기회를 관리하고 단계별로 추적합니다.",
+      "columns": {
+        "bizOpNm": "영업기회명",
+        "customerName": "고객사명",
+        "productType": "제품군",
+        "bizStep": "영업기회단계",
+        "bizStepYmd": "단계 변경일",
+        "orgNm": "담당부서",
+        "insName": "영업담당",
+        "bizOpSource": "영업기회출처",
+        "insdate": "등록일자",
+        "memo": "메모"
+      }
+    },
+    "Activities": {
+      "title": "영업활동",
+      "description": "고객 접촉 및 활동을 기록합니다.",
+      "columns": {
+        "bizActNm": "활동명",
+        "opportunity": "영업기회",
+        "customerName": "고객사",
+        "actYmd": "활동일",
+        "actType": "활동유형",
+        "accessRoute": "접근경로",
+        "attendee": "참석자",
+        "bizStep": "단계",
+        "productType": "제품군",
+        "insdate": "등록일자",
+        "memo": "메모"
+      }
+    },
+    "Dashboard": {
+      "title": "영업기회현황",
+      "description": "단계 분포 + 월별 신규 영업기회.",
+      "kpis": {
+        "total": "전체 영업기회",
+        "inProgressAmt": "진행 중 예상금액",
+        "monthNew": "이번달 신규",
+        "focus": "집중관리"
+      },
+      "charts": {
+        "stepDistribution": "단계별 영업기회 분포",
+        "monthlyNew": "월별 신규 영업기회"
+      }
     },
     "Customers": {
       "title": "고객사관리",
@@ -1211,6 +1284,22 @@
       },
       "errors": {
         "duplicateCustCd": "중복된 고객코드가 있습니다: {codes}"
+      },
+      "Edit": {
+        "fields": {
+          "custCd": "고객사코드",
+          "custNm": "고객사명",
+          "ceoNm": "대표자명",
+          "telNo": "전화번호",
+          "businessNo": "사업자등록번호",
+          "homepage": "홈페이지",
+          "addr1": "주소",
+          "addr2": "상세주소"
+        },
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "삭제하시겠습니까?"
       }
     },
     "CustomerContacts": {
@@ -1245,6 +1334,23 @@
         "empty": "등록된 의견이 없습니다.",
         "memoLabel": "의견",
         "memoPlaceholder": "의견을 입력하세요"
+      },
+      "Edit": {
+        "fields": {
+          "custName": "고객명",
+          "custNm": "고객사명",
+          "orgNm": "부서",
+          "jikweeNm": "직위",
+          "hpNo": "핸드폰",
+          "telNo": "전화번호",
+          "email": "이메일",
+          "statusYn": "재직상태",
+          "switComp": "이직회사"
+        },
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "삭제하시겠습니까?"
       }
     },
     "ProductTypes": {
@@ -1294,7 +1400,8 @@
     },
     "Common": {
       "Excel": {
-        "button": "엑셀 다운로드",
+        "button": "다운로드",
+        "downloading": "다운로드 중…",
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "다운로드를 시작했습니다."
       },

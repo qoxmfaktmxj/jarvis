@@ -414,6 +414,27 @@
       "when": 1777620782260,
       "tag": "0058_giant_norrin_radd",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1777637974514,
+      "tag": "0059_gigantic_lila_cheney",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1777638210954,
+      "tag": "0060_shallow_thena",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1777656314664,
+      "tag": "0061_daffy_photon",
+      "breakpoints": true
     }
   ]
 }

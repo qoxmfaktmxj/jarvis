@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@jarvis/db/client';
 import {
   user, organization, userRole, role,
-  codeGroup, codeItem,
+  codeGroup, codeItem, auditLog,
 } from '@jarvis/db/schema';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -195,6 +195,7 @@ export async function POST(req: NextRequest) {
         position: position ?? null,
         jobTitle: jobTitle ?? null,
         workspaceId: session.workspaceId,
+        updatedBy: session.userId,
       })
       .returning(userResponseColumns);
     const newUser = inserted[0];
@@ -211,6 +212,16 @@ export async function POST(req: NextRequest) {
     if (roleRow.length > 0 && roleRow[0]) {
       await tx.insert(userRole).values({ userId: newUser.id, roleId: roleRow[0].id });
     }
+
+    await tx.insert(auditLog).values({
+      workspaceId: session.workspaceId,
+      userId: session.userId,
+      action: 'user.create',
+      resourceType: 'user',
+      resourceId: newUser.id,
+      details: { employeeId: rest.employeeId, roleCode } as Record<string, unknown>,
+      success: true,
+    });
 
     return NextResponse.json(newUser, { status: 201 });
   });
@@ -238,12 +249,27 @@ export async function PUT(req: NextRequest) {
   }
 
   return await db.transaction(async (tx) => {
+    const before = await tx
+      .select({
+        name: user.name,
+        email: user.email,
+        orgId: user.orgId,
+        status: user.status,
+        position: user.position,
+        jobTitle: user.jobTitle,
+        isOutsourced: user.isOutsourced,
+      })
+      .from(user)
+      .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
+      .limit(1);
+
     const [updated] = await tx
       .update(user)
       .set({
         ...updateData,
         ...(position !== undefined ? { position } : {}),
         ...(jobTitle !== undefined ? { jobTitle } : {}),
+        updatedBy: session.userId,
         updatedAt: new Date(),
       })
       .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
@@ -266,6 +292,19 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    await tx.insert(auditLog).values({
+      workspaceId: session.workspaceId,
+      userId: session.userId,
+      action: 'user.update',
+      resourceType: 'user',
+      resourceId: updated.id,
+      details: {
+        before: before[0],
+        after: { ...updateData, ...(position !== undefined ? { position } : {}), ...(jobTitle !== undefined ? { jobTitle } : {}), ...(roleCodes !== undefined ? { roleCodes } : {}) },
+      } as Record<string, unknown>,
+      success: true,
+    });
+
     return NextResponse.json(updated);
   });
 }
@@ -283,13 +322,25 @@ export async function DELETE(req: NextRequest) {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(id)) return NextResponse.json({ error: 'id must be uuid' }, { status: 400 });
 
-  const [updated] = await db
-    .update(user)
-    .set({ status: 'inactive', updatedAt: new Date() })
-    .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
-    .returning({ id: user.id });
+  return await db.transaction(async (tx) => {
+    const [deactivated] = await tx
+      .update(user)
+      .set({ status: 'inactive', updatedBy: session.userId, updatedAt: new Date() })
+      .where(and(eq(user.id, id), eq(user.workspaceId, session.workspaceId)))
+      .returning({ id: user.id });
 
-  if (!updated) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!deactivated) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-  return NextResponse.json({ success: true });
+    await tx.insert(auditLog).values({
+      workspaceId: session.workspaceId,
+      userId: session.userId,
+      action: 'user.delete',
+      resourceType: 'user',
+      resourceId: deactivated.id,
+      details: {} as Record<string, unknown>,
+      success: true,
+    });
+
+    return NextResponse.json({ success: true });
+  });
 }

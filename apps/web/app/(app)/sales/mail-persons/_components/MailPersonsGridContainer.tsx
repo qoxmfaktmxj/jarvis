@@ -28,9 +28,11 @@
  */
 import { useCallback, useState, useTransition } from "react";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
-import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import type { ColumnDef } from "@/components/grid/types";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -87,7 +89,15 @@ export function MailPersonsGridContainer({
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+
+  const [pendingFilters, setPendingFilters] = useState<Omit<FilterValues, "page">>({
+    searchMail: initialFilters?.searchMail ?? "",
+    name: initialFilters?.name ?? "",
+    sabun: initialFilters?.sabun ?? "",
+  });
+  const setPending = (key: keyof Omit<FilterValues, "page">, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters<FilterValues>({
     defaults: {
@@ -227,27 +237,6 @@ export function MailPersonsGridContainer({
     },
   ];
 
-  const FILTERS: FilterDef<MailPersonRow>[] = [
-    { key: "name", type: "text", placeholder: "이름" },
-    { key: "sabun", type: "text", placeholder: "사번" },
-  ];
-
-  const handleFilterChange = useCallback(
-    (newFilters: Record<string, string>) => {
-      const next: FilterValues = {
-        searchMail: filterValues.searchMail,
-        name: newFilters.name ?? filterValues.name,
-        sabun: newFilters.sabun ?? filterValues.sabun,
-        page: "1",
-      };
-      setFilterValue("name", next.name);
-      setFilterValue("sabun", next.sabun);
-      setFilterValue("page", "1");
-      reload(1, next);
-    },
-    [filterValues, setFilterValue, reload],
-  );
-
   const handlePageChange = useCallback(
     (p: number) => {
       setFilterValue("page", String(p));
@@ -256,45 +245,63 @@ export function MailPersonsGridContainer({
     [filterValues, setFilterValue, reload],
   );
 
+  const handleSearch = useCallback(() => {
+    setFilterValue("searchMail", pendingFilters.searchMail);
+    setFilterValue("name", pendingFilters.name);
+    setFilterValue("sabun", pendingFilters.sabun);
+    setFilterValue("page", "1");
+    reload(1, { ...filterValues, ...pendingFilters, page: "1" });
+  }, [pendingFilters, filterValues, setFilterValue, reload]);
+
   return (
-    <div className="flex flex-col rounded-md border border-slate-200 bg-white shadow-sm">
-      <DataGridToolbar
-        onExport={() => void handleExport()}
-        exportLabel="엑셀 다운로드"
-        isExporting={isExporting}
-      >
-        {/* searchMail URL-persisted filter */}
-        <label className="flex items-center gap-1.5 text-[13px] text-slate-600">
-          <span>메일주소</span>
-          <input
+    <div className="space-y-3">
+      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+        <GridFilterField label="메일주소" className="w-[210px]">
+          <Input
             type="text"
             data-filter="searchMail"
-            className="h-7 rounded border border-slate-300 px-2 text-[13px]"
-            value={filterValues.searchMail}
+            value={pendingFilters.searchMail}
+            onChange={(e) => setPending("searchMail", e.target.value)}
             placeholder="메일주소 검색"
-            onChange={(e) => {
-              const v = e.target.value;
-              setFilterValue("searchMail", v);
-              setFilterValue("page", "1");
-              const next: FilterValues = { ...filterValues, searchMail: v, page: "1" };
-              reload(1, next);
-            }}
+            className="h-8"
           />
-        </label>
-      </DataGridToolbar>
+        </GridFilterField>
+        <GridFilterField label="이름" className="w-[140px]">
+          <Input
+            type="text"
+            value={pendingFilters.name}
+            onChange={(e) => setPending("name", e.target.value)}
+            placeholder="이름"
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label="사번" className="w-[140px]">
+          <Input
+            type="text"
+            value={pendingFilters.sabun}
+            onChange={(e) => setPending("sabun", e.target.value)}
+            placeholder="사번"
+            className="h-8"
+          />
+        </GridFilterField>
+      </GridSearchForm>
 
       <DataGrid<MailPersonRow>
         key={reloadKey}
         rows={rows}
         total={total}
         columns={COLUMNS}
-        filters={FILTERS}
+        filters={[]}
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
-        filterValues={{ name: filterValues.name, sabun: filterValues.sabun }}
+        filterValues={{}}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={handlePageChange}
-        onFilterChange={handleFilterChange}
+        onFilterChange={() => {
+          // Filters managed by GridSearchForm above
+        }}
         onSave={async (changes) => {
           // Composite-key duplicate check before save (sabun + mailId).
           const existingMerged = rows
