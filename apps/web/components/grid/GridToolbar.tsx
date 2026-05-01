@@ -35,24 +35,26 @@ export function GridToolbar({
 }: Props) {
   return (
     <div className="ml-auto flex items-center gap-2">
-      <Button size="sm" variant="outline" onClick={onInsert} disabled={saving}>
+      <Button size="sm" variant="outline" className="rounded" onClick={onInsert} disabled={saving}>
         {insertLabel}
       </Button>
       <Button
         size="sm"
         variant="outline"
+        className="rounded"
         onClick={onCopy}
         disabled={saving || !onCopy}
       >
         {copyLabel}
       </Button>
-      <Button size="sm" disabled={dirtyCount === 0 || saving} onClick={onSave}>
+      <Button size="sm" className="rounded" disabled={dirtyCount === 0 || saving} onClick={onSave}>
         {saving ? savingLabel : dirtyCount > 0 ? `${saveLabel} (${dirtyCount})` : saveLabel}
       </Button>
       {onExport && (
         <Button
           size="sm"
           variant="outline"
+          className="rounded"
           onClick={() => void onExport()}
           disabled={isExporting || saving}
         >

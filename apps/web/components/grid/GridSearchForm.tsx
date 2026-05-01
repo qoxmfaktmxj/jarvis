@@ -38,7 +38,7 @@ export function GridSearchForm({
       className="flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-slate-50 px-4 py-3"
     >
       <div className="flex flex-1 flex-wrap items-end gap-3">{children}</div>
-      <Button type="submit" size="sm" disabled={isSearching}>
+      <Button type="submit" size="sm" className="rounded" disabled={isSearching}>
         {isSearching ? searchingLabel : searchLabel}
       </Button>
     </form>
