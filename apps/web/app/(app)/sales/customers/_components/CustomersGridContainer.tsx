@@ -20,9 +20,14 @@ type Props = {
 };
 
 function makeBlankRow(): CustomerRow {
+  // Legacy ibSheet bizActCustCompanyMgr.jsp:221~233 marks `custCd` Hidden:1 (PK, system-assigned).
+  // Until a code-generation popup is wired up, derive a placeholder from the row id so the
+  // NOT NULL + (workspace, custCd) UNIQUE constraint is satisfied. createdAt is omitted on
+  // new rows — DB defaultNow assigns on save; UI shows "—".
+  const id = crypto.randomUUID();
   return {
-    id: crypto.randomUUID(),
-    custCd: "",
+    id,
+    custCd: id.slice(0, 12),
     custNm: "",
     custKindCd: null,
     custDivCd: null,
@@ -40,6 +45,7 @@ function makeBlankRow(): CustomerRow {
     addrNo: null,
     addr1: null,
     addr2: null,
+    createdAt: null,
   };
 }
 
@@ -60,7 +66,6 @@ export function CustomersGridContainer({
     (nextPage: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listCustomers({
-          custCd: nextFilters.custCd || undefined,
           custNm: nextFilters.custNm || undefined,
           custKindCd: nextFilters.custKindCd || undefined,
           custDivCd: nextFilters.custDivCd || undefined,
@@ -78,22 +83,24 @@ export function CustomersGridContainer({
     [limit],
   );
 
+  // Hidden:0 (visible) columns per legacy ibSheet bizActCustCompanyMgr.jsp:221~233.
+  // custCd / businessNo / businessKind / homepage / addr1 are Hidden:1 — intentionally omitted.
   const COLUMNS: ColumnDef<CustomerRow>[] = [
-    { key: "custCd", label: "고객코드", type: "text", width: 100, editable: true, required: true },
     { key: "custNm", label: "고객명", type: "text", editable: true, required: true },
-    { key: "ceoNm", label: "대표자", type: "text", width: 150, editable: true },
-    { key: "businessNo", label: "사업자번호", type: "text", width: 130, editable: true },
-    { key: "telNo", label: "전화번호", type: "text", width: 130, editable: true },
     { key: "custKindCd", label: "고객종류", type: "select", width: 120, editable: true, options: codeOptions.custKind },
     { key: "custDivCd", label: "고객구분", type: "select", width: 120, editable: true, options: codeOptions.custDiv },
-    { key: "exchangeTypeCd", label: "거래유형", type: "select", width: 120, editable: true, options: codeOptions.exchangeType },
-    { key: "businessKind", label: "업종", type: "text", width: 200, editable: true },
-    { key: "homepage", label: "홈페이지", type: "text", width: 200, editable: true },
-    { key: "addr1", label: "주소", type: "text", width: 300, editable: true },
+    { key: "ceoNm", label: "대표자", type: "text", width: 150, editable: true },
+    { key: "telNo", label: "전화번호", type: "text", width: 130, editable: true },
+    {
+      key: "createdAt",
+      label: "등록일자",
+      type: "readonly",
+      width: 110,
+      render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
+    },
   ];
 
   const FILTERS: FilterDef<CustomerRow>[] = [
-    { key: "custCd", type: "text", placeholder: "고객코드" },
     { key: "custNm", type: "text", placeholder: "고객명" },
     { key: "custKindCd", type: "select", options: codeOptions.custKind },
     { key: "custDivCd", type: "select", options: codeOptions.custDiv },

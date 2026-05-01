@@ -12,6 +12,10 @@ export const customerContactRow = z.object({
   email: z.string().nullable(),
   statusYn: z.boolean().nullable(),
   sabun: z.string().nullable(),
+  // 고객사명 (read-only display; populated via JOIN salesCustomer.custNm in listCustomerContacts).
+  custNm: z.string().nullable().optional(),
+  // 등록일자 (read-only display; server sets defaultNow on insert).
+  createdAt: z.string().nullable().optional(),
 });
 
 export const listCustomerContactsInput = z.object({

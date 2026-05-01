@@ -4,7 +4,7 @@ import { and, count, eq, ilike, inArray } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomerContact, auditLog } from "@jarvis/db/schema";
+import { salesCustomerContact, salesCustomer, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomerContactsInput,
@@ -55,7 +55,29 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([
-    db.select().from(salesCustomerContact).where(where).orderBy(salesCustomerContact.custMcd).limit(input.limit).offset(offset),
+    db
+      .select({
+        id: salesCustomerContact.id,
+        custMcd: salesCustomerContact.custMcd,
+        customerId: salesCustomerContact.customerId,
+        custName: salesCustomerContact.custName,
+        jikweeNm: salesCustomerContact.jikweeNm,
+        orgNm: salesCustomerContact.orgNm,
+        telNo: salesCustomerContact.telNo,
+        hpNo: salesCustomerContact.hpNo,
+        email: salesCustomerContact.email,
+        statusYn: salesCustomerContact.statusYn,
+        sabun: salesCustomerContact.sabun,
+        createdAt: salesCustomerContact.createdAt,
+        // JOIN salesCustomer.custNm — read-only display column for grid (legacy bizActCustomerMgr.jsp:207).
+        custNm: salesCustomer.custNm,
+      })
+      .from(salesCustomerContact)
+      .leftJoin(salesCustomer, eq(salesCustomer.id, salesCustomerContact.customerId))
+      .where(where)
+      .orderBy(salesCustomerContact.custMcd)
+      .limit(input.limit)
+      .offset(offset),
     db.select({ count: count() }).from(salesCustomerContact).where(where),
   ]);
 
@@ -72,6 +94,8 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
       email: r.email ?? null,
       statusYn: r.statusYn ?? null,
       sabun: r.sabun ?? null,
+      custNm: r.custNm ?? null,
+      createdAt: r.createdAt.toISOString(),
     })),
     total: Number(countRows[0]?.count ?? 0),
   });
@@ -90,13 +114,21 @@ export async function saveCustomerContacts(rawInput: z.input<typeof saveCustomer
   try {
     await db.transaction(async (tx) => {
       for (const c of input.creates) {
-        await tx.insert(salesCustomerContact).values({ ...c, workspaceId: ctx.workspaceId, createdBy: ctx.userId ?? undefined });
-        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.create", resourceType: "sales_customer_contact", resourceId: c.id, details: {} as Record<string, unknown>, success: true });
+        // custNm + createdAt are read-only display fields (custNm via JOIN, createdAt via defaultNow) — strip from insert.
+        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, ...createPayload } = c;
+        void _omitCustNm;
+        void _omitCreatedAt;
+        await tx.insert(salesCustomerContact).values({ ...createPayload, workspaceId: ctx.workspaceId, createdBy: ctx.userId ?? undefined });
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.create", resourceType: "sales_customer_contact", resourceId: c.id, details: { custMcd: c.custMcd } as Record<string, unknown>, success: true });
         created.push(c.id);
       }
       for (const u of input.updates) {
-        await tx.update(salesCustomerContact).set({ ...u.patch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined }).where(and(eq(salesCustomerContact.id, u.id), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
-        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.update", resourceType: "sales_customer_contact", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
+        // custNm + createdAt are read-only display fields — strip from update patch.
+        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, ...updatablePatch } = u.patch;
+        void _omitCustNm;
+        void _omitCreatedAt;
+        await tx.update(salesCustomerContact).set({ ...updatablePatch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined }).where(and(eq(salesCustomerContact.id, u.id), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.update", resourceType: "sales_customer_contact", resourceId: u.id, details: updatablePatch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {

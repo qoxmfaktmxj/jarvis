@@ -114,6 +114,7 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
       addrNo: r.addrNo ?? null,
       addr1: r.addr1 ?? null,
       addr2: r.addr2 ?? null,
+      createdAt: r.createdAt.toISOString(),
     })),
     total,
   });
@@ -137,8 +138,11 @@ export async function saveCustomers(rawInput: z.input<typeof saveCustomersInput>
     await db.transaction(async (tx) => {
       // ---- CREATE ----
       for (const c of input.creates) {
+        // createdAt is read-only — DB defaultNow handles insert; strip from client payload.
+        const { createdAt: _omitCreatedAt, ...createPayload } = c;
+        void _omitCreatedAt;
         await tx.insert(salesCustomer).values({
-          ...c,
+          ...createPayload,
           workspaceId: ctx.workspaceId,
           createdBy: ctx.userId ?? undefined,
         });
@@ -156,9 +160,12 @@ export async function saveCustomers(rawInput: z.input<typeof saveCustomersInput>
 
       // ---- UPDATE ----
       for (const u of input.updates) {
+        // createdAt is read-only — strip from update patch.
+        const { createdAt: _omitCreatedAt, ...updatablePatch } = u.patch;
+        void _omitCreatedAt;
         await tx
           .update(salesCustomer)
-          .set({ ...u.patch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined })
+          .set({ ...updatablePatch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined })
           .where(
             and(
               eq(salesCustomer.id, u.id),
@@ -171,7 +178,7 @@ export async function saveCustomers(rawInput: z.input<typeof saveCustomersInput>
           action: "sales.customer.update",
           resourceType: "sales_customer",
           resourceId: u.id,
-          details: u.patch as Record<string, unknown>,
+          details: updatablePatch as Record<string, unknown>,
           success: true,
         });
         updated.push(u.id);

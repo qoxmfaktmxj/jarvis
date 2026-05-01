@@ -1,11 +1,10 @@
 /**
  * e2e/sales-customers.spec.ts
  *
- * sales/customers 그리드 smoke test.
- * DataGrid 공통 컴포넌트 + SALES_ALL 권한 게이트 검증.
- *
- * 전제: E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD 환경변수 또는
- *       helpers/auth.ts loginAsAdmin 사용.
+ * sales/customers 그리드 smoke test (Task 9 / P1.5).
+ * 레거시 ibSheet bizActCustCompanyMgr.jsp:221~233 Hidden:0 정책 검증:
+ *  - custCd / businessNo / businessKind / homepage / addr1 PK 또는 부가 컬럼은 보이지 않아야 함
+ *  - custNm / custKindCd / custDivCd / ceoNm / telNo / 등록일자 보임
  */
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
@@ -32,11 +31,27 @@ test.describe("sales/customers grid", () => {
     await expect(saveBtn).toBeEnabled();
   });
 
-  test("filter inputs exist for custCd and custNm", async ({ page }) => {
-    const custCdInput = page
-      .locator('input[placeholder*="고객코드"]')
-      .or(page.locator('input[placeholder*="코드"]'))
-      .first();
-    await expect(custCdInput).toBeVisible();
+  test("Hidden:0 columns visible (고객명 / 고객종류 / 고객구분 / 대표자 / 전화번호 / 등록일자)", async ({ page }) => {
+    const header = page.locator("thead");
+    await expect(header).toContainText("고객명");
+    await expect(header).toContainText("고객종류");
+    await expect(header).toContainText("고객구분");
+    await expect(header).toContainText("대표자");
+    await expect(header).toContainText("전화번호");
+    await expect(header).toContainText("등록일자");
+  });
+
+  test("Hidden:1 columns not rendered (고객코드 / 사업자번호 / 업종 / 홈페이지 / 주소)", async ({ page }) => {
+    const header = page.locator("thead");
+    await expect(header).not.toContainText("고객코드");
+    await expect(header).not.toContainText("사업자번호");
+    await expect(header).not.toContainText("업종");
+    await expect(header).not.toContainText("홈페이지");
+    await expect(header).not.toContainText("주소");
+  });
+
+  test("filter input exists for custNm", async ({ page }) => {
+    const custNmInput = page.locator('input[placeholder*="고객명"]').first();
+    await expect(custNmInput).toBeVisible();
   });
 });
