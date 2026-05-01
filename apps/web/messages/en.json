@@ -230,6 +230,7 @@
     "Common": {
       "Excel": {
         "button": "Download Excel",
+        "downloading": "Downloading…",
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "Download started."
       },

@@ -27,6 +27,7 @@
  * (enterCd is implicit via workspaceId; name is a display field.)
  */
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
@@ -83,6 +84,7 @@ export function MailPersonsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const t = useTranslations("Sales.Common");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
@@ -260,7 +262,7 @@ export function MailPersonsGridContainer({
     <div className="flex flex-col rounded-md border border-slate-200 bg-white shadow-sm">
       <DataGridToolbar
         onExport={() => void handleExport()}
-        exportLabel="엑셀 다운로드"
+        exportLabel={isExporting ? t("Excel.downloading") : t("Excel.button")}
         isExporting={isExporting}
       >
         {/* searchMail URL-persisted filter */}

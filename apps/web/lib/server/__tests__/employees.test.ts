@@ -17,7 +17,12 @@ vi.mock("@jarvis/db/client", () => ({
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
-  getSession: vi.fn().mockResolvedValue({ userId: "u1", workspaceId: "w1" }),
+  getSession: vi.fn().mockResolvedValue({
+    userId: "u1",
+    workspaceId: "w1",
+    permissions: ["sales:all"],
+    roles: [],
+  }),
 }));
 
 vi.mock("next/headers", () => ({
@@ -62,6 +67,17 @@ describe("searchEmployees", () => {
     await expect(searchEmployees({ q: "ho", limit: 10 })).rejects.toThrow(/Unauthorized/);
   });
 
+  it("throws Forbidden when session lacks SALES_ALL permission", async () => {
+    const sess = await import("@jarvis/auth/session");
+    vi.mocked(sess.getSession).mockResolvedValueOnce({
+      userId: "u-no-perm",
+      workspaceId: "w1",
+      permissions: [],
+      roles: [],
+    } as never);
+    await expect(searchEmployees({ q: "ho", limit: 10 })).rejects.toThrow(/Forbidden/);
+  });
+
   it("passes session.workspaceId to the query (WHERE called once)", async () => {
     const sess = await import("@jarvis/auth/session");
     vi.mocked(sess.getSession).mockResolvedValueOnce({
@@ -70,6 +86,8 @@ describe("searchEmployees", () => {
       id: "s1",
       expiresAt: Date.now() + 3600_000,
       employeeId: "E001",
+      permissions: ["sales:all"],
+      roles: [],
     } as never);
     limitMock.mockResolvedValueOnce([]);
 

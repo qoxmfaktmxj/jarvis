@@ -190,7 +190,7 @@ export function ProductCostMappingGrid({
       {/* DataGridToolbar: Excel export button */}
       <DataGridToolbar
         onExport={handleExport}
-        exportLabel={t("Common.Excel.button")}
+        exportLabel={exporting ? t("Common.Excel.downloading") : t("Common.Excel.button")}
         isExporting={exporting}
       >
         <GridToolbar
