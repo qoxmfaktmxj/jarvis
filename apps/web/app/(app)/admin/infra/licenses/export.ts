@@ -13,7 +13,7 @@ import { and, eq, ilike, or } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { infraLicense } from "@jarvis/db/schema";
+import { auditLog, infraLicense } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   exportInfraLicensesInput,
@@ -162,6 +162,17 @@ export async function exportInfraLicenses(
 
   const date = new Date().toISOString().slice(0, 10);
   const filename = `infra-licenses_${date}.xlsx`;
+
+  // Audit log for export (mirrors infra.license.create/update/delete in actions.ts)
+  await db.insert(auditLog).values({
+    workspaceId: session.workspaceId,
+    userId: session.userId,
+    action: "infra.license.export",
+    resourceType: "infra_license",
+    resourceId: null,
+    details: { export: true, filters: input } as Record<string, unknown>,
+    success: true,
+  });
 
   return { ok: true, bytes: new Uint8Array(buf), filename };
 }
