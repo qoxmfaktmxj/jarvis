@@ -10,7 +10,6 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { listCompanies, saveCompanies } from "../actions";
 import { DataGrid, type DataGridProps } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
@@ -147,11 +146,6 @@ export function CompaniesGridContainer({
 
   return (
     <div className="space-y-3">
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel="엑셀 다운로드"
-        isExporting={isExporting}
-      />
       <DataGrid<Company>
         rows={rows}
         total={totalCount}
@@ -161,6 +155,8 @@ export function CompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => {
