@@ -281,7 +281,7 @@ export function CustomersGridContainer({
   return (
     <div className="space-y-0">
       <DataGridToolbar
-        exportLabel={tCommon("Excel.button")}
+        exportLabel={isExporting ? tCommon("Excel.downloading") : tCommon("Excel.button")}
         isExporting={isExporting}
         onExport={async () => {
           setIsExporting(true);

@@ -189,7 +189,7 @@ export function CustomerContactsGridContainer({
     <div className="space-y-2">
       <DataGridToolbar
         onExport={handleExport}
-        exportLabel={t("Excel.button")}
+        exportLabel={isExporting ? t("Excel.downloading") : t("Excel.button")}
         isExporting={isExporting}
       >
         {/* Search form — new filter fields added per Task 6 / P2-A */}
