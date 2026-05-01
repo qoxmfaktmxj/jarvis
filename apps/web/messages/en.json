@@ -146,6 +146,12 @@
     "Customers": {
       "title": "Customers",
       "description": "Manage customer master information.",
+      "Tabs": {
+        "customers": "Contacts ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custCd": "Customer Code",
         "custNm": "Customer Name",
@@ -168,6 +174,12 @@
     "CustomerContacts": {
       "title": "Contacts",
       "description": "Manage contact information per customer.",
+      "Tabs": {
+        "customer": "Company ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custMcd": "Master Code",
         "custName": "Name",
