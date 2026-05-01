@@ -35,7 +35,7 @@ export default async function AppLayout({
   return (
     <>
       <SessionRefresher />
-      <AppShell userName={session.name} menus={menus} actions={actions}>
+      <AppShell userName={session.name} workspaceId={session.workspaceId} menus={menus} actions={actions}>
         {children}
       </AppShell>
     </>
