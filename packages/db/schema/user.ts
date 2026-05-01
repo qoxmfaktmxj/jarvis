@@ -45,6 +45,7 @@ export const user = pgTable("user", {
     .default({})
     .notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedBy: uuid("updated_by"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull()
 });
 
