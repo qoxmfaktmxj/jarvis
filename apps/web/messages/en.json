@@ -131,6 +131,49 @@
         "next": "Next",
         "pageInfo": "{page} / {total}"
       }
+    },
+    "Infra": {
+      "Licenses": {
+        "search": {
+          "devGbCode": "Dev Type"
+        }
+      }
+    }
+  },
+  "Sales": {
+    "Common": {
+      "Search": {
+        "placeholder": "Search...",
+        "reset": "Reset",
+        "noResults": "No search results"
+      },
+      "DupCheck": {
+        "title": "Duplicate keys found",
+        "message": "{count} duplicate key(s) found. Please fix before saving."
+      },
+      "Excel": {
+        "label": "Excel Download",
+        "downloading": "Downloading..."
+      }
+    },
+    "Customers": {
+      "search": {
+        "chargerNm": "Charger"
+      }
+    },
+    "CustomerContacts": {
+      "search": {
+        "chargerNm": "Charger",
+        "hpNo": "Mobile",
+        "email": "Email",
+        "employeeAddPlaceholder": "Add new by employee ID/name/email"
+      }
+    },
+    "MailPersons": {
+      "search": {
+        "name": "Search by name",
+        "employeeAddPlaceholder": "Add new by employee ID/name/email"
+      }
     }
   }
 }
