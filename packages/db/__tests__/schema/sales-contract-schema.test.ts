@@ -11,7 +11,7 @@
 
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
-import { salesContract } from "../../schema/sales-contract.js";
+import { salesContract, salesContractMonth } from "../../schema/sales-contract.js";
 
 describe("sales_contract schema", () => {
   it("has uuid primary key + workspaceId + legacy composite columns", () => {
@@ -51,5 +51,34 @@ describe("sales_contract schema", () => {
     for (const c of expected) {
       assert.ok(cols.includes(c), `missing column ${c}`);
     }
+  });
+});
+
+describe("sales_contract_month schema", () => {
+  it("has FK to sales_contract via contractId", () => {
+    const cols = Object.keys(salesContractMonth);
+    assert.ok(cols.includes("contractId"), "missing contractId column");
+  });
+
+  it("has 3-way (PLAN/VIEW/PERF) × 13 amount columns + man_month + tax + finalize", () => {
+    const cols = Object.keys(salesContractMonth);
+    // PLAN
+    assert.ok(cols.includes("planInManMonth"), "missing planInManMonth");
+    assert.ok(cols.includes("planOutManMonth"), "missing planOutManMonth");
+    assert.ok(cols.includes("planServSaleAmt"), "missing planServSaleAmt");
+    assert.ok(cols.includes("planRentAmt"), "missing planRentAmt");
+    assert.ok(cols.includes("planSgaAmt"), "missing planSgaAmt");
+    assert.ok(cols.includes("planExpAmt"), "missing planExpAmt");
+    // VIEW
+    assert.ok(cols.includes("viewServSaleAmt"), "missing viewServSaleAmt");
+    assert.ok(cols.includes("viewRentAmt"), "missing viewRentAmt");
+    // PERF
+    assert.ok(cols.includes("perfServSaleAmt"), "missing perfServSaleAmt");
+    assert.ok(cols.includes("perfRentAmt"), "missing perfRentAmt");
+    // tax + finalize
+    assert.ok(cols.includes("taxOrderAmt"), "missing taxOrderAmt");
+    assert.ok(cols.includes("taxServAmt"), "missing taxServAmt");
+    assert.ok(cols.includes("rfcEndYn"), "missing rfcEndYn");
+    assert.ok(cols.includes("note"), "missing note");
   });
 });

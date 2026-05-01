@@ -145,3 +145,95 @@ export const salesContract = pgTable(
     ),
   }),
 );
+
+export const salesContractMonth = pgTable(
+  "sales_contract_month",
+  {
+    // PK + workspace
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+
+    // FK to sales_contract
+    contractId: uuid("contract_id").notNull().references(() => salesContract.id, { onDelete: "cascade" }),
+
+    // Legacy composite key (nullable for ETL re-import)
+    legacyContYear: varchar("legacy_cont_year", { length: 4 }),
+    legacyContNo: varchar("legacy_cont_no", { length: 30 }),
+    legacySeq: numeric("legacy_seq"),
+    legacyYm: varchar("legacy_ym", { length: 6 }),
+
+    // Billing target
+    ym: varchar("ym", { length: 6 }).notNull(),
+    billTargetYn: varchar("bill_target_yn", { length: 1 }),
+
+    // PLAN (15 cols: 2 man-month + 9 amounts + rent/sga/exp + 1 indirect_grp + 1 indirect_com)
+    planInManMonth: numeric("plan_in_man_month", { precision: 15, scale: 10 }),
+    planOutManMonth: numeric("plan_out_man_month", { precision: 15, scale: 10 }),
+    planServSaleAmt: numeric("plan_serv_sale_amt"),
+    planProdSaleAmt: numeric("plan_prod_sale_amt"),
+    planInfSaleAmt: numeric("plan_inf_sale_amt"),
+    planServInCostAmt: numeric("plan_serv_in_cost_amt"),
+    planServOutCostAmt: numeric("plan_serv_out_cost_amt"),
+    planProdCostAmt: numeric("plan_prod_cost_amt"),
+    planInCostAmt: numeric("plan_in_cost_amt"),
+    planOutCostAmt: numeric("plan_out_cost_amt"),
+    planIndirectGrpAmt: numeric("plan_indirect_grp_amt"),
+    planIndirectComAmt: numeric("plan_indirect_com_amt"),
+    planRentAmt: numeric("plan_rent_amt"),
+    planSgaAmt: numeric("plan_sga_amt"),
+    planExpAmt: numeric("plan_exp_amt"),
+
+    // VIEW (15 cols same shape)
+    viewInManMonth: numeric("view_in_man_month", { precision: 15, scale: 10 }),
+    viewOutManMonth: numeric("view_out_man_month", { precision: 15, scale: 10 }),
+    viewServSaleAmt: numeric("view_serv_sale_amt"),
+    viewProdSaleAmt: numeric("view_prod_sale_amt"),
+    viewInfSaleAmt: numeric("view_inf_sale_amt"),
+    viewServInCostAmt: numeric("view_serv_in_cost_amt"),
+    viewServOutCostAmt: numeric("view_serv_out_cost_amt"),
+    viewProdCostAmt: numeric("view_prod_cost_amt"),
+    viewInCostAmt: numeric("view_in_cost_amt"),
+    viewOutCostAmt: numeric("view_out_cost_amt"),
+    viewIndirectGrpAmt: numeric("view_indirect_grp_amt"),
+    viewIndirectComAmt: numeric("view_indirect_com_amt"),
+    viewRentAmt: numeric("view_rent_amt"),
+    viewSgaAmt: numeric("view_sga_amt"),
+    viewExpAmt: numeric("view_exp_amt"),
+
+    // PERF (15 cols same shape)
+    perfInManMonth: numeric("perf_in_man_month", { precision: 15, scale: 10 }),
+    perfOutManMonth: numeric("perf_out_man_month", { precision: 15, scale: 10 }),
+    perfServSaleAmt: numeric("perf_serv_sale_amt"),
+    perfProdSaleAmt: numeric("perf_prod_sale_amt"),
+    perfInfSaleAmt: numeric("perf_inf_sale_amt"),
+    perfServInCostAmt: numeric("perf_serv_in_cost_amt"),
+    perfServOutCostAmt: numeric("perf_serv_out_cost_amt"),
+    perfProdCostAmt: numeric("perf_prod_cost_amt"),
+    perfInCostAmt: numeric("perf_in_cost_amt"),
+    perfOutCostAmt: numeric("perf_out_cost_amt"),
+    perfIndirectGrpAmt: numeric("perf_indirect_grp_amt"),
+    perfIndirectComAmt: numeric("perf_indirect_com_amt"),
+    perfRentAmt: numeric("perf_rent_amt"),
+    perfSgaAmt: numeric("perf_sga_amt"),
+    perfExpAmt: numeric("perf_exp_amt"),
+
+    // Tax (2 cols)
+    taxOrderAmt: numeric("tax_order_amt"),
+    taxServAmt: numeric("tax_serv_amt"),
+
+    // Finalize
+    rfcEndYn: varchar("rfc_end_yn", { length: 1 }).default("N"),
+    note: text("note"),
+
+    // Audit columns
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    createdBy: uuid("created_by"),
+    updatedBy: uuid("updated_by"),
+  },
+  (t) => ({
+    wsIdx: index("sales_contract_month_ws_idx").on(t.workspaceId),
+    contractIdx: index("sales_contract_month_contract_idx").on(t.contractId),
+    contractYmIdx: index("sales_contract_month_contract_ym_idx").on(t.contractId, t.ym),
+  }),
+);
