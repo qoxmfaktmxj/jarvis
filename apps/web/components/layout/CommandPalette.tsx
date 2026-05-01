@@ -27,6 +27,11 @@ type PaletteItem = {
   label: string;
   icon: ReturnType<typeof resolveIcon>;
   section: "navigate" | "actions";
+  /**
+   * Lower-cased "haystack" of [label, ...keywords] used by fuzzy filter.
+   * Pre-joined so the filter avoids re-allocating per keystroke.
+   */
+  searchHaystack: string;
 };
 
 /**
@@ -50,12 +55,22 @@ function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): Pal
     }
     return null;
   }
+  // Build a single lower-cased haystack from label + keywords. `\u0001` is a
+  // non-printable separator that user input can't realistically contain, so
+  // it prevents accidental cross-term matches (e.g. "ab" hitting label "a"
+  // adjacent to keyword "b").
+  const keywords = Array.isArray(node.keywords) ? node.keywords : [];
+  const searchHaystack = [node.label, ...keywords]
+    .filter((s): s is string => typeof s === "string" && s.length > 0)
+    .join("\u0001")
+    .toLowerCase();
   return {
     id: node.code,
     href: node.routePath,
     label: node.label,
     icon: resolveIcon(node.icon),
     section,
+    searchHaystack,
   };
 }
 
@@ -118,7 +133,9 @@ export function CommandPalette({ menus, actions }: Props) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return items;
-    return items.filter((it) => it.label.toLowerCase().includes(q));
+    // Match against label + keywords (pre-joined haystack). Items without
+    // keywords still match by label because label is part of the haystack.
+    return items.filter((it) => it.searchHaystack.includes(q));
   }, [items, query]);
 
   useEffect(() => { setActiveIdx(0); }, [query]);

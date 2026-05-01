@@ -19,10 +19,18 @@ import { ColumnFilterRow } from "./ColumnFilterRow";
 import { RowStatusBadge } from "./RowStatusBadge";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 import { EditableTextCell } from "./cells/EditableTextCell";
+import { EditableTextAreaCell } from "./cells/EditableTextAreaCell";
 import { EditableSelectCell } from "./cells/EditableSelectCell";
 import { EditableDateCell } from "./cells/EditableDateCell";
 import { EditableBooleanCell } from "./cells/EditableBooleanCell";
-import type { ColumnDef, FilterDef, GridChanges, GridSaveResult } from "./types";
+import { EditableNumericCell } from "./cells/EditableNumericCell";
+import type {
+  ColumnDef,
+  FilterDef,
+  GridChanges,
+  GridSaveResult,
+  GroupHeader,
+} from "./types";
 
 type WithId = { id: string };
 
@@ -51,6 +59,11 @@ export type DataGridProps<T extends WithId> = {
   filterValues?: Record<string, string>;
   /** 빈 상태 메시지 */
   emptyMessage?: string;
+  /**
+   * 컬럼 헤더 위에 한 줄 더 렌더링할 그룹 헤더 행.
+   * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
+   */
+  groupHeaders?: GroupHeader[];
 };
 
 export function DataGrid<T extends WithId>({
@@ -66,7 +79,17 @@ export function DataGrid<T extends WithId>({
   onSave,
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
+  groupHeaders,
 }: DataGridProps<T>) {
+  if (groupHeaders && process.env.NODE_ENV !== "production") {
+    const sum = groupHeaders.reduce((acc, g) => acc + g.span, 0);
+    if (sum !== columns.length) {
+      console.warn(
+        `[DataGrid] groupHeaders span sum (${sum}) does not match columns.length (${columns.length}).`,
+      );
+    }
+  }
+
   const grid = useGridState<T>(initialRows);
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useTransition();
@@ -137,13 +160,37 @@ export function DataGrid<T extends WithId>({
       <div className="overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+            {groupHeaders && groupHeaders.length > 0 ? (
+              <tr
+                data-testid="group-header-row"
+                className="border-b border-slate-200 bg-slate-100"
+              >
+                <th className="w-10 px-2 py-2" aria-hidden colSpan={2} />
+                {groupHeaders.map((g, idx) => (
+                  <th
+                    key={`${g.label}-${idx}`}
+                    colSpan={g.span}
+                    className={[
+                      "px-2 py-2 text-center font-semibold",
+                      g.className ?? "",
+                    ].join(" ")}
+                  >
+                    {g.label}
+                  </th>
+                ))}
+                <th aria-hidden />
+              </tr>
+            ) : null}
             <tr className="border-b border-slate-200">
               <th className="w-10 px-2 py-2 text-left">No</th>
               <th className="w-10 px-2 py-2">삭제</th>
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-2 py-2 text-left"
+                  className={[
+                    "px-2 py-2",
+                    col.type === "numeric" ? "text-right" : "text-left",
+                  ].join(" ")}
                   style={col.width ? { width: col.width } : undefined}
                 >
                   {col.label}
@@ -201,14 +248,23 @@ export function DataGrid<T extends WithId>({
                       grid.update(r.data.id, col.key as keyof T, v as T[keyof T]);
 
                     if (col.type === "readonly" || !col.editable) {
+                      const isNumeric = col.type === "numeric";
+                      const display = col.render
+                        ? col.render(r.data)
+                        : isNumeric && typeof val === "number"
+                          ? val.toLocaleString("ko-KR")
+                          : String(val ?? "");
                       return (
                         <td
                           key={col.key}
                           data-col={col.key}
                           data-cell-value={String(val ?? "")}
-                          className="h-8 px-2 align-middle text-[13px] text-slate-900"
+                          className={[
+                            "h-8 px-2 align-middle text-[13px] text-slate-900",
+                            isNumeric ? "text-right" : "",
+                          ].join(" ")}
                         >
-                          {col.render ? col.render(r.data) : String(val ?? "")}
+                          {display}
                         </td>
                       );
                     }
@@ -223,6 +279,13 @@ export function DataGrid<T extends WithId>({
                       >
                         {col.type === "text" && (
                           <EditableTextCell
+                            value={val as string | null}
+                            onCommit={commit}
+                            required={col.required}
+                          />
+                        )}
+                        {col.type === "textarea" && (
+                          <EditableTextAreaCell
                             value={val as string | null}
                             onCommit={commit}
                             required={col.required}
@@ -246,6 +309,16 @@ export function DataGrid<T extends WithId>({
                           <EditableBooleanCell
                             value={Boolean(val)}
                             onCommit={commit}
+                          />
+                        )}
+                        {col.type === "numeric" && (
+                          <EditableNumericCell
+                            value={
+                              val === null || val === undefined || val === ""
+                                ? null
+                                : Number(val)
+                            }
+                            onChange={(next) => commit(next)}
                           />
                         )}
                       </td>

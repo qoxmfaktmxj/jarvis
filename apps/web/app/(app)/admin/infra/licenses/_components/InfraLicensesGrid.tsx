@@ -4,23 +4,23 @@
  *
  * 인프라 라이선스 (TBIZ500) 그리드.
  *
- * Task 9 additions:
- * - DataGridToolbar with Excel export button
- * - useUrlFilters for URL-persistent filter state
- * - findDuplicateKeys composite-key dedup guard (companyId + devGbCode + symd)
- * - CodeGroupPopupLauncher on devGbCode cell (B10025 code group items)
+ * Merged from P2-A (Task 9) + origin/main (PR #41 DataGrid adoption):
+ * - DataGrid baseline: <DataGrid> + groupHeaders + numeric column types (from main)
+ * - P2-A features: searchDevGbCd filter via CodeGroupPopupLauncher, useUrlFilters,
+ *   findDuplicateKeys composite-key dedup guard (companyId + devGbCode + symd),
+ *   DataGridToolbar wired to server-side exportInfraLicenses (full-data + audit log)
+ *
+ * 컬럼 구성 (총 31열) - groupHeaders span 합계와 일치해야 한다.
+ *   - 기본정보(8): companyId, symd, eymd, devGbCode, domainAddr, ipAddr, userCnt, corpCnt
+ *   - 사용자/관리(4): emp/hr/org/edu
+ *   - 급여/근태/복지(5): pap/car/cpn/tim/ben
+ *   - 포털/시스템(7): app/eis/sys/year/board/wl/pds
+ *   - 협업/보안/IDP(6): idp/abhr/work/sec/doc/dis
+ *   - 메타(1): createdAt
  */
 import { Suspense, useCallback, useMemo, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
-import { GridToolbar } from "@/components/grid/GridToolbar";
-import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
-import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
-import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
-import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
-import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
-import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
-import { EditableNumericCell } from "@/components/grid/cells/EditableNumericCell";
 import {
   CodeGroupPopupLauncher,
   type CodeGroupItem,
@@ -29,14 +29,11 @@ import { Button } from "@/components/ui/button";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
+import type { ColumnDef, GroupHeader, GridChanges, GridSaveResult } from "@/components/grid/types";
 import type { InfraLicenseRow } from "@jarvis/shared/validation/infra/license";
 import { listInfraLicenses, saveInfraLicenses } from "../actions";
 import { exportInfraLicenses } from "../export";
-import {
-  makeBlankInfraLicense,
-  useInfraLicensesGridState,
-} from "./useInfraLicensesGridState";
-import { MODULE_COLUMNS_FLAT, MODULE_GROUPS } from "./ModuleCheckboxGroup";
+import { makeBlankInfraLicense } from "./useInfraLicensesGridState";
 
 type Option = { value: string; label: string };
 
@@ -59,6 +56,55 @@ function toCodeGroupItems(options: Option[]): readonly CodeGroupItem[] {
   return options.map((o) => ({ code: o.value, label: o.label }));
 }
 
+/** 22 모듈 그룹 메타 — group 헤더 라벨 + 컬럼 라벨/key 정의 */
+const MODULE_GROUPS: {
+  label: string;
+  columns: { key: keyof InfraLicenseRow & string; label: string }[];
+}[] = [
+  {
+    label: "사용자/관리",
+    columns: [
+      { key: "empYn", label: "직원" },
+      { key: "hrYn", label: "인사" },
+      { key: "orgYn", label: "조직" },
+      { key: "eduYn", label: "교육" },
+    ],
+  },
+  {
+    label: "급여/근태/복지",
+    columns: [
+      { key: "papYn", label: "급여" },
+      { key: "carYn", label: "차량" },
+      { key: "cpnYn", label: "쿠폰" },
+      { key: "timYn", label: "근태" },
+      { key: "benYn", label: "복지" },
+    ],
+  },
+  {
+    label: "포털/시스템",
+    columns: [
+      { key: "appYn", label: "앱" },
+      { key: "eisYn", label: "EIS" },
+      { key: "sysYn", label: "시스템" },
+      { key: "yearYn", label: "연말" },
+      { key: "boardYn", label: "게시판" },
+      { key: "wlYn", label: "WF" },
+      { key: "pdsYn", label: "PDS" },
+    ],
+  },
+  {
+    label: "협업/보안/IDP",
+    columns: [
+      { key: "idpYn", label: "IDP" },
+      { key: "abhrYn", label: "ABHR" },
+      { key: "workYn", label: "워크" },
+      { key: "secYn", label: "보안" },
+      { key: "docYn", label: "문서" },
+      { key: "disYn", label: "파견" },
+    ],
+  },
+];
+
 function InfraLicensesGridInner({
   initialRows,
   initialTotal,
@@ -69,16 +115,11 @@ function InfraLicensesGridInner({
   initialSearchDevGbCd = "",
   initialQ = "",
 }: Props) {
-  const t = useTranslations("Sales");
-
-  const grid = useInfraLicensesGridState(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [saving, startSave] = useTransition();
   const [exporting, startExport] = useTransition();
-  const [, startReload] = useTransition();
-  const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
   const [dupError, setDupError] = useState<string | null>(null);
+  const [, startReload] = useTransition();
 
   // URL-persistent filter state (useSearchParams requires Suspense boundary)
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters({
@@ -101,51 +142,162 @@ function InfraLicensesGridInner({
           limit,
         });
         if (!("error" in res)) {
-          grid.reset(res.rows as InfraLicenseRow[]);
           setTotal(res.total);
           setPage(nextPage);
         }
       });
     },
-    [grid, limit],
+    [limit],
   );
 
-  const guarded = useCallback(
-    (action: () => void) => {
-      if (grid.dirtyCount > 0) setPendingNav(() => action);
-      else action();
-    },
-    [grid.dirtyCount],
+  // ---------------------------------------------------------------------------
+  // Columns + groupHeaders
+  // ---------------------------------------------------------------------------
+  const columns: ColumnDef<InfraLicenseRow>[] = useMemo(() => {
+    const moduleColumns: ColumnDef<InfraLicenseRow>[] = MODULE_GROUPS.flatMap((g) =>
+      g.columns.map(
+        (m) =>
+          ({
+            key: m.key,
+            label: m.label,
+            type: "boolean",
+            editable: true,
+            width: 56,
+          }) satisfies ColumnDef<InfraLicenseRow>,
+      ),
+    );
+
+    return [
+      {
+        key: "companyId",
+        label: "회사",
+        type: "select",
+        editable: true,
+        required: true,
+        options: companyOptions,
+        width: 220,
+      },
+      {
+        key: "symd",
+        label: "시작일",
+        type: "date",
+        editable: true,
+        required: true,
+        width: 130,
+      },
+      {
+        key: "eymd",
+        label: "종료일",
+        type: "date",
+        editable: true,
+        width: 130,
+      },
+      {
+        key: "devGbCode",
+        label: "환경",
+        type: "select",
+        editable: true,
+        required: true,
+        options: devGbOptions,
+        width: 110,
+      },
+      {
+        key: "domainAddr",
+        label: "도메인",
+        type: "text",
+        editable: true,
+        width: 220,
+      },
+      {
+        key: "ipAddr",
+        label: "IP",
+        type: "text",
+        editable: true,
+        width: 140,
+      },
+      {
+        key: "userCnt",
+        label: "사용자수",
+        type: "numeric",
+        editable: true,
+        width: 90,
+      },
+      {
+        key: "corpCnt",
+        label: "법인수",
+        type: "numeric",
+        editable: true,
+        width: 90,
+      },
+      ...moduleColumns,
+      {
+        key: "createdAt",
+        label: "등록일",
+        type: "readonly",
+        width: 110,
+        render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : ""),
+      },
+    ];
+  }, [companyOptions, devGbOptions]);
+
+  const groupHeaders: GroupHeader[] = useMemo(
+    () => [
+      { label: "기본정보", span: 8 },
+      ...MODULE_GROUPS.map((g) => ({
+        label: g.label,
+        span: g.columns.length,
+        className: "border-l border-slate-200",
+      })),
+      { label: "메타", span: 1, className: "border-l border-slate-200" },
+    ],
+    [],
   );
 
-  const handleSave = useCallback(() => {
-    // Composite-key dedup guard: companyId + devGbCode + symd
-    const activeRows = grid.rows
-      .filter((r) => r.state !== "deleted")
-      .map((r) => r.data);
-    const dups = findDuplicateKeys(activeRows, ["companyId", "devGbCode", "symd"]);
-    if (dups.length > 0) {
-      setDupError(`중복된 키가 있습니다: ${dups.join(", ")}`);
-      return;
-    }
-    setDupError(null);
+  // ---------------------------------------------------------------------------
+  // Save handler with composite-key dedup guard (companyId + devGbCode + symd)
+  // ---------------------------------------------------------------------------
+  const handleSave = useCallback(
+    async (changes: GridChanges<InfraLicenseRow>): Promise<GridSaveResult> => {
+      // Composite-key dedup guard: check new rows for duplicate companyId+devGbCode+symd
+      if (changes.creates.length > 0) {
+        const dups = findDuplicateKeys(
+          changes.creates as unknown as Record<string, unknown>[],
+          ["companyId", "devGbCode", "symd"],
+        );
+        if (dups.length > 0) {
+          setDupError(`중복된 키가 있습니다: ${dups.join(", ")}`);
+          return { ok: false, errors: [{ message: `중복된 키: ${dups.join(", ")}` }] };
+        }
+      }
+      setDupError(null);
 
-    startSave(async () => {
-      const changes = grid.toBatch();
       const result = await saveInfraLicenses({
         creates: changes.creates,
         updates: changes.updates,
         deletes: changes.deletes,
       });
       if (result.ok) {
-        await reload(page, filterValues.q, filterValues.searchDevGbCd);
-      } else {
-        const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
-        alert(msg);
+        // Re-fetch current page to refresh server-projected fields (createdAt, etc.)
+        const res = await listInfraLicenses({
+          q: filterValues.q || undefined,
+          searchDevGbCd: filterValues.searchDevGbCd || undefined,
+          page,
+          limit,
+        });
+        if (!("error" in res)) {
+          setTotal(res.total);
+        }
       }
-    });
-  }, [grid, page, filterValues, reload]);
+      return result;
+    },
+    [filterValues, page, limit],
+  );
 
+  // ---------------------------------------------------------------------------
+  // Excel export — server-side full-data export with audit log (P2-A design)
+  // NOTE: does NOT use client-side excelExport.ts (that exports only loaded rows).
+  // exportInfraLicenses server action fetches all rows + writes audit log entry.
+  // ---------------------------------------------------------------------------
   const handleExport = useCallback(() => {
     startExport(async () => {
       const result = await exportInfraLicenses({
@@ -160,65 +312,43 @@ function InfraLicensesGridInner({
     });
   }, [filterValues]);
 
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-
-  // companyId → label lookup (for display in select cell)
-  const companyLabel = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const o of companyOptions) m.set(o.value, o.label);
-    return m;
-  }, [companyOptions]);
-
+  // searchDevGbCd popup select: toggle-selects a code (same code = clear)
   const handleSearchDevGbCdSelect = useCallback(
     (item: CodeGroupItem) => {
-      // toggle: selecting the same code again clears the filter
       const newVal = item.code === filterValues.searchDevGbCd ? "" : item.code;
       setFilterValue("searchDevGbCd", newVal);
       setFilterValue("page", "1");
-      guarded(() => reload(1, filterValues.q, newVal));
+      reload(1, filterValues.q, newVal);
     },
-    [filterValues, setFilterValue, guarded, reload],
+    [filterValues, setFilterValue, reload],
   );
 
   return (
     <div className="space-y-3">
-      {/* DataGridToolbar: Excel export + GridToolbar (insert/save) unified */}
+      {/* Excel export toolbar (server-side full-data export with audit log) */}
       <DataGridToolbar
         onExport={handleExport}
-        exportLabel={t("Common.Excel.button")}
+        exportLabel="엑셀 다운로드"
         isExporting={exporting}
-      >
-        <GridToolbar
-          dirtyCount={grid.dirtyCount}
-          saving={saving}
-          onInsert={() => grid.insertBlank(makeBlankInfraLicense())}
-          onSave={handleSave}
-        />
-      </DataGridToolbar>
+      />
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
-      </div>
-
-      {/* Filter row */}
+      {/* External filter strip — q + searchDevGbCd via CodeGroupPopupLauncher */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <input
           type="text"
           placeholder="회사코드/회사명/도메인/IP"
           value={filterValues.q}
           onChange={(e) => setFilterValue("q", e.target.value)}
-          onBlur={() => guarded(() => reload(1, filterValues.q, filterValues.searchDevGbCd))}
+          onBlur={() => reload(1, filterValues.q, filterValues.searchDevGbCd)}
           onKeyDown={(e) => {
             if (e.key === "Enter")
-              guarded(() => reload(1, filterValues.q, filterValues.searchDevGbCd));
+              reload(1, filterValues.q, filterValues.searchDevGbCd);
           }}
           className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
         />
-        {/* searchDevGbCd filter — uses CodeGroupPopupLauncher with devGbOptions (B10025) */}
+        {/* searchDevGbCd filter — CodeGroupPopupLauncher (B10025 code group) */}
         <div className="flex items-center gap-1" data-testid="searchDevGbCd-filter">
-          <span className="text-[13px] text-slate-500">
-            {t("Common.Search.searchDevGbCd")}:
-          </span>
+          <span className="text-[13px] text-slate-500">환경:</span>
           <span
             className="min-w-[60px] rounded border border-slate-300 px-2 py-1 text-[13px] text-slate-700"
             data-testid="searchDevGbCd-display"
@@ -239,7 +369,7 @@ function InfraLicensesGridInner({
               onClick={() => {
                 setFilterValue("searchDevGbCd", "");
                 setFilterValue("page", "1");
-                guarded(() => reload(1, filterValues.q, ""));
+                reload(1, filterValues.q, "");
               }}
               className="px-2 text-[12px]"
             >
@@ -258,288 +388,24 @@ function InfraLicensesGridInner({
         </div>
       ) : null}
 
-      <div className="overflow-auto rounded border border-slate-200">
-        <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-            <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-1" colSpan={2}></th>
-              <th colSpan={6} className="px-2 py-1 text-left text-slate-500">
-                기본 정보
-              </th>
-              {MODULE_GROUPS.map((g) => (
-                <th
-                  key={g.label}
-                  colSpan={g.columns.length}
-                  className="border-l border-slate-200 px-2 py-1 text-center text-slate-700"
-                >
-                  {g.label}
-                </th>
-              ))}
-              <th colSpan={2} className="border-l border-slate-200 px-2 py-1 text-center text-slate-500">
-                수량
-              </th>
-              <th className="w-16 px-2 py-1"></th>
-            </tr>
-            <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">No</th>
-              <th className="w-10 px-2 py-2">삭제</th>
-              <th className="px-2 py-2 text-left" style={{ width: 220 }}>
-                회사
-              </th>
-              <th className="px-2 py-2 text-left" style={{ width: 130 }}>
-                시작일
-              </th>
-              <th className="px-2 py-2 text-left" style={{ width: 130 }}>
-                종료일
-              </th>
-              <th className="px-2 py-2 text-left" style={{ width: 110 }}>
-                환경
-              </th>
-              <th className="px-2 py-2 text-left" style={{ width: 220 }}>
-                도메인
-              </th>
-              <th className="px-2 py-2 text-left" style={{ width: 140 }}>
-                IP
-              </th>
-              {MODULE_COLUMNS_FLAT.map((c) => (
-                <th
-                  key={c.key}
-                  className="px-1 py-2 text-center"
-                  style={{ width: 56 }}
-                  data-module-key={c.key}
-                >
-                  {c.label}
-                </th>
-              ))}
-              <th className="px-2 py-2 text-right" style={{ width: 90 }}>
-                사용자수
-              </th>
-              <th className="px-2 py-2 text-right" style={{ width: 90 }}>
-                법인수
-              </th>
-              <th className="w-16 px-2 py-2 text-left">상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grid.rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={9 + MODULE_COLUMNS_FLAT.length + 2}
-                  className="px-4 py-12 text-center text-sm text-slate-500"
-                >
-                  데이터가 없습니다.
-                </td>
-              </tr>
-            ) : (
-              grid.rows.map((r, i) => {
-                const row = r.data;
-                const update = <K extends keyof InfraLicenseRow>(
-                  key: K,
-                  value: InfraLicenseRow[K],
-                ) => grid.update(row.id, key, value);
-
-                const devGbLabel =
-                  devGbOptions.find((o) => o.value === row.devGbCode)?.label ??
-                  row.devGbCode ??
-                  "";
-
-                return (
-                  <tr
-                    key={row.id}
-                    data-row-status={r.state}
-                    className={[
-                      "border-b border-slate-100 transition-colors duration-150",
-                      "hover:bg-slate-50",
-                      r.state === "deleted" ? "bg-rose-50/40 line-through opacity-70" : "",
-                      r.state === "new" ? "bg-blue-50/40" : "",
-                      r.state === "dirty" ? "bg-amber-50/40" : "",
-                    ].join(" ")}
-                  >
-                    <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
-                      {(page - 1) * limit + i + 1}
-                    </td>
-                    <td className="h-8 w-10 px-2 text-center align-middle">
-                      <input
-                        type="checkbox"
-                        checked={r.state === "deleted"}
-                        onChange={() =>
-                          r.state === "new" ? grid.removeNew(row.id) : grid.toggleDelete(row.id)
-                        }
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                      />
-                    </td>
-                    {/* 회사 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="companyId"
-                      data-cell-value={row.companyId}
-                    >
-                      <EditableSelectCell
-                        value={row.companyId || null}
-                        options={companyOptions}
-                        onCommit={(v) => update("companyId", v ?? "")}
-                        required
-                      />
-                      {!companyOptions.find((o) => o.value === row.companyId) && row.companyId && (
-                        <span className="ml-1 text-[11px] text-slate-400">
-                          {companyLabel.get(row.companyId) ?? "(deleted)"}
-                        </span>
-                      )}
-                    </td>
-                    {/* 시작일 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="symd"
-                      data-cell-value={row.symd}
-                    >
-                      <EditableDateCell
-                        value={row.symd || null}
-                        onCommit={(v) => update("symd", v ?? "")}
-                      />
-                    </td>
-                    {/* 종료일 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="eymd"
-                      data-cell-value={row.eymd ?? ""}
-                    >
-                      <EditableDateCell
-                        value={row.eymd}
-                        onCommit={(v) => update("eymd", v)}
-                      />
-                    </td>
-                    {/* 환경 — CodeGroupPopupLauncher as devGbCode cell editor (render callback pattern) */}
-                    <td
-                      className="h-8 p-1 align-middle"
-                      data-col="devGbCode"
-                      data-cell-value={row.devGbCode}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="min-w-[36px] text-[12px] text-slate-700">
-                          {devGbLabel}
-                        </span>
-                        <CodeGroupPopupLauncher
-                          triggerLabel="▾"
-                          items={devGbCodeItems}
-                          onSelect={(item) => update("devGbCode", item.code)}
-                          searchable={false}
-                        />
-                      </div>
-                    </td>
-                    {/* 도메인 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="domainAddr"
-                      data-cell-value={row.domainAddr ?? ""}
-                    >
-                      <EditableTextCell
-                        value={row.domainAddr}
-                        onCommit={(v) => update("domainAddr", v)}
-                      />
-                    </td>
-                    {/* IP */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="ipAddr"
-                      data-cell-value={row.ipAddr ?? ""}
-                    >
-                      <EditableTextCell
-                        value={row.ipAddr}
-                        onCommit={(v) => update("ipAddr", v)}
-                      />
-                    </td>
-                    {/* 22 module booleans */}
-                    {MODULE_COLUMNS_FLAT.map((m) => (
-                      <td
-                        key={m.key}
-                        className="h-8 p-0 align-middle"
-                        data-col={m.key}
-                        data-cell-value={String(row[m.key])}
-                      >
-                        <EditableBooleanCell
-                          value={Boolean(row[m.key])}
-                          onCommit={(v) => update(m.key, v)}
-                        />
-                      </td>
-                    ))}
-                    {/* 사용자수 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="userCnt"
-                      data-cell-value={row.userCnt === null ? "" : String(row.userCnt)}
-                    >
-                      <EditableNumericCell
-                        value={row.userCnt}
-                        onChange={(v) => update("userCnt", v)}
-                      />
-                    </td>
-                    {/* 법인수 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="corpCnt"
-                      data-cell-value={row.corpCnt === null ? "" : String(row.corpCnt)}
-                    >
-                      <EditableNumericCell
-                        value={row.corpCnt}
-                        onChange={(v) => update("corpCnt", v)}
-                      />
-                    </td>
-                    <td className="h-8 w-16 px-2 align-middle">
-                      <RowStatusBadge state={r.state} />
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-end gap-2 text-sm text-slate-600">
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={page <= 1 || saving}
-          onClick={() => {
-            const next = page - 1;
-            setFilterValue("page", String(next));
-            guarded(() => reload(next, filterValues.q, filterValues.searchDevGbCd));
-          }}
-        >
-          이전
-        </Button>
-        <span>
-          {page} / {totalPages}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={page >= totalPages || saving}
-          onClick={() => {
-            const next = page + 1;
-            setFilterValue("page", String(next));
-            guarded(() => reload(next, filterValues.q, filterValues.searchDevGbCd));
-          }}
-        >
-          다음
-        </Button>
-      </div>
-
-      <UnsavedChangesDialog
-        open={pendingNav !== null}
-        count={grid.dirtyCount}
-        onSaveAndContinue={async () => {
-          handleSave();
-          pendingNav?.();
-          setPendingNav(null);
+      <DataGrid<InfraLicenseRow>
+        rows={initialRows}
+        total={total}
+        columns={columns}
+        filters={[]}
+        page={page}
+        limit={limit}
+        makeBlankRow={makeBlankInfraLicense}
+        onPageChange={(nextPage) => {
+          setFilterValue("page", String(nextPage));
+          reload(nextPage, filterValues.q, filterValues.searchDevGbCd);
         }}
-        onDiscardAndContinue={() => {
-          grid.reset(grid.rows.map((r) => r.data));
-          pendingNav?.();
-          setPendingNav(null);
+        onFilterChange={() => {
+          /* external filters managed in strip above; DataGrid filters[] is empty */
         }}
-        onCancel={() => setPendingNav(null)}
+        onSave={handleSave}
+        groupHeaders={groupHeaders}
+        emptyMessage="데이터가 없습니다."
       />
     </div>
   );

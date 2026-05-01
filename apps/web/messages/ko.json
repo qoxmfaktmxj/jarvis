@@ -158,13 +158,80 @@
     },
     "Menus": {
       "title": "메뉴 설정",
-      "description": "DB 기반 메뉴 트리를 조회합니다. 메뉴 추가·수정은 packages/db/seed/menus.ts 를 통해 시드하거나 후속 편집 UI에서 처리합니다.",
-      "kindMenu": "사이드바 메뉴",
-      "kindAction": "빠른 액션 (CommandPalette)",
-      "empty": "항목 없음",
-      "childBadge": "하위",
-      "visible": "표시",
-      "hidden": "숨김"
+      "description": "사이드바·CommandPalette에 표시되는 메뉴와 권한 매핑을 관리합니다.",
+      "duplicates": "중복된 메뉴 코드가 있습니다: {codes}",
+      "saveSuccess": "저장되었습니다.",
+      "saveError": "저장 중 오류가 발생했습니다.",
+      "noDataToExport": "내려받을 데이터가 없습니다.",
+      "masterSection": {
+        "title": "메뉴 목록",
+        "filter": {
+          "code": "코드",
+          "label": "라벨",
+          "kind": "종류",
+          "kindAll": "전체",
+          "parent": "부모",
+          "parentAll": "전체",
+          "parentRoot": "(최상위)",
+          "visibleY": "표시",
+          "visibleN": "숨김",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "kind": {
+          "menu": "메뉴",
+          "action": "액션"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "코드",
+          "kind": "종류",
+          "parent": "부모",
+          "label": "라벨",
+          "icon": "아이콘",
+          "routePath": "경로",
+          "sortOrder": "순서",
+          "isVisible": "표시",
+          "badge": "배지",
+          "keywords": "검색어",
+          "description": "설명",
+          "permCnt": "권한수"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "empty": "데이터가 없습니다."
+      },
+      "detailSection": {
+        "title": "메뉴 권한",
+        "filter": {
+          "code": "권한 코드",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "status": "상태",
+          "permissionCode": "권한 코드",
+          "permissionDescription": "설명",
+          "assigned": "할당됨"
+        },
+        "toolbar": {
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "emptyMaster": "메뉴를 선택하세요.",
+        "empty": "권한이 없습니다.",
+        "assignedY": "할당",
+        "assignedN": "미할당"
+      }
     },
     "Organizations": {
       "title": "조직",
@@ -175,17 +242,84 @@
       "deleteConfirm": "이 조직을 삭제하시겠습니까?"
     },
     "Codes": {
-      "title": "코드 마스터",
-      "description": "시스템 코드 그룹과 값을 관리합니다.",
-      "loading": "로딩 중...",
-      "codeLabel": "코드",
-      "itemsLabel": "항목",
-      "save": "저장",
-      "cancel": "취소",
-      "status": {
-        "active": "활성",
-        "inactive": "비활성"
-      }
+      "title": "공통코드관리",
+      "description": "그룹코드와 세부코드를 관리합니다.",
+      "groupSection": {
+        "title": "그룹코드 관리",
+        "filter": {
+          "code": "그룹코드",
+          "codePlaceholder": "그룹코드 입력",
+          "name": "그룹코드명",
+          "namePlaceholder": "그룹코드명 입력",
+          "includesDetailCodeNm": "포함세부코드명",
+          "includesDetailCodeNmPlaceholder": "포함 세부 코드명 입력",
+          "kind": "구분",
+          "kindAll": "전체",
+          "kindUser": "사용자코드",
+          "kindSystem": "시스템코드",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "그룹코드",
+          "name": "코드명",
+          "description": "코드설명",
+          "descriptionHint": "(개행: Enter)",
+          "businessDiv": "업무구분",
+          "kind": "구분",
+          "subCnt": "세부 코드수"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        }
+      },
+      "itemSection": {
+        "title": "세부코드 관리",
+        "filter": {
+          "code": "세부코드",
+          "codePlaceholder": "세부코드 입력",
+          "name": "세부코드명",
+          "namePlaceholder": "세부코드명 입력",
+          "useYn": "사용유무",
+          "useYnAll": "전체",
+          "useY": "사용",
+          "useN": "사용안함",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "세부코드",
+          "name": "세부코드명",
+          "sortOrder": "순서",
+          "useYn": "사용유무",
+          "nameEn": "영문명",
+          "note": "비고{n}",
+          "numNote": "비고(숫자형)",
+          "sdate": "시작일",
+          "edate": "종료일"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "emptyMaster": "그룹코드를 먼저 선택하세요."
+      },
+      "duplicates": "중복된 코드가 있습니다: {codes}",
+      "saveSuccess": "저장되었습니다.",
+      "saveError": "저장 중 오류가 발생했습니다."
     },
     "Companies": {
       "title": "회사관리",
