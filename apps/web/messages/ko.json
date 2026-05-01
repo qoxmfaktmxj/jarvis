@@ -1364,7 +1364,7 @@
     },
     "Common": {
       "Excel": {
-        "button": "엑셀 다운로드",
+        "button": "다운로드",
         "downloading": "다운로드 중…",
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "다운로드를 시작했습니다."

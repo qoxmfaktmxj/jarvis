@@ -64,6 +64,14 @@ export type DataGridProps<T extends WithId> = {
    * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
    */
   groupHeaders?: GroupHeader[];
+  /** Excel 다운로드 콜백. 제공 시 GridToolbar 우측 끝에 [다운로드] 버튼이 표시된다. */
+  onExport?: () => void | Promise<void>;
+  /** 다운로드 진행 중 플래그 — 버튼 라벨 토글 + disabled 적용. */
+  isExporting?: boolean;
+  /** 다운로드 버튼 라벨 (기본 "다운로드"). i18n 적용 시 호출자가 t() 결과 전달. */
+  exportLabel?: string;
+  /** 다운로드 진행 중 라벨 (기본 "다운로드 중…"). */
+  exportingLabel?: string;
 };
 
 export function DataGrid<T extends WithId>({
@@ -80,6 +88,10 @@ export function DataGrid<T extends WithId>({
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
+  onExport,
+  isExporting,
+  exportLabel,
+  exportingLabel,
 }: DataGridProps<T>) {
   if (groupHeaders && process.env.NODE_ENV !== "production") {
     const sum = groupHeaders.reduce((acc, g) => acc + g.span, 0);
@@ -154,6 +166,10 @@ export function DataGrid<T extends WithId>({
               : undefined
           }
           onSave={handleSave}
+          onExport={onExport}
+          isExporting={isExporting}
+          exportLabel={exportLabel}
+          exportingLabel={exportingLabel}
         />
       </div>
 
