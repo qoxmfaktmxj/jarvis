@@ -50,3 +50,32 @@ test.describe("sales/customer-contacts grid", () => {
     await expect(saveBtn).toBeEnabled();
   });
 });
+
+test.describe("sales/customer-contacts — baseline assertions (Task 10)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/customer-contacts");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("Excel download button is visible", async ({ page }) => {
+    await expect(
+      page.getByRole("button", { name: /엑셀 다운로드/i }),
+    ).toBeVisible();
+  });
+
+  test("chargerNm search input value persists across reload via URL", async ({ page }) => {
+    // chargerNm input is in DataGridToolbar children (placeholder = "영업담당" from ko.json)
+    const input = page.locator('input[placeholder="영업담당"]').first();
+    await expect(input).toBeVisible();
+    await input.fill("홍길동");
+    // wait for 300ms debounce + URL update
+    await page.waitForTimeout(500);
+    // URL searchParam chargerNm should be set
+    expect(page.url()).toContain("chargerNm=");
+    // reload — SSR reads searchParams and passes as initialFilters
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(input).toHaveValue("홍길동");
+  });
+});

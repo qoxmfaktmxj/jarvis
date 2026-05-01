@@ -46,3 +46,32 @@ test.describe("admin/infra/licenses grid (smoke)", () => {
     await expect(saveBtn).toBeEnabled();
   });
 });
+
+test.describe("admin/infra/licenses — baseline assertions (Task 10)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/admin/infra/licenses");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("Excel download button is visible", async ({ page }) => {
+    await expect(
+      page.getByRole("button", { name: /엑셀 다운로드/i }),
+    ).toBeVisible();
+  });
+
+  test("q search input value persists across reload via URL", async ({ page }) => {
+    // q input is in DataGridToolbar children (placeholder = "검색어 입력" from ko.json Common.Search.placeholder)
+    const input = page.locator('input[placeholder="검색어 입력"]').first();
+    await expect(input).toBeVisible();
+    await input.fill("ABC");
+    // wait for 300ms debounce + URL update
+    await page.waitForTimeout(500);
+    // URL searchParam q should be set
+    expect(page.url()).toContain("q=");
+    // reload — SSR reads searchParams and passes as initialFilters
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(input).toHaveValue("ABC");
+  });
+});

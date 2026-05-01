@@ -46,3 +46,32 @@ test.describe("sales/mail-persons grid", () => {
     await expect(saveBtn).toBeEnabled();
   });
 });
+
+test.describe("sales/mail-persons — baseline assertions (Task 10)", () => {
+  test.beforeEach(async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/mail-persons");
+    await page.waitForLoadState("networkidle");
+  });
+
+  test("Excel download button is visible", async ({ page }) => {
+    await expect(
+      page.getByRole("button", { name: /엑셀 다운로드/i }),
+    ).toBeVisible();
+  });
+
+  test("name search input value persists across reload via URL", async ({ page }) => {
+    // name input is in DataGridToolbar children (placeholder = "이름 검색" from ko.json MailPersons.search.name)
+    const input = page.locator('input[placeholder="이름 검색"]').first();
+    await expect(input).toBeVisible();
+    await input.fill("홍길동");
+    // wait for 300ms debounce + URL update
+    await page.waitForTimeout(500);
+    // URL searchParam name should be set
+    expect(page.url()).toContain("name=");
+    // reload — SSR reads searchParams and passes as initialFilters
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(input).toHaveValue("홍길동");
+  });
+});
