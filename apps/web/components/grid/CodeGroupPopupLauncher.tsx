@@ -74,7 +74,7 @@ export function CodeGroupPopupLauncher({
             role="dialog"
             aria-modal="true"
             aria-label={triggerLabel}
-            className="max-h-[60vh] w-80 overflow-auto rounded bg-white p-3 shadow-lg"
+            className="max-h-[60vh] w-80 overflow-auto rounded bg-(--bg-page) p-3 shadow-lg"
           >
             {searchable ? (
               <input
@@ -82,12 +82,12 @@ export function CodeGroupPopupLauncher({
                 placeholder={searchPlaceholder}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="mb-2 w-full rounded border border-slate-200 px-2 py-1 text-xs"
+                className="mb-2 w-full rounded border border-(--border-default) px-2 py-1 text-xs"
               />
             ) : null}
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-(--border-default)">
               {filtered.length === 0 ? (
-                <li className="px-2 py-3 text-center text-xs text-slate-500">
+                <li className="px-2 py-3 text-center text-xs text-(--fg-muted)">
                   {emptyLabel}
                 </li>
               ) : (
@@ -104,10 +104,10 @@ export function CodeGroupPopupLauncher({
                         setQuery("");
                       }}
                     >
-                      <span className="font-medium text-slate-900">
+                      <span className="font-medium text-(--fg-primary)">
                         {it.label}
                       </span>
-                      <span className="ml-2 text-slate-500">{it.code}</span>
+                      <span className="ml-2 text-(--fg-muted)">{it.code}</span>
                     </Button>
                   </li>
                 ))

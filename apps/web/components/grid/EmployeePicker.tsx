@@ -57,13 +57,13 @@ export function EmployeePicker({ value, onSelect, search, placeholder }: Props) 
         onChange={onChange}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="h-7 w-full rounded border border-slate-300 px-2 text-[13px]"
+        className="h-7 w-full rounded border border-(--border-default) px-2 text-[13px]"
       />
       {open && hits.length > 0 ? (
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-slate-200 bg-white shadow-lg"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-(--border-default) bg-(--bg-page) shadow-lg"
         >
           {hits.map((h, i) => (
             <li
@@ -79,7 +79,7 @@ export function EmployeePicker({ value, onSelect, search, placeholder }: Props) 
               {" · "}
               <span>{h.name}</span>
               {" "}
-              <span className="text-slate-500">({h.email})</span>
+              <span className="text-(--fg-muted)">({h.email})</span>
             </li>
           ))}
         </ul>

@@ -196,12 +196,12 @@
   --font-sans:    "Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
   --font-mono:    "JetBrains Mono", var(--font-mono-stack, "SF Mono"), ui-monospace, Menlo, monospace;
 
-  /* ── Radius scale ───────────────────────────────────────────── */
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.25rem;
+  /* ── Radius scale (tightened 2026-05-02 for enterprise admin tone) ── */
+  --radius-sm: 0.125rem;  /* 2px  — formerly 6px */
+  --radius-md: 0.25rem;   /* 4px  — formerly 8px (default UI primitive) */
+  --radius-lg: 0.375rem;  /* 6px  — formerly 12px */
+  --radius-xl: 0.5rem;    /* 8px  — formerly 16px */
+  --radius-2xl: 0.75rem;  /* 12px — formerly 20px (modal/sheet) */
 
   /* ── Shadow / Elevation (crisper, tinted) ───────────────────── */
   --shadow-elev-1: 0 1px 2px 0 oklch(0.20 0.080 260 / 0.05);
@@ -230,8 +230,8 @@
     --border: var(--color-surface-200);
     --border-strong: var(--color-surface-300);
 
-    /* shadcn radius token */
-    --radius: 0.5rem;
+    /* shadcn radius token (tightened 2026-05-02 to 4px) */
+    --radius: 0.25rem;
 
     /* Layout tokens */
     --sidebar-width: 60px;        /* rail (default) */
