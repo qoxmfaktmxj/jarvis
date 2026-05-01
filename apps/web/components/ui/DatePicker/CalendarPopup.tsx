@@ -43,7 +43,6 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
 
   const firstDayOfMonth = new Date(Date.UTC(year, monthIndex, 1));
   const startWeekday = firstDayOfMonth.getUTCDay(); // 0=Sun
-  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 
   // 6 weeks * 7 days = 42 cells. Pad with prev/next month days for grid alignment.
   const cells: { iso: string; day: number; inMonth: boolean; weekday: number }[] = [];
@@ -75,8 +74,22 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
       case "ArrowRight": e.preventDefault(); moveFocus(1); break;
       case "ArrowUp":    e.preventDefault(); moveFocus(-7); break;
       case "ArrowDown":  e.preventDefault(); moveFocus(7); break;
-      case "PageUp":     e.preventDefault(); setMonthIndex((m) => (m === 0 ? 11 : m - 1)); if (monthIndex === 0) setYear((y) => y - 1); break;
-      case "PageDown":   e.preventDefault(); setMonthIndex((m) => (m === 11 ? 0 : m + 1)); if (monthIndex === 11) setYear((y) => y + 1); break;
+      case "PageUp": {
+        e.preventDefault();
+        const newMonth = monthIndex === 0 ? 11 : monthIndex - 1;
+        const newYear = monthIndex === 0 ? year - 1 : year;
+        setMonthIndex(newMonth);
+        setYear(newYear);
+        break;
+      }
+      case "PageDown": {
+        e.preventDefault();
+        const newMonth = monthIndex === 11 ? 0 : monthIndex + 1;
+        const newYear = monthIndex === 11 ? year + 1 : year;
+        setMonthIndex(newMonth);
+        setYear(newYear);
+        break;
+      }
       case "Home":       e.preventDefault(); moveFocus(-(new Date(focusISO).getUTCDay())); break;
       case "End":        e.preventDefault(); moveFocus(6 - new Date(focusISO).getUTCDay()); break;
       case "Enter": case " ":
@@ -116,48 +129,53 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
         onKeyDown={handleKey}
         className="grid grid-cols-7 gap-0.5 outline-none"
       >
-        {cells.map((c) => {
-          const holiday = holidaysByDate.get(c.iso);
-          const isWeekend0 = c.weekday === 0 || !!holiday;
-          const isWeekend6 = c.weekday === 6;
-          const isToday = c.iso === today;
-          const isSelected = c.iso === value;
-          const isFocused = c.iso === focusISO;
-          const inRange = isInRange(c.iso, min, max);
+        {Array.from({ length: 6 }, (_, weekIdx) => (
+          <div key={weekIdx} role="row" className="contents">
+            {cells.slice(weekIdx * 7, weekIdx * 7 + 7).map((c) => {
+              const holiday = holidaysByDate.get(c.iso);
+              const isHoliday = !!holiday;
+              const isSunday = c.weekday === 0;
+              const isSaturday = c.weekday === 6;
+              const isToday = c.iso === today;
+              const isSelected = c.iso === value;
+              const isFocused = c.iso === focusISO;
+              const inRange = isInRange(c.iso, min, max);
 
-          return (
-            <button
-              key={c.iso}
-              role="gridcell"
-              type="button"
-              aria-label={`${c.iso}${holiday ? ` (${holiday.name})` : ""}`}
-              aria-selected={isSelected}
-              title={holiday?.name}
-              disabled={!inRange}
-              onClick={() => onSelect(c.iso)}
-              className={cn(
-                "relative h-8 w-8 rounded text-[12px]",
-                !c.inMonth && "text-slate-300",
-                c.inMonth && isWeekend0 && "text-rose-600",
-                c.inMonth && isWeekend6 && "text-blue-600",
-                c.inMonth && !isWeekend0 && !isWeekend6 && "text-slate-900",
-                isFocused && !isSelected && "ring-2 ring-blue-300 ring-inset",
-                isSelected && "bg-blue-500 text-white",
-                isToday && !isSelected && "border border-blue-400",
-                inRange && !isSelected && "hover:bg-slate-100",
-                !inRange && "cursor-not-allowed opacity-40",
-              )}
-            >
-              {c.day}
-              {holiday && (
-                <span
-                  data-holiday-dot
-                  className="absolute right-1 top-1 h-1 w-1 rounded-full bg-rose-500"
-                />
-              )}
-            </button>
-          );
-        })}
+              return (
+                <button
+                  key={c.iso}
+                  role="gridcell"
+                  type="button"
+                  aria-label={`${c.iso}${holiday ? ` (${holiday.name})` : ""}`}
+                  aria-selected={isSelected}
+                  title={holiday?.name}
+                  disabled={!inRange}
+                  onClick={() => onSelect(c.iso)}
+                  className={cn(
+                    "relative h-8 w-8 rounded text-[12px]",
+                    !c.inMonth && "text-slate-300",
+                    c.inMonth && (isSunday || isHoliday) && "text-rose-600",
+                    c.inMonth && isSaturday && !isHoliday && "text-blue-600",
+                    c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-slate-900",
+                    isFocused && !isSelected && "ring-2 ring-blue-300 ring-inset",
+                    isSelected && "bg-blue-500 text-white",
+                    isToday && !isSelected && "border border-blue-400",
+                    inRange && !isSelected && "hover:bg-slate-100",
+                    !inRange && "cursor-not-allowed opacity-40",
+                  )}
+                >
+                  {c.day}
+                  {holiday && (
+                    <span
+                      data-holiday-dot
+                      className="absolute right-1 top-1 h-1 w-1 rounded-full bg-rose-500"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

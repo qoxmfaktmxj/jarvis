@@ -67,4 +67,18 @@ describe("CalendarPopup", () => {
     fireEvent.keyDown(screen.getByRole("grid"), { key: "Escape" });
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("Saturday holiday gets text-rose-600, not text-blue-600", async () => {
+    // 2026-05-02 is a Saturday; override the mock to make it a holiday
+    vi.spyOn(global, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({ holidays: [{ date: "2026-05-02", name: "대체공휴일", note: null }] }),
+        { status: 200 },
+      ),
+    );
+    render(<CalendarPopup value="2026-05-12" onSelect={vi.fn()} onClose={vi.fn()} />);
+    const cell = await screen.findByRole("gridcell", { name: /^2026-05-02.*대체공휴일/ });
+    expect(cell.className).toMatch(/text-rose-600/);
+    expect(cell.className).not.toMatch(/text-blue-600/);
+  });
 });
