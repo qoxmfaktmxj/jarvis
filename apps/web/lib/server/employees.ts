@@ -6,7 +6,7 @@ import { db } from "@jarvis/db/client";
 import { user } from "@jarvis/db/schema/user";
 import { getSession } from "@jarvis/auth/session";
 
-export const searchEmployeesInput = z.object({
+const searchEmployeesInput = z.object({
   q: z.string().transform((s) => s.trim()).pipe(z.string().min(2).max(50)),
   limit: z.number().int().min(1).max(50).default(10),
 });
