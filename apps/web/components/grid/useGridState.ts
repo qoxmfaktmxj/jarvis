@@ -46,6 +46,19 @@ export function useGridState<T extends { id: string }>(initial: T[]) {
         const next = { ...r.data, [key]: value };
         if (r.state === "new") return { ...r, data: next };
         const original = r.original ?? r.data;
+        // If the edit returns the row to its original value across all tracked
+        // fields, drop back to clean and discard the snapshot. Without this,
+        // A → A1 → A would remain marked "변경됨".
+        const matchesOriginal = Object.keys(next as Record<string, unknown>).every((k) =>
+          Object.is(
+            (next as Record<string, unknown>)[k],
+            (original as Record<string, unknown>)[k],
+          ),
+        );
+        if (matchesOriginal) {
+          const { original: _drop, ...rest } = r;
+          return { ...rest, data: next, state: "clean" };
+        }
         return { ...r, data: next, original, state: "dirty" };
       }),
     );
