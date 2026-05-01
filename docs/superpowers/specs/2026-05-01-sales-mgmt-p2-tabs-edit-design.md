@@ -500,9 +500,59 @@ PR-1 머지 후 main rebase → PR-4 진입. 같은 worktree 순차.
 
 ---
 
-## 14. 다음 단계
+## 14. Self-review에서 추가 발견된 항목 (post-commit 보강)
 
-1. **현재 iter:** spec 작성 + commit (이 문서)
-2. **머지 polling:** P1.5 + P2 머지 신호 받을 때까지 다음 iter들에서 git fetch + log 확인
-3. **머지 신호 후:** writing-plans로 PR-1 plan 작성 → SDD 진입 → 머지 → PR-4 plan → SDD → 머지
+### 14.1 P2 server actions 필터 누락 (PR-4 책임 추가)
+
+**문제:** P2 plan Task 5 §opportunityListInput Zod schema는 `q, bizStepCode, productTypeCode, focusOnly, page, limit`만 정의. **`customerId` / `contactId` 필터 누락**. P2 plan Task 6 영업활동도 동상 (구체적 input은 plan에서 deferred).
+
+**영향:** PR-4 sidebar [영업기회] 탭 클릭 시 `router.push("/sales/opportunities?customerId=X")`로 진입해도 grid가 필터 적용 못함 → 전체 list 표시.
+
+**대응:** PR-4 task에 추가 — P2 머지본의 `listOpportunitiesAction` / `listActivitiesAction`에 `customerId?: uuid` + `contactId?: uuid` optional 필터 추가 (Zod input + queries WHERE 절). 별 commit.
+
+**대안 검토:**
+- (A) inline list in sidebar (페이지 이동 X) — 단순하나 사용자가 전체 grid 못 봄, 사이드바 정보량↑
+- (B) PR-4가 P2 server actions 보강 (현 결정)
+- (C) P2 plan을 수정해 사용자가 머지 전 반영 — P2 SDD 영역 침범
+
+→ **결정: B** — PR-4 task 9에 명시 (plan 단계에서 task 분해).
+
+### 14.2 카운트 N+1 우려
+
+`listCustomers` 응답에 row마다 4 카운트 함께 반환 → 50 row × 4 sub-query = 200. 일반 도메인엔 무겁지 않으나 grid가 커지면 부담.
+
+**대응 옵션:**
+- (A) `LEFT JOIN LATERAL (SELECT COUNT(*) ...)` × 4 (단일 쿼리) — Drizzle SQL template으로 표현 가능
+- (B) `listCustomers` + `getCustomerCounts(ids: uuid[])` 분리 (2 round-trip, 두 번째는 batch)
+- (C) 그대로 (200 query) — 50 row는 매우 작음, 측정 후 결정
+
+→ **결정: PR-1 SDD에서 implementer가 측정 후 선택.** spec은 (C) 기본, 200ms 초과 시 (A)로 전환. plan Task 6/7에 측정 step 명시.
+
+### 14.3 user.name lookup (메모 작성자)
+
+`sales_customer_memo.created_by` (uuid) → `user.name` (text) join 필요. 카운트엔 불필요, 메모 list에만.
+
+**대응:** `listCustomerMemos` server lib에서 `LEFT JOIN user ON user.id = sales_customer_memo.created_by` (workspaceId scope). 사용자가 삭제됐으면 `name` null → UI에서 "(알 수 없음)" 표시.
+
+### 14.4 sidebar [고객사] 탭 — contact.customerId null 가드
+
+`ContactDetailSidebar` [고객사] 탭이 1:1 link하려면 `contact.customerId`가 non-null 필요. customer-contacts row의 customerId가 nullable(`uuid("customer_id")` — schema 121 line — `.notNull()` 없음)이라 null 가능.
+
+**대응:** `custCompanyCnt = contact.customerId ? 1 : 0` (이미 spec §5.1에 명시), null이면 [고객사 0] 칩 비활성 + 클릭 무동작. UI 가드 plan task에 명시.
+
+### 14.5 본인 검증 e2e
+
+`deleteCustomerMemo` / `deleteContactMemo`가 본인 작성건만 삭제하는 검증. e2e fixture에 두 user 필요:
+- `admin@jarvis.dev` (P1 fixture, 모든 권한)
+- `viewer@jarvis.dev` (P1 fixture, SALES_READ만? 또는 SALES_ALL이지만 user_id 다름)
+
+**대응:** P1 e2e fixture에 second user 있는지 plan 단계에서 확인 — 없으면 fixture 보강 task 추가. ADMIN_ALL은 본인 검증 우회 가능 (`isAdmin(session)`) — e2e에서 admin도 다른 사용자 메모 삭제 가능 검증.
+
+---
+
+## 15. 다음 단계
+
+1. **iter 1:** spec 작성 + commit ✅ (574c325)
+2. **iter 2~N:** 260초 cadence로 P1.5 + P2 머지 polling. 매 iter spec 보강 (이번 §14는 iter 2 산출물).
+3. **머지 신호 후:** `superpowers:writing-plans`로 PR-1 plan 작성 → `superpowers:subagent-driven-development` 진입 → 머지 → PR-4 plan → SDD → 머지
 4. **본 작업 완료 시:** spec + plan disposable 삭제 commit (메모리 룰)
