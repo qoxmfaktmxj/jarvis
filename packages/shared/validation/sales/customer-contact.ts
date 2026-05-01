@@ -22,6 +22,12 @@ export const listCustomerContactsInput = z.object({
   custMcd: z.string().optional(),
   custName: z.string().optional(),
   customerId: z.string().uuid().optional(),
+  // 영업담당 검색 — salesCustomerCharger.name via EXISTS subquery (chargerNm col 없음).
+  chargerNm: z.string().optional(),
+  // 휴대폰 검색 — salesCustomerContact.hpNo 직접 ilike.
+  hpNo: z.string().optional(),
+  // 이메일 검색 — salesCustomerContact.email 직접 ilike.
+  email: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });

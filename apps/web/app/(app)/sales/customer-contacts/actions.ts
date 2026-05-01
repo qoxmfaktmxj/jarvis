@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, exists, ilike, inArray } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomerContact, salesCustomer, auditLog } from "@jarvis/db/schema";
+import { salesCustomerContact, salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomerContactsInput,
@@ -52,6 +52,26 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
+  if (input.hpNo) conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));
+  if (input.email) conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
+  if (input.chargerNm) {
+    // chargerNm은 salesCustomerContact에 컬럼 없음. salesCustomerCharger(TBIZ101).name via EXISTS 서브쿼리.
+    // salesCustomerContact.customerId → salesCustomerCharger.customerId 경유.
+    conditions.push(
+      exists(
+        db
+          .select({ _: salesCustomerCharger.id })
+          .from(salesCustomerCharger)
+          .where(
+            and(
+              eq(salesCustomerCharger.workspaceId, ctx.workspaceId),
+              eq(salesCustomerCharger.customerId, salesCustomerContact.customerId),
+              ilike(salesCustomerCharger.name, `%${input.chargerNm}%`),
+            ),
+          ),
+      ),
+    );
+  }
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([

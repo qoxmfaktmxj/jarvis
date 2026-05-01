@@ -110,6 +110,28 @@
       "search": {
         "chargerNm": "Sales Rep"
       }
+    },
+    "CustomerContacts": {
+      "title": "Contact Management",
+      "description": "Manage customer-side contact persons.",
+      "columns": {
+        "custMcd": "Master Code",
+        "custName": "Name",
+        "jikweeNm": "Title",
+        "orgNm": "Department",
+        "telNo": "Phone",
+        "hpNo": "Mobile",
+        "email": "Email",
+        "statusYn": "Active",
+        "sabun": "Sales Rep (ID)",
+        "memo": "Memo",
+        "insdate": "Created At"
+      },
+      "search": {
+        "chargerNm": "Sales Rep",
+        "hpNo": "Mobile",
+        "email": "Email"
+      }
     }
   },
   "Admin": {
