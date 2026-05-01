@@ -64,6 +64,8 @@ export type DataGridProps<T extends WithId> = {
    * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
    */
   groupHeaders?: GroupHeader[];
+  /** 행 더블클릭 콜백 (master-detail 진입용) */
+  onRowDoubleClick?: (row: T) => void;
   /** Excel 다운로드 콜백. 제공 시 GridToolbar 우측 끝에 [다운로드] 버튼이 표시된다. */
   onExport?: () => void | Promise<void>;
   /** 다운로드 진행 중 플래그 — 버튼 라벨 토글 + disabled 적용. */
@@ -88,6 +90,7 @@ export function DataGrid<T extends WithId>({
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
+  onRowDoubleClick,
   onExport,
   isExporting,
   exportLabel,
@@ -234,6 +237,7 @@ export function DataGrid<T extends WithId>({
                   key={r.data.id}
                   data-row-status={r.state}
                   onClick={() => setSelected(r.data.id)}
+                  onDoubleClick={() => onRowDoubleClick?.(r.data)}
                   className={[
                     "border-b border-(--border-default) transition-colors duration-150",
                     "hover:bg-(--bg-surface)",

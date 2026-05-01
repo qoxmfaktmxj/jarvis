@@ -80,6 +80,8 @@ export async function listActivities(rawInput: z.input<typeof listActivitiesInpu
   if (input.opportunityId) conditions.push(eq(salesActivity.opportunityId, input.opportunityId));
   if (input.actTypeCode) conditions.push(eq(salesActivity.actTypeCode, input.actTypeCode));
   if (input.bizStepCode) conditions.push(eq(salesActivity.bizStepCode, input.bizStepCode));
+  if (input.customerId) conditions.push(eq(salesActivity.customerId, input.customerId));
+  if (input.contactId) conditions.push(eq(salesActivity.contactId, input.contactId));
 
   const where = and(...conditions);
 

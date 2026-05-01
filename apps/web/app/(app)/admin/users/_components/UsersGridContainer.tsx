@@ -10,10 +10,12 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { type UserRow } from "@jarvis/shared/validation/admin/user";
 import { listUsers, saveUsers } from "../actions";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
-import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import type { ColumnDef } from "@/components/grid/types";
 
 type User = UserRow;
 type Option = { value: string; label: string };
@@ -78,8 +80,15 @@ export function UsersGridContainer({
     status: initialFilters.status,
     orgId: initialFilters.orgId,
   });
+  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({
+    q: initialFilters.q,
+    status: initialFilters.status,
+    orgId: initialFilters.orgId,
+  });
   const [isExporting, setIsExporting] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -203,14 +212,6 @@ export function UsersGridContainer({
     [t, orgOptions, positionOptions, jobTitleOptions, statusOptionsTranslated],
   );
 
-  const FILTERS: FilterDef<User>[] = [
-    {
-      key: "q" as keyof User & string,
-      type: "text",
-      placeholder: t("filters.search"),
-    },
-  ];
-
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
@@ -257,20 +258,56 @@ export function UsersGridContainer({
 
   return (
     <div className="space-y-3">
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel={isExporting ? "다운로드 중..." : "엑셀 다운로드"}
-        isExporting={isExporting}
-      />
+      <GridSearchForm
+        onSearch={() => reload(1, pendingFilters)}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="조직" className="w-[140px]">
+          <select
+            value={pendingFilters.orgId ?? ""}
+            onChange={(e) => setPending("orgId", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {orgOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="상태" className="w-[140px]">
+          <select
+            value={pendingFilters.status ?? ""}
+            onChange={(e) => setPending("status", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {statusOptionsTranslated.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="검색" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.q ?? ""}
+            onChange={(e) => setPending("q", e.target.value)}
+            placeholder={t("filters.search")}
+            className="h-8"
+          />
+        </GridFilterField>
+      </GridSearchForm>
+
       <DataGrid<User>
         rows={rows}
         total={totalCount}
         columns={COLUMNS}
-        filters={FILTERS}
+        filters={[]}
         page={page}
         limit={PAGE_SIZE}
         makeBlankRow={() => makeBlankRow(workspaceId)}
         filterValues={filterValues}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => {
