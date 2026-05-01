@@ -11,7 +11,7 @@ export type RowStatus = "clean" | "new" | "dirty" | "deleted";
 export type ColumnDef<T> = {
   key: keyof T & string;
   label: string; // i18n key suffix (tNamespace + ".columns." + label)
-  type: "text" | "select" | "date" | "boolean" | "numeric" | "readonly";
+  type: "text" | "textarea" | "select" | "date" | "boolean" | "numeric" | "readonly";
   width?: number;
   editable?: boolean;
   required?: boolean;
