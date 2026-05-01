@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { aliasedTable, and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { aliasedTable, and, count, desc, eq, ilike, inArray, max } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
+import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesActivity, salesCustomer, user, auditLog } from "@jarvis/db/schema";
+import { salesActivity, salesActivityMemo, salesCustomer, user, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listActivitiesInput,
@@ -12,6 +12,12 @@ import {
   saveActivitiesInput,
   saveActivitiesOutput,
 } from "@jarvis/shared/validation/sales/activity";
+import {
+  activityMemoListInput, activityMemoListOutput,
+  activityMemoCreateInput, activityMemoCreateOutput,
+  activityMemoDeleteInput, activityMemoDeleteOutput,
+} from "@jarvis/shared/validation/sales/activity-memo";
+import { buildMemoTree } from "@/lib/queries/sales-tabs";
 import type { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -241,4 +247,122 @@ export async function saveActivities(rawInput: z.input<typeof saveActivitiesInpu
     deleted,
     errors: errors.length > 0 ? errors : undefined,
   });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Memo CRUD (Task 7)
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function listActivityMemos(rawInput: z.input<typeof activityMemoListInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [] };
+  const { activityId } = activityMemoListInput.parse(rawInput);
+
+  const rows = await db
+    .select({
+      comtSeq: salesActivityMemo.comtSeq,
+      priorComtSeq: salesActivityMemo.priorComtSeq,
+      memo: salesActivityMemo.memo,
+      authorName: user.name,
+      insdate: salesActivityMemo.insDate,
+      insUserId: salesActivityMemo.insUserId,
+    })
+    .from(salesActivityMemo)
+    .leftJoin(user, eq(user.id, salesActivityMemo.insUserId))
+    .where(and(
+      eq(salesActivityMemo.workspaceId, ctx.workspaceId),
+      eq(salesActivityMemo.activityId, activityId),
+    ))
+    .orderBy(salesActivityMemo.comtSeq);
+
+  const tree = buildMemoTree(
+    rows.map((r) => ({
+      comtSeq: r.comtSeq,
+      priorComtSeq: r.priorComtSeq,
+      memo: r.memo ?? "",
+      authorName: r.authorName,
+      insdate: r.insdate.toISOString().slice(0, 16).replace("T", " "),
+      createdBy: r.insUserId,
+    })),
+    ctx.userId ?? null,
+  );
+
+  return activityMemoListOutput.parse({ rows: tree });
+}
+
+export async function createActivityMemo(rawInput: z.input<typeof activityMemoCreateInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return activityMemoCreateOutput.parse({ ok: false, comtSeq: null });
+  const { activityId, priorComtSeq, memo } = activityMemoCreateInput.parse(rawInput);
+
+  const nextSeq = await db.transaction(async (tx) => {
+    const maxRow = await tx
+      .select({ m: max(salesActivityMemo.comtSeq) })
+      .from(salesActivityMemo)
+      .where(and(
+        eq(salesActivityMemo.workspaceId, ctx.workspaceId),
+        eq(salesActivityMemo.activityId, activityId),
+      ));
+    const seq = (maxRow[0]?.m ?? 0) + 1;
+
+    await tx.insert(salesActivityMemo).values({
+      workspaceId: ctx.workspaceId,
+      activityId,
+      comtSeq: seq,
+      priorComtSeq: priorComtSeq === 0 ? null : priorComtSeq,
+      memo,
+      insUserId: ctx.userId ?? undefined,
+    });
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.activity.memo.create",
+      resourceType: "sales_activity_memo",
+      resourceId: activityId,
+      details: { comtSeq: seq, priorComtSeq } as Record<string, unknown>,
+      success: true,
+    });
+    return seq;
+  });
+
+  return activityMemoCreateOutput.parse({ ok: true, comtSeq: nextSeq });
+}
+
+export async function deleteActivityMemo(rawInput: z.input<typeof activityMemoDeleteInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return activityMemoDeleteOutput.parse({ ok: false });
+  const { activityId, comtSeq } = activityMemoDeleteInput.parse(rawInput);
+
+  const sessionId = await resolveSessionId();
+  const session = sessionId ? await getSession(sessionId) : null;
+  const adminBypass = session ? isAdmin(session) : false;
+
+  await db.transaction(async (tx) => {
+    const conds = [
+      eq(salesActivityMemo.workspaceId, ctx.workspaceId),
+      eq(salesActivityMemo.activityId, activityId),
+      eq(salesActivityMemo.comtSeq, comtSeq),
+    ];
+    if (!adminBypass && ctx.userId) conds.push(eq(salesActivityMemo.insUserId, ctx.userId));
+    await tx.delete(salesActivityMemo).where(and(...conds));
+
+    // Cascade: delete replies of this master (priorComtSeq = comtSeq)
+    await tx.delete(salesActivityMemo).where(and(
+      eq(salesActivityMemo.workspaceId, ctx.workspaceId),
+      eq(salesActivityMemo.activityId, activityId),
+      eq(salesActivityMemo.priorComtSeq, comtSeq),
+    ));
+
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.activity.memo.delete",
+      resourceType: "sales_activity_memo",
+      resourceId: activityId,
+      details: { comtSeq } as Record<string, unknown>,
+      success: true,
+    });
+  });
+
+  return activityMemoDeleteOutput.parse({ ok: true });
 }

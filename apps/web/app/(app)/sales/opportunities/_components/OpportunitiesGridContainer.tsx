@@ -12,6 +12,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import { MemoModal } from "./MemoModal";
 
 type Opportunity = OpportunityRow;
 type Option = { value: string; label: string };
@@ -64,6 +65,7 @@ export function OpportunitiesGridContainer({
     return v;
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [, startTransition] = useTransition();
 
   const reload = useCallback(
@@ -98,6 +100,26 @@ export function OpportunitiesGridContainer({
       { key: "insUserName", label: "영업담당", type: "text", width: 60, editable: false },
       { key: "bizOpSourceCode", label: "영업기회출처", type: "select", width: 200, editable: true, options: codeOptions.bizOpSource },
       { key: "insDate", label: "등록일자", type: "date", width: 100, editable: false },
+      {
+        key: "id" as keyof Opportunity & string,
+        label: "메모",
+        type: "readonly",
+        width: 70,
+        render: (row) =>
+          row.id && row.bizOpNm ? (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setMemoTarget({ id: row.id, name: row.bizOpNm });
+              }}
+              className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-200"
+            >
+              메모
+            </button>
+          ) : (
+            <span className="text-slate-300">—</span>
+          ),
+      },
     ],
     [codeOptions.productType, codeOptions.bizStep, codeOptions.bizOpSource],
   );
@@ -111,7 +133,7 @@ export function OpportunitiesGridContainer({
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
-      const exportColumns = COLUMNS.map((c) => ({ key: c.key as string, header: c.label }));
+      const exportColumns = COLUMNS.filter((c) => c.label !== "메모").map((c) => ({ key: c.key as string, header: c.label }));
       const productTypeMap = new Map(codeOptions.productType.map((o) => [o.value, o.label]));
       const bizStepMap = new Map(codeOptions.bizStep.map((o) => [o.value, o.label]));
       const bizOpSourceMap = new Map(codeOptions.bizOpSource.map((o) => [o.value, o.label]));
@@ -172,6 +194,11 @@ export function OpportunitiesGridContainer({
                 : [];
           return { ok: false, errors: errs };
         }}
+      />
+      <MemoModal
+        opportunityId={memoTarget?.id ?? null}
+        opportunityName={memoTarget?.name}
+        onClose={() => setMemoTarget(null)}
       />
     </div>
   );
