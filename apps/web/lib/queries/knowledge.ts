@@ -49,14 +49,22 @@ function canAccessKnowledgePage(
 }
 
 function buildReadableSensitivityCondition(permissions: string[]) {
-  if (canAccessKnowledgePage(permissions, 'RESTRICTED')) {
+  const canRestricted = canAccessKnowledgePage(permissions, 'RESTRICTED');
+  const canSecret = canAccessKnowledgePage(permissions, 'SECRET_REF_ONLY');
+
+  if (canRestricted && canSecret) {
+    // No sensitivity filter needed.
     return null;
   }
 
-  return or(
+  const allowed = [
     eq(knowledgePage.sensitivity, 'PUBLIC'),
     eq(knowledgePage.sensitivity, 'INTERNAL'),
-  );
+  ];
+  if (canRestricted) allowed.push(eq(knowledgePage.sensitivity, 'RESTRICTED'));
+  if (canSecret) allowed.push(eq(knowledgePage.sensitivity, 'SECRET_REF_ONLY'));
+
+  return or(...allowed);
 }
 
 export async function getKnowledgePages(

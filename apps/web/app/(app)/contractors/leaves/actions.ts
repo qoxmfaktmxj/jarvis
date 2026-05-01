@@ -22,7 +22,7 @@ import {
 
 export async function saveLeaveBatch(
   input: unknown
-): Promise<{ inserted: string[]; cancelled: string[] }> {
+): Promise<{ inserted: string[]; cancelled: string[]; cancelFailed: string[] }> {
   const parsed = leaveBatchInputSchema.parse(input);
   validateBatchBusinessRules(parsed);
 
@@ -49,6 +49,7 @@ export async function saveLeaveBatch(
 
   const inserted: string[] = [];
   const cancelled: string[] = [];
+  const cancelFailed: string[] = [];
 
   await db.transaction(async (tx) => {
     for (const ins of parsed.inserts) {
@@ -79,18 +80,28 @@ export async function saveLeaveBatch(
     }
 
     if (parsed.cancels.length > 0) {
-      await tx
+      // Bind to parsed.contractId so a caller cannot cancel another contractor's leave.
+      const updated = await tx
         .update(leaveRequest)
         .set({ status: "cancelled", cancelledAt: new Date(), updatedAt: new Date() })
         .where(
           and(
             inArray(leaveRequest.id, parsed.cancels),
             eq(leaveRequest.workspaceId, session.workspaceId),
+            eq(leaveRequest.contractId, parsed.contractId),
             eq(leaveRequest.status, "approved")
           )
-        );
+        )
+        .returning({ id: leaveRequest.id });
+
+      const updatedIds = new Set(updated.map((r) => r.id));
 
       for (const id of parsed.cancels) {
+        if (!updatedIds.has(id)) {
+          cancelFailed.push(id);
+          console.warn(`LEAVE_CANCEL: id ${id} not updated (wrong contract, status, or workspace)`);
+          continue;
+        }
         await tx.insert(auditLog).values({
           id: randomUUID(),
           workspaceId: session.workspaceId,
@@ -98,12 +109,12 @@ export async function saveLeaveBatch(
           action: "LEAVE_CANCEL",
           resourceType: "leave_request",
           resourceId: id,
-          details: {}
+          details: { contractId: parsed.contractId }
         });
         cancelled.push(id);
       }
     }
   });
 
-  return { inserted, cancelled };
+  return { inserted, cancelled, cancelFailed };
 }
