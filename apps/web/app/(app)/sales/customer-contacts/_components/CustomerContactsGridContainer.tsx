@@ -3,6 +3,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -245,28 +246,28 @@ export function CustomerContactsGridContainer({
           />
           <label className="flex items-center gap-1 text-sm text-slate-600">
             {t("Search.searchYmdFrom")}
-            <input
-              type="date"
-              value={urlFilters.searchYmdFrom}
-              onChange={(e) => {
-                setUrlFilter("searchYmdFrom", e.target.value);
+            <DatePicker
+              value={urlFilters.searchYmdFrom || null}
+              onChange={(v) => {
+                const next = v ?? "";
+                setUrlFilter("searchYmdFrom", next);
                 setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, searchYmdFrom: e.target.value, page: "1" });
+                reload(1, { ...urlFilters, searchYmdFrom: next, page: "1" });
               }}
-              className="h-8 rounded border border-slate-300 px-2 text-sm"
+              ariaLabel={t("Search.searchYmdFrom")}
             />
           </label>
           <label className="flex items-center gap-1 text-sm text-slate-600">
             {t("Search.searchYmdTo")}
-            <input
-              type="date"
-              value={urlFilters.searchYmdTo}
-              onChange={(e) => {
-                setUrlFilter("searchYmdTo", e.target.value);
+            <DatePicker
+              value={urlFilters.searchYmdTo || null}
+              onChange={(v) => {
+                const next = v ?? "";
+                setUrlFilter("searchYmdTo", next);
                 setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, searchYmdTo: e.target.value, page: "1" });
+                reload(1, { ...urlFilters, searchYmdTo: next, page: "1" });
               }}
-              className="h-8 rounded border border-slate-300 px-2 text-sm"
+              ariaLabel={t("Search.searchYmdTo")}
             />
           </label>
         </div>

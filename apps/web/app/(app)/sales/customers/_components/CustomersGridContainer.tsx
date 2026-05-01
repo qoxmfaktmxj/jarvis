@@ -3,6 +3,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -249,30 +250,26 @@ export function CustomersGridContainer({
       {/* searchYmdFrom ~ searchYmdTo */}
       <div className="flex items-center gap-1">
         <span className="text-xs text-slate-500">{tCommon("Search.searchYmd")}</span>
-        <input
-          type="date"
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          placeholder={tCommon("Search.searchYmdFrom")}
-          value={values.searchYmdFrom}
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue("searchYmdFrom", v);
+        <DatePicker
+          value={values.searchYmdFrom || null}
+          onChange={(v) => {
+            const next = v ?? "";
+            setValue("searchYmdFrom", next);
             setValue("page", "1");
-            reload(1, { ...values, searchYmdFrom: v });
+            reload(1, { ...values, searchYmdFrom: next });
           }}
+          ariaLabel={tCommon("Search.searchYmdFrom")}
         />
         <span className="text-xs text-slate-400">~</span>
-        <input
-          type="date"
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          placeholder={tCommon("Search.searchYmdTo")}
-          value={values.searchYmdTo}
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue("searchYmdTo", v);
+        <DatePicker
+          value={values.searchYmdTo || null}
+          onChange={(v) => {
+            const next = v ?? "";
+            setValue("searchYmdTo", next);
             setValue("page", "1");
-            reload(1, { ...values, searchYmdTo: v });
+            reload(1, { ...values, searchYmdTo: next });
           }}
+          ariaLabel={tCommon("Search.searchYmdTo")}
         />
       </div>
     </div>

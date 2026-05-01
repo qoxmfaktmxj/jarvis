@@ -30,6 +30,7 @@ import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -243,15 +244,14 @@ export function ProductCostMappingGrid({
         {/* searchYmd — new in P2-A */}
         <label className="flex items-center gap-1 text-[13px] text-slate-600">
           <span>{t("Common.Search.searchYmd")}</span>
-          <input
-            type="date"
-            aria-label={t("Common.Search.searchYmd")}
-            value={filterValues.searchYmd}
-            onChange={(e) => {
-              setFilterValue("searchYmd", e.target.value);
-              guarded(() => reload(1, { ...filterValues, searchYmd: e.target.value }));
+          <DatePicker
+            value={filterValues.searchYmd || null}
+            onChange={(v) => {
+              const next = v ?? "";
+              setFilterValue("searchYmd", next);
+              guarded(() => reload(1, { ...filterValues, searchYmd: next }));
             }}
-            className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+            ariaLabel={t("Common.Search.searchYmd")}
           />
         </label>
         <select

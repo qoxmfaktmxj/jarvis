@@ -74,8 +74,8 @@ test.describe("sales/customers grid", () => {
   });
 
   test("searchYmdFrom date input is present", async ({ page }) => {
-    // Date range: two date inputs rendered inside the toolbar
-    const dateInputs = page.locator('input[type="date"]');
+    // Date range: DatePicker renders <input type="text" placeholder="yyyy-mm-dd">
+    const dateInputs = page.locator('input[placeholder="yyyy-mm-dd"]');
     await expect(dateInputs.first()).toBeVisible();
   });
 
