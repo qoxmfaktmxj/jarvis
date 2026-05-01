@@ -31,12 +31,33 @@ describe("knowledge sensitivity access", () => {
     expect(canAccessKnowledgeSensitivity(session, "SECRET_REF_ONLY")).toBe(false);
   });
 
-  it("allows editors and reviewers to restricted knowledge", () => {
+  it("allows editors and reviewers to RESTRICTED knowledge", () => {
     const editor = makeSession([PERMISSIONS.KNOWLEDGE_UPDATE], ["DEVELOPER"]);
     const reviewer = makeSession([PERMISSIONS.KNOWLEDGE_REVIEW], ["MANAGER"]);
 
     expect(canAccessKnowledgeSensitivity(editor, "RESTRICTED")).toBe(true);
-    expect(canAccessKnowledgeSensitivity(reviewer, "SECRET_REF_ONLY")).toBe(true);
+    expect(canAccessKnowledgeSensitivity(reviewer, "RESTRICTED")).toBe(true);
+  });
+
+  it("blocks editors and reviewers from SECRET_REF_ONLY without PROJECT_ACCESS_SECRET", () => {
+    // Tightened in PR #51: SECRET_REF_ONLY now gates on PROJECT_ACCESS_SECRET / ADMIN_ALL
+    // (matches wiki 4-tier rule). KNOWLEDGE_UPDATE/REVIEW alone is no longer enough.
+    const editor = makeSession([PERMISSIONS.KNOWLEDGE_UPDATE], ["DEVELOPER"]);
+    const reviewer = makeSession([PERMISSIONS.KNOWLEDGE_REVIEW], ["MANAGER"]);
+
+    expect(canAccessKnowledgeSensitivity(editor, "SECRET_REF_ONLY")).toBe(false);
+    expect(canAccessKnowledgeSensitivity(reviewer, "SECRET_REF_ONLY")).toBe(false);
+  });
+
+  it("allows PROJECT_ACCESS_SECRET holders to read SECRET_REF_ONLY", () => {
+    const secretReader = makeSession(
+      [PERMISSIONS.PROJECT_ACCESS_SECRET, PERMISSIONS.KNOWLEDGE_READ],
+      ["MANAGER"],
+    );
+    const admin = makeSession([PERMISSIONS.ADMIN_ALL], ["ADMIN"]);
+
+    expect(canAccessKnowledgeSensitivity(secretReader, "SECRET_REF_ONLY")).toBe(true);
+    expect(canAccessKnowledgeSensitivity(admin, "SECRET_REF_ONLY")).toBe(true);
   });
 
   it("builds a strict SQL filter for knowledge read-only sessions", () => {

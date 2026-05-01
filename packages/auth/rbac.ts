@@ -8,9 +8,18 @@ const PRIVILEGED_KNOWLEDGE_PERMISSIONS = [
   PERMISSIONS.ADMIN_ALL
 ] as const;
 
+/** RESTRICTED sensitivity gate: KNOWLEDGE_UPDATE | KNOWLEDGE_REVIEW | ADMIN_ALL */
 const KNOWLEDGE_RESTRICTED_SENSITIVITIES = [
-  "RESTRICTED",
-  "SECRET_REF_ONLY"
+  "RESTRICTED"
+] as const;
+
+/**
+ * SECRET_REF_ONLY sensitivity gate: PROJECT_ACCESS_SECRET | ADMIN_ALL
+ * Matches the wiki 4-tier rule in {@link resolveAllowedWikiSensitivities}.
+ */
+const SECRET_REF_ONLY_PERMISSIONS = [
+  PERMISSIONS.PROJECT_ACCESS_SECRET,
+  PERMISSIONS.ADMIN_ALL
 ] as const;
 
 const WIKI_SENSITIVITIES = [
@@ -78,22 +87,32 @@ export function canAccessKnowledgeSensitivityByPermissions(
   permissions: string[],
   sensitivity: string | null | undefined
 ): boolean {
-  if (
-    !sensitivity ||
-    !KNOWLEDGE_RESTRICTED_SENSITIVITIES.includes(
-      sensitivity as (typeof KNOWLEDGE_RESTRICTED_SENSITIVITIES)[number]
-    )
-  ) {
-    return (
-      permissions.includes(PERMISSIONS.KNOWLEDGE_READ) ||
-      permissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE) ||
-      permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW) ||
-      permissions.includes(PERMISSIONS.ADMIN_ALL)
+  // SECRET_REF_ONLY: tighter gate — PROJECT_ACCESS_SECRET or ADMIN_ALL only.
+  // Matches wiki 4-tier rule: resolveAllowedWikiSensitivities PROJECT_ACCESS_SECRET gate.
+  if (sensitivity === "SECRET_REF_ONLY") {
+    return SECRET_REF_ONLY_PERMISSIONS.some((permission) =>
+      permissions.includes(permission)
     );
   }
 
-  return PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
-    permissions.includes(permission)
+  // RESTRICTED: privileged knowledge gate — KNOWLEDGE_UPDATE | KNOWLEDGE_REVIEW | ADMIN_ALL.
+  if (
+    sensitivity &&
+    KNOWLEDGE_RESTRICTED_SENSITIVITIES.includes(
+      sensitivity as (typeof KNOWLEDGE_RESTRICTED_SENSITIVITIES)[number]
+    )
+  ) {
+    return PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
+      permissions.includes(permission)
+    );
+  }
+
+  // PUBLIC / INTERNAL (or null/undefined treated as INTERNAL): any knowledge reader.
+  return (
+    permissions.includes(PERMISSIONS.KNOWLEDGE_READ) ||
+    permissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE) ||
+    permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW) ||
+    permissions.includes(PERMISSIONS.ADMIN_ALL)
   );
 }
 
@@ -104,12 +123,31 @@ export function canAccessKnowledgeSensitivityByPermissions(
 export function buildLegacyKnowledgeSensitivitySqlFilter(
   permissions: string[]
 ): string {
-  if (
-    PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
-      permissions.includes(permission)
-    )
-  ) {
+  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
+
+  // ADMIN_ALL sees everything.
+  if (hasAdminAll) {
     return "";
+  }
+
+  const hasPrivileged = PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
+    permissions.includes(permission)
+  );
+  const hasSecretAccess = permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET);
+
+  if (hasPrivileged && hasSecretAccess) {
+    // Can read RESTRICTED and SECRET_REF_ONLY.
+    return "";
+  }
+
+  if (hasPrivileged) {
+    // Can read RESTRICTED but NOT SECRET_REF_ONLY.
+    return "AND sensitivity NOT IN ('SECRET_REF_ONLY')";
+  }
+
+  if (hasSecretAccess && permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
+    // Has KNOWLEDGE_READ + PROJECT_ACCESS_SECRET: can read SECRET_REF_ONLY but not RESTRICTED.
+    return "AND sensitivity NOT IN ('RESTRICTED')";
   }
 
   if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
@@ -129,12 +167,31 @@ export function buildLegacyKnowledgeSensitivitySqlFilter(
 export function buildLegacyKnowledgeSensitivitySqlFragment(
   permissions: string[]
 ): SQL {
-  if (
-    PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
-      permissions.includes(permission)
-    )
-  ) {
+  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
+
+  // ADMIN_ALL sees everything.
+  if (hasAdminAll) {
     return sql``;
+  }
+
+  const hasPrivileged = PRIVILEGED_KNOWLEDGE_PERMISSIONS.some((permission) =>
+    permissions.includes(permission)
+  );
+  const hasSecretAccess = permissions.includes(PERMISSIONS.PROJECT_ACCESS_SECRET);
+
+  if (hasPrivileged && hasSecretAccess) {
+    // Can read RESTRICTED and SECRET_REF_ONLY.
+    return sql``;
+  }
+
+  if (hasPrivileged) {
+    // Can read RESTRICTED but NOT SECRET_REF_ONLY.
+    return sql.raw("AND sensitivity NOT IN ('SECRET_REF_ONLY')");
+  }
+
+  if (hasSecretAccess && permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
+    // Has KNOWLEDGE_READ + PROJECT_ACCESS_SECRET: can read SECRET_REF_ONLY but not RESTRICTED.
+    return sql.raw("AND sensitivity NOT IN ('RESTRICTED')");
   }
 
   if (permissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
