@@ -1148,6 +1148,9 @@
       "name": "이름",
       "note": "비고"
     },
+    "filters": {
+      "year": "연도"
+    },
     "actions": {
       "add": "+ 공휴일 추가",
       "edit": "수정",
