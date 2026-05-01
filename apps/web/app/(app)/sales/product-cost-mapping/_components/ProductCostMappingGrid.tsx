@@ -5,6 +5,7 @@
  * 영업 제품군 × 코스트 매핑 그리드 (sales_product_type_cost / TBIZ024 row mapping).
  *
  * Phase-Sales P1.5 Task 6 (2026-05-01).
+ * Baseline applied: Task 9 (2026-05-01).
  *
  * Task 5 (admin/infra/licenses)와 동일한 커스텀 테이블 패턴: 공유 cell/hook
  * (useGridState · EditableTextCell · EditableSelectCell · EditableDateCell ·
@@ -26,7 +27,9 @@
  * Note: ko.json `Sales.ProductCostMapping.*` 키는 Task 10에서 도입. P1.5 동안은
  * inline Korean placeholder 문자열 (다른 sales/* 라우트도 동일).
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
@@ -35,6 +38,10 @@ import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
 import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { Button } from "@/components/ui/button";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { sanitizeCellValue } from "@/lib/utils/sanitize-csv";
+import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import type { ProductCostMappingRow } from "@jarvis/shared/validation/sales/product-type-cost";
 import { listProductCostMapping, saveProductCostMapping } from "../actions";
 import {
@@ -44,6 +51,12 @@ import {
 
 type Option = { value: string; label: string };
 
+type FilterDefaults = {
+  q: string;
+  productTypeId: string;
+  costId: string;
+};
+
 type Props = {
   initialRows: ProductCostMappingRow[];
   initialTotal: number;
@@ -51,7 +64,18 @@ type Props = {
   limit: number;
   productTypeOptions: Option[];
   costOptions: Option[];
+  initialFilters?: Partial<FilterDefaults>;
 };
+
+const EXPORT_COLUMNS = [
+  { key: "productTypeNm", header: "제품군명" },
+  { key: "costNm", header: "코스트명" },
+  { key: "sdate", header: "시작일" },
+  { key: "edate", header: "종료일" },
+  { key: "bizYn", header: "사용중" },
+  { key: "note", header: "비고" },
+  { key: "createdAt", header: "등록일자" },
+] as const;
 
 export function ProductCostMappingGrid({
   initialRows,
@@ -60,27 +84,55 @@ export function ProductCostMappingGrid({
   limit,
   productTypeOptions,
   costOptions,
+  initialFilters,
 }: Props) {
+  const tSales = useTranslations("Sales");
   const grid = useProductCostMappingGridState(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<{
-    q: string;
-    productTypeId: string;
-    costId: string;
-  }>({
-    q: "",
-    productTypeId: "",
-    costId: "",
-  });
   const [saving, startSave] = useTransition();
   const [, startReload] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // URL-synced filter state (Task 4 I-1 pattern).
+  // useMemo for stable FILTER_DEFAULTS reference — prevents useUrlFilters re-render loop.
+  const FILTER_DEFAULTS: FilterDefaults = useMemo(
+    () => ({
+      q: initialFilters?.q ?? "",
+      productTypeId: initialFilters?.productTypeId ?? "",
+      costId: initialFilters?.costId ?? "",
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [initialFilters?.q, initialFilters?.productTypeId, initialFilters?.costId],
+  );
+
+  const { values, setValue } = useUrlFilters<FilterDefaults>({ defaults: FILTER_DEFAULTS });
+
+  // Local state for q input: avoids cursor-jump race between URL-derived value and live input.
+  // Debounced 300ms effect commits to URL — mirrors Task 4 fix chargerNm pattern.
+  const [qInput, setQInput] = useState(values.q);
+
+  // Reverse sync: URL → local (browser back/forward navigation).
+  useEffect(() => {
+    setQInput(values.q);
+  }, [values.q]);
+
+  // Local → debounce → URL + reload.
+  useEffect(() => {
+    if (qInput === values.q) return;
+    const t = setTimeout(() => {
+      setValue("q", qInput);
+      reload(1, { ...values, q: qInput });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qInput]);
 
   const reload = useCallback(
     (
       nextPage: number,
-      nextFilters: { q: string; productTypeId: string; costId: string },
+      nextFilters: FilterDefaults,
     ) => {
       startReload(async () => {
         const res = await listProductCostMapping({
@@ -94,10 +146,10 @@ export function ProductCostMappingGrid({
           grid.reset(res.rows as ProductCostMappingRow[]);
           setTotal(res.total);
           setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [grid, limit],
   );
 
@@ -109,22 +161,57 @@ export function ProductCostMappingGrid({
     [grid.dirtyCount],
   );
 
+  // xlsx export: visible columns only, sanitizeCellValue for OWASP CSV-injection guard.
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      await exportToExcel({
+        filename: `product-cost-mapping_${date}`,
+        sheetName: "제품-코스트 매핑",
+        columns: EXPORT_COLUMNS as unknown as { key: string; header: string }[],
+        rows: grid.rows.filter((r) => r.state !== "deleted").map((r) => r.data),
+        cellFormatter: (row, col) =>
+          sanitizeCellValue((row as Record<string, unknown>)[col.key]),
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [grid.rows]);
+
   const handleSave = useCallback(() => {
     startSave(async () => {
       const changes = grid.toBatch();
+
+      // dupChk: composite key (productTypeId × costId × sdate) across all
+      // non-deleted rows (includes dirty — patch may change PK fields).
+      // Mirrors DB unique index (workspace_id, product_type_id, cost_id, sdate).
+      const allRowsForDupCheck = grid.rows
+        .filter((r) => r.state !== "deleted")
+        .map((r) => ({
+          productTypeId: r.data.productTypeId,
+          costId: r.data.costId,
+          sdate: r.data.sdate,
+        }));
+      const dups = findDuplicateKeys(allRowsForDupCheck, ["productTypeId", "costId", "sdate"]);
+      if (dups.length > 0) {
+        alert(tSales("Common.DupCheck.message", { count: dups.length }));
+        return;
+      }
+
       const result = await saveProductCostMapping({
         creates: changes.creates,
         updates: changes.updates,
         deletes: changes.deletes,
       });
       if (result.ok) {
-        await reload(page, filterValues);
+        await reload(page, values);
       } else {
         const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
         alert(msg);
       }
     });
-  }, [grid, page, filterValues, reload]);
+  }, [grid, page, values, reload, tSales]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -143,39 +230,30 @@ export function ProductCostMappingGrid({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
-        <GridToolbar
-          dirtyCount={grid.dirtyCount}
-          saving={saving}
-          onInsert={() => grid.insertBlank(makeBlankProductCostMapping())}
-          onSave={handleSave}
-        />
-      </div>
-
-      {/* Filter row */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      {/* DataGridToolbar: unified strip — q input + select filters + GridToolbar controls + export.
+          Task 4 fix pattern (14d6229): place extra controls in children slot. */}
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel={tSales("Common.Excel.label")}
+        isExporting={isExporting}
+      >
+        {/* q free-text: 300ms debounce via local state */}
         <input
           type="text"
-          placeholder="제품/코스트/비고"
-          value={filterValues.q}
-          onChange={(e) => {
-            const next = { ...filterValues, q: e.target.value };
-            setFilterValues(next);
-          }}
-          onBlur={() => guarded(() => reload(1, filterValues))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") guarded(() => reload(1, filterValues));
-          }}
-          className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder={tSales("Common.Search.placeholder")}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          className="h-7 w-48 rounded border border-slate-200 px-2 text-xs outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {/* productTypeId select: immediate reload */}
         <select
-          value={filterValues.productTypeId}
+          value={values.productTypeId}
           onChange={(e) => {
-            const next = { ...filterValues, productTypeId: e.target.value };
-            guarded(() => reload(1, next));
+            const next = e.target.value;
+            setValue("productTypeId", next);
+            guarded(() => reload(1, { ...values, productTypeId: next }));
           }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-7 rounded border border-slate-200 px-2 text-xs outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="제품군 필터"
         >
           <option value="">제품군 (전체)</option>
@@ -185,13 +263,15 @@ export function ProductCostMappingGrid({
             </option>
           ))}
         </select>
+        {/* costId select: immediate reload */}
         <select
-          value={filterValues.costId}
+          value={values.costId}
           onChange={(e) => {
-            const next = { ...filterValues, costId: e.target.value };
-            guarded(() => reload(1, next));
+            const next = e.target.value;
+            setValue("costId", next);
+            guarded(() => reload(1, { ...values, costId: next }));
           }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-7 rounded border border-slate-200 px-2 text-xs outline-none focus:ring-2 focus:ring-blue-500"
           aria-label="코스트 필터"
         >
           <option value="">코스트 (전체)</option>
@@ -201,6 +281,17 @@ export function ProductCostMappingGrid({
             </option>
           ))}
         </select>
+        {/* GridToolbar: insert + save controls inside the unified strip */}
+        <GridToolbar
+          dirtyCount={grid.dirtyCount}
+          saving={saving}
+          onInsert={() => grid.insertBlank(makeBlankProductCostMapping())}
+          onSave={handleSave}
+        />
+      </DataGridToolbar>
+
+      <div className="flex items-center">
+        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
       </div>
 
       <div className="overflow-auto rounded border border-slate-200">
@@ -379,7 +470,7 @@ export function ProductCostMappingGrid({
           size="sm"
           variant="outline"
           disabled={page <= 1 || saving}
-          onClick={() => guarded(() => reload(page - 1, filterValues))}
+          onClick={() => guarded(() => reload(page - 1, values))}
         >
           이전
         </Button>
@@ -390,7 +481,7 @@ export function ProductCostMappingGrid({
           size="sm"
           variant="outline"
           disabled={page >= totalPages || saving}
-          onClick={() => guarded(() => reload(page + 1, filterValues))}
+          onClick={() => guarded(() => reload(page + 1, values))}
         >
           다음
         </Button>

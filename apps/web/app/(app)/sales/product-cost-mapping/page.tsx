@@ -3,6 +3,7 @@
  *
  * 영업 제품군 × 코스트 매핑 (sales_product_type_cost / TBIZ024 row mapping).
  * Phase-Sales P1.5 Task 6 (2026-05-01).
+ * Baseline applied: Task 9 (2026-05-01) — searchParams → initialFilters SSR.
  *
  * 권한: SALES_ALL — 다른 sales/* 라우트와 동일.
  *
@@ -21,7 +22,11 @@ import {
 import { listProductCostMapping } from "./actions";
 import { ProductCostMappingGrid } from "./_components/ProductCostMappingGrid";
 
-export default async function SalesProductCostMappingPage() {
+export default async function SalesProductCostMappingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -30,8 +35,17 @@ export default async function SalesProductCostMappingPage() {
   }
 
   const limit = 50;
+  const sp = searchParams ? await searchParams : {};
+  const filters = {
+    q: typeof sp.q === "string" ? sp.q : undefined,
+    productTypeId: typeof sp.productTypeId === "string" ? sp.productTypeId : undefined,
+    costId: typeof sp.costId === "string" ? sp.costId : undefined,
+    page: 1,
+    limit,
+  };
+
   const [listResult, productTypeOptions, costOptions] = await Promise.all([
-    listProductCostMapping({ page: 1, limit }),
+    listProductCostMapping(filters),
     listProductTypeOptions(session.workspaceId),
     listCostMasterOptions(session.workspaceId),
   ]);
@@ -53,6 +67,11 @@ export default async function SalesProductCostMappingPage() {
         limit={limit}
         productTypeOptions={productTypeOptions}
         costOptions={costOptions}
+        initialFilters={{
+          q: filters.q ?? "",
+          productTypeId: filters.productTypeId ?? "",
+          costId: filters.costId ?? "",
+        }}
       />
     </div>
   );
