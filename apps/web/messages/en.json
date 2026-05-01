@@ -130,7 +130,8 @@
       "search": {
         "chargerNm": "Sales Rep",
         "hpNo": "Mobile",
-        "email": "Email"
+        "email": "Email",
+        "employeeAddPlaceholder": "Add by ID/name/email"
       }
     }
   },

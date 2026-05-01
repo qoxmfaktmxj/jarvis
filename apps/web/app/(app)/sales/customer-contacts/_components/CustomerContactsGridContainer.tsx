@@ -25,28 +25,14 @@ type Props = {
   initialFilters?: Partial<FilterDefaults>;
 };
 
-function makeBlankRow(): CustomerContactRow {
-  // Legacy ibSheet bizActCustomerMgr.jsp:207~220 marks `custMcd` Hidden:1 (PK, system-assigned).
-  // Until a code-generation popup is wired up, derive a placeholder from the row id so the
-  // NOT NULL + (workspace, custMcd) UNIQUE constraint is satisfied. createdAt is omitted on
-  // new rows — DB defaultNow assigns on save; UI shows "—".
-  const id = crypto.randomUUID();
-  return {
-    id,
-    custMcd: id.slice(0, 12),
-    customerId: null,
-    custName: null,
-    jikweeNm: null,
-    orgNm: null,
-    telNo: null,
-    hpNo: null,
-    email: null,
-    statusYn: true,
-    sabun: null,
-    custNm: null,
-    createdAt: null,
-  };
-}
+// pendingEmployee stores the employee selected in EmployeePicker before makeBlankRow is called.
+// makeBlankRow (passed to DataGrid) consumes and clears it, so the new row is pre-filled with
+// the employee's data. This avoids any DOM row-index assumptions.
+type PendingEmployee = {
+  employeeId: string;
+  name: string;
+  email?: string | null;
+};
 
 // Hidden:0 (visible) columns per legacy ibSheet bizActCustomerMgr.jsp:207~220.
 // custMcd / statusYn / sabun are Hidden:1 — intentionally omitted from grid columns.
@@ -90,21 +76,17 @@ export function CustomerContactsGridContainer({
   const [page, setPage] = useState(initialPage);
   const [, startTransition] = useTransition();
 
-  // selectedRowId tracks the grid row the user last clicked (set via DataGrid onClick — see below).
-  // Used by EmployeePicker to know which row to patch sabun on.
-  // NOTE: DataGrid exposes row selection only via its internal `selected` state. We mirror it here
-  // via a ref updated on DataGrid's onFilterChange side-effect (not ideal). The cleaner long-term
-  // solution is to expose onRowSelect from DataGrid (Task backlog). For now EmployeePicker is
-  // rendered as a standalone input above the grid and requires user to select a row first.
-  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  // pendingEmployee: set by EmployeePicker onSelect, consumed by makeBlankRowWithEmployee.
+  // Using a ref (not state) so that makeBlankRow (a stable function reference passed to DataGrid)
+  // can read the latest value without causing re-renders or stale closures.
+  const pendingEmployee = useRef<PendingEmployee | null>(null);
 
-  // sabunOverrides: maps rowId → { sabun, custName, email }.
-  // When EmployeePicker selects an employee for a row, we store the mapping here and inject
-  // it into the saveCustomerContacts batch at save time (merging into creates/updates).
-  // This avoids needing direct access to DataGrid's internal useGridState.update().
-  const sabunOverrides = useRef<Map<string, { sabun: string; custName?: string; email?: string }>>(
-    new Map(),
-  );
+  // dataGridWrapperRef: used to programmatically click DataGrid's internal "입력" (insert) button
+  // when EmployeePicker selects an employee. The insert button is always the first <button> inside
+  // the GridToolbar, which is the first button rendered inside the DataGrid div.
+  // This is safe (unlike DOM row-index capture) because we're triggering a stable UI action,
+  // not reading positional row data.
+  const dataGridWrapperRef = useRef<HTMLDivElement>(null);
 
   // URL-synced filter state (replaces local useState filterValues).
   // useUrlFilters keeps searchParams in sync so page.tsx re-runs on navigation,
@@ -138,14 +120,41 @@ export function CustomerContactsGridContainer({
           setRows(res.rows as CustomerContactRow[]);
           setTotal(res.total);
           setPage(nextPage);
-          // Clear sabun overrides on reload — stale row ids are invalid.
-          sabunOverrides.current.clear();
-          setSelectedRowId(null);
         }
       });
     },
     [limit],
   );
+
+  // makeBlankRowWithEmployee: factory passed to DataGrid as makeBlankRow.
+  // If pendingEmployee ref is set (EmployeePicker just selected someone), the new row is
+  // pre-filled with sabun=employeeId, custName=name, email=email. Otherwise produces a
+  // fully blank row (same as before, for regular "입력" button clicks).
+  // Legacy ibSheet bizActCustomerMgr.jsp:207~220 marks `custMcd` Hidden:1 (PK, system-assigned).
+  // Until a code-generation popup is wired up, derive a placeholder from the row id so the
+  // NOT NULL + (workspace, custMcd) UNIQUE constraint is satisfied. createdAt is omitted on
+  // new rows — DB defaultNow assigns on save; UI shows "—".
+  const makeBlankRowWithEmployee = useCallback((): CustomerContactRow => {
+    const id = crypto.randomUUID();
+    const emp = pendingEmployee.current;
+    // Consume the pending employee so subsequent plain "입력" clicks produce blank rows.
+    pendingEmployee.current = null;
+    return {
+      id,
+      custMcd: id.slice(0, 12),
+      customerId: null,
+      custName: emp?.name ?? null,
+      jikweeNm: null,
+      orgNm: null,
+      telNo: null,
+      hpNo: null,
+      email: emp?.email ?? null,
+      statusYn: true,
+      sabun: emp?.employeeId ?? null,
+      custNm: null,
+      createdAt: null,
+    };
+  }, []);
 
   // CSV export: Hidden:0 columns only (mirrors COLUMNS above).
   const handleExport = () => {
@@ -203,46 +212,31 @@ export function CustomerContactsGridContainer({
       </div>
 
       {/* sabun / EmployeePicker strip.
-          sabun은 Hidden:1 컬럼 — grid에 직접 편집 UI 없음. 사용자가 DataGrid에서 행을 클릭한 뒤
-          이 EmployeePicker로 영업담당자를 검색·선택하면 sabunOverrides에 rowId → sabun 매핑 저장.
-          실제 DB 반영은 onSave 배치에서 이루어짐 (sabunOverrides를 patch에 주입).
-          selectedRowId가 없을 때 disabled. */}
+          sabun은 Hidden:1 컬럼 — grid에 직접 편집 UI 없음.
+          EmployeePicker는 "신규 contact 등록" 트리거: 직원 선택 시 sabun/name/email이
+          미리 채워진 새 row를 grid에 추가한다. 기존 row의 sabun은 건드리지 않음.
+          (이전 DOM-based row capture 패턴 제거 — 정렬/필터 시 DOM 순서 불일치 위험) */}
       <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
-        <span className="text-xs text-slate-500">
-          {t("CustomerContacts.columns.sabun")}
-          {selectedRowId ? (
-            <span className="ml-1 text-blue-600">
-              ({rows.find((r) => r.id === selectedRowId)?.custName ?? "선택된 행"})
-            </span>
-          ) : (
-            <span className="ml-1 text-slate-400">— 행을 선택하세요</span>
-          )}
-        </span>
+        <span className="text-xs text-slate-500">{t("CustomerContacts.columns.sabun")}</span>
         <div className="w-56">
           <EmployeePicker
-            value={
-              selectedRowId
-                ? (sabunOverrides.current.get(selectedRowId)?.custName ??
-                  rows.find((r) => r.id === selectedRowId)?.sabun ??
-                  "")
-                : ""
-            }
+            value=""
             onSelect={(emp) => {
-              if (!selectedRowId) return;
-              sabunOverrides.current.set(selectedRowId, {
-                sabun: emp.employeeId,
-                custName: emp.name,
-                email: emp.email ?? undefined,
-              });
-              // Optimistically reflect sabun text in the rows state for display.
-              setRows((prev) =>
-                prev.map((r) =>
-                  r.id === selectedRowId ? { ...r, sabun: emp.employeeId } : r,
-                ),
+              // Store the selected employee in the ref so makeBlankRowWithEmployee can consume it.
+              pendingEmployee.current = {
+                employeeId: emp.employeeId,
+                name: emp.name,
+                email: emp.email,
+              };
+              // Programmatically click DataGrid's internal "입력" (insert) button.
+              // The button is always the first <button> inside the grid wrapper div.
+              // This is safe: we trigger a stable UI action, not read positional row data.
+              const firstBtn = dataGridWrapperRef.current?.querySelector<HTMLButtonElement>(
+                "button:not([disabled])",
               );
+              firstBtn?.click();
             }}
-            placeholder={t("CustomerContacts.search.chargerNm")}
-            disabled={!selectedRowId}
+            placeholder={t("CustomerContacts.search.employeeAddPlaceholder")}
           />
         </div>
       </div>
@@ -250,28 +244,10 @@ export function CustomerContactsGridContainer({
       {/* DataGridToolbar (separate strip above DataGrid — per baseline JSDoc pattern). */}
       <DataGridToolbar onExport={handleExport} exportLabel={t("Common.Excel.label")} />
 
-      {/* DataGrid wraps with an onClick capture on the container div to detect row selection.
-          DataGrid's internal `selected` state is not exposed; we mirror it here via a capture
-          listener on data-row-status rows. Long-term: expose onRowSelect from DataGrid.
-          role="presentation" + onKeyDown suppress jsx-a11y warnings — this div is a non-interactive
-          capture wrapper, not a focusable control; row selection keyboard interaction is provided
-          by the DataGrid's own <tr> elements. */}
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div
-        onClick={(e) => {
-          const row = (e.target as HTMLElement).closest("tr[data-row-status]");
-          if (row) {
-            // We rely on DOM order matching rows array order (DataGrid renders rows in order).
-            const tbody = row.parentElement;
-            if (tbody) {
-              const trIndex = Array.from(tbody.children).indexOf(row as HTMLTableRowElement);
-              if (trIndex >= 0 && trIndex < rows.length) {
-                setSelectedRowId(rows[trIndex]?.id ?? null);
-              }
-            }
-          }
-        }}
-      >
+      {/* DataGrid: no onClick wrapper needed. Row selection is DataGrid-internal.
+          makeBlankRowWithEmployee replaces the static makeBlankRow — it consumes
+          pendingEmployee ref when EmployeePicker triggers the insert. */}
+      <div ref={dataGridWrapperRef}>
         <DataGrid<CustomerContactRow>
           rows={rows}
           total={total}
@@ -279,7 +255,7 @@ export function CustomerContactsGridContainer({
           filters={FILTERS}
           page={page}
           limit={limit}
-          makeBlankRow={makeBlankRow}
+          makeBlankRow={makeBlankRowWithEmployee}
           filterValues={values}
           onPageChange={(p) => reload(p, values)}
           onFilterChange={(f) => {
@@ -293,33 +269,7 @@ export function CustomerContactsGridContainer({
             reload(1, next);
           }}
           onSave={async (changes) => {
-            // Inject sabunOverrides into creates/updates before saving.
-            const overrides = sabunOverrides.current;
-            const patchedCreates = changes.creates.map((row) => {
-              const ov = overrides.get(row.id);
-              return ov ? { ...row, sabun: ov.sabun } : row;
-            });
-            const patchedUpdates = changes.updates.map((u) => {
-              const ov = overrides.get(u.id);
-              return ov ? { ...u, patch: { ...u.patch, sabun: ov.sabun } } : u;
-            });
-            // Also add sabun-only updates for rows that have sabunOverrides but no other dirty changes.
-            const overrideOnlyUpdates: typeof changes.updates = [];
-            for (const [rowId, ov] of overrides.entries()) {
-              const alreadyCovered =
-                patchedCreates.some((r) => r.id === rowId) ||
-                patchedUpdates.some((u) => u.id === rowId) ||
-                changes.deletes.includes(rowId);
-              if (!alreadyCovered) {
-                overrideOnlyUpdates.push({ id: rowId, patch: { sabun: ov.sabun } });
-              }
-            }
-
-            const result = await saveCustomerContacts({
-              creates: patchedCreates,
-              updates: [...patchedUpdates, ...overrideOnlyUpdates],
-              deletes: changes.deletes,
-            });
+            const result = await saveCustomerContacts(changes);
             if (result.ok) await reload(page, values);
             return result;
           }}

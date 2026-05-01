@@ -1097,7 +1097,8 @@
       "search": {
         "chargerNm": "영업담당",
         "hpNo": "휴대폰",
-        "email": "이메일"
+        "email": "이메일",
+        "employeeAddPlaceholder": "사번/이름/이메일로 신규 등록"
       }
     },
     "ProductTypes": {
