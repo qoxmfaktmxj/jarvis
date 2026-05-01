@@ -133,6 +133,22 @@
         "email": "Email",
         "employeeAddPlaceholder": "Add by ID/name/email"
       }
+    },
+    "MailPersons": {
+      "title": "Mail Persons",
+      "description": "Manage sales and HR mail recipients.",
+      "columns": {
+        "sabun": "Employee ID",
+        "name": "Name",
+        "salesYn": "Sales",
+        "insaYn": "HR",
+        "mailId": "Mail ID",
+        "memo": "Memo",
+        "insdate": "Created At"
+      },
+      "search": {
+        "name": "Search by name"
+      }
     }
   },
   "Admin": {

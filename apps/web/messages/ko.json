@@ -1144,6 +1144,9 @@
         "mailId": "메일 ID",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "search": {
+        "name": "이름 검색"
       }
     }
   }
