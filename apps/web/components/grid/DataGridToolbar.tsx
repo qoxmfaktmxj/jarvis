@@ -10,6 +10,15 @@ export type DataGridToolbarProps = {
   isExporting?: boolean;
 };
 
+/**
+ * Toolbar wrapper providing Excel export slot via `onExport`. Compose with
+ * DataGrid's built-in GridToolbar (insert/copy/save) by either:
+ * - placing DataGridToolbar above DataGrid (separate strips), or
+ * - passing GridToolbar's controls into `children` for a unified strip.
+ *
+ * All visible labels (`exportLabel`) are passthrough props — baseline carries
+ * no i18n. Callers wire `t('Sales.Common.Excel.label')` etc.
+ */
 export function DataGridToolbar({
   children,
   onExport,
