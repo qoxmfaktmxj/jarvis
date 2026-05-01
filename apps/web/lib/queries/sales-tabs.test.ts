@@ -40,7 +40,11 @@ describe("buildMemoTree", () => {
   });
 });
 
-describe("getCustomerTabCounts (P2-BLOCKED)", () => {
+// Count helpers hit a real DB. Skip when no DATABASE_URL (local dev w/o Postgres).
+// CI sets DATABASE_URL; e2e (Task 9) covers the live-DB path end-to-end.
+const HAS_DB = !!process.env.DATABASE_URL;
+
+describe.skipIf(!HAS_DB)("getCustomerTabCounts (P2-BLOCKED, DB-required)", () => {
   it("returns 0 for opCnt and actCnt while P2 schema is not yet merged", async () => {
     // No DB fixture — this test verifies the P2-BLOCKED contract: op/act always 0
     // until the P2 schema is wired up. Real customer/comt counts require DB setup,
@@ -53,7 +57,7 @@ describe("getCustomerTabCounts (P2-BLOCKED)", () => {
   });
 });
 
-describe("getContactTabCounts (P2-BLOCKED)", () => {
+describe.skipIf(!HAS_DB)("getContactTabCounts (P2-BLOCKED, DB-required)", () => {
   it("returns 0 for opCnt and actCnt; custCompanyCnt is 0 or 1", async () => {
     const counts = await getContactTabCounts("00000000-0000-0000-0000-000000000000", "22222222-2222-2222-2222-222222222222");
     expect(counts.opCnt).toBe(0);
