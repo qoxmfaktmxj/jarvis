@@ -222,50 +222,155 @@ export function TabProvider({
     };
   }, []);
 
-  // openTab/closeTab/closeBatch are defined in later tasks;
-  // for now provide minimal versions that satisfy basic open/focus/close tests.
-  const openTab = useCallback<TabContextValue["openTab"]>(async (url, fallbackTitle) => {
-    const key = pathnameToTabKey(url);
-    const now = Date.now();
-    const tab: Tab = {
-      key,
-      url,
-      title: fallbackTitle,
-      pinned: false,
-      createdAt: now,
-      lastVisitedAt: now,
-    };
-    // Explicit blocked check (don't rely on reducer reference equality):
-    // Refuse only when at MAX_TABS, target doesn't already exist, and every existing tab is pinned.
-    const s = stateRef.current;
-    const blocked =
-      s.tabs.length >= MAX_TABS &&
-      !s.tabs.some((t) => t.key === key) &&
-      s.tabs.every((t) => t.pinned);
-    dispatch({ type: "OPEN_TAB", tab });
-    return !blocked;
+  const performCloseTab = useCallback((key: TabKey) => {
+    dispatch({ type: "REMOVE_TAB", key });
+    saveHandlersRef.current.delete(key);
   }, []);
 
-  const closeTab = useCallback<TabContextValue["closeTab"]>(async (key) => {
-    dispatch({ type: "REMOVE_TAB", key });
-    return true;
-  }, []);
+  const requestUnsavedDialog = useCallback(
+    (tabs: Tab[], reason: "single" | "batch"): Promise<CloseAction> =>
+      new Promise<CloseAction>((resolve) => {
+        dispatch({
+          type: "SET_PENDING",
+          req: { tabs, reason, resolve },
+        });
+      }),
+    [],
+  );
+
+  const handleDirtyClose = useCallback(
+    async (tab: Tab, reason: "single" | "batch"): Promise<boolean> => {
+      const action = await requestUnsavedDialog([tab], reason);
+      if (action === "cancel") return false;
+      if (action === "save") {
+        const handler = saveHandlersRef.current.get(tab.key);
+        if (!handler) {
+          if (process.env.NODE_ENV !== "production") {
+            // eslint-disable-next-line no-console
+            console.warn(
+              `[tabs] No save handler registered for ${tab.key}; falling back to discard.`,
+            );
+          }
+          performCloseTab(tab.key);
+          return true;
+        }
+        const result = await handler();
+        if (!result.ok) return false;
+        performCloseTab(tab.key);
+        return true;
+      }
+      // discard
+      performCloseTab(tab.key);
+      return true;
+    },
+    [performCloseTab, requestUnsavedDialog],
+  );
+
+  const openTab = useCallback<TabContextValue["openTab"]>(
+    async (url, fallbackTitle) => {
+      const key = pathnameToTabKey(url);
+      const s = stateRef.current;
+
+      // Check if dirty-eviction dialog is needed BEFORE dispatching.
+      // This is the only case we must handle asynchronously (dialog requires await).
+      if (
+        s.tabs.length >= MAX_TABS &&
+        !s.tabs.some((t) => t.key === key)
+      ) {
+        const candidates = s.tabs.filter((t) => !t.pinned);
+        if (candidates.length === 0) {
+          // All pinned — dispatch OPEN_TAB so reducer can signal no-op, return false.
+          dispatch({
+            type: "OPEN_TAB",
+            tab: {
+              key,
+              url,
+              title: fallbackTitle,
+              pinned: false,
+              createdAt: Date.now(),
+              lastVisitedAt: Date.now(),
+            },
+          });
+          return false;
+        }
+        const victim = [...candidates].sort(
+          (a, b) => a.lastVisitedAt - b.lastVisitedAt,
+        )[0];
+        if (!victim) return false;
+
+        if (s.dirtyKeys.has(victim.key)) {
+          // Async dialog path: must handle eviction manually.
+          const proceeded = await handleDirtyClose(victim, "single");
+          if (!proceeded) return false;
+          // Now append the new tab.
+          const now = Date.now();
+          dispatch({
+            type: "ADD_TAB",
+            tab: {
+              key,
+              url,
+              title: fallbackTitle,
+              pinned: false,
+              createdAt: now,
+              lastVisitedAt: now,
+            },
+          });
+          return true;
+        }
+        // Clean victim — fall through to OPEN_TAB which evicts atomically.
+      }
+
+      // Atomic path: let the reducer handle focus/append/clean-eviction.
+      const now = Date.now();
+      dispatch({
+        type: "OPEN_TAB",
+        tab: { key, url, title: fallbackTitle, pinned: false, createdAt: now, lastVisitedAt: now },
+      });
+
+      // Compute blocked result from the pre-read state (same logic as reducer for all-pinned).
+      const blocked =
+        s.tabs.length >= MAX_TABS &&
+        !s.tabs.some((t) => t.key === key) &&
+        s.tabs.every((t) => t.pinned);
+      return !blocked;
+    },
+    [handleDirtyClose, performCloseTab],
+  );
+
+  const closeTab = useCallback<TabContextValue["closeTab"]>(
+    async (key, opts) => {
+      const tab = stateRef.current.tabs.find((t) => t.key === key);
+      if (!tab) return true;
+      if (!opts?.skipDirtyCheck && stateRef.current.dirtyKeys.has(key)) {
+        return handleDirtyClose(tab, "single");
+      }
+      performCloseTab(key);
+      return true;
+    },
+    [handleDirtyClose, performCloseTab],
+  );
 
   const closeBatch = useCallback<TabContextValue["closeBatch"]>(
     async (predicate) => {
-      const targets = state.tabs.filter(predicate).map((t) => t.key);
-      for (const k of targets) dispatch({ type: "REMOVE_TAB", key: k });
+      const targets = stateRef.current.tabs.filter(predicate);
+      const dirtyTargets = targets.filter((t) =>
+        stateRef.current.dirtyKeys.has(t.key),
+      );
+      if (dirtyTargets.length > 0) {
+        const action = await requestUnsavedDialog(dirtyTargets, "batch");
+        if (action === "cancel") return;
+        // batch dialog only supports discard / cancel; ignore save (different flow per tab).
+      }
+      for (const t of targets) performCloseTab(t.key);
     },
-    [state.tabs],
+    [performCloseTab, requestUnsavedDialog],
   );
 
-  const resolvePendingClose = useCallback(
-    (_action: CloseAction) => {
-      if (state.pendingClose) state.pendingClose.resolve(_action);
-      dispatch({ type: "SET_PENDING", req: null });
-    },
-    [state.pendingClose],
-  );
+  const resolvePendingClose = useCallback((action: CloseAction) => {
+    const req = stateRef.current.pendingClose;
+    dispatch({ type: "SET_PENDING", req: null });
+    if (req) req.resolve(action);
+  }, []);
 
   const value = useMemo<TabContextValue>(
     () => ({
@@ -309,6 +414,7 @@ export function TabProvider({
       resolvePendingClose,
     ],
   );
+
 
   return <TabContext.Provider value={value}>{children}</TabContext.Provider>;
 }

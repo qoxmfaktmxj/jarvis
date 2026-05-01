@@ -130,12 +130,19 @@ describe("TabProvider — LRU eviction", () => {
     });
     expect(result.current.tabs).toHaveLength(5);
 
-    // Mark /a dirty before eviction; the eviction should clean it up.
+    // Mark /a dirty before eviction; the eviction should trigger a dialog; discard cleans it up.
     act(() => result.current.setDirty("/a", true));
     expect(result.current.isDirty("/a")).toBe(true);
 
+    let openPromise!: Promise<boolean>;
+    act(() => {
+      openPromise = result.current.openTab("/f", "F");
+    });
+    // Dialog should be pending for the dirty victim /a.
+    expect(result.current.pendingClose).not.toBeNull();
     await act(async () => {
-      await result.current.openTab("/f", "F");
+      result.current.resolvePendingClose("discard");
+      await openPromise;
     });
     expect(result.current.tabs.map((t) => t.key)).toEqual(["/b", "/c", "/d", "/e", "/f"]);
     expect(result.current.activeKey).toBe("/f");
@@ -192,6 +199,159 @@ describe("TabProvider — pin policy", () => {
     });
     expect(ok).toBe(false);
     expect(result.current.tabs).toHaveLength(5);
+    expect(result.current.tabs.map((t) => t.key)).not.toContain("/f");
+  });
+});
+
+describe("TabProvider — dirty + save handler + pending close", () => {
+  it("setDirty toggles isDirty(key)", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+    });
+    expect(result.current.isDirty("/a")).toBe(false);
+    act(() => result.current.setDirty("/a", true));
+    expect(result.current.isDirty("/a")).toBe(true);
+    act(() => result.current.setDirty("/a", false));
+    expect(result.current.isDirty("/a")).toBe(false);
+  });
+
+  it("closeTab on dirty tab requests pending close (single)", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+    });
+    let closePromise!: Promise<boolean>;
+    act(() => {
+      closePromise = result.current.closeTab("/a");
+    });
+    expect(result.current.pendingClose).not.toBeNull();
+    expect(result.current.pendingClose!.tabs).toHaveLength(1);
+    expect(result.current.pendingClose!.tabs[0]?.key).toBe("/a");
+    expect(result.current.pendingClose!.reason).toBe("single");
+
+    let ok = true;
+    await act(async () => {
+      result.current.resolvePendingClose("discard");
+      ok = await closePromise;
+    });
+    expect(ok).toBe(true);
+    expect(result.current.tabs).toHaveLength(0);
+    expect(result.current.pendingClose).toBeNull();
+  });
+
+  it("resolvePendingClose('cancel') aborts close, tab remains", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+    });
+    let closePromise!: Promise<boolean>;
+    act(() => {
+      closePromise = result.current.closeTab("/a");
+    });
+    let ok = true;
+    await act(async () => {
+      result.current.resolvePendingClose("cancel");
+      ok = await closePromise;
+    });
+    expect(ok).toBe(false);
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.isDirty("/a")).toBe(true);
+  });
+
+  it("resolvePendingClose('save') invokes the registered save handler", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    const handler = vi.fn().mockResolvedValue({ ok: true });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+      result.current.registerSaveHandler("/a", handler);
+    });
+    let closePromise!: Promise<boolean>;
+    act(() => {
+      closePromise = result.current.closeTab("/a");
+    });
+    await act(async () => {
+      result.current.resolvePendingClose("save");
+      await closePromise;
+    });
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(result.current.tabs).toHaveLength(0);
+  });
+
+  it("save handler returning ok:false aborts close", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    const handler = vi.fn().mockResolvedValue({ ok: false });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+      result.current.registerSaveHandler("/a", handler);
+    });
+    let closePromise!: Promise<boolean>;
+    act(() => {
+      closePromise = result.current.closeTab("/a");
+    });
+    let ok = true;
+    await act(async () => {
+      result.current.resolvePendingClose("save");
+      ok = await closePromise;
+    });
+    expect(ok).toBe(false);
+    expect(result.current.tabs).toHaveLength(1);
+  });
+
+  it("LRU eviction on dirty tab requests pending close, discard proceeds", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+      await new Promise((r) => setTimeout(r, 1));
+      for (const k of ["/b", "/c", "/d", "/e"]) {
+        await result.current.openTab(k, k);
+        await new Promise((r) => setTimeout(r, 1));
+      }
+    });
+    let openPromise!: Promise<boolean>;
+    act(() => {
+      openPromise = result.current.openTab("/f", "F");
+    });
+    expect(result.current.pendingClose).not.toBeNull();
+    expect(result.current.pendingClose!.tabs[0]?.key).toBe("/a");
+
+    let ok = false;
+    await act(async () => {
+      result.current.resolvePendingClose("discard");
+      ok = await openPromise;
+    });
+    expect(ok).toBe(true);
+    expect(result.current.tabs.map((t) => t.key)).not.toContain("/a");
+    expect(result.current.tabs.map((t) => t.key)).toContain("/f");
+  });
+
+  it("LRU dirty + cancel aborts new tab open", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.setDirty("/a", true);
+      await new Promise((r) => setTimeout(r, 1));
+      for (const k of ["/b", "/c", "/d", "/e"]) {
+        await result.current.openTab(k, k);
+        await new Promise((r) => setTimeout(r, 1));
+      }
+    });
+    let openPromise!: Promise<boolean>;
+    act(() => {
+      openPromise = result.current.openTab("/f", "F");
+    });
+    let ok = true;
+    await act(async () => {
+      result.current.resolvePendingClose("cancel");
+      ok = await openPromise;
+    });
+    expect(ok).toBe(false);
+    expect(result.current.tabs.map((t) => t.key)).toContain("/a");
     expect(result.current.tabs.map((t) => t.key)).not.toContain("/f");
   });
 });
