@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, eq, ilike, isNotNull, or } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { user } from "@jarvis/db/schema";
 import { getSession } from "@jarvis/auth/session";
@@ -17,6 +17,17 @@ async function resolveSessionId(): Promise<string | null> {
   );
 }
 
+/**
+ * Employee match result for autocomplete pickers.
+ *
+ * Note: `employeeId` corresponds to the legacy "사번" / `sabun` field in
+ * salesMailPerson, salesCustomerContact, etc. Consumer code maps at
+ * the boundary:
+ *   onSelect={(emp) => setSabun(emp.employeeId)}
+ *
+ * Email is guaranteed non-null (filtered at SQL WHERE), so dropdown
+ * results never show employees lacking email.
+ */
 export type EmployeeMatch = {
   employeeId: string;
   name: string;
@@ -42,6 +53,7 @@ export async function searchEmployees(query: string): Promise<EmployeeMatch[]> {
     .where(
       and(
         eq(user.workspaceId, session.workspaceId),
+        isNotNull(user.email),
         or(
           ilike(user.name, q),
           ilike(user.email, q),
@@ -51,8 +63,5 @@ export async function searchEmployees(query: string): Promise<EmployeeMatch[]> {
     )
     .limit(10);
 
-  return rows.filter(
-    (r): r is EmployeeMatch =>
-      r.employeeId != null && r.name != null && r.email != null,
-  );
+  return rows.filter((r): r is EmployeeMatch => r.email !== null);
 }
