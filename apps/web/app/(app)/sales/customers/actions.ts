@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, exists, ilike, inArray, sql } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomer, auditLog } from "@jarvis/db/schema";
+import { salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomersInput,
@@ -77,6 +77,22 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
   if (input.custNm) conditions.push(ilike(salesCustomer.custNm, `%${input.custNm}%`));
   if (input.custKindCd) conditions.push(eq(salesCustomer.custKindCd, input.custKindCd));
   if (input.custDivCd) conditions.push(eq(salesCustomer.custDivCd, input.custDivCd));
+  if (input.chargerNm) {
+    conditions.push(
+      exists(
+        db
+          .select({ ok: sql`1` })
+          .from(salesCustomerCharger)
+          .where(
+            and(
+              eq(salesCustomerCharger.workspaceId, ctx.workspaceId),
+              eq(salesCustomerCharger.customerId, salesCustomer.id),
+              ilike(salesCustomerCharger.name, `%${input.chargerNm}%`),
+            ),
+          ),
+      ),
+    );
+  }
 
   const where = and(...conditions);
 

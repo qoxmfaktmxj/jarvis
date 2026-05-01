@@ -30,6 +30,7 @@ export const listCustomersInput = z.object({
   custNm: z.string().optional(),
   custKindCd: z.string().optional(),
   custDivCd: z.string().optional(),
+  chargerNm: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });

@@ -1,6 +1,10 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { sanitizeCellValue } from "@/lib/utils/sanitize-csv";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
@@ -12,6 +16,7 @@ type Props = {
   total: number;
   page: number;
   limit: number;
+  initialFilters?: Record<string, string>;
   codeOptions: {
     custKind: Option[];
     custDiv: Option[];
@@ -54,12 +59,15 @@ export function CustomersGridContainer({
   total: initialTotal,
   page: initialPage,
   limit,
+  initialFilters,
   codeOptions,
 }: Props) {
+  const tCommon = useTranslations();
   const [rows, setRows] = useState<CustomerRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [filterValues, setFilterValues] = useState<Record<string, string>>(initialFilters ?? {});
+  const [isExporting, setIsExporting] = useState(false);
   const [, startTransition] = useTransition();
 
   const reload = useCallback(
@@ -69,6 +77,7 @@ export function CustomersGridContainer({
           custNm: nextFilters.custNm || undefined,
           custKindCd: nextFilters.custKindCd || undefined,
           custDivCd: nextFilters.custDivCd || undefined,
+          chargerNm: nextFilters.chargerNm || undefined,
           page: nextPage,
           limit,
         });
@@ -104,27 +113,62 @@ export function CustomersGridContainer({
     { key: "custNm", type: "text", placeholder: "고객명" },
     { key: "custKindCd", type: "select", options: codeOptions.custKind },
     { key: "custDivCd", type: "select", options: codeOptions.custDiv },
+    // chargerNm is filter-only (EXISTS subquery on salesCustomerCharger — not a CustomerRow column)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    { key: "chargerNm" as any, type: "text", placeholder: tCommon("Sales.Customers.search.chargerNm") },
   ];
 
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const exportColumns = COLUMNS.map((c) => ({
+        key: c.key as string,
+        header: typeof c.label === "string" ? c.label : c.key,
+      }));
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      await exportToExcel({
+        filename: `customers_${date}`,
+        sheetName: "고객사",
+        columns: exportColumns,
+        rows,
+        cellFormatter: (row, col) => {
+          // counts column (angry-ishizaka follow-on) skip
+          if (col.key === "counts") return "";
+          return sanitizeCellValue((row as Record<string, unknown>)[col.key]);
+        },
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [rows]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
-    <DataGrid<CustomerRow>
-      rows={rows}
-      total={total}
-      columns={COLUMNS}
-      filters={FILTERS}
-      page={page}
-      limit={limit}
-      makeBlankRow={makeBlankRow}
-      filterValues={filterValues}
-      onPageChange={(p) => reload(p, filterValues)}
-      onFilterChange={(f) => reload(1, f)}
-      onSave={async (changes) => {
-        const result = await saveCustomers(changes);
-        if (result.ok) {
-          await reload(page, filterValues);
-        }
-        return result;
-      }}
-    />
+    <>
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel={tCommon("Sales.Common.Excel.label")}
+        isExporting={isExporting}
+      />
+      <DataGrid<CustomerRow>
+        syncWithUrl
+        rows={rows}
+        total={total}
+        columns={COLUMNS}
+        filters={FILTERS}
+        page={page}
+        limit={limit}
+        makeBlankRow={makeBlankRow}
+        filterValues={filterValues}
+        onPageChange={(p) => reload(p, filterValues)}
+        onFilterChange={(f) => reload(1, f)}
+        onSave={async (changes) => {
+          const result = await saveCustomers(changes);
+          if (result.ok) {
+            await reload(page, filterValues);
+          }
+          return result;
+        }}
+      />
+    </>
   );
 }

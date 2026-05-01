@@ -20,7 +20,11 @@ async function loadCodeOptions(workspaceId: string, groupCode: string) {
   return rows.map((r) => ({ value: r.code, label: r.name }));
 }
 
-export default async function SalesCustomersPage() {
+export default async function SalesCustomersPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -28,10 +32,25 @@ export default async function SalesCustomersPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const sp = searchParams ? await searchParams : {};
+  const initialFilters = {
+    custNm: typeof sp.custNm === "string" ? sp.custNm : "",
+    custKindCd: typeof sp.custKindCd === "string" ? sp.custKindCd : "",
+    custDivCd: typeof sp.custDivCd === "string" ? sp.custDivCd : "",
+    chargerNm: typeof sp.chargerNm === "string" ? sp.chargerNm : "",
+  };
+
   const limit = 50;
 
   const [listResult, custKindOptions, custDivOptions, exchangeTypeOptions] = await Promise.all([
-    listCustomers({ page: 1, limit }),
+    listCustomers({
+      page: 1,
+      limit,
+      custNm: initialFilters.custNm || undefined,
+      custKindCd: initialFilters.custKindCd || undefined,
+      custDivCd: initialFilters.custDivCd || undefined,
+      chargerNm: initialFilters.chargerNm || undefined,
+    }),
     loadCodeOptions(session.workspaceId, "SALES_CUST_KIND"),
     loadCodeOptions(session.workspaceId, "SALES_CUST_DIV"),
     loadCodeOptions(session.workspaceId, "SALES_EXCHANGE_TYPE"),
@@ -53,6 +72,7 @@ export default async function SalesCustomersPage() {
         total={initialTotal}
         page={1}
         limit={limit}
+        initialFilters={initialFilters}
         codeOptions={{
           custKind: custKindOptions,
           custDiv: custDivOptions,
