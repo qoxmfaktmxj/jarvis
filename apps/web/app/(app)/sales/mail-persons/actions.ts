@@ -46,7 +46,16 @@ export async function listMailPersons(rawInput: z.input<typeof listMailPersonsIn
   ]);
 
   return listMailPersonsOutput.parse({
-    rows: rows.map((r) => ({ id: r.id, sabun: r.sabun, name: r.name, mailId: r.mailId, salesYn: r.salesYn, insaYn: r.insaYn, memo: r.memo })),
+    rows: rows.map((r) => ({
+      id: r.id,
+      sabun: r.sabun,
+      name: r.name,
+      mailId: r.mailId,
+      salesYn: r.salesYn,
+      insaYn: r.insaYn,
+      memo: r.memo,
+      createdAt: r.createdAt.toISOString(),
+    })),
     total: Number(countRows[0]?.count ?? 0),
   });
 }
@@ -61,19 +70,55 @@ export async function saveMailPersons(rawInput: z.input<typeof saveMailPersonsIn
   try {
     await db.transaction(async (tx) => {
       for (const c of input.creates) {
-        await tx.insert(salesMailPerson).values({ ...c, workspaceId: ctx.workspaceId });
-        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.create", resourceType: "sales_mail_person", resourceId: c.id, details: {} as Record<string, unknown>, success: true });
+        // createdAt is read-only — DB defaultNow handles insert; strip from client payload.
+        await tx.insert(salesMailPerson).values({
+          id: c.id,
+          sabun: c.sabun,
+          name: c.name,
+          mailId: c.mailId,
+          salesYn: c.salesYn,
+          insaYn: c.insaYn,
+          memo: c.memo,
+          workspaceId: ctx.workspaceId,
+        });
+        await tx.insert(auditLog).values({
+          workspaceId: ctx.workspaceId,
+          userId: ctx.userId,
+          action: "sales.mail_person.create",
+          resourceType: "sales_mail_person",
+          resourceId: c.id,
+          details: { name: c.name, mailId: c.mailId } as Record<string, unknown>,
+          success: true,
+        });
         created.push(c.id);
       }
       for (const u of input.updates) {
-        await tx.update(salesMailPerson).set({ ...u.patch, updatedAt: new Date() }).where(and(eq(salesMailPerson.id, u.id), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
-        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.update", resourceType: "sales_mail_person", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
+        // createdAt is read-only — strip from update patch.
+        const { createdAt: _omitCreatedAt, ...updatablePatch } = u.patch;
+        void _omitCreatedAt;
+        await tx.update(salesMailPerson).set({ ...updatablePatch, updatedAt: new Date() }).where(and(eq(salesMailPerson.id, u.id), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.update", resourceType: "sales_mail_person", resourceId: u.id, details: updatablePatch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {
+        // Capture pre-delete rows to populate audit detail with {name, mailId}.
+        const preRows = await tx
+          .select({ id: salesMailPerson.id, name: salesMailPerson.name, mailId: salesMailPerson.mailId })
+          .from(salesMailPerson)
+          .where(and(inArray(salesMailPerson.id, input.deletes), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
+        const preById = new Map(preRows.map((r) => [r.id, r]));
         await tx.delete(salesMailPerson).where(and(inArray(salesMailPerson.id, input.deletes), eq(salesMailPerson.workspaceId, ctx.workspaceId)));
         for (const id of input.deletes) {
-          await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.mail_person.delete", resourceType: "sales_mail_person", resourceId: id, details: {} as Record<string, unknown>, success: true });
+          const pre = preById.get(id);
+          await tx.insert(auditLog).values({
+            workspaceId: ctx.workspaceId,
+            userId: ctx.userId,
+            action: "sales.mail_person.delete",
+            resourceType: "sales_mail_person",
+            resourceId: id,
+            details: pre ? { name: pre.name, mailId: pre.mailId } : ({} as Record<string, unknown>),
+            success: true,
+          });
         }
         deleted.push(...input.deletes);
       }

@@ -8,6 +8,8 @@ export const mailPersonRow = z.object({
   salesYn: z.boolean(),
   insaYn: z.boolean(),
   memo: z.string().nullable(),
+  // 등록일자 (read-only display; server sets defaultNow on insert).
+  createdAt: z.string().nullable().optional(),
 });
 
 export const listMailPersonsInput = z.object({
