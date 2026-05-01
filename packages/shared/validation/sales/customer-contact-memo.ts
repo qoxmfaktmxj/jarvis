@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 // MemoTreeNode 타입은 customer-memo에서 공유
-export type { MemoTreeNode } from "./customer-memo";
-import { memoTreeNodeSchema } from "./customer-memo";
+export type { MemoTreeNode } from "./customer-memo.js";
+import { memoTreeNodeSchema } from "./customer-memo.js";
 
 // 입출력
 export const customerContactMemoListInput = z.object({ contactId: z.string().uuid() });
