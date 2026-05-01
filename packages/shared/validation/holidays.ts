@@ -28,9 +28,9 @@ export const listHolidaysInput = z.object({
 });
 
 export const saveHolidaysInput = z.object({
-  creates: z.array(holidayCreateInput),
-  updates: z.array(holidayUpdateInput),
-  deletes: z.array(z.string().uuid()),
+  creates: z.array(holidayCreateInput).default([]),
+  updates: z.array(holidayUpdateInput).default([]),
+  deletes: z.array(z.string().uuid()).default([]),
 });
 
 export const saveHolidaysOutput = z.object({
@@ -55,3 +55,9 @@ export const holidayRangeQuery = z
     },
     { message: "범위는 92일 이하만 허용됩니다." },
   );
+
+export type HolidayCreateInput = z.infer<typeof holidayCreateInput>;
+export type HolidayUpdateInput = z.infer<typeof holidayUpdateInput>;
+export type ListHolidaysInput = z.infer<typeof listHolidaysInput>;
+export type SaveHolidaysInput = z.infer<typeof saveHolidaysInput>;
+export type SaveHolidaysOutput = z.infer<typeof saveHolidaysOutput>;
