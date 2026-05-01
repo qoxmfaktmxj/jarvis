@@ -6,8 +6,7 @@
  * Note: NULL, undefined, and empty string ("") all coalesce to the same
  * empty key segment via `String(value ?? "")`. If your Postgres unique
  * constraint distinguishes NULL from "", pre-filter or normalize rows
- * before calling — this function will report `{a: "X", b: null}` and
- * `{a: "X", b: ""}` as the same composite key "X|".
+ * before calling.
  */
 export function findDuplicateKeys<T extends Record<string, unknown>>(
   rows: readonly T[],
