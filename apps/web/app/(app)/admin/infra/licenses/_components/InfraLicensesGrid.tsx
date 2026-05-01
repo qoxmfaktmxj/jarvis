@@ -13,8 +13,12 @@
  *
  * 디자인 표준은 admin/companies와 동일하게 유지: h-8 행, sticky bg-slate-50 헤더,
  * 신규/변경/삭제 상태 배지·행 색상.
+ *
+ * Baseline applied: Task 9 (2026-05-01) — DataGridToolbar + useUrlFilters + dupChk.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
@@ -24,6 +28,9 @@ import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { EditableNumericCell } from "@/components/grid/cells/EditableNumericCell";
 import { Button } from "@/components/ui/button";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { rowsToCsv, downloadCsv } from "@/lib/utils/csv-export";
+import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import type { InfraLicenseRow } from "@jarvis/shared/validation/infra/license";
 import { listInfraLicenses, saveInfraLicenses } from "../actions";
 import {
@@ -34,6 +41,11 @@ import { MODULE_COLUMNS_FLAT, MODULE_GROUPS } from "./ModuleCheckboxGroup";
 
 type Option = { value: string; label: string };
 
+type FilterDefaults = {
+  q: string;
+  devGbCode: string;
+};
+
 type Props = {
   initialRows: InfraLicenseRow[];
   initialTotal: number;
@@ -41,6 +53,7 @@ type Props = {
   limit: number;
   companyOptions: Option[];
   devGbOptions: Option[];
+  initialFilters?: Partial<FilterDefaults>;
 };
 
 export function InfraLicensesGrid({
@@ -50,20 +63,51 @@ export function InfraLicensesGrid({
   limit,
   companyOptions,
   devGbOptions,
+  initialFilters,
 }: Props) {
+  const tSales = useTranslations("Sales");
   const grid = useInfraLicensesGridState(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<{ q: string; devGbCode: string }>({
-    q: "",
-    devGbCode: "",
-  });
   const [saving, startSave] = useTransition();
   const [, startReload] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
 
+  // URL-synced filter state (Task 4 I-1 / Task 7 pattern).
+  // useMemo for stable FILTER_DEFAULTS reference — prevents useUrlFilters re-render loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const FILTER_DEFAULTS: FilterDefaults = useMemo(
+    () => ({
+      q: initialFilters?.q ?? "",
+      devGbCode: initialFilters?.devGbCode ?? "",
+    }),
+    [],
+  );
+
+  const { values, setValue } = useUrlFilters<FilterDefaults>({ defaults: FILTER_DEFAULTS });
+
+  // Local state for q input: avoids cursor-jump race between URL-derived value and live input.
+  // Debounced 300ms effect commits to URL — mirrors Task 4 fix chargerNm pattern.
+  const [qInput, setQInput] = useState(values.q);
+
+  // Reverse sync: URL → local (browser back/forward navigation).
+  useEffect(() => {
+    setQInput(values.q);
+  }, [values.q]);
+
+  // Local → debounce → URL + reload.
+  useEffect(() => {
+    if (qInput === values.q) return;
+    const t = setTimeout(() => {
+      setValue("q", qInput);
+      reload(1, { ...values, q: qInput });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qInput]);
+
   const reload = useCallback(
-    (nextPage: number, nextFilters: { q: string; devGbCode: string }) => {
+    (nextPage: number, nextFilters: FilterDefaults) => {
       startReload(async () => {
         const res = await listInfraLicenses({
           q: nextFilters.q || undefined,
@@ -75,10 +119,10 @@ export function InfraLicensesGrid({
           grid.reset(res.rows as InfraLicenseRow[]);
           setTotal(res.total);
           setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [grid, limit],
   );
 
@@ -90,22 +134,82 @@ export function InfraLicensesGrid({
     [grid.dirtyCount],
   );
 
+  // CSV export: Hidden:0 visible columns only (Hidden:1 = PK/workspaceId/legacy codes).
+  // 22 module boolean columns included per infra-license domain rule.
+  const handleExport = useCallback(() => {
+    const csv = rowsToCsv(grid.rows.map((r) => r.data), [
+      { key: "devGbCode", header: "환경" },
+      { key: "domainAddr", header: "도메인" },
+      { key: "ipAddr", header: "IP" },
+      { key: "symd", header: "시작일" },
+      { key: "eymd", header: "종료일" },
+      // 사용자/관리
+      { key: "empYn", header: "직원" },
+      { key: "hrYn", header: "인사" },
+      { key: "orgYn", header: "조직" },
+      { key: "eduYn", header: "교육" },
+      // 급여/근태/복지
+      { key: "papYn", header: "급여" },
+      { key: "carYn", header: "차량" },
+      { key: "cpnYn", header: "쿠폰" },
+      { key: "timYn", header: "근태" },
+      { key: "benYn", header: "복지" },
+      // 포털/시스템
+      { key: "appYn", header: "앱" },
+      { key: "eisYn", header: "EIS" },
+      { key: "sysYn", header: "시스템" },
+      { key: "yearYn", header: "연말" },
+      { key: "boardYn", header: "게시판" },
+      { key: "wlYn", header: "WF" },
+      { key: "pdsYn", header: "PDS" },
+      // 협업/보안/IDP
+      { key: "idpYn", header: "IDP" },
+      { key: "abhrYn", header: "ABHR" },
+      { key: "workYn", header: "워크" },
+      { key: "secYn", header: "보안" },
+      { key: "docYn", header: "문서" },
+      { key: "disYn", header: "파견" },
+      // 수량
+      { key: "userCnt", header: "사용자수" },
+      { key: "corpCnt", header: "법인수" },
+      { key: "createdAt", header: "등록일자" },
+    ]);
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    downloadCsv(csv, `infra-licenses_${date}.csv`);
+  }, [grid.rows]);
+
   const handleSave = useCallback(() => {
     startSave(async () => {
       const changes = grid.toBatch();
+
+      // dupChk: composite key (companyId × devGbCode × symd) across all non-deleted rows.
+      // Mirrors the DB unique index: infra_license_ws_company_symd_gb_uniq.
+      const allRowsForDupCheck = grid.rows
+        .filter((r) => r.state !== "deleted")
+        .map((r) => ({
+          companyId: r.data.companyId,
+          devGbCode: r.data.devGbCode,
+          symd: r.data.symd,
+        }));
+      const dups = findDuplicateKeys(allRowsForDupCheck, ["companyId", "devGbCode", "symd"]);
+      if (dups.length > 0) {
+        alert(tSales("Common.DupCheck.message", { count: dups.length }));
+        return;
+      }
+
       const result = await saveInfraLicenses({
         creates: changes.creates,
         updates: changes.updates,
         deletes: changes.deletes,
       });
       if (result.ok) {
-        await reload(page, filterValues);
+        await reload(page, values);
       } else {
         const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
         alert(msg);
       }
     });
-  }, [grid, page, filterValues, reload]);
+  }, [grid, page, values, reload, tSales]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -118,39 +222,30 @@ export function InfraLicensesGrid({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
-        <GridToolbar
-          dirtyCount={grid.dirtyCount}
-          saving={saving}
-          onInsert={() => grid.insertBlank(makeBlankInfraLicense())}
-          onSave={handleSave}
-        />
-      </div>
-
-      {/* Filter row */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
+      {/* DataGridToolbar: unified strip — q input + devGbCode select + GridToolbar controls + export.
+          Task 4 fix pattern (14d6229): place extra controls in children slot. */}
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel={tSales("Common.Excel.label")}
+      >
+        {/* q free-text: 300ms debounce via local state */}
         <input
           type="text"
-          placeholder="회사코드/회사명/도메인/IP"
-          value={filterValues.q}
-          onChange={(e) => {
-            const next = { ...filterValues, q: e.target.value };
-            setFilterValues(next);
-          }}
-          onBlur={() => guarded(() => reload(1, filterValues))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") guarded(() => reload(1, filterValues));
-          }}
-          className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder={tSales("Common.Search.placeholder")}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          className="w-48 rounded border border-slate-200 px-2 py-1 text-xs"
         />
+        {/* devGbCode select: immediate reload */}
         <select
-          value={filterValues.devGbCode}
+          value={values.devGbCode}
           onChange={(e) => {
-            const next = { ...filterValues, devGbCode: e.target.value };
-            guarded(() => reload(1, next));
+            const next = e.target.value;
+            setValue("devGbCode", next);
+            guarded(() => reload(1, { ...values, devGbCode: next }));
           }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-7 rounded border border-slate-200 px-2 text-xs outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="환경 필터"
         >
           <option value="">환경 (전체)</option>
           {devGbOptions.map((o) => (
@@ -159,6 +254,17 @@ export function InfraLicensesGrid({
             </option>
           ))}
         </select>
+        {/* GridToolbar: insert + save controls inside the unified strip */}
+        <GridToolbar
+          dirtyCount={grid.dirtyCount}
+          saving={saving}
+          onInsert={() => grid.insertBlank(makeBlankInfraLicense())}
+          onSave={handleSave}
+        />
+      </DataGridToolbar>
+
+      <div className="flex items-center">
+        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
       </div>
 
       <div className="overflow-auto rounded border border-slate-200">
@@ -394,7 +500,7 @@ export function InfraLicensesGrid({
           size="sm"
           variant="outline"
           disabled={page <= 1 || saving}
-          onClick={() => guarded(() => reload(page - 1, filterValues))}
+          onClick={() => guarded(() => reload(page - 1, values))}
         >
           이전
         </Button>
@@ -405,7 +511,7 @@ export function InfraLicensesGrid({
           size="sm"
           variant="outline"
           disabled={page >= totalPages || saving}
-          onClick={() => guarded(() => reload(page + 1, filterValues))}
+          onClick={() => guarded(() => reload(page + 1, values))}
         >
           다음
         </Button>

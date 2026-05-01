@@ -41,7 +41,11 @@ async function loadDevGbOptions(workspaceId: string) {
     : DEV_GB_FALLBACK;
 }
 
-export default async function AdminInfraLicensesPage() {
+export default async function AdminInfraLicensesPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -50,8 +54,16 @@ export default async function AdminInfraLicensesPage() {
   }
 
   const limit = 50;
+  const sp = searchParams ? await searchParams : {};
+  const filters = {
+    q: typeof sp.q === "string" ? sp.q : undefined,
+    devGbCode: typeof sp.devGbCode === "string" ? sp.devGbCode : undefined,
+    page: 1,
+    limit,
+  };
+
   const [listResult, companyOptions, devGbOptions] = await Promise.all([
-    listInfraLicenses({ page: 1, limit }),
+    listInfraLicenses(filters),
     listCompanyOptions(session.workspaceId),
     loadDevGbOptions(session.workspaceId),
   ]);
@@ -73,6 +85,7 @@ export default async function AdminInfraLicensesPage() {
         limit={limit}
         companyOptions={companyOptions}
         devGbOptions={devGbOptions}
+        initialFilters={{ q: filters.q ?? "", devGbCode: filters.devGbCode ?? "" }}
       />
     </div>
   );
