@@ -170,6 +170,20 @@ export function MenuGrid({
         editable: true,
       },
       {
+        key: "badge",
+        label: t("columns.badge"),
+        type: "text",
+        width: 100,
+        editable: true,
+      },
+      {
+        key: "keywords",
+        label: t("columns.keywords"),
+        type: "text",
+        width: 240,
+        editable: true,
+      },
+      {
         key: "description",
         label: t("columns.description"),
         type: "textarea",
@@ -493,6 +507,8 @@ export function getMenuExportColumns(t: (k: string) => string) {
     { key: "routePath", header: t("columns.routePath") },
     { key: "sortOrder", header: t("columns.sortOrder") },
     { key: "isVisible", header: t("columns.isVisible") },
+    { key: "badge", header: t("columns.badge") },
+    { key: "keywords", header: t("columns.keywords") },
     { key: "description", header: t("columns.description") },
     { key: "permCnt", header: t("columns.permCnt") },
   ] as const;

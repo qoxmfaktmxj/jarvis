@@ -10,10 +10,12 @@
  *
  * NOTE — 스키마 컬럼:
  *   menu_item:  id, workspaceId, parentId, code, kind, label, description, icon,
- *               routePath, sortOrder, isVisible, requiredRole(@deprecated), createdAt, updatedAt.
+ *               routePath, sortOrder, isVisible, requiredRole(@deprecated),
+ *               badge, keywords, createdAt, updatedAt.
  *   menu_permission: (menuItemId, permissionId) PK.
  *
- *   `badge` 컬럼은 현재 스키마에 없으므로 grid에서도 제외한다 (spec 대비 deviation).
+ *   `keywords` 는 DB 상 text[] 이지만 admin grid UX 목적으로 boundary 에서는
+ *   comma-separated string 으로 표현한다 (server actions 가 양방향 변환).
  */
 import { z } from "zod";
 
@@ -35,6 +37,14 @@ export const menuRow = z.object({
   sortOrder: z.number().int(),
   description: z.string().nullable(),
   isVisible: z.boolean(),
+  /** Sidebar label badge text (e.g. "AI"). Empty/null → no badge rendered. */
+  badge: z.string().max(50).nullable(),
+  /**
+   * CommandPalette fuzzy-search vocabulary. Boundary representation =
+   * comma-separated string (e.g. "AI, 질문, ask"). server actions split
+   * into `string[]` before persisting. Empty/null → no extra keywords.
+   */
+  keywords: z.string().max(500).nullable(),
   // joined: 권한 갯수 (permCnt)
   permCnt: z.number().int().min(0).default(0),
 });
@@ -55,6 +65,13 @@ export const menuCreateInput = z.object({
   sortOrder: z.number().int().default(0),
   description: z.string().nullable().optional(),
   isVisible: z.boolean().default(true),
+  /** Sidebar badge text (e.g. "AI"). Optional. */
+  badge: z.string().max(50).nullable().optional(),
+  /**
+   * Fuzzy-search keywords as a comma-separated string. server actions splits
+   * into `string[]` before insert.
+   */
+  keywords: z.string().max(500).nullable().optional(),
 });
 
 export const menuUpdateInput = z.object({

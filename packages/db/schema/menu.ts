@@ -32,6 +32,10 @@ export const menuItem = pgTable(
     routePath: varchar("route_path", { length: 300 }),
     sortOrder: integer("sort_order").default(0).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
+    // Sidebar label badge (e.g. "AI", "NEW"). Nullable — most rows have none.
+    badge: text("badge"),
+    // CommandPalette fuzzy-search vocabulary. Nullable Postgres text[].
+    keywords: text("keywords").array(),
     // @deprecated rbac-menu-tree (2026-04-30): replaced by menu_permission junction.
     // Kept for backwards compat; will be dropped after all readers migrate to permission-based gating.
     requiredRole: varchar("required_role", { length: 50 }),
