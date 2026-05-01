@@ -1,0 +1,45 @@
+-- Phase-Sales P1.5 Task 5: 인프라 운영 라이선스 (TBIZ500)
+-- 회사 × 환경(개발/스테이징/운영) 단위로 22 모듈 라이선스 활성 여부 + 도메인/IP/사용자수 보관.
+CREATE TABLE "infra_license" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"workspace_id" uuid NOT NULL,
+	"company_id" uuid NOT NULL,
+	"legacy_company_cd" text,
+	"legacy_company_nm" text,
+	"symd" date NOT NULL,
+	"eymd" date,
+	"dev_gb_code" text NOT NULL,
+	"domain_addr" text,
+	"ip_addr" text,
+	"user_cnt" integer,
+	"corp_cnt" integer,
+	"emp_yn" boolean DEFAULT false NOT NULL,
+	"hr_yn" boolean DEFAULT false NOT NULL,
+	"org_yn" boolean DEFAULT false NOT NULL,
+	"edu_yn" boolean DEFAULT false NOT NULL,
+	"pap_yn" boolean DEFAULT false NOT NULL,
+	"car_yn" boolean DEFAULT false NOT NULL,
+	"cpn_yn" boolean DEFAULT false NOT NULL,
+	"tim_yn" boolean DEFAULT false NOT NULL,
+	"ben_yn" boolean DEFAULT false NOT NULL,
+	"app_yn" boolean DEFAULT false NOT NULL,
+	"eis_yn" boolean DEFAULT false NOT NULL,
+	"sys_yn" boolean DEFAULT false NOT NULL,
+	"year_yn" boolean DEFAULT false NOT NULL,
+	"board_yn" boolean DEFAULT false NOT NULL,
+	"wl_yn" boolean DEFAULT false NOT NULL,
+	"pds_yn" boolean DEFAULT false NOT NULL,
+	"idp_yn" boolean DEFAULT false NOT NULL,
+	"abhr_yn" boolean DEFAULT false NOT NULL,
+	"work_yn" boolean DEFAULT false NOT NULL,
+	"sec_yn" boolean DEFAULT false NOT NULL,
+	"doc_yn" boolean DEFAULT false NOT NULL,
+	"dis_yn" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone,
+	"created_by" uuid,
+	"updated_by" uuid
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX "infra_license_ws_company_symd_gb_uniq" ON "infra_license" USING btree ("workspace_id","company_id","symd","dev_gb_code");--> statement-breakpoint
+CREATE INDEX "infra_license_ws_company_idx" ON "infra_license" USING btree ("workspace_id","company_id");

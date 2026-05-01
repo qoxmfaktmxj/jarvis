@@ -386,6 +386,13 @@
       "when": 1777779312168,
       "tag": "0054_add_mail_id_memo_to_mail_person",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1777865712168,
+      "tag": "0055_create_infra_license",
+      "breakpoints": true
     }
   ]
 }
