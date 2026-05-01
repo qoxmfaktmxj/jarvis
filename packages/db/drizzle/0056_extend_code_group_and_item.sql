@@ -23,7 +23,7 @@ ALTER TABLE "code_item" ADD COLUMN "note9" text;--> statement-breakpoint
 ALTER TABLE "code_item" ADD COLUMN "num_note" integer;--> statement-breakpoint
 ALTER TABLE "code_item" ADD COLUMN "sdate" date DEFAULT '1900-01-01' NOT NULL;--> statement-breakpoint
 ALTER TABLE "code_item" ADD COLUMN "edate" date DEFAULT '2999-12-31' NOT NULL;--> statement-breakpoint
-ALTER TABLE "code_item" ADD COLUMN "visual_yn" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-
-CREATE UNIQUE INDEX "code_group_ws_code_uniq" ON "code_group" USING btree ("workspace_id","code");--> statement-breakpoint
-CREATE UNIQUE INDEX "code_item_group_code_uniq" ON "code_item" USING btree ("group_id","code");
+ALTER TABLE "code_item" ADD COLUMN "visual_yn" boolean DEFAULT true NOT NULL;
+-- NOTE: The unique indexes "code_group_ws_code_uniq" and "code_item_group_code_uniq"
+-- are already created in 0033_admin_users_status.sql (lines 29-32). Re-emitting them
+-- here would fail with `relation already exists` (PG 42P07).

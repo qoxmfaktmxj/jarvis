@@ -23,8 +23,6 @@ import { db } from "@jarvis/db/client";
 import { auditLog, codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
-  codeGroupRow,
-  codeItemRow,
   listCodeGroupsInput,
   listCodeGroupsOutput,
   listCodeItemsInput,
@@ -575,6 +573,3 @@ export async function saveCodeItems(
     errors: errors.length > 0 ? errors : undefined,
   });
 }
-
-// expose row schemas for client consumers if useful
-export { codeGroupRow, codeItemRow };
