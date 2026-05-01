@@ -50,11 +50,21 @@ export const infraLicenseRow = z.object({
 });
 
 export const listInfraLicensesInput = z.object({
-  q: z.string().optional(),
-  devGbCode: z.string().optional(),
+  q: z.string().trim().optional(),
+  devGbCode: z.string().trim().optional(),
+  /** B10025 code group filter (alias kept for URL-param compatibility) */
+  searchDevGbCd: z.string().trim().optional(),
   companyId: z.string().uuid().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
+});
+
+/** Same filters as listInfraLicensesInput minus pagination — used by exportInfraLicenses. */
+export const exportInfraLicensesInput = z.object({
+  q: z.string().trim().optional(),
+  devGbCode: z.string().trim().optional(),
+  searchDevGbCd: z.string().trim().optional(),
+  companyId: z.string().uuid().optional(),
 });
 
 export const listInfraLicensesOutput = z.object({
@@ -81,5 +91,6 @@ export const saveInfraLicensesOutput = z.object({
 export type InfraLicenseRow = z.infer<typeof infraLicenseRow>;
 export type ListInfraLicensesInput = z.infer<typeof listInfraLicensesInput>;
 export type ListInfraLicensesOutput = z.infer<typeof listInfraLicensesOutput>;
+export type ExportInfraLicensesInput = z.infer<typeof exportInfraLicensesInput>;
 export type SaveInfraLicensesInput = z.infer<typeof saveInfraLicensesInput>;
 export type SaveInfraLicensesOutput = z.infer<typeof saveInfraLicensesOutput>;

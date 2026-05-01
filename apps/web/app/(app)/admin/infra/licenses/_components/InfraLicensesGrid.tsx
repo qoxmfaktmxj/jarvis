@@ -4,17 +4,15 @@
  *
  * 인프라 라이선스 (TBIZ500) 그리드.
  *
- * 일반 도메인 그리드와 달리 22 모듈 boolean + 숫자 두 컬럼(userCnt/corpCnt) 때문에
- * 공유 <DataGrid> 추상화로는 깔끔하게 표현되지 않는다(커스텀 헤더 그룹 + numeric 셀).
- * 따라서 본 화면은 공유 cell/hook(useGridState · EditableTextCell · EditableSelectCell ·
- * EditableDateCell · EditableBooleanCell · EditableNumericCell · GridToolbar ·
- * RowStatusBadge · UnsavedChangesDialog)을 직접 조립한 커스텀 테이블이다.
- * <DataGrid>는 의도적으로 변경하지 않는다(Phase-Sales P1.5 Task 5의 forbidden list).
- *
- * 디자인 표준은 admin/companies와 동일하게 유지: h-8 행, sticky bg-slate-50 헤더,
- * 신규/변경/삭제 상태 배지·행 색상.
+ * Task 9 additions:
+ * - DataGridToolbar with Excel export button
+ * - useUrlFilters for URL-persistent filter state
+ * - findDuplicateKeys composite-key dedup guard (companyId + devGbCode + symd)
+ * - CodeGroupPopupLauncher on devGbCode cell (B10025 code group items)
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { Suspense, useCallback, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
@@ -23,9 +21,17 @@ import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
 import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { EditableNumericCell } from "@/components/grid/cells/EditableNumericCell";
+import {
+  CodeGroupPopupLauncher,
+  type CodeGroupItem,
+} from "@/components/grid/CodeGroupPopupLauncher";
 import { Button } from "@/components/ui/button";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import type { InfraLicenseRow } from "@jarvis/shared/validation/infra/license";
 import { listInfraLicenses, saveInfraLicenses } from "../actions";
+import { exportInfraLicenses } from "../export";
 import {
   makeBlankInfraLicense,
   useInfraLicensesGridState,
@@ -40,34 +46,57 @@ type Props = {
   page: number;
   limit: number;
   companyOptions: Option[];
+  /** devGb options — doubles as B10025 code group items for the popup */
   devGbOptions: Option[];
+  /** Pre-selected devGbCode filter from URL (from page.tsx SSR) */
+  initialSearchDevGbCd?: string;
+  /** Pre-set text search query from URL */
+  initialQ?: string;
 };
 
-export function InfraLicensesGrid({
+/** Convert Option[] to CodeGroupItem[] for CodeGroupPopupLauncher */
+function toCodeGroupItems(options: Option[]): readonly CodeGroupItem[] {
+  return options.map((o) => ({ code: o.value, label: o.label }));
+}
+
+function InfraLicensesGridInner({
   initialRows,
   initialTotal,
   page: initialPage,
   limit,
   companyOptions,
   devGbOptions,
+  initialSearchDevGbCd = "",
+  initialQ = "",
 }: Props) {
+  const t = useTranslations("Sales");
+
   const grid = useInfraLicensesGridState(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<{ q: string; devGbCode: string }>({
-    q: "",
-    devGbCode: "",
-  });
   const [saving, startSave] = useTransition();
+  const [exporting, startExport] = useTransition();
   const [, startReload] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
+  const [dupError, setDupError] = useState<string | null>(null);
+
+  // URL-persistent filter state (useSearchParams requires Suspense boundary)
+  const { values: filterValues, setValue: setFilterValue } = useUrlFilters({
+    defaults: {
+      q: initialQ,
+      searchDevGbCd: initialSearchDevGbCd,
+      page: String(initialPage),
+    },
+  });
+
+  const devGbCodeItems = useMemo(() => toCodeGroupItems(devGbOptions), [devGbOptions]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: { q: string; devGbCode: string }) => {
+    (nextPage: number, nextQ: string, nextDevGbCd: string) => {
       startReload(async () => {
         const res = await listInfraLicenses({
-          q: nextFilters.q || undefined,
-          devGbCode: nextFilters.devGbCode || undefined,
+          q: nextQ || undefined,
+          searchDevGbCd: nextDevGbCd || undefined,
           page: nextPage,
           limit,
         });
@@ -75,7 +104,6 @@ export function InfraLicensesGrid({
           grid.reset(res.rows as InfraLicenseRow[]);
           setTotal(res.total);
           setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
@@ -91,6 +119,17 @@ export function InfraLicensesGrid({
   );
 
   const handleSave = useCallback(() => {
+    // Composite-key dedup guard: companyId + devGbCode + symd
+    const activeRows = grid.rows
+      .filter((r) => r.state !== "deleted")
+      .map((r) => r.data);
+    const dups = findDuplicateKeys(activeRows, ["companyId", "devGbCode", "symd"]);
+    if (dups.length > 0) {
+      setDupError(`중복된 키가 있습니다: ${dups.join(", ")}`);
+      return;
+    }
+    setDupError(null);
+
     startSave(async () => {
       const changes = grid.toBatch();
       const result = await saveInfraLicenses({
@@ -99,13 +138,27 @@ export function InfraLicensesGrid({
         deletes: changes.deletes,
       });
       if (result.ok) {
-        await reload(page, filterValues);
+        await reload(page, filterValues.q, filterValues.searchDevGbCd);
       } else {
         const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
         alert(msg);
       }
     });
   }, [grid, page, filterValues, reload]);
+
+  const handleExport = useCallback(() => {
+    startExport(async () => {
+      const result = await exportInfraLicenses({
+        q: filterValues.q || undefined,
+        searchDevGbCd: filterValues.searchDevGbCd || undefined,
+      });
+      if (result.ok) {
+        triggerDownload(result.bytes, result.filename);
+      } else {
+        alert("엑셀 내보내기 실패: " + result.error);
+      }
+    });
+  }, [filterValues]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
@@ -116,16 +169,35 @@ export function InfraLicensesGrid({
     return m;
   }, [companyOptions]);
 
+  const handleSearchDevGbCdSelect = useCallback(
+    (item: CodeGroupItem) => {
+      // toggle: selecting the same code again clears the filter
+      const newVal = item.code === filterValues.searchDevGbCd ? "" : item.code;
+      setFilterValue("searchDevGbCd", newVal);
+      setFilterValue("page", "1");
+      guarded(() => reload(1, filterValues.q, newVal));
+    },
+    [filterValues, setFilterValue, guarded, reload],
+  );
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
+      {/* DataGridToolbar: Excel export + GridToolbar (insert/save) unified */}
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel={t("Common.Excel.button")}
+        isExporting={exporting}
+      >
         <GridToolbar
           dirtyCount={grid.dirtyCount}
           saving={saving}
           onInsert={() => grid.insertBlank(makeBlankInfraLicense())}
           onSave={handleSave}
         />
+      </DataGridToolbar>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
       </div>
 
       {/* Filter row */}
@@ -134,40 +206,63 @@ export function InfraLicensesGrid({
           type="text"
           placeholder="회사코드/회사명/도메인/IP"
           value={filterValues.q}
-          onChange={(e) => {
-            const next = { ...filterValues, q: e.target.value };
-            setFilterValues(next);
-          }}
-          onBlur={() => guarded(() => reload(1, filterValues))}
+          onChange={(e) => setFilterValue("q", e.target.value)}
+          onBlur={() => guarded(() => reload(1, filterValues.q, filterValues.searchDevGbCd))}
           onKeyDown={(e) => {
-            if (e.key === "Enter") guarded(() => reload(1, filterValues));
+            if (e.key === "Enter")
+              guarded(() => reload(1, filterValues.q, filterValues.searchDevGbCd));
           }}
           className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <select
-          value={filterValues.devGbCode}
-          onChange={(e) => {
-            const next = { ...filterValues, devGbCode: e.target.value };
-            guarded(() => reload(1, next));
-          }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">환경 (전체)</option>
-          {devGbOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        {/* searchDevGbCd filter — uses CodeGroupPopupLauncher with devGbOptions (B10025) */}
+        <div className="flex items-center gap-1" data-testid="searchDevGbCd-filter">
+          <span className="text-[13px] text-slate-500">
+            {t("Common.Search.searchDevGbCd")}:
+          </span>
+          <span
+            className="min-w-[60px] rounded border border-slate-300 px-2 py-1 text-[13px] text-slate-700"
+            data-testid="searchDevGbCd-display"
+          >
+            {devGbOptions.find((o) => o.value === filterValues.searchDevGbCd)?.label ?? "전체"}
+          </span>
+          <CodeGroupPopupLauncher
+            triggerLabel="선택"
+            items={devGbCodeItems}
+            onSelect={handleSearchDevGbCdSelect}
+            searchable={false}
+          />
+          {filterValues.searchDevGbCd ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setFilterValue("searchDevGbCd", "");
+                setFilterValue("page", "1");
+                guarded(() => reload(1, filterValues.q, ""));
+              }}
+              className="px-2 text-[12px]"
+            >
+              초기화
+            </Button>
+          ) : null}
+        </div>
       </div>
+
+      {dupError ? (
+        <div
+          role="alert"
+          className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+        >
+          {dupError}
+        </div>
+      ) : null}
 
       <div className="overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-            {/* Group header row — 22 모듈 boolean 그룹 라벨 */}
             <tr className="border-b border-slate-200">
               <th className="w-10 px-2 py-1" colSpan={2}></th>
-              {/* meta columns: company, symd, eymd, devGb, domain, ip */}
               <th colSpan={6} className="px-2 py-1 text-left text-slate-500">
                 기본 정보
               </th>
@@ -180,13 +275,11 @@ export function InfraLicensesGrid({
                   {g.label}
                 </th>
               ))}
-              {/* userCnt, corpCnt */}
               <th colSpan={2} className="border-l border-slate-200 px-2 py-1 text-center text-slate-500">
                 수량
               </th>
               <th className="w-16 px-2 py-1"></th>
             </tr>
-            {/* Column header row */}
             <tr className="border-b border-slate-200">
               <th className="w-10 px-2 py-2 text-left">No</th>
               <th className="w-10 px-2 py-2">삭제</th>
@@ -245,6 +338,11 @@ export function InfraLicensesGrid({
                   value: InfraLicenseRow[K],
                 ) => grid.update(row.id, key, value);
 
+                const devGbLabel =
+                  devGbOptions.find((o) => o.value === row.devGbCode)?.label ??
+                  row.devGbCode ??
+                  "";
+
                 return (
                   <tr
                     key={row.id}
@@ -289,7 +387,11 @@ export function InfraLicensesGrid({
                       )}
                     </td>
                     {/* 시작일 */}
-                    <td className="h-8 p-0 align-middle" data-col="symd" data-cell-value={row.symd}>
+                    <td
+                      className="h-8 p-0 align-middle"
+                      data-col="symd"
+                      data-cell-value={row.symd}
+                    >
                       <EditableDateCell
                         value={row.symd || null}
                         onCommit={(v) => update("symd", v ?? "")}
@@ -306,18 +408,23 @@ export function InfraLicensesGrid({
                         onCommit={(v) => update("eymd", v)}
                       />
                     </td>
-                    {/* 환경 */}
+                    {/* 환경 — CodeGroupPopupLauncher as devGbCode cell editor (render callback pattern) */}
                     <td
-                      className="h-8 p-0 align-middle"
+                      className="h-8 p-1 align-middle"
                       data-col="devGbCode"
                       data-cell-value={row.devGbCode}
                     >
-                      <EditableSelectCell
-                        value={row.devGbCode || null}
-                        options={devGbOptions}
-                        onCommit={(v) => update("devGbCode", v ?? "")}
-                        required
-                      />
+                      <div className="flex items-center gap-1">
+                        <span className="min-w-[36px] text-[12px] text-slate-700">
+                          {devGbLabel}
+                        </span>
+                        <CodeGroupPopupLauncher
+                          triggerLabel="▾"
+                          items={devGbCodeItems}
+                          onSelect={(item) => update("devGbCode", item.code)}
+                          searchable={false}
+                        />
+                      </div>
                     </td>
                     {/* 도메인 */}
                     <td
@@ -394,7 +501,11 @@ export function InfraLicensesGrid({
           size="sm"
           variant="outline"
           disabled={page <= 1 || saving}
-          onClick={() => guarded(() => reload(page - 1, filterValues))}
+          onClick={() => {
+            const next = page - 1;
+            setFilterValue("page", String(next));
+            guarded(() => reload(next, filterValues.q, filterValues.searchDevGbCd));
+          }}
         >
           이전
         </Button>
@@ -405,7 +516,11 @@ export function InfraLicensesGrid({
           size="sm"
           variant="outline"
           disabled={page >= totalPages || saving}
-          onClick={() => guarded(() => reload(page + 1, filterValues))}
+          onClick={() => {
+            const next = page + 1;
+            setFilterValue("page", String(next));
+            guarded(() => reload(next, filterValues.q, filterValues.searchDevGbCd));
+          }}
         >
           다음
         </Button>
@@ -427,5 +542,17 @@ export function InfraLicensesGrid({
         onCancel={() => setPendingNav(null)}
       />
     </div>
+  );
+}
+
+/**
+ * Suspense wrapper because useUrlFilters uses useSearchParams(),
+ * which requires Suspense when rendered as a Server Component child.
+ */
+export function InfraLicensesGrid(props: Props) {
+  return (
+    <Suspense fallback={null}>
+      <InfraLicensesGridInner {...props} />
+    </Suspense>
   );
 }
