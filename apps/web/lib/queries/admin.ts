@@ -168,6 +168,17 @@ export async function getOrgTree(workspaceId: string): Promise<OrgNode[]> {
 
 // ── Menus ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Admin variant: returns ALL `menu_item` rows in the workspace, with no
+ * permission filter. Used by `(app)/admin/menus/page.tsx` so administrators
+ * can inspect the full menu catalog regardless of their personal permissions.
+ *
+ * **For the user-facing sidebar / CommandPalette use the RBAC-filtered
+ * `getVisibleMenuTree(session, kind)` at `apps/web/lib/server/menu-tree.ts`
+ * instead.** Two functions, opposite security postures: this one is admin-
+ * gated by the calling page; the other is the runtime filter every signed-in
+ * user gets.
+ */
 export async function getMenuTree(workspaceId: string) {
   return db
     .select()

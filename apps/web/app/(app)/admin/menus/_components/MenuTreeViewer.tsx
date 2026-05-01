@@ -3,11 +3,14 @@
 /**
  * apps/web/app/(app)/admin/menus/_components/MenuTreeViewer.tsx
  *
- * Read-only tree viewer for the admin/menus page.
- * Displays menu_item rows as a flat table grouped by kind (menu / action),
- * sorted by sortOrder. Edit UI is deferred to a future task.
+ * Read-only viewer for the admin/menus page.
+ * Displays menu_item rows as a flat list grouped by `kind` (menu / action),
+ * sorted by sortOrder. Hierarchy (parent_id) is currently surfaced as a
+ * small "child" badge; nested rendering will arrive when the seed introduces
+ * parent_id rows. Edit UI is deferred to a future task.
  */
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 
 type MenuItem = {
@@ -28,21 +31,43 @@ type Props = {
 
 export function MenuTreeViewer({ items }: Props) {
   const t = useTranslations('Admin.Menus');
+
+  // Dev-only: warn if seed introduces parent_id rows. Mirrors Sidebar.tsx
+  // because admins are the most likely audience to add hierarchical rows
+  // through a future write UI; the viewer flat-lists today and would
+  // misrepresent the tree once children appear.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return;
+    if (items.some((i) => i.parentId !== null)) {
+      console.warn(
+        '[MenuTreeViewer] menu_item has parent_id rows but the viewer renders flat. Hierarchical rendering will be added in a follow-up task.',
+      );
+    }
+  }, [items]);
+
   const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
   const menuItems = sorted.filter((i) => i.kind === 'menu');
   const actionItems = sorted.filter((i) => i.kind === 'action');
 
   return (
     <div className="space-y-8">
-      <Section title={t('kindMenu')} items={menuItems} />
+      <Section title={t('kindMenu')} items={menuItems} t={t} />
       {actionItems.length > 0 && (
-        <Section title={t('kindAction')} items={actionItems} />
+        <Section title={t('kindAction')} items={actionItems} t={t} />
       )}
     </div>
   );
 }
 
-function Section({ title, items }: { title: string; items: MenuItem[] }) {
+function Section({
+  title,
+  items,
+  t,
+}: {
+  title: string;
+  items: MenuItem[];
+  t: (key: string) => string;
+}) {
   return (
     <div className="space-y-2">
       <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -51,7 +76,7 @@ function Section({ title, items }: { title: string; items: MenuItem[] }) {
       <div className="rounded-md border divide-y">
         {items.length === 0 ? (
           <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-            항목 없음
+            {t('empty')}
           </div>
         ) : (
           items.map((item) => (
@@ -82,7 +107,7 @@ function Section({ title, items }: { title: string; items: MenuItem[] }) {
               <div className="flex items-center gap-3">
                 {item.parentId && (
                   <span className="text-[10px] bg-surface-100 text-surface-600 rounded px-1.5 py-0.5">
-                    하위
+                    {t('childBadge')}
                   </span>
                 )}
                 <span
@@ -93,7 +118,7 @@ function Section({ title, items }: { title: string; items: MenuItem[] }) {
                       : 'bg-surface-100 text-surface-500',
                   ].join(' ')}
                 >
-                  {item.isVisible ? '표시' : '숨김'}
+                  {item.isVisible ? t('visible') : t('hidden')}
                 </span>
               </div>
             </div>

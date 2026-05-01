@@ -113,12 +113,10 @@
       "description": "DB 기반 메뉴 트리를 조회합니다. 메뉴 추가·수정은 packages/db/seed/menus.ts 를 통해 시드하거나 후속 편집 UI에서 처리합니다.",
       "kindMenu": "사이드바 메뉴",
       "kindAction": "빠른 액션 (CommandPalette)",
+      "empty": "항목 없음",
+      "childBadge": "하위",
       "visible": "표시",
-      "anyRole": "모든 역할",
-      "anyRoleOption": "— 모든 역할 —",
-      "saving": "저장 중...",
-      "saved": "저장됨!",
-      "saveAll": "전체 저장"
+      "hidden": "숨김"
     },
     "Organizations": {
       "title": "조직",
