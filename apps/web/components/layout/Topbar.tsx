@@ -8,20 +8,12 @@
  */
 
 import { useCallback } from "react";
-import { usePathname } from "next/navigation";
 import { Bell, Moon, Search, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
 import { setTheme, useTheme } from "./uiPrefs";
-import { ROUTE_LABELS } from "@/lib/routes";
+import { TabBar } from "./tabs/TabBar";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
-
-function routeLabel(pathname: string): string {
-  for (const [prefix, label] of ROUTE_LABELS) {
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return label;
-  }
-  return "";
-}
 
 export function Topbar({
   userName,
@@ -32,7 +24,6 @@ export function Topbar({
   menus: MenuTreeNode[];
   actions: MenuTreeNode[];
 }) {
-  const pathname = usePathname();
   const theme = useTheme();
   const isDark = theme === "dark";
 
@@ -59,12 +50,9 @@ export function Topbar({
           transition: "left .2s ease",
         }}
       >
-        <span
-          className="text-[13.5px] font-medium"
-          style={{ color: "var(--ink)" }}
-        >
-          {routeLabel(pathname)}
-        </span>
+        <div className="flex items-stretch h-full" style={{ flex: 1, minWidth: 0 }}>
+          <TabBar />
+        </div>
 
         <div className="flex-1" />
 
