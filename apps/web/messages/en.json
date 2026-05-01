@@ -131,6 +131,33 @@
         "next": "Next",
         "pageInfo": "{page} / {total}"
       }
+    },
+    "Users": {
+      "title": "User Management",
+      "description": "Manage internal users and permissions.",
+      "Grid": {
+        "columns": {
+          "employeeId": "Employee ID",
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "org": "Org",
+          "position": "Position",
+          "jobTitle": "Job Title",
+          "status": "Status",
+          "isOutsourced": "Outsourced",
+          "updatedBy": "Last Modified By",
+          "updatedAt": "Last Modified At"
+        },
+        "status": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "locked": "Locked"
+        },
+        "filters": {
+          "search": "Search by ID/name/email"
+        }
+      }
     }
   },
   "Sales": {
