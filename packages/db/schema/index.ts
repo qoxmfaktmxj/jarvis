@@ -39,4 +39,3 @@ export * from "./quiz-season.js";
 export * from "./sales-customer.js";
 export * from "./sales-product-type.js";
 export * from "./sales-mail-person.js";
-export * from "./sales-license.js";
