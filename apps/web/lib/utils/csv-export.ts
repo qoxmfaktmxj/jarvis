@@ -5,7 +5,10 @@ export type CsvColumn<T> = {
 
 function escape(v: unknown): string {
   if (v === null || v === undefined) return "";
-  const s = String(v);
+  let s = String(v);
+  // CSV-injection neutralization (OWASP). Mirrors server-side exporter
+  // at apps/web/app/api/admin/users/export/route.ts:21.
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
   if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }

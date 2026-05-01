@@ -38,4 +38,12 @@ describe("rowsToCsv", () => {
   it("returns header only when rows empty", () => {
     expect(rowsToCsv([], columns)).toBe("A,B");
   });
+
+  it("neutralizes CSV-injection prefixes (=, +, -, @)", () => {
+    const cols: CsvColumn<{ x: string }>[] = [{ key: "x", header: "X" }];
+    expect(rowsToCsv([{ x: "=HACK()" }], cols)).toBe("X\r\n'=HACK()");
+    expect(rowsToCsv([{ x: "+CMD" }], cols)).toBe("X\r\n'+CMD");
+    expect(rowsToCsv([{ x: "-MINUS" }], cols)).toBe("X\r\n'-MINUS");
+    expect(rowsToCsv([{ x: "@HYPERLINK" }], cols)).toBe("X\r\n'@HYPERLINK");
+  });
 });
