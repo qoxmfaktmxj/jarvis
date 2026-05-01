@@ -584,6 +584,3 @@ export async function saveMenuPermissions(
     errors: errors.length > 0 ? errors : undefined,
   });
 }
-
-// expose row schemas for client consumers if useful
-export { menuRow, menuPermissionRow };
