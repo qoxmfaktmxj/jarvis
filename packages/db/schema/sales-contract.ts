@@ -249,13 +249,12 @@ export const salesContractAddinfo = pgTable(
     // FK to sales_contract
     contractId: uuid("contract_id").notNull().references(() => salesContract.id, { onDelete: "cascade" }),
 
-    // Legacy composite key (for ETL re-import)
+    // legacy composite key (TBIZ032 PK: ENTER_CD + CONT_NO + SABUN — no CONT_YEAR)
     legacyEnterCd: varchar("legacy_enter_cd", { length: 10 }),
-    legacyContYear: varchar("legacy_cont_year", { length: 4 }),
     legacyContNo: varchar("legacy_cont_no", { length: 30 }),
-
-    // ===== TBIZ032 columns from dump line 387-399 =====
     legacySabun: varchar("legacy_sabun", { length: 13 }),
+
+    // ===== TBIZ032 data column from dump line 387-399 =====
     mailId: varchar("mail_id", { length: 100 }),
 
     // Audit columns

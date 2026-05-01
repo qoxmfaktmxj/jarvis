@@ -102,9 +102,10 @@ describe("sales_contract_addinfo schema (TBIZ032)", () => {
 
   it("has legacy composite key + audit columns", () => {
     const cols = Object.keys(salesContractAddinfo);
+    // TBIZ032 PK is (ENTER_CD, CONT_NO, SABUN) — no CONT_YEAR
     assert.ok(cols.includes("legacyEnterCd"), "missing legacyEnterCd");
-    assert.ok(cols.includes("legacyContYear"), "missing legacyContYear");
     assert.ok(cols.includes("legacyContNo"), "missing legacyContNo");
+    assert.ok(cols.includes("legacySabun"), "missing legacySabun");
     assert.ok(cols.includes("createdAt"), "missing createdAt");
     assert.ok(cols.includes("updatedAt"), "missing updatedAt");
     assert.ok(cols.includes("createdBy"), "missing createdBy");
