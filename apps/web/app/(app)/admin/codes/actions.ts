@@ -126,9 +126,13 @@ export async function listCodeGroups(
   const input = listCodeGroupsInput.parse(rawInput);
   const offset = (input.page - 1) * input.limit;
 
-  // EXISTS subquery: code_item.name이 q와 부분일치하는 row가 있는 그룹
+  // EXISTS subquery: code_item.name이 q 혹은 qName과 부분일치하는 row가 있는 그룹.
+  // legacy '포함세부코드명' 토글이 켜졌을 때, q (그룹코드) 또는 qName (그룹코드명)
+  // 어느 쪽이 채워져 있어도 세부코드명 매칭에 그 substring을 활용한다.
+  const detailNeedle =
+    input.includesDetailCodeNm ? (input.qName ?? input.q ?? "") : "";
   const detailMatch =
-    input.q && input.includesDetailCodeNm
+    detailNeedle.length > 0
       ? exists(
           db
             .select({ one: sql`1` })
@@ -136,11 +140,22 @@ export async function listCodeGroups(
             .where(
               and(
                 eq(codeItem.groupId, codeGroup.id),
-                ilike(codeItem.name, `%${input.q}%`),
+                ilike(codeItem.name, `%${detailNeedle}%`),
               ),
             ),
         )
       : undefined;
+
+  // q matches code/description; qName matches name; each independent (AND).
+  const qFilter = input.q
+    ? or(
+        ilike(codeGroup.code, `%${input.q}%`),
+        ilike(codeGroup.description, `%${input.q}%`),
+      )
+    : undefined;
+  const qNameFilter = input.qName
+    ? ilike(codeGroup.name, `%${input.qName}%`)
+    : undefined;
 
   const baseFilters = and(
     eq(codeGroup.workspaceId, ctx.workspaceId),
@@ -148,14 +163,9 @@ export async function listCodeGroups(
     input.businessDivCode
       ? eq(codeGroup.businessDivCode, input.businessDivCode)
       : undefined,
-    input.q
-      ? or(
-          ilike(codeGroup.code, `%${input.q}%`),
-          ilike(codeGroup.name, `%${input.q}%`),
-          ilike(codeGroup.description, `%${input.q}%`),
-          ...(detailMatch ? [detailMatch] : []),
-        )
-      : undefined,
+    qFilter,
+    qNameFilter,
+    detailMatch,
   );
 
   // subCnt: correlated subquery

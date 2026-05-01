@@ -19,6 +19,7 @@
  * 세부코드(`code`)는 신규 행에서만 편집 가능 (legacy KeyField:1 의미).
  */
 import { useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
@@ -70,6 +71,7 @@ export function CodeItemGrid({
   onSave,
   onExport,
 }: Props) {
+  const t = useTranslations("Admin.Codes.itemSection");
   const update = useCallback(
     <K extends keyof CodeItemRow>(id: string, key: K, value: CodeItemRow[K]) =>
       grid.update(id, key, value),
@@ -95,7 +97,7 @@ export function CodeItemGrid({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm text-slate-600">
-          세부코드
+          {t("title")}
           {selectedGroupId ? (
             <>
               {" — "}
@@ -103,12 +105,12 @@ export function CodeItemGrid({
               {selectedGroupName ? (
                 <span className="text-slate-500"> · {selectedGroupName}</span>
               ) : null}
-              {" — 전체 "}
-              {total.toLocaleString()}건
+              {" — "}
+              {total.toLocaleString()}
             </>
           ) : (
             <span className="ml-1 text-slate-400">
-              (그룹코드를 선택하세요)
+              ({t("emptyMaster")})
             </span>
           )}
         </span>
@@ -126,7 +128,7 @@ export function CodeItemGrid({
             onClick={onExport}
             disabled={saving || disabled}
           >
-            다운로드
+            {t("toolbar.export")}
           </Button>
         </div>
       </div>
@@ -141,7 +143,7 @@ export function CodeItemGrid({
       >
         <input
           type="text"
-          placeholder="세부코드"
+          placeholder={t("filter.code")}
           value={draftFilters.q}
           onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
           disabled={disabled}
@@ -149,7 +151,7 @@ export function CodeItemGrid({
         />
         <input
           type="text"
-          placeholder="세부코드명"
+          placeholder={t("filter.name")}
           value={draftFilters.qName}
           onChange={(e) =>
             onDraftFilterChange({ ...draftFilters, qName: e.target.value })
@@ -165,12 +167,14 @@ export function CodeItemGrid({
           disabled={disabled}
           className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
         >
-          <option value="">사용유무 (전체)</option>
-          <option value="Y">사용</option>
-          <option value="N">사용안함</option>
+          <option value="">
+            {t("filter.useYn")} ({t("filter.useYnAll")})
+          </option>
+          <option value="Y">{t("filter.useY")}</option>
+          <option value="N">{t("filter.useN")}</option>
         </select>
         <Button type="submit" size="sm" disabled={disabled}>
-          조회
+          {t("filter.search")}
         </Button>
         <Button
           type="button"
@@ -179,7 +183,7 @@ export function CodeItemGrid({
           onClick={onResetFilters}
           disabled={disabled}
         >
-          초기화
+          {t("filter.reset")}
         </Button>
       </form>
 
@@ -187,23 +191,23 @@ export function CodeItemGrid({
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">No</th>
-              <th className="w-10 px-2 py-2">삭제</th>
-              <th className="w-16 px-2 py-2 text-left">상태</th>
+              <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
+              <th className="w-10 px-2 py-2">{t("columns.delete")}</th>
+              <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
               <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *세부코드
+                *{t("columns.code")}
               </th>
               <th className="px-2 py-2 text-left" style={{ minWidth: 200 }}>
-                세부코드명
+                {t("columns.name")}
               </th>
               <th className="px-2 py-2 text-right" style={{ minWidth: 80 }}>
-                순서
+                {t("columns.sortOrder")}
               </th>
               <th className="px-2 py-2 text-center" style={{ minWidth: 90 }}>
-                사용유무
+                {t("columns.useYn")}
               </th>
               <th className="px-2 py-2 text-left" style={{ minWidth: 160 }}>
-                영문명
+                {t("columns.nameEn")}
               </th>
               {NOTE_KEYS.map((k, idx) => (
                 <th
@@ -211,17 +215,17 @@ export function CodeItemGrid({
                   className="px-2 py-2 text-left"
                   style={{ minWidth: 140 }}
                 >
-                  비고{idx + 1}
+                  {t("columns.note", { n: idx + 1 })}
                 </th>
               ))}
               <th className="px-2 py-2 text-right" style={{ minWidth: 110 }}>
-                비고(숫자형)
+                {t("columns.numNote")}
               </th>
               <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *시작일
+                *{t("columns.sdate")}
               </th>
               <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *종료일
+                *{t("columns.edate")}
               </th>
             </tr>
           </thead>
@@ -229,7 +233,7 @@ export function CodeItemGrid({
             {!selectedGroupId ? (
               <tr>
                 <td colSpan={20} className="px-4 py-12 text-center text-sm text-slate-400">
-                  상단에서 그룹코드를 선택하세요.
+                  {t("emptyMaster")}
                 </td>
               </tr>
             ) : grid.rows.length === 0 ? (

@@ -175,17 +175,84 @@
       "deleteConfirm": "이 조직을 삭제하시겠습니까?"
     },
     "Codes": {
-      "title": "코드 마스터",
-      "description": "시스템 코드 그룹과 값을 관리합니다.",
-      "loading": "로딩 중...",
-      "codeLabel": "코드",
-      "itemsLabel": "항목",
-      "save": "저장",
-      "cancel": "취소",
-      "status": {
-        "active": "활성",
-        "inactive": "비활성"
-      }
+      "title": "공통코드관리",
+      "description": "그룹코드와 세부코드를 관리합니다.",
+      "groupSection": {
+        "title": "그룹코드 관리",
+        "filter": {
+          "code": "그룹코드",
+          "codePlaceholder": "그룹코드 입력",
+          "name": "그룹코드명",
+          "namePlaceholder": "그룹코드명 입력",
+          "includesDetailCodeNm": "포함세부코드명",
+          "includesDetailCodeNmPlaceholder": "포함 세부 코드명 입력",
+          "kind": "구분",
+          "kindAll": "전체",
+          "kindUser": "사용자코드",
+          "kindSystem": "시스템코드",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "그룹코드",
+          "name": "코드명",
+          "description": "코드설명",
+          "descriptionHint": "(개행: Enter)",
+          "businessDiv": "업무구분",
+          "kind": "구분",
+          "subCnt": "세부 코드수"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        }
+      },
+      "itemSection": {
+        "title": "세부코드 관리",
+        "filter": {
+          "code": "세부코드",
+          "codePlaceholder": "세부코드 입력",
+          "name": "세부코드명",
+          "namePlaceholder": "세부코드명 입력",
+          "useYn": "사용유무",
+          "useYnAll": "전체",
+          "useY": "사용",
+          "useN": "사용안함",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "세부코드",
+          "name": "세부코드명",
+          "sortOrder": "순서",
+          "useYn": "사용유무",
+          "nameEn": "영문명",
+          "note": "비고{n}",
+          "numNote": "비고(숫자형)",
+          "sdate": "시작일",
+          "edate": "종료일"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "emptyMaster": "그룹코드를 먼저 선택하세요."
+      },
+      "duplicates": "중복된 코드가 있습니다: {codes}",
+      "saveSuccess": "저장되었습니다.",
+      "saveError": "저장 중 오류가 발생했습니다."
     },
     "Companies": {
       "title": "회사관리",

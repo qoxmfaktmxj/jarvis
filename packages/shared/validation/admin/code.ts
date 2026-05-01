@@ -74,7 +74,10 @@ export const saveCodeGroupsOutput = z.object({
 });
 
 export const listCodeGroupsInput = z.object({
+  // q matches code+description (legacy '그룹코드' input).
   q: z.string().optional(),
+  // qName matches name (legacy '그룹코드명' input — independent filter).
+  qName: z.string().optional(),
   kind: z.enum(["C", "N"]).optional(),
   // legacy '코드설명+세부코드명 포함검색' 토글
   includesDetailCodeNm: z.boolean().optional(),

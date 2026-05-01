@@ -16,6 +16,7 @@
  * KeyField:1, UpdateEdit:0, InsertEdit:1 의미를 그대로 반영).
  */
 import { useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
@@ -26,10 +27,8 @@ import type { useGridState } from "@/components/grid/useGridState";
 
 type GridApi = ReturnType<typeof useGridState<CodeGroupRow>>;
 
-const KIND_OPTIONS = [
-  { value: "C", label: "사용자코드" },
-  { value: "N", label: "시스템코드" },
-];
+// Kind option *values* are stable enums; *labels* are i18n'd in the component.
+const KIND_OPTION_VALUES = ["C", "N"] as const;
 
 type FilterValues = {
   q: string;
@@ -69,17 +68,23 @@ export function CodeGroupGrid({
   onSave,
   onExport,
 }: Props) {
+  const t = useTranslations("Admin.Codes.groupSection");
   const update = useCallback(
     <K extends keyof CodeGroupRow>(id: string, key: K, value: CodeGroupRow[K]) =>
       grid.update(id, key, value),
     [grid],
   );
 
+  const KIND_OPTIONS = KIND_OPTION_VALUES.map((value) => ({
+    value,
+    label: value === "C" ? t("filter.kindUser") : t("filter.kindSystem"),
+  }));
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm text-slate-600">
-          그룹코드 — 전체 {total.toLocaleString()}건
+          {t("title")} — {total.toLocaleString()}
         </span>
         <div className="flex items-center gap-2">
           <GridToolbar
@@ -90,7 +95,7 @@ export function CodeGroupGrid({
             onSave={onSave}
           />
           <Button size="sm" variant="outline" onClick={onExport} disabled={saving}>
-            다운로드
+            {t("toolbar.export")}
           </Button>
         </div>
       </div>
@@ -105,14 +110,14 @@ export function CodeGroupGrid({
       >
         <input
           type="text"
-          placeholder="그룹코드"
+          placeholder={t("filter.code")}
           value={draftFilters.q}
           onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
           className="h-8 w-40 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="text"
-          placeholder="그룹코드명"
+          placeholder={t("filter.name")}
           value={draftFilters.qName}
           onChange={(e) =>
             onDraftFilterChange({ ...draftFilters, qName: e.target.value })
@@ -121,7 +126,7 @@ export function CodeGroupGrid({
         />
         <input
           type="text"
-          placeholder="포함 세부코드명"
+          placeholder={t("filter.includesDetailCodeNmPlaceholder")}
           value={draftFilters.includesDetailCodeNm}
           onChange={(e) =>
             onDraftFilterChange({
@@ -138,7 +143,9 @@ export function CodeGroupGrid({
           }
           className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">구분 (전체)</option>
+          <option value="">
+            {t("filter.kind")} ({t("filter.kindAll")})
+          </option>
           {KIND_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}
@@ -146,10 +153,10 @@ export function CodeGroupGrid({
           ))}
         </select>
         <Button type="submit" size="sm">
-          조회
+          {t("filter.search")}
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
-          초기화
+          {t("filter.reset")}
         </Button>
       </form>
 
@@ -157,26 +164,26 @@ export function CodeGroupGrid({
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">No</th>
-              <th className="w-10 px-2 py-2">삭제</th>
-              <th className="w-16 px-2 py-2 text-left">상태</th>
+              <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
+              <th className="w-10 px-2 py-2">{t("columns.delete")}</th>
+              <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
               <th className="px-2 py-2 text-left" style={{ width: 160 }}>
-                *그룹코드
+                *{t("columns.code")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 220 }}>
-                *코드명
+                *{t("columns.name")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 280 }}>
-                코드설명
+                {t("columns.description")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 140 }}>
-                업무구분
+                {t("columns.businessDiv")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 120 }}>
-                구분
+                {t("columns.kind")}
               </th>
               <th className="px-2 py-2 text-right" style={{ width: 100 }}>
-                세부 코드수
+                {t("columns.subCnt")}
               </th>
             </tr>
           </thead>

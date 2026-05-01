@@ -13,6 +13,7 @@
  */
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -28,6 +29,8 @@ export default async function AdminCodesPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const t = await getTranslations("Admin.Codes");
+
   const initial = await listCodeGroups({ page: 1, limit: 100 });
   const initialGroups =
     "rows" in initial && Array.isArray(initial.rows) ? initial.rows : [];
@@ -38,8 +41,8 @@ export default async function AdminCodesPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Admin · Codes"
-        title="공통코드 관리"
-        description="그룹코드와 세부코드를 관리합니다. 마스터 행을 선택하면 하단에 세부코드가 표시됩니다."
+        title={t("title")}
+        description={t("description")}
       />
       <CodesPageClient
         initialGroups={initialGroups}

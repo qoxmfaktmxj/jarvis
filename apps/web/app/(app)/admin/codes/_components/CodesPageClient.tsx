@@ -13,6 +13,7 @@
  * 디테일 필터는 그룹별로 의미가 달라 URL persist하지 않는다 (선택 변경 시 자연 초기화).
  */
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
@@ -69,6 +70,7 @@ const DETAIL_DEFAULTS: DetailFilters = {
 };
 
 export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
+  const t = useTranslations("Admin.Codes");
   const masterGrid = useCodeGroupGridState(initialGroups);
   const detailGrid = useCodeItemGridState([]);
 
@@ -101,18 +103,13 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
     (filters: MasterFilters) => {
       startMasterReload(async () => {
         const res = await listCodeGroups({
-          q:
-            filters.q || filters.qName
-              ? [filters.q, filters.qName].filter(Boolean).join(" ")
-              : undefined,
-          // backend `q` matches code/name/description/(detail name if toggle).
-          // For separate qName, we OR by joining; not perfect — Phase-2: split params.
+          // q matches code/description; qName matches name. Independent filters.
+          q: filters.q || undefined,
+          qName: filters.qName || undefined,
           kind: filters.kind === "C" || filters.kind === "N" ? filters.kind : undefined,
           includesDetailCodeNm: filters.includesDetailCodeNm
             ? true
             : undefined,
-          // includesDetailCodeNm flag in backend uses `q` as the substring; if user
-          // typed only "포함세부코드명" we feed it as q.
           page: 1,
           limit: MASTER_LIMIT,
         });
@@ -192,7 +189,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(`중복된 그룹코드가 있습니다: ${dups.join(", ")}`);
+      alert(t("duplicates", { codes: dups.join(", ") }));
       return;
     }
     startMasterSave(async () => {
@@ -214,7 +211,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
           setDetailTotal(0);
         }
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? "저장 실패");
+        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
       }
     });
   }, [
@@ -223,6 +220,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
     reloadMaster,
     selectedGroupId,
     detailGrid,
+    t,
   ]);
 
   // ---- Detail save ----
@@ -233,7 +231,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(`중복된 세부코드가 있습니다: ${dups.join(", ")}`);
+      alert(t("duplicates", { codes: dups.join(", ") }));
       return;
     }
     startDetailSave(async () => {
@@ -248,7 +246,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
         // master subCnt 갱신을 위해 master도 reload
         reloadMaster(masterUrlFilters);
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? "저장 실패");
+        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
       }
     });
   }, [
@@ -258,6 +256,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
     reloadDetail,
     reloadMaster,
     masterUrlFilters,
+    t,
   ]);
 
   // ---- Insert / Copy ----
@@ -267,7 +266,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
 
   const handleMasterCopy = useCallback(() => {
     if (!selectedGroupId) {
-      alert("복사할 그룹코드를 먼저 선택하세요.");
+      alert(t("groupSection.filter.code") + ": " + t("itemSection.emptyMaster"));
       return;
     }
     masterGrid.duplicate(selectedGroupId, (clone) => ({
@@ -276,15 +275,15 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
       code: "",
       subCnt: 0,
     }));
-  }, [masterGrid, selectedGroupId]);
+  }, [masterGrid, selectedGroupId, t]);
 
   const handleDetailInsert = useCallback(() => {
     if (!selectedGroupId) {
-      alert("그룹코드를 먼저 선택하세요.");
+      alert(t("itemSection.emptyMaster"));
       return;
     }
     detailGrid.insertBlank(makeBlankCodeItem(selectedGroupId));
-  }, [detailGrid, selectedGroupId]);
+  }, [detailGrid, selectedGroupId, t]);
 
   const handleDetailCopy = useCallback(() => {
     if (!selectedGroupId) return;
