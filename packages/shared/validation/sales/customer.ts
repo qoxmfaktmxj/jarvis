@@ -22,6 +22,17 @@ export const customerRow = z.object({
   addr2: z.string().nullable(),
   // 등록일자 (read-only display; server sets defaultNow on insert).
   createdAt: z.string().nullable().optional(),
+  // 탭 카운트 (read-only display; derived, not user input).
+  // P2-BLOCKED: op/act will stay 0 until P2 merges; type is still number.
+  counts: z
+    .object({
+      customer: z.number().int(),
+      op: z.number().int(),
+      act: z.number().int(),
+      comt: z.number().int(),
+    })
+    .nullable()
+    .optional(),
 });
 
 export const listCustomersInput = z.object({
