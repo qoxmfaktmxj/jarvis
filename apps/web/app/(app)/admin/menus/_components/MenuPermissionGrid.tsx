@@ -15,6 +15,8 @@
  */
 import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { Button } from "@/components/ui/button";
@@ -98,21 +100,38 @@ export function MenuPermissionGrid({
 
   return (
     <div className="space-y-2">
+      {/* Search form */}
+      <GridSearchForm
+        onSearch={onApplyFilters}
+        isSearching={saving || disabled}
+        searchLabel={t("filter.search")}
+      >
+        <GridFilterField label={t("filter.code")} className="w-[210px]">
+          <input
+            type="text"
+            value={draftFilters.q}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
+            disabled={disabled}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) disabled:opacity-50"
+          />
+        </GridFilterField>
+      </GridSearchForm>
+
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">
+        <span className="text-sm text-(--fg-secondary)">
           {t("title")}
           {selectedMenuId ? (
             <>
               {" — "}
-              <span className="font-mono text-slate-800">{selectedMenuCode}</span>
+              <span className="font-mono text-(--fg-primary)">{selectedMenuCode}</span>
               {selectedMenuLabel ? (
-                <span className="text-slate-500"> · {selectedMenuLabel}</span>
+                <span className="text-(--fg-muted)"> · {selectedMenuLabel}</span>
               ) : null}
               {" — "}
               {total.toLocaleString()}
             </>
           ) : (
-            <span className="ml-1 text-slate-400">({t("emptyMaster")})</span>
+            <span className="ml-1 text-(--fg-muted)">({t("emptyMaster")})</span>
           )}
         </span>
         <div className="flex items-center gap-2">
@@ -137,36 +156,6 @@ export function MenuPermissionGrid({
           </Button>
         </div>
       </div>
-
-      {/* Filter row */}
-      <form
-        className="flex flex-wrap items-center gap-2 rounded border border-slate-200 bg-slate-50/50 px-2 py-2 text-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onApplyFilters();
-        }}
-      >
-        <input
-          type="text"
-          placeholder={t("filter.code")}
-          value={draftFilters.q}
-          onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
-          disabled={disabled}
-          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-100"
-        />
-        <Button type="submit" size="sm" disabled={disabled}>
-          {t("filter.search")}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={onResetFilters}
-          disabled={disabled}
-        >
-          {t("filter.reset")}
-        </Button>
-      </form>
 
       <div className="overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
