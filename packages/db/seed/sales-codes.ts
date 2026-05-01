@@ -295,6 +295,165 @@ const SALES_CODE_GROUPS: SeedGroup[] = [
       { code: "99", name: "기타" },
     ],
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Phase 1A — 계약 도메인 12 코드 그룹 (TBIZ030 / TBIZ031 / TBIZ010 기준)
+  //
+  // 항목 출처:
+  //   ① JSP 인라인 ComboText/ComboCode (SetColProperty) — 확정 값
+  //   ② HTML <select> 직접 선언                         — 확정 값
+  //   ③ TBIZ030 덤프 distinct 값 (ENTER_CD='ISU_ST')     — 코드 확인, 라벨 추론
+  //   ④ Oracle CommonCode API (C10021/C10037 등)         — 덤프 미포함, TODO 라벨 추론
+  //   ⑤ TBIZ010 덤프 전체 NULL (19행)                   — placeholder
+  //   코드별 출처는 인라인 주석 참조.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  {
+    // ③ TBIZ030 distinct: 001, 002 (Oracle CommonCode C10004 — 덤프 미포함)
+    // 계약구분이 001=신규계약 / 002=유지보수 패턴은 bizContractMgr.jsp 업무 로직에서
+    // contGbCd==002 조건으로 "실적&매출" 분기를 하므로 아래와 같이 추론.
+    // TODO: 사용자 검증 — 실제 Oracle C10004 코드명 확인 후 갱신
+    code: "SALES_CONT_GB",
+    name: "계약구분",
+    items: [
+      { code: "001", name: "신규계약" },
+      { code: "002", name: "유지보수" },
+    ],
+  },
+  {
+    // ③ TBIZ030 distinct: 01,02,04,05,06,07,09,10,11,12 (Oracle CommonCode C10021)
+    // 계약형태(mainContType): bizContractMgrDetailPop.jsp mainContType 변경 시
+    //   contType 콤보가 재조회되는 구조. 라벨은 ISU_ST 사용 패턴·업계 관행으로 추론.
+    // TODO: 사용자 검증 — Oracle C10021 실제 코드명 확인 후 갱신
+    code: "SALES_MAIN_CONT_TYPE",
+    name: "계약형태",
+    items: [
+      { code: "01", name: "라이선스" },
+      { code: "02", name: "유지보수" },
+      { code: "04", name: "SaaS" },
+      { code: "05", name: "구축" },
+      { code: "06", name: "교육" },
+      { code: "07", name: "기타용역" },
+      { code: "09", name: "임대" },
+      { code: "10", name: "상품(H/W)" },
+      { code: "11", name: "상품(S/W)" },
+      { code: "12", name: "인프라" },
+    ],
+  },
+  {
+    // ① bizContractMgr.jsp SetColProperty: ComboText="|내부|외부|팀비용", ComboCode="|01|02|03"
+    // bizContractMonthMgr.jsp 동일 패턴 확인 — 확정값
+    code: "SALES_IN_OUT_TYPE",
+    name: "내외구분",
+    items: [
+      { code: "01", name: "내부" },
+      { code: "02", name: "외부" },
+      { code: "03", name: "팀비용" },
+    ],
+  },
+  {
+    // ③ TBIZ030 distinct: 10, 20, 30 (Oracle CommonCode C10037 — 덤프 미포함)
+    // 기업분류(companyType): 10=법인고객/20=외부거래처/30=협력사로 추론
+    //   (dump 실제 데이터 상 10·20이 다수, 30이 소수)
+    // TODO: 사용자 검증 — Oracle C10037 실제 코드명 확인 후 갱신
+    code: "SALES_COMPANY_TYPE",
+    name: "기업분류",
+    items: [
+      { code: "10", name: "법인고객" },
+      { code: "20", name: "외부거래처" },
+      { code: "30", name: "협력사" },
+    ],
+  },
+  {
+    // ② bizContractMgrDetailPop.jsp HTML <select>:
+    //   <option value="H">고</option>
+    //   <option value="M">중</option>
+    //   <option value="L">저</option>
+    //   TBIZ030 덤프 distinct SUC_PROB: H, M, L 확인
+    code: "SALES_SUC_PROB",
+    name: "수주확률",
+    items: [
+      { code: "H", name: "고" },
+      { code: "M", name: "중" },
+      { code: "L", name: "저" },
+    ],
+  },
+  {
+    // TBIZ031.BILL_TARGET_YN — CheckBox(TrueValue:Y/FalseValue:N)
+    // mmContractMgrDetailPop.jsp "전표발행 대상" 컬럼. 코드그룹으로 등록해
+    // 필터 드롭다운에서 Y/N 선택 가능하도록 유지.
+    code: "SALES_BILL_TARGET_YN",
+    name: "청구대상여부",
+    items: [
+      { code: "Y", name: "청구대상" },
+      { code: "N", name: "비대상" },
+    ],
+  },
+  {
+    // bizContractMonthMgr.jsp rfcEndYn — CheckBox(TrueValue:Y/FalseValue:N)
+    // "실적 생성 마감" 컬럼. 코드그룹으로 등록해 필터 드롭다운 지원.
+    code: "SALES_RFC_END_YN",
+    name: "실적마감여부",
+    items: [
+      { code: "Y", name: "마감" },
+      { code: "N", name: "미마감" },
+    ],
+  },
+  {
+    // ⑤ TBIZ010.ATTEND_CD — 덤프 19행 전체 NULL. contractServMgr JSP에 Combo 없음.
+    // 근태구분 placeholder: Oracle HR 시스템 연동 코드 추정.
+    // TODO: 사용자 검증 — 실제 근태 코드 확인 후 갱신
+    code: "SALES_ATTEND_CD",
+    name: "근태구분",
+    items: [
+      { code: "01", name: "정규" },
+      { code: "02", name: "파견" },
+    ],
+  },
+  {
+    // ⑤ TBIZ010.SKILL_CD — 덤프 19행 전체 NULL. contractServMgr JSP에 Combo 없음.
+    // 기술구분 placeholder: 용역 인력 기술 등급/분류 코드 추정.
+    // TODO: 사용자 검증 — 실제 기술 코드 확인 후 갱신
+    code: "SALES_SKILL_CD",
+    name: "기술구분",
+    items: [
+      { code: "01", name: "개발" },
+      { code: "02", name: "분석/설계" },
+    ],
+  },
+  {
+    // ⑤ TBIZ010.CMMNC_CD — 덤프 19행 전체 NULL. contractServMgr JSP에 Combo 없음.
+    // 통신구분 placeholder: 용역 인력 통신비 처리 코드 추정.
+    // TODO: 사용자 검증 — 실제 통신 코드 확인 후 갱신
+    code: "SALES_CMMNC_CD",
+    name: "통신구분",
+    items: [
+      { code: "01", name: "포함" },
+      { code: "02", name: "미포함" },
+    ],
+  },
+  {
+    // ⑤ TBIZ010.RSPONS_CD — 덤프 19행 전체 NULL. contractServMgr JSP에 Combo 없음.
+    // 책임구분 placeholder: PM/PL/개발자 등 역할 책임 코드 추정.
+    // TODO: 사용자 검증 — 실제 책임 코드 확인 후 갱신
+    code: "SALES_RSPONS_CD",
+    name: "책임구분",
+    items: [
+      { code: "01", name: "PM" },
+      { code: "02", name: "PL" },
+    ],
+  },
+  {
+    // ① contractServMgr.jsp SetColProperty:
+    //   ComboText="|직계약|업체계약", ComboCode="|01|02"
+    //   TBIZ010.CPY_GB_CD 컬럼 (계약구분: 직계약 vs 업체 파견계약)
+    code: "SALES_CPY_GB",
+    name: "CPY계약구분",
+    items: [
+      { code: "01", name: "직계약" },
+      { code: "02", name: "업체계약" },
+    ],
+  },
 ];
 
 async function upsertCodeGroup(
