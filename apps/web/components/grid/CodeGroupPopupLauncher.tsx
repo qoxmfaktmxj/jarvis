@@ -51,9 +51,11 @@ export function CodeGroupPopupLauncher({
       {open ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-          onClick={() => {
-            setOpen(false);
-            setQuery("");
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setOpen(false);
+              setQuery("");
+            }
           }}
         >
           <div
@@ -61,7 +63,6 @@ export function CodeGroupPopupLauncher({
             aria-modal="true"
             aria-label={triggerLabel}
             className="max-h-[60vh] w-80 overflow-auto rounded bg-white p-3 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
           >
             {searchable ? (
               <input
