@@ -16,6 +16,13 @@
  *   For existing (clean/dirty) rows the sabun cell is read-only plain text,
  *   matching legacy Hidden:0 UpdateEdit:0 (display-only after creation).
  *
+ *   DataGrid initialises its internal row state lazily via useState — prop
+ *   changes to `rows` do not re-sync internal state. After a picker auto-save
+ *   we increment `reloadKey` and pass it as `key` to <DataGrid> so the
+ *   component remounts cleanly from the fresh server rows. This key-bump is
+ *   ONLY triggered by the picker flow, never by the normal Save button, so
+ *   regular in-grid edits are unaffected.
+ *
  * Composite key dedup: sabun + mailId
  * (enterCd is implicit via workspaceId; name is a display field.)
  */
@@ -79,6 +86,7 @@ export function MailPersonsGridContainer({
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const [, startTransition] = useTransition();
 
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters<FilterValues>({
@@ -115,6 +123,11 @@ export function MailPersonsGridContainer({
    * Called by EmployeePicker in the sabun render cell for brand-new blank rows.
    * Auto-saves the row with picked values then reloads, matching ibsheet popup
    * behaviour (picker commit ≠ grid save button flow).
+   *
+   * After a successful save+reload we bump `reloadKey` so that <DataGrid> is
+   * remounted with the fresh `rows` prop. Without this, DataGrid's internal
+   * useGridState (lazy useState) would keep the old blank "new" row in its
+   * internal state even though the container's `rows` has been updated.
    */
   const handleEmployeePick = useCallback(
     (rowId: string, hit: { sabun: string; name: string; email: string }) => {
@@ -137,6 +150,9 @@ export function MailPersonsGridContainer({
         });
         if (result.ok) {
           reload(currentPage, filterValues);
+          // Remount DataGrid so its internal lazy useState re-initialises
+          // from the freshly reloaded `rows`. Only happens on picker flow.
+          setReloadKey((k) => k + 1);
         } else {
           const msg =
             "errors" in result
@@ -268,6 +284,7 @@ export function MailPersonsGridContainer({
       </DataGridToolbar>
 
       <DataGrid<MailPersonRow>
+        key={reloadKey}
         rows={rows}
         total={total}
         columns={COLUMNS}
