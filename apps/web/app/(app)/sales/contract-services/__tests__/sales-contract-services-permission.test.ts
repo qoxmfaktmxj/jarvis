@@ -303,7 +303,7 @@ describe("saveContractServices", () => {
   });
 
   it("processes creates within workspaceId and writes audit_log", async () => {
-    let capturedValuesArgs: unknown[][] = [];
+    const capturedValuesArgs: unknown[][] = [];
     const valuesCapture = vi.fn((...args: unknown[]) => {
       capturedValuesArgs.push(args);
       return { returning: vi.fn().mockResolvedValue([{ id: "new-id-1" }]) };

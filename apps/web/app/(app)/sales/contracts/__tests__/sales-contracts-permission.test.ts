@@ -258,7 +258,7 @@ describe("saveContracts", () => {
   it("inserts new contracts scoped to workspaceId and writes audit_log", async () => {
     // Capture the values mock from the hoisted insertSpy chain so we can inspect
     // all .values() calls (both salesContract and auditLog use the same spy chain).
-    let capturedValuesArgs: unknown[][] = [];
+    const capturedValuesArgs: unknown[][] = [];
     const valuesCapture = vi.fn((...args: unknown[]) => {
       capturedValuesArgs.push(args);
       return { returning: vi.fn().mockResolvedValue([{ id: "new-id-1" }]) };
