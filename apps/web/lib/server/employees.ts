@@ -5,27 +5,31 @@ import { headers, cookies } from "next/headers";
 import { db } from "@jarvis/db/client";
 import { user } from "@jarvis/db/schema/user";
 import { getSession } from "@jarvis/auth/session";
-import { resolveSessionId } from "@/lib/session-cookie";
 
 export const searchEmployeesInput = z.object({
-  q: z.string().min(2).max(50),
+  q: z.string().transform((s) => s.trim()).pipe(z.string().min(2).max(50)),
   limit: z.number().int().min(1).max(50).default(10),
 });
 
+// Returning '' for callers that interpolate; null contract would be cleaner
+// but requires Task 1 (EmployeePicker) refactor — deferred.
 export type EmployeeHit = { sabun: string; name: string; email: string };
 
-async function resolveServerSessionId(): Promise<string | null> {
-  const h = await headers();
-  const fromHeader = h.get("x-session-id");
-  if (fromHeader && fromHeader.length > 0) return fromHeader;
-  const c = await cookies();
-  return resolveSessionId(c);
+async function resolveSessionId(): Promise<string | null> {
+  const headerStore = await headers();
+  const cookieStore = await cookies();
+  return (
+    headerStore.get("x-session-id") ??
+    cookieStore.get("sessionId")?.value ??
+    cookieStore.get("jarvis_session")?.value ??
+    null
+  );
 }
 
 export async function searchEmployees(
   rawInput: z.input<typeof searchEmployeesInput>,
 ): Promise<EmployeeHit[]> {
-  const sid = await resolveServerSessionId();
+  const sid = await resolveSessionId();
   if (!sid) throw new Error("Unauthorized");
   const session = await getSession(sid);
   if (!session) throw new Error("Unauthorized");
