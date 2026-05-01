@@ -177,7 +177,8 @@ describe("askAgent — tool-use loop", () => {
           { id: "c2", name: "wiki_read", args: { slug: "x" } },
         ],
       },
-      { content: "OK" },
+      // Include a valid [[slug]] citation so citation validation passes.
+      { content: "[[x]] 참고하세요." },
     ]);
     const r = await askAgent("?", ctx, { client: client as never });
     expect(grepExec).toHaveBeenCalledTimes(1);
