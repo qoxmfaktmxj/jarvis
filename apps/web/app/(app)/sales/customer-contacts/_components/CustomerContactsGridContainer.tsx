@@ -133,8 +133,10 @@ export function CustomerContactsGridContainer({
         searchYmdFrom: urlFilters.searchYmdFrom || undefined,
         searchYmdTo: urlFilters.searchYmdTo || undefined,
       });
-      if ("bytes" in result) {
+      if (result.ok) {
         triggerDownload(result.bytes, result.filename);
+      } else {
+        alert(result.error);
       }
     } finally {
       setIsExporting(false);
@@ -269,7 +271,7 @@ export function CustomerContactsGridContainer({
             };
           }
           const result = await saveCustomerContacts(changes);
-          if (result.ok) await reload(currentPage, urlFilters);
+          if (result.ok) reload(currentPage, urlFilters);
           return result;
         }}
       />

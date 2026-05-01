@@ -11,6 +11,8 @@ import { exportToExcel } from "@/lib/server/export-excel";
 import type { z } from "zod";
 import type { ColumnDef } from "@/components/grid/types";
 
+const MAX_EXPORT_ROWS = 50_000;
+
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
   const cookieStore = await cookies();
@@ -60,7 +62,7 @@ const EXPORT_COLUMNS: ColumnDef<ExportRow>[] = [
  */
 export async function exportCustomerContactsToExcel(
   rawInput: z.input<typeof exportCustomerContactsInput>,
-): Promise<{ filename: string; bytes: Uint8Array } | { ok: false; error: string }> {
+): Promise<{ ok: true; filename: string; bytes: Uint8Array } | { ok: false; error: string }> {
   // Auth — same pattern as resolveSalesContext in actions.ts
   const sessionId = await resolveSessionId();
   if (!sessionId) return { ok: false, error: "Unauthorized" };
@@ -87,7 +89,7 @@ export async function exportCustomerContactsToExcel(
     conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
   }
   if (input.searchYmdFrom) {
-    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom)));
+    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom + "T00:00:00+09:00")));
   }
   if (input.searchYmdTo) {
     const toDate = new Date(input.searchYmdTo);
@@ -113,6 +115,10 @@ export async function exportCustomerContactsToExcel(
     .leftJoin(salesCustomer, eq(salesCustomer.id, salesCustomerContact.customerId))
     .where(where)
     .orderBy(salesCustomerContact.custMcd);
+
+  if (rows.length >= MAX_EXPORT_ROWS) {
+    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
+  }
 
   const exportRows: ExportRow[] = rows.map((r) => ({
     custNm: r.custNm ?? null,
@@ -144,6 +150,7 @@ export async function exportCustomerContactsToExcel(
 
   const today = new Date().toISOString().slice(0, 10);
   return {
+    ok: true,
     filename: `customer-contacts_${today}.xlsx`,
     bytes: new Uint8Array(buf),
   };

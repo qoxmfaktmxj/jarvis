@@ -64,8 +64,10 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
     conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
   }
   // Date range on createdAt (legacy: searchFromInsdate / searchToInsdate — 등록일자)
+  // Use explicit KST offset to avoid UTC midnight being 09:00 KST, which would
+  // exclude records created between 00:00–08:59 KST on the start date.
   if (input.searchYmdFrom) {
-    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom)));
+    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom + "T00:00:00+09:00")));
   }
   if (input.searchYmdTo) {
     // Include the full end date day by using start of next day

@@ -87,8 +87,10 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
     conditions.push(inArray(salesCustomer.id, chargerSubquery));
   }
   // searchYmd date range: filter on salesCustomer.createdAt::date
+  // Use explicit KST offset to avoid UTC midnight being 09:00 KST, which would
+  // exclude records created between 00:00–08:59 KST on the start date.
   if (input.searchYmdFrom) {
-    conditions.push(gte(salesCustomer.createdAt, new Date(input.searchYmdFrom)));
+    conditions.push(gte(salesCustomer.createdAt, new Date(input.searchYmdFrom + "T00:00:00+09:00")));
   }
   if (input.searchYmdTo) {
     // Include the full end date day by using start of next day

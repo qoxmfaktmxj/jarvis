@@ -23,6 +23,8 @@ import { exportToExcel } from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
 
+const MAX_EXPORT_ROWS = 50_000;
+
 // ---------------------------------------------------------------------------
 // Session helpers (mirrors actions.ts)
 // ---------------------------------------------------------------------------
@@ -112,6 +114,10 @@ export async function exportInfraLicenses(
     .from(infraLicense)
     .where(where)
     .orderBy(infraLicense.symd);
+
+  if (rows.length >= MAX_EXPORT_ROWS) {
+    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
+  }
 
   // Serialize to InfraLicenseRow shape (same as serialize() in actions.ts)
   const serialized: InfraLicenseRow[] = rows.map((r) => ({

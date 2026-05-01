@@ -252,7 +252,11 @@ export function CustomersGridContainer({
               searchYmdFrom: values.searchYmdFrom || undefined,
               searchYmdTo: values.searchYmdTo || undefined,
             });
-            triggerDownload(r.bytes, r.filename);
+            if (r.ok) {
+              triggerDownload(r.bytes, r.filename);
+            } else {
+              alert(r.error);
+            }
           } finally {
             setIsExporting(false);
           }

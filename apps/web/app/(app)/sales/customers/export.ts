@@ -13,6 +13,8 @@ import { exportToExcel } from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
 
+const MAX_EXPORT_ROWS = 50_000;
+
 // ---------------------------------------------------------------------------
 // Session helpers (same pattern as actions.ts)
 // ---------------------------------------------------------------------------
@@ -58,9 +60,9 @@ async function resolveSalesContext() {
 
 export async function exportCustomersToExcel(
   rawFilters: z.input<typeof exportCustomersInput>,
-): Promise<{ filename: string; bytes: Uint8Array }> {
+): Promise<{ ok: true; filename: string; bytes: Uint8Array } | { ok: false; error: string }> {
   const ctx = await resolveSalesContext();
-  if (!ctx.ok) throw new Error(ctx.error);
+  if (!ctx.ok) return { ok: false, error: ctx.error };
 
   const input = exportCustomersInput.parse(rawFilters);
 
@@ -84,7 +86,7 @@ export async function exportCustomersToExcel(
     conditions.push(inArray(salesCustomer.id, chargerSubquery));
   }
   if (input.searchYmdFrom) {
-    conditions.push(gte(salesCustomer.createdAt, new Date(input.searchYmdFrom)));
+    conditions.push(gte(salesCustomer.createdAt, new Date(input.searchYmdFrom + "T00:00:00+09:00")));
   }
   if (input.searchYmdTo) {
     const toDate = new Date(input.searchYmdTo);
@@ -97,6 +99,10 @@ export async function exportCustomersToExcel(
     .from(salesCustomer)
     .where(and(...conditions))
     .orderBy(salesCustomer.custCd);
+
+  if (rows.length >= MAX_EXPORT_ROWS) {
+    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
+  }
 
   // Hidden:0 (visible) columns per legacy ibSheet bizActCustCompanyMgr.jsp.
   // Pass resolved Korean display strings — NOT i18n keys.
@@ -152,5 +158,5 @@ export async function exportCustomersToExcel(
     success: true,
   });
 
-  return { filename, bytes: new Uint8Array(buf) };
+  return { ok: true, filename, bytes: new Uint8Array(buf) };
 }

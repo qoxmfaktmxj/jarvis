@@ -27,6 +27,8 @@ import { exportToExcel } from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
 
+const MAX_EXPORT_ROWS = 50_000;
+
 // ---------------------------------------------------------------------------
 // Row type for Excel export
 // ---------------------------------------------------------------------------
@@ -131,6 +133,10 @@ export async function exportProductCostMappingToExcel(
     .leftJoin(salesCostMaster, eq(salesCostMaster.id, salesProductTypeCost.costId))
     .where(where)
     .orderBy(desc(salesProductTypeCost.sdate));
+
+  if (rows.length >= MAX_EXPORT_ROWS) {
+    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
+  }
 
   const exportRows: ExportRow[] = rows.map((r) => ({
     productTypeNm: r.productTypeNm ?? null,
