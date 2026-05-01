@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, gte, ilike, inArray, lte } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, lte, max } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
+import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema";
+import { salesCustomer, salesCustomerMemo, salesCustomerCharger, user, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomersInput,
@@ -12,6 +12,13 @@ import {
   saveCustomersInput,
   saveCustomersOutput,
 } from "@jarvis/shared/validation/sales/customer";
+import {
+  customerMemoListInput, customerMemoListOutput,
+  customerMemoCreateInput, customerMemoCreateOutput,
+  customerMemoDeleteInput, customerMemoDeleteOutput,
+  customerTabCountsInput, customerTabCountsOutput,
+} from "@jarvis/shared/validation/sales/customer-memo";
+import { buildMemoTree, getCustomerTabCounts as queryCustomerTabCounts } from "@/lib/queries/sales-tabs";
 import type { z } from "zod";
 
 // ---------------------------------------------------------------------------
@@ -114,6 +121,21 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
 
   const total = Number(countRows[0]?.count ?? 0);
 
+  // Batch-fetch tab counts for all rows on this page (N+1 accepted per plan §14.2;
+  // LATERAL JOIN optimisation deferred to follow-up).
+  const customerIds = rows.map((r) => r.id);
+  const countsMap =
+    customerIds.length > 0
+      ? new Map(
+          await Promise.all(
+            customerIds.map(
+              async (id) =>
+                [id, await queryCustomerTabCounts(ctx.workspaceId, id)] as const,
+            ),
+          ),
+        )
+      : new Map<string, Awaited<ReturnType<typeof queryCustomerTabCounts>>>();
+
   return listCustomersOutput.parse({
     rows: rows.map((r) => ({
       id: r.id,
@@ -136,6 +158,14 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
       addr1: r.addr1 ?? null,
       addr2: r.addr2 ?? null,
       createdAt: r.createdAt.toISOString(),
+      counts: countsMap.get(r.id)
+        ? {
+            customer: countsMap.get(r.id)!.customerCnt,
+            op: countsMap.get(r.id)!.opCnt,
+            act: countsMap.get(r.id)!.actCnt,
+            comt: countsMap.get(r.id)!.comtCnt,
+          }
+        : null,
     })),
     total,
   });
@@ -238,4 +268,130 @@ export async function saveCustomers(rawInput: z.input<typeof saveCustomersInput>
     deleted,
     errors: errors.length > 0 ? errors : undefined,
   });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tab counts + memo CRUD (Task 5)
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function getCustomerTabCounts(rawInput: z.input<typeof customerTabCountsInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const { customerId } = customerTabCountsInput.parse(rawInput);
+  const counts = await queryCustomerTabCounts(ctx.workspaceId, customerId);
+  return { ok: true as const, ...customerTabCountsOutput.parse(counts) };
+}
+
+export async function listCustomerMemos(rawInput: z.input<typeof customerMemoListInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [] };
+  const { customerId } = customerMemoListInput.parse(rawInput);
+
+  const rows = await db
+    .select({
+      comtSeq: salesCustomerMemo.comtSeq,
+      priorComtSeq: salesCustomerMemo.priorComtSeq,
+      memo: salesCustomerMemo.memo,
+      authorName: user.name,
+      insdate: salesCustomerMemo.createdAt,
+      createdBy: salesCustomerMemo.createdBy,
+    })
+    .from(salesCustomerMemo)
+    .leftJoin(user, eq(user.id, salesCustomerMemo.createdBy))
+    .where(and(
+      eq(salesCustomerMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerMemo.customerId, customerId),
+    ))
+    .orderBy(salesCustomerMemo.comtSeq);
+
+  const tree = buildMemoTree(
+    rows.map((r) => ({
+      comtSeq: r.comtSeq,
+      priorComtSeq: r.priorComtSeq,
+      memo: r.memo ?? "",
+      authorName: r.authorName,
+      insdate: r.insdate.toISOString().slice(0, 16).replace("T", " "),
+      createdBy: r.createdBy,
+    })),
+    ctx.userId ?? null,
+  );
+
+  return customerMemoListOutput.parse({ rows: tree });
+}
+
+export async function createCustomerMemo(rawInput: z.input<typeof customerMemoCreateInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return customerMemoCreateOutput.parse({ ok: false, comtSeq: null });
+  const { customerId, priorComtSeq, memo } = customerMemoCreateInput.parse(rawInput);
+
+  const nextSeq = await db.transaction(async (tx) => {
+    const maxRow = await tx
+      .select({ m: max(salesCustomerMemo.comtSeq) })
+      .from(salesCustomerMemo)
+      .where(and(
+        eq(salesCustomerMemo.workspaceId, ctx.workspaceId),
+        eq(salesCustomerMemo.customerId, customerId),
+      ));
+    const seq = (maxRow[0]?.m ?? 0) + 1;
+
+    await tx.insert(salesCustomerMemo).values({
+      workspaceId: ctx.workspaceId,
+      customerId,
+      comtSeq: seq,
+      priorComtSeq: priorComtSeq === 0 ? null : priorComtSeq,
+      memo,
+      createdBy: ctx.userId ?? undefined,
+    });
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.customer.memo.create",
+      resourceType: "sales_customer_memo",
+      resourceId: customerId,
+      details: { comtSeq: seq, priorComtSeq } as Record<string, unknown>,
+      success: true,
+    });
+    return seq;
+  });
+
+  return customerMemoCreateOutput.parse({ ok: true, comtSeq: nextSeq });
+}
+
+export async function deleteCustomerMemo(rawInput: z.input<typeof customerMemoDeleteInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return customerMemoDeleteOutput.parse({ ok: false });
+  const { customerId, comtSeq } = customerMemoDeleteInput.parse(rawInput);
+
+  const sessionId = await resolveSessionId();
+  const session = sessionId ? await getSession(sessionId) : null;
+  const adminBypass = session ? isAdmin(session) : false;
+
+  await db.transaction(async (tx) => {
+    const conds = [
+      eq(salesCustomerMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerMemo.customerId, customerId),
+      eq(salesCustomerMemo.comtSeq, comtSeq),
+    ];
+    if (!adminBypass && ctx.userId) conds.push(eq(salesCustomerMemo.createdBy, ctx.userId));
+    await tx.delete(salesCustomerMemo).where(and(...conds));
+
+    // Cascade: delete replies of this master (priorComtSeq = comtSeq)
+    await tx.delete(salesCustomerMemo).where(and(
+      eq(salesCustomerMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerMemo.customerId, customerId),
+      eq(salesCustomerMemo.priorComtSeq, comtSeq),
+    ));
+
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.customer.memo.delete",
+      resourceType: "sales_customer_memo",
+      resourceId: customerId,
+      details: { comtSeq } as Record<string, unknown>,
+      success: true,
+    });
+  });
+
+  return customerMemoDeleteOutput.parse({ ok: true });
 }

@@ -1189,6 +1189,23 @@
         "memo": "메모",
         "insdate": "등록일자"
       },
+      "Tabs": {
+        "customers": "고객 ({count})",
+        "opportunities": "영업기회 ({count})",
+        "activities": "영업활동 ({count})",
+        "memos": "의견 ({count})"
+      },
+      "Memo": {
+        "title": "고객사 의견",
+        "createMaster": "의견 등록",
+        "createReply": "댓글",
+        "delete": "삭제",
+        "deleteMasterConfirm": "의견 삭제 시 댓글도 모두 삭제됩니다. 삭제하시겠습니까?",
+        "deleteReplyConfirm": "댓글을 삭제하시겠습니까?",
+        "empty": "등록된 의견이 없습니다.",
+        "memoLabel": "의견",
+        "memoPlaceholder": "의견을 입력하세요"
+      },
       "errors": {
         "duplicateCustCd": "중복된 고객코드가 있습니다: {codes}"
       }
@@ -1208,6 +1225,23 @@
         "sabun": "담당사번",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "Tabs": {
+        "customer": "고객사 ({count})",
+        "opportunities": "영업기회 ({count})",
+        "activities": "영업활동 ({count})",
+        "memos": "의견 ({count})"
+      },
+      "Memo": {
+        "title": "고객담당자 의견",
+        "createMaster": "의견 등록",
+        "createReply": "댓글",
+        "delete": "삭제",
+        "deleteMasterConfirm": "의견 삭제 시 댓글도 모두 삭제됩니다. 삭제하시겠습니까?",
+        "deleteReplyConfirm": "댓글을 삭제하시겠습니까?",
+        "empty": "등록된 의견이 없습니다.",
+        "memoLabel": "의견",
+        "memoPlaceholder": "의견을 입력하세요"
       }
     },
     "ProductTypes": {

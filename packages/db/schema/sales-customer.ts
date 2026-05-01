@@ -8,6 +8,7 @@
  * - salesCustomerOrg    (TBIZ102): 고객사 조직
  * - salesCustomerMemo   (TBIZ103): 고객사 메모
  * - salesCustomerContact (TBIZ105): 고객사 컨택 담당자 (고객측)
+ * - salesCustomerContactMemo (신설): 고객 컨택 담당자 의견 (2-level reply tree)
  */
 import {
   boolean,
@@ -147,5 +148,25 @@ export const salesCustomerContact = pgTable(
   (t) => ({
     uniq: uniqueIndex("sales_customer_contact_uniq").on(t.workspaceId, t.custMcd),
     wsCustIdx: index("sales_customer_contact_ws_cust_idx").on(t.workspaceId, t.customerId),
+  }),
+);
+
+export const salesCustomerContactMemo = pgTable(
+  "sales_customer_contact_memo",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+    contactId: uuid("contact_id").notNull(),
+    comtSeq: integer("comt_seq").notNull(),
+    priorComtSeq: integer("prior_comt_seq"),
+    // stricter than salesCustomerMemo: empty contact memo is meaningless, enforce at DB
+    memo: text("memo").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    createdBy: uuid("created_by"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+  },
+  (t) => ({
+    wsContactIdx: index("sales_customer_contact_memo_ws_contact_idx").on(t.workspaceId, t.contactId),
+    seqUniq: uniqueIndex("sales_customer_contact_memo_seq_uniq").on(t.workspaceId, t.contactId, t.comtSeq),
   }),
 );

@@ -10,6 +10,7 @@ import type { ColumnDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
 import { exportCustomersToExcel } from "../export";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
+import { MemoModal } from "./MemoModal";
 
 type Option = { value: string; label: string };
 
@@ -32,6 +33,31 @@ type Props = {
     exchangeType: Option[];
   };
 };
+
+function CountChips({
+  counts,
+  onMemoClick,
+}: {
+  counts: { customer: number; op: number; act: number; comt: number };
+  onMemoClick: () => void;
+}) {
+  return (
+    <div className="flex gap-1 text-[11px]">
+      <span className="rounded bg-slate-100 px-2 py-0.5">고객 {counts.customer}</span>
+      <span className="rounded bg-slate-100 px-2 py-0.5">기회 {counts.op}</span>
+      <span className="rounded bg-slate-100 px-2 py-0.5">활동 {counts.act}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMemoClick();
+        }}
+        className="rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
+      >
+        의견 {counts.comt}
+      </button>
+    </div>
+  );
+}
 
 function makeBlankRow(): CustomerRow {
   // Legacy ibSheet bizActCustCompanyMgr.jsp:221~233 marks `custCd` Hidden:1 (PK, system-assigned).
@@ -97,6 +123,7 @@ export function CustomersGridContainer({
   const [rows, setRows] = useState<CustomerRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
+  const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [, startTransition] = useTransition();
 
   // Derive current filter values from URL state
@@ -132,6 +159,21 @@ export function CustomersGridContainer({
     { key: "custDivCd", label: t("Customers.columns.custDivCd"), type: "select", width: 120, editable: true, options: codeOptions.custDiv },
     { key: "ceoNm", label: t("Customers.columns.ceoNm"), type: "text", width: 150, editable: true },
     { key: "telNo", label: t("Customers.columns.telNo"), type: "text", width: 130, editable: true },
+    {
+      key: "counts",
+      label: "탭",
+      type: "readonly",
+      width: 220,
+      render: (row) =>
+        row.counts ? (
+          <CountChips
+            counts={row.counts}
+            onMemoClick={() => setMemoTarget({ id: row.id, name: row.custNm })}
+          />
+        ) : (
+          <span className="text-slate-300">—</span>
+        ),
+    },
     {
       key: "createdAt",
       label: t("Customers.columns.insdate"),
@@ -303,6 +345,12 @@ export function CustomersGridContainer({
           }
           return result;
         }}
+      />
+      <MemoModal
+        customerId={memoTarget?.id ?? null}
+        customerName={memoTarget?.name}
+        onClose={() => setMemoTarget(null)}
+        onCountChange={() => reload(currentPage, values)}
       />
     </div>
   );

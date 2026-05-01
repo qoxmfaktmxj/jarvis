@@ -407,6 +407,13 @@
       "when": 1778038512168,
       "tag": "0057_menu_badge_keywords",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1777620782260,
+      "tag": "0058_giant_norrin_radd",
+      "breakpoints": true
     }
   ]
 }
