@@ -12,6 +12,7 @@
  * - 상태 배지: new/dirty/deleted 색상 pill
  */
 import { useCallback, useState, useTransition } from "react";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { Button } from "@/components/ui/button";
 import { useGridState } from "./useGridState";
 import { GridToolbar } from "./GridToolbar";
@@ -57,6 +58,12 @@ export type DataGridProps<T extends WithId> = {
   onSave: (changes: GridChanges<T>) => Promise<GridSaveResult>;
   /** 현재 필터 값 */
   filterValues?: Record<string, string>;
+  /**
+   * true 시 DataGrid가 내부적으로 useUrlFilters를 호출하여
+   * filterValues ↔ URL searchParams를 양방향으로 자동 동기화한다.
+   * false/undefined 시 기존 동작 그대로 (URL 영향 0, regression 없음).
+   */
+  syncWithUrl?: boolean;
   /** 빈 상태 메시지 */
   emptyMessage?: string;
   /**
@@ -78,6 +85,7 @@ export function DataGrid<T extends WithId>({
   onFilterChange,
   onSave,
   filterValues: externalFilterValues,
+  syncWithUrl = false,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
 }: DataGridProps<T>) {
@@ -96,7 +104,16 @@ export function DataGrid<T extends WithId>({
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
   const [localFilterValues, setLocalFilterValues] = useState<Record<string, string>>({});
 
-  const filterValues = externalFilterValues ?? localFilterValues;
+  // useUrlFilters is always called (hook rules — no conditional calls).
+  // When syncWithUrl=false the defaults are {} and the result is never used,
+  // so there is zero URL impact in the disabled case.
+  const urlFilters = useUrlFilters({
+    defaults: syncWithUrl ? (externalFilterValues ?? {}) : {},
+  });
+
+  const filterValues = syncWithUrl
+    ? urlFilters.values
+    : (externalFilterValues ?? localFilterValues);
 
   const guarded = useCallback(
     (action: () => void) => {
@@ -126,12 +143,19 @@ export function DataGrid<T extends WithId>({
 
   const handleFilterChange = useCallback(
     (next: Record<string, string>) => {
-      if (externalFilterValues === undefined) {
+      if (syncWithUrl) {
+        // Write only changed keys to URL (compose-write via pendingRef in useUrlFilters).
+        for (const key of Object.keys(next)) {
+          if (next[key] !== urlFilters.values[key]) {
+            urlFilters.setValue(key, next[key] as string);
+          }
+        }
+      } else if (externalFilterValues === undefined) {
         setLocalFilterValues(next);
       }
       guarded(() => onFilterChange(next));
     },
-    [externalFilterValues, guarded, onFilterChange],
+    [syncWithUrl, urlFilters, externalFilterValues, guarded, onFilterChange],
   );
 
   const totalPages = Math.max(1, Math.ceil(total / limit));

@@ -47,6 +47,17 @@ function makeTranslator(namespace: string) {
   };
 }
 
+// Global mock for next/navigation — prevents tests that render client components
+// (e.g. DataGrid, which now calls useUrlFilters internally) from crashing on
+// missing router context. Per-file mocks with specific assertions still work
+// because vi.mock at the file level overrides this global.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn(), refresh: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(""),
+  usePathname: () => "/",
+  useParams: () => ({}),
+}));
+
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn().mockImplementation((namespace: string) =>
     Promise.resolve(makeTranslator(namespace))
