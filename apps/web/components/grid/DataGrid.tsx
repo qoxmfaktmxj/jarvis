@@ -151,7 +151,7 @@ export function DataGrid<T extends WithId>({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
+        <span className="text-sm text-(--fg-secondary)">전체 {total.toLocaleString()}건</span>
         <GridToolbar
           dirtyCount={grid.dirtyCount}
           saving={saving}
@@ -173,13 +173,13 @@ export function DataGrid<T extends WithId>({
         />
       </div>
 
-      <div className="overflow-auto rounded border border-slate-200">
+      <div className="overflow-auto rounded border border-(--border-default)">
         <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
+          <thead className="sticky top-0 z-10 bg-(--bg-surface) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
             {groupHeaders && groupHeaders.length > 0 ? (
               <tr
                 data-testid="group-header-row"
-                className="border-b border-slate-200 bg-slate-100"
+                className="border-b border-(--border-default) bg-(--bg-surface)"
               >
                 <th className="w-10 px-2 py-2" aria-hidden colSpan={2} />
                 {groupHeaders.map((g, idx) => (
@@ -197,7 +197,7 @@ export function DataGrid<T extends WithId>({
                 <th aria-hidden />
               </tr>
             ) : null}
-            <tr className="border-b border-slate-200">
+            <tr className="border-b border-(--border-default)">
               <th className="w-10 px-2 py-2 text-left">No</th>
               <th className="w-10 px-2 py-2">삭제</th>
               {columns.map((col) => (
@@ -224,7 +224,7 @@ export function DataGrid<T extends WithId>({
           <tbody>
             {grid.rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 3} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={columns.length + 3} className="px-4 py-12 text-center text-sm text-(--fg-muted)">
                   {emptyMessage}
                 </td>
               </tr>
@@ -235,15 +235,15 @@ export function DataGrid<T extends WithId>({
                   data-row-status={r.state}
                   onClick={() => setSelected(r.data.id)}
                   className={[
-                    "border-b border-slate-100 transition-colors duration-150",
-                    "hover:bg-slate-50",
+                    "border-b border-(--border-default) transition-colors duration-150",
+                    "hover:bg-(--bg-surface)",
                     selected === r.data.id ? "bg-blue-50/40" : "",
                     r.state === "deleted" ? "bg-rose-50/40 line-through opacity-70" : "",
                     r.state === "new" ? "bg-blue-50/40" : "",
                     r.state === "dirty" ? "bg-amber-50/40" : "",
                   ].join(" ")}
                 >
-                  <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
+                  <td className="h-8 w-10 px-2 align-middle text-[12px] text-(--fg-muted)">
                     {(page - 1) * limit + i + 1}
                   </td>
                   <td className="h-8 w-10 px-2 text-center align-middle">
@@ -255,7 +255,7 @@ export function DataGrid<T extends WithId>({
                           ? grid.removeNew(r.data.id)
                           : grid.toggleDelete(r.data.id)
                       }
-                      className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                      className="h-4 w-4 rounded border-(--border-default) text-(--brand-primary) focus:ring-2 focus:ring-(--border-focus) focus:ring-offset-0"
                     />
                   </td>
                   {columns.map((col) => {
@@ -276,7 +276,7 @@ export function DataGrid<T extends WithId>({
                           data-col={col.key}
                           data-cell-value={String(val ?? "")}
                           className={[
-                            "h-8 px-2 align-middle text-[13px] text-slate-900",
+                            "h-8 px-2 align-middle text-[13px] text-(--fg-primary)",
                             isNumeric ? "text-right" : "",
                           ].join(" ")}
                         >
@@ -351,7 +351,7 @@ export function DataGrid<T extends WithId>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-end gap-2 text-sm text-slate-600">
+      <div className="flex items-center justify-end gap-2 text-sm text-(--fg-secondary)">
         <Button
           size="sm"
           variant="outline"

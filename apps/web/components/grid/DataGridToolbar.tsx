@@ -26,7 +26,7 @@ export function DataGridToolbar({
   isExporting = false,
 }: DataGridToolbarProps) {
   return (
-    <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
+    <div className="flex items-center gap-2 border-b border-(--border-default) bg-(--bg-page) px-3 py-2">
       <div className="flex items-center gap-2">{children}</div>
       {onExport ? (
         <Button
