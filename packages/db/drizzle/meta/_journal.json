@@ -428,6 +428,13 @@
       "when": 1777638210954,
       "tag": "0060_shallow_thena",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1777656314664,
+      "tag": "0061_daffy_photon",
+      "breakpoints": true
     }
   ]
 }

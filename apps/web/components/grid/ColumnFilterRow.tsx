@@ -19,7 +19,7 @@ export function ColumnFilterRow<T extends { id: string }>({
   trailingCols = 0,
 }: Props<T>) {
   return (
-    <tr className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
+    <tr className="border-b border-(--border-default) bg-(--bg-surface) text-xs text-(--fg-secondary)">
       {Array.from({ length: leadingCols }).map((_, i) => (
         <td key={`lead-${i}`} className="px-2 py-1" />
       ))}
@@ -27,7 +27,7 @@ export function ColumnFilterRow<T extends { id: string }>({
         <td key={String(f.key)} className="px-2 py-1">
           {f.type === "select" ? (
             <select
-              className="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 focus:ring-inset"
+              className="w-full bg-transparent outline-none focus:bg-(--bg-page) focus:ring-1 focus:ring-(--border-focus) focus:ring-inset"
               value={values[String(f.key)] ?? ""}
               onChange={(e) =>
                 onChange({ ...values, [String(f.key)]: e.target.value })
@@ -42,7 +42,7 @@ export function ColumnFilterRow<T extends { id: string }>({
             </select>
           ) : (
             <input
-              className="w-full bg-transparent outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 focus:ring-inset"
+              className="w-full bg-transparent outline-none focus:bg-(--bg-page) focus:ring-1 focus:ring-(--border-focus) focus:ring-inset"
               placeholder={f.placeholder ?? ""}
               value={values[String(f.key)] ?? ""}
               onChange={(e) =>

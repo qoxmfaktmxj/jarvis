@@ -9,8 +9,10 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { listCompanies, saveCompanies } from "../actions";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import { DataGrid, type DataGridProps } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
@@ -60,8 +62,9 @@ export function CompaniesGridContainer({
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useState(1);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({});
   const [isExporting, setIsExporting] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -99,15 +102,11 @@ export function CompaniesGridContainer({
     [objectDivOptions, groupOptions, industryOptions],
   );
 
-  const FILTERS: FilterDef<Company>[] = [
-    { key: "objectDiv" as keyof Company & string, type: "select", options: objectDivOptions },
-    { key: "groupCode" as keyof Company & string, type: "select", options: groupOptions },
-    { key: "q" as keyof Company & string, type: "text", placeholder: "코드/회사명" },
-    // representCompany filter — skip (boolean filter less common)
-    // startDate filter — skip
-    { key: "industryCode" as keyof Company & string, type: "select", options: industryOptions },
-    // zip — skip
-  ];
+  // Per-column filter row removed — filters live in <GridSearchForm> at the top.
+  const FILTERS: FilterDef<Company>[] = [];
+
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
@@ -147,11 +146,63 @@ export function CompaniesGridContainer({
 
   return (
     <div className="space-y-3">
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel="엑셀 다운로드"
-        isExporting={isExporting}
-      />
+      <GridSearchForm
+        onSearch={() => reload(1, pendingFilters)}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="대상구분" className="w-[140px]">
+          <select
+            value={pendingFilters.objectDiv ?? ""}
+            onChange={(e) => setPending("objectDiv", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {objectDivOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="그룹사" className="w-[140px]">
+          <select
+            value={pendingFilters.groupCode ?? ""}
+            onChange={(e) => setPending("groupCode", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {groupOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="코드/회사명" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.q ?? ""}
+            onChange={(e) => setPending("q", e.target.value)}
+            placeholder="코드 또는 회사명"
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label="업종" className="w-[140px]">
+          <select
+            value={pendingFilters.industryCode ?? ""}
+            onChange={(e) => setPending("industryCode", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {industryOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+      </GridSearchForm>
+
       <DataGrid<Company>
         rows={rows}
         total={totalCount}
@@ -161,6 +212,8 @@ export function CompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => {

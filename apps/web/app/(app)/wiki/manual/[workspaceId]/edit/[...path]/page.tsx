@@ -55,26 +55,34 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   // Normalize backslashes to forward slashes first.
   const normalizedSlug = slug.replace(/\\/g, "/");
 
+  // Strip an optional trailing `.md` so the URL works either way
+  // (`/edit/test-page` and `/edit/test-page.md` both map to the same file).
+  // The action layer assumes pageSlug WITHOUT the `.md` extension and adds
+  // it back when computing `wiki/{ws}/manual/{slug}.md` — leaving `.md` here
+  // would cause double-extension `manual/test-page.md.md` saves.
+  const slugNoExt = normalizedSlug.replace(/\.md$/, "");
+
   // Reject slugs that:
+  //   - are empty
   //   - start with "/" (absolute path injection)
-  //   - do not end with ".md" (only markdown files are valid)
   //   - contain null bytes
   //   - have any segment that is exactly ".." (directory traversal)
+  //   - have any segment that is exactly "." or empty (e.g. "//", trailing "/")
   if (
-    normalizedSlug.startsWith("/") ||
-    !normalizedSlug.endsWith(".md") ||
-    normalizedSlug.includes("\0") ||
-    normalizedSlug.split("/").some((seg) => seg === "..")
+    slugNoExt.length === 0 ||
+    slugNoExt.startsWith("/") ||
+    slugNoExt.includes("\0") ||
+    slugNoExt.split("/").some((seg) => seg === ".." || seg === "." || seg.length === 0)
   ) {
     notFound();
   }
 
   const repoRoot = getWikiRepoRoot();
   const manualBase = path.resolve(repoRoot, "wiki", workspaceId, "manual");
-  const fileAbs = path.resolve(manualBase, normalizedSlug);
+  const fileAbs = path.resolve(manualBase, `${slugNoExt}.md`);
 
-  // Boundary check: resolved absolute path must stay inside the manual tree.
-  if (fileAbs !== manualBase && !fileAbs.startsWith(manualBase + path.sep)) {
+  // Boundary check: resolved absolute path must stay strictly inside the manual tree.
+  if (!fileAbs.startsWith(manualBase + path.sep)) {
     notFound();
   }
 
@@ -98,14 +106,14 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
 
       <PageHeader
         eyebrow="Wiki · Manual"
-        title={`wiki/manual/${normalizedSlug}`}
+        title={`wiki/manual/${slugNoExt}.md`}
         description={`workspace: ${workspaceId}`}
       />
 
       <EditPageClientShell
         initialContent={initialContent}
         workspaceId={workspaceId}
-        pageSlug={normalizedSlug}
+        pageSlug={slugNoExt}
       />
     </div>
   );

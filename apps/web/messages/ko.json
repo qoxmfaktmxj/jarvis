@@ -127,6 +127,29 @@
         "passwordResetFailed": "비밀번호 초기화 요청에 실패했습니다.",
         "lockChanged": "상태가 변경되었습니다",
         "exportStarted": "다운로드 중…"
+      },
+      "Grid": {
+        "columns": {
+          "employeeId": "사번",
+          "name": "성명",
+          "email": "이메일",
+          "phone": "휴대폰",
+          "org": "부서",
+          "position": "직위",
+          "jobTitle": "직책",
+          "status": "상태",
+          "isOutsourced": "외주",
+          "updatedBy": "최종 수정자",
+          "updatedAt": "최종 수정일시"
+        },
+        "status": {
+          "active": "활성",
+          "inactive": "비활성",
+          "locked": "잠금"
+        },
+        "filters": {
+          "search": "사번/이름/이메일 검색"
+        }
       }
     },
     "Audit": {
@@ -1374,7 +1397,7 @@
     },
     "Common": {
       "Excel": {
-        "button": "엑셀 다운로드",
+        "button": "다운로드",
         "downloading": "다운로드 중…",
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "다운로드를 시작했습니다."

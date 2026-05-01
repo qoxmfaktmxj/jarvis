@@ -126,6 +126,15 @@ interface SubstitutedBlock {
  *
  * Returns the normalized relPath (forward-slash, no leading slash) on
  * success, or null when the path must be rejected.
+ *
+ * Allowlist (Karpathy boundary — defense in depth, not just prompt):
+ *  - `index.md` and `log.md` at the workspace root (bookkeeping)
+ *  - `auto/<sub>/<...>.md` (content pages — LLM-owned subtree)
+ *
+ * Anything else (`manual/**`, `_system/**`, `_archive/**`, root `.md` files
+ * other than index/log) is rejected. The system prompt also tells the LLM
+ * not to write outside `auto/`, but that prompt-only guard breaks under
+ * prompt injection or model error — this code-level allowlist closes it.
  */
 function validateBlockPath(
   rawPath: string,
@@ -142,9 +151,17 @@ function validateBlockPath(
   if (!relPath.endsWith(".md")) return null;
   // Reject absolute paths (POSIX or Windows drive letters).
   if (path.isAbsolute(relPath) || /^[A-Za-z]:/.test(relPath)) return null;
-  // Reject any `..` segment (path traversal).
+  // Reject any `..` or `.` segment (path traversal / weird normalization).
   const parts = relPath.split("/");
   if (parts.some((p) => p === ".." || p === ".")) return null;
+  // Reject empty segments (e.g. "auto//foo.md").
+  if (parts.some((p) => p.length === 0)) return null;
+
+  // Allowlist: bookkeeping (root only) OR auto/** content pages.
+  const isRootBookkeeping = relPath === "index.md" || relPath === "log.md";
+  const isAutoContent =
+    parts.length >= 2 && parts[0] === "auto" && relPath.endsWith(".md");
+  if (!isRootBookkeeping && !isAutoContent) return null;
 
   // Confirm that the resolved path stays inside wiki/{workspaceId}/.
   // We check this symbolically here; the atomicWrite site does a second
@@ -170,14 +187,11 @@ function substituteFrontmatter(
     return { rule: "invalid-path", detail: `block.path "${block.path}" failed boundary check (must be a non-empty .md path under wiki/${workspaceId}/ with no .. segments)` };
   }
 
-  // Bookkeeping files (index.md, log.md) typically don't have frontmatter —
-  // pass them through untouched.
+  // Bookkeeping files (root index.md, log.md) don't have frontmatter —
+  // pass them through untouched. validateBlockPath has already rejected
+  // any nested index.md / log.md, so a strict equality match is correct.
   const relPath = pathCheck.relPath;
-  const isBookkeeping =
-    relPath === "index.md" ||
-    relPath === "log.md" ||
-    relPath.endsWith("/index.md") ||
-    relPath.endsWith("/log.md");
+  const isBookkeeping = relPath === "index.md" || relPath === "log.md";
   const wikiPath = `wiki/${workspaceId}/${relPath}`;
 
   if (isBookkeeping) {

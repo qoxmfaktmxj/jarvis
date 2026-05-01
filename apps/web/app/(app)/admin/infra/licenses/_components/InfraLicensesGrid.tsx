@@ -20,7 +20,9 @@
  */
 import { Suspense, useCallback, useMemo, useState, useTransition } from "react";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import {
   CodeGroupPopupLauncher,
   type CodeGroupItem,
@@ -119,7 +121,13 @@ function InfraLicensesGridInner({
   const [page, setPage] = useState(initialPage);
   const [exporting, startExport] = useTransition();
   const [dupError, setDupError] = useState<string | null>(null);
-  const [, startReload] = useTransition();
+  const [isSearching, startReload] = useTransition();
+  const [pendingFilters, setPendingFilters] = useState({
+    q: initialQ,
+    searchDevGbCd: initialSearchDevGbCd,
+  });
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   // URL-persistent filter state (useSearchParams requires Suspense boundary)
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters({
@@ -312,72 +320,59 @@ function InfraLicensesGridInner({
     });
   }, [filterValues]);
 
-  // searchDevGbCd popup select: toggle-selects a code (same code = clear)
-  const handleSearchDevGbCdSelect = useCallback(
-    (item: CodeGroupItem) => {
-      const newVal = item.code === filterValues.searchDevGbCd ? "" : item.code;
-      setFilterValue("searchDevGbCd", newVal);
-      setFilterValue("page", "1");
-      reload(1, filterValues.q, newVal);
-    },
-    [filterValues, setFilterValue, reload],
-  );
-
   return (
     <div className="space-y-3">
-      {/* Excel export toolbar (server-side full-data export with audit log) */}
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel="엑셀 다운로드"
-        isExporting={exporting}
-      />
-
-      {/* External filter strip — q + searchDevGbCd via CodeGroupPopupLauncher */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <input
-          type="text"
-          placeholder="회사코드/회사명/도메인/IP"
-          value={filterValues.q}
-          onChange={(e) => setFilterValue("q", e.target.value)}
-          onBlur={() => reload(1, filterValues.q, filterValues.searchDevGbCd)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter")
-              reload(1, filterValues.q, filterValues.searchDevGbCd);
-          }}
-          className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {/* searchDevGbCd filter — CodeGroupPopupLauncher (B10025 code group) */}
-        <div className="flex items-center gap-1" data-testid="searchDevGbCd-filter">
-          <span className="text-[13px] text-slate-500">환경:</span>
-          <span
-            className="min-w-[60px] rounded border border-slate-300 px-2 py-1 text-[13px] text-slate-700"
-            data-testid="searchDevGbCd-display"
-          >
-            {devGbOptions.find((o) => o.value === filterValues.searchDevGbCd)?.label ?? "전체"}
-          </span>
-          <CodeGroupPopupLauncher
-            triggerLabel="선택"
-            items={devGbCodeItems}
-            onSelect={handleSearchDevGbCdSelect}
-            searchable={false}
+      {/* GridSearchForm: q + searchDevGbCd filter panel with [조회] button */}
+      <GridSearchForm
+        onSearch={() => {
+          setFilterValue("q", pendingFilters.q);
+          setFilterValue("searchDevGbCd", pendingFilters.searchDevGbCd);
+          setFilterValue("page", "1");
+          reload(1, pendingFilters.q, pendingFilters.searchDevGbCd);
+        }}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="검색" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.q}
+            onChange={(e) => setPending("q", e.target.value)}
+            placeholder="회사코드/회사명/도메인/IP"
+            className="h-8"
           />
-          {filterValues.searchDevGbCd ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setFilterValue("searchDevGbCd", "");
-                setFilterValue("page", "1");
-                reload(1, filterValues.q, "");
-              }}
-              className="px-2 text-[12px]"
+        </GridFilterField>
+        {/* searchDevGbCd filter — CodeGroupPopupLauncher (B10025 code group) */}
+        <GridFilterField label="환경" className="w-[200px]">
+          <div className="flex items-center gap-1" data-testid="searchDevGbCd-filter">
+            <span
+              className="min-w-[60px] rounded border border-(--border-default) bg-(--bg-page) px-2 py-1 text-[13px] text-(--fg-primary)"
+              data-testid="searchDevGbCd-display"
             >
-              초기화
-            </Button>
-          ) : null}
-        </div>
-      </div>
+              {devGbOptions.find((o) => o.value === pendingFilters.searchDevGbCd)?.label ?? "전체"}
+            </span>
+            <CodeGroupPopupLauncher
+              triggerLabel="선택"
+              items={devGbCodeItems}
+              onSelect={(item) => {
+                const newVal = item.code === pendingFilters.searchDevGbCd ? "" : item.code;
+                setPending("searchDevGbCd", newVal);
+              }}
+              searchable={false}
+            />
+            {pendingFilters.searchDevGbCd ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => setPending("searchDevGbCd", "")}
+                className="px-2 text-[12px]"
+              >
+                초기화
+              </Button>
+            ) : null}
+          </div>
+        </GridFilterField>
+      </GridSearchForm>
 
       {dupError ? (
         <div
@@ -396,6 +391,8 @@ function InfraLicensesGridInner({
         page={page}
         limit={limit}
         makeBlankRow={makeBlankInfraLicense}
+        onExport={handleExport}
+        isExporting={exporting}
         onPageChange={(nextPage) => {
           setFilterValue("page", String(nextPage));
           reload(nextPage, filterValues.q, filterValues.searchDevGbCd);

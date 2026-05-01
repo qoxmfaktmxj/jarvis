@@ -29,15 +29,15 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
         type="button"
         onClick={() => setEditing(true)}
         className={cn(
-          "flex h-full w-full items-center px-2 text-left text-[13px] text-slate-900",
-          "hover:bg-slate-100/60",
+          "flex h-full w-full items-center px-2 text-left text-[13px] text-(--fg-primary)",
+          "hover:bg-(--bg-surface)/60",
           invalid && "ring-1 ring-rose-500 ring-inset",
         )}
       >
         {value ? (
           <span className="truncate">{value}</span>
         ) : (
-          <span className="text-slate-400">{placeholder ?? ""}</span>
+          <span className="text-(--fg-muted)">{placeholder ?? ""}</span>
         )}
         {required && !value && <span className="ml-1 shrink-0 text-rose-500">*</span>}
       </button>
@@ -60,7 +60,7 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
           setEditing(false);
         }
       }}
-      className="h-full w-full bg-white px-2 text-[13px] text-slate-900 outline-none ring-2 ring-blue-500 ring-inset transition-shadow duration-150"
+      className="h-full w-full bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) outline-none ring-2 ring-(--border-focus) ring-inset transition-shadow duration-150"
     />
   );
 }

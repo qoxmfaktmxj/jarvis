@@ -45,30 +45,44 @@ vi.mock('@jarvis/db/client', () => ({
     update: vi.fn().mockReturnThis(),
     set: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
-    transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => fn({
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      innerJoin: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue([]),
-      insert: vi.fn().mockReturnThis(),
-      values: vi.fn().mockReturnThis(),
-      returning: vi.fn((cols?: Record<string, unknown>) => {
-      // Drizzle .returning() projects rows to selected columns. cols=undefined → full row.
-      if (!cols) return Promise.resolve(returningRows.value);
-      const projected = returningRows.value.map((row) => {
-        const r = row as Record<string, unknown>;
-        const out: Record<string, unknown> = {};
-        for (const key of Object.keys(cols)) out[key] = r[key];
-        return out;
+    transaction: vi.fn((fn: (tx: unknown) => Promise<unknown>) => {
+      // Shared returning mock that projects columns like Drizzle does.
+      const makeReturning = () => vi.fn((cols?: Record<string, unknown>) => {
+        if (!cols) return Promise.resolve(returningRows.value);
+        const projected = returningRows.value.map((row) => {
+          const r = row as Record<string, unknown>;
+          const out: Record<string, unknown> = {};
+          for (const key of Object.keys(cols)) out[key] = r[key];
+          return out;
+        });
+        return Promise.resolve(projected);
       });
-      return Promise.resolve(projected);
+      // values() must be thenable so `await tx.insert(...).values(...)` resolves.
+      const makeValues = () => {
+        const valuesChain: Record<string, unknown> = {};
+        valuesChain.returning = makeReturning();
+        // Make the chain itself a resolved Promise (handles bare `await .values(...)`)
+        Object.assign(valuesChain, Promise.resolve([]));
+        valuesChain.then = (resolve: (v: unknown) => unknown) => Promise.resolve([]).then(resolve);
+        valuesChain.catch = (reject: (v: unknown) => unknown) => Promise.resolve([]).catch(reject);
+        valuesChain.finally = (fn: () => void) => Promise.resolve([]).finally(fn);
+        return vi.fn().mockReturnValue(valuesChain);
+      };
+      return fn({
+        select: vi.fn().mockReturnThis(),
+        from: vi.fn().mockReturnThis(),
+        innerJoin: vi.fn().mockReturnThis(),
+        leftJoin: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue([]),
+        insert: vi.fn().mockReturnThis(),
+        values: makeValues(),
+        returning: makeReturning(),
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis(),
+        delete: vi.fn().mockReturnThis(),
+      });
     }),
-      update: vi.fn().mockReturnThis(),
-      set: vi.fn().mockReturnThis(),
-      delete: vi.fn().mockReturnThis(),
-    })),
   },
 }));
 
@@ -85,6 +99,7 @@ vi.mock('@jarvis/db/schema', () => ({
   role: { id: 'id', code: 'code', workspaceId: 'workspace_id' },
   codeGroup: { id: 'id', workspaceId: 'workspace_id', code: 'code' },
   codeItem: { id: 'id', groupId: 'group_id', code: 'code', name: 'name', isActive: 'is_active' },
+  auditLog: { id: 'id', workspaceId: 'workspace_id', userId: 'user_id', action: 'action', resourceType: 'resource_type', resourceId: 'resource_id', details: 'details', success: 'success' },
 }));
 
 import { GET, POST, PUT, DELETE } from './route';
