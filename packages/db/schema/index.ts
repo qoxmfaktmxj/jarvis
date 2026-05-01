@@ -44,3 +44,5 @@ export * from "./infra-license.js";
 // Phase-Sales P2: 영업기회 (TBIZ110/112) + 영업활동 (TBIZ115/116)
 export * from "./sales-opportunity.js";
 export * from "./sales-activity.js";
+// Phase-Sales PR-1A: 계약 (TBIZ030/031/032/010)
+export * from "./sales-contract.js";
