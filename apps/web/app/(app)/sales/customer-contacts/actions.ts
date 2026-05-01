@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, exists, ilike, inArray, sql } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomerContact, salesCustomer, auditLog } from "@jarvis/db/schema";
+import { salesCustomerContact, salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomerContactsInput,
@@ -52,6 +52,23 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
+  if (input.chargerNm) {
+    // EXISTS via salesCustomerContact.customerId → salesCustomerCharger.customerId + charger.name ilike
+    conditions.push(
+      exists(
+        db.select({ ok: sql<number>`1` }).from(salesCustomerCharger)
+          .where(
+            and(
+              eq(salesCustomerCharger.workspaceId, ctx.workspaceId),
+              eq(salesCustomerCharger.customerId, salesCustomerContact.customerId),
+              ilike(salesCustomerCharger.name, `%${input.chargerNm}%`),
+            ),
+          ),
+      ),
+    );
+  }
+  if (input.hpNo) conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));
+  if (input.email) conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([
@@ -115,18 +132,22 @@ export async function saveCustomerContacts(rawInput: z.input<typeof saveCustomer
     await db.transaction(async (tx) => {
       for (const c of input.creates) {
         // custNm + createdAt are read-only display fields (custNm via JOIN, createdAt via defaultNow) — strip from insert.
-        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, ...createPayload } = c;
+        // chargerNm is a virtual search-only field — strip from insert.
+        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, chargerNm: _omitChargerNm, ...createPayload } = c;
         void _omitCustNm;
         void _omitCreatedAt;
+        void _omitChargerNm;
         await tx.insert(salesCustomerContact).values({ ...createPayload, workspaceId: ctx.workspaceId, createdBy: ctx.userId ?? undefined });
         await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.create", resourceType: "sales_customer_contact", resourceId: c.id, details: { custMcd: c.custMcd } as Record<string, unknown>, success: true });
         created.push(c.id);
       }
       for (const u of input.updates) {
         // custNm + createdAt are read-only display fields — strip from update patch.
-        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, ...updatablePatch } = u.patch;
+        // chargerNm is a virtual search-only field — strip from update patch.
+        const { custNm: _omitCustNm, createdAt: _omitCreatedAt, chargerNm: _omitChargerNm, ...updatablePatch } = u.patch;
         void _omitCustNm;
         void _omitCreatedAt;
+        void _omitChargerNm;
         await tx.update(salesCustomerContact).set({ ...updatablePatch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined }).where(and(eq(salesCustomerContact.id, u.id), eq(salesCustomerContact.workspaceId, ctx.workspaceId)));
         await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.customer_contact.update", resourceType: "sales_customer_contact", resourceId: u.id, details: updatablePatch as Record<string, unknown>, success: true });
         updated.push(u.id);

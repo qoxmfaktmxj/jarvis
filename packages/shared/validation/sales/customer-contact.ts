@@ -16,12 +16,17 @@ export const customerContactRow = z.object({
   custNm: z.string().nullable().optional(),
   // 등록일자 (read-only display; server sets defaultNow on insert).
   createdAt: z.string().nullable().optional(),
+  // 영업담당 검색용 virtual 필드 (filter key only — NOT stored in DB; FilterDef<CustomerContactRow> 참조).
+  chargerNm: z.string().optional(),
 });
 
 export const listCustomerContactsInput = z.object({
   custMcd: z.string().optional(),
   custName: z.string().optional(),
   customerId: z.string().uuid().optional(),
+  chargerNm: z.string().optional(),
+  hpNo: z.string().optional(),
+  email: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });
