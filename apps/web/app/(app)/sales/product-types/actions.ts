@@ -46,7 +46,12 @@ export async function listProductTypes(rawInput: z.input<typeof listProductTypes
   ]);
 
   return listProductTypesOutput.parse({
-    rows: rows.map((r) => ({ id: r.id, productCd: r.productCd, productNm: r.productNm })),
+    rows: rows.map((r) => ({
+      id: r.id,
+      productCd: r.productCd,
+      productNm: r.productNm,
+      createdAt: r.createdAt.toISOString(),
+    })),
     total: Number(countRows[0]?.count ?? 0),
   });
 }
@@ -61,13 +66,22 @@ export async function saveProductTypes(rawInput: z.input<typeof saveProductTypes
   try {
     await db.transaction(async (tx) => {
       for (const c of input.creates) {
-        await tx.insert(salesProductType).values({ ...c, workspaceId: ctx.workspaceId });
+        // createdAt is read-only — DB defaultNow handles insert; strip from client payload.
+        await tx.insert(salesProductType).values({
+          id: c.id,
+          productCd: c.productCd,
+          productNm: c.productNm,
+          workspaceId: ctx.workspaceId,
+        });
         await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.product_type.create", resourceType: "sales_product_type", resourceId: c.id, details: {} as Record<string, unknown>, success: true });
         created.push(c.id);
       }
       for (const u of input.updates) {
-        await tx.update(salesProductType).set({ ...u.patch, updatedAt: new Date() }).where(and(eq(salesProductType.id, u.id), eq(salesProductType.workspaceId, ctx.workspaceId)));
-        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.product_type.update", resourceType: "sales_product_type", resourceId: u.id, details: u.patch as Record<string, unknown>, success: true });
+        // createdAt is read-only — strip from update patch.
+        const { createdAt: _omitCreatedAt, ...updatablePatch } = u.patch;
+        void _omitCreatedAt;
+        await tx.update(salesProductType).set({ ...updatablePatch, updatedAt: new Date() }).where(and(eq(salesProductType.id, u.id), eq(salesProductType.workspaceId, ctx.workspaceId)));
+        await tx.insert(auditLog).values({ workspaceId: ctx.workspaceId, userId: ctx.userId, action: "sales.product_type.update", resourceType: "sales_product_type", resourceId: u.id, details: updatablePatch as Record<string, unknown>, success: true });
         updated.push(u.id);
       }
       if (input.deletes.length > 0) {

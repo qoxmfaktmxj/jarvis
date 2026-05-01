@@ -4,6 +4,8 @@ export const productTypeRow = z.object({
   id: z.string().uuid(),
   productCd: z.string().min(1).max(50),
   productNm: z.string().min(1).max(300),
+  // 등록일자 (read-only display; server sets defaultNow on insert).
+  createdAt: z.string().nullable().optional(),
 });
 
 export const listProductTypesInput = z.object({
