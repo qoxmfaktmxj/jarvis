@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
   useRef,
@@ -11,6 +12,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { pathnameToTabKey } from "./tab-key";
+import { loadFromSession, makeDebouncedSaver } from "./tab-persistence";
 import type {
   CloseAction,
   PendingCloseRequest,
@@ -20,7 +22,7 @@ import type {
   TabContextValue,
   TabKey,
 } from "./tab-types";
-import { MAX_TABS } from "./tab-types";
+import { MAX_TABS, PERSISTENCE_DEBOUNCE_MS } from "./tab-types";
 
 interface InternalState {
   tabs: Tab[];
@@ -162,7 +164,7 @@ export function useTabContext(): TabContextValue {
 }
 
 export function TabProvider({
-  workspaceId: _workspaceId,
+  workspaceId,
   children,
 }: {
   workspaceId: string;
@@ -175,10 +177,39 @@ export function TabProvider({
       stateRef.current = next;
       return next;
     },
-    initialState,
+    workspaceId,
+    (ws): InternalState => {
+      const persisted = loadFromSession(ws);
+      if (!persisted) {
+        stateRef.current = initialState;
+        return initialState;
+      }
+      const restored: InternalState = {
+        tabs: persisted.tabs,
+        activeKey: persisted.activeKey,
+        tabStates: persisted.tabStates,
+        dirtyKeys: new Set(),       // dirtyKeys not persisted (runtime only)
+        pendingClose: null,         // pendingClose not persisted
+      };
+      stateRef.current = restored;
+      return restored;
+    },
   );
   const router = useRouter();
   const saveHandlersRef = useRef(new Map<TabKey, SaveHandler>());
+
+  const debouncedSaverRef = useRef<ReturnType<typeof makeDebouncedSaver> | null>(null);
+  if (!debouncedSaverRef.current) {
+    debouncedSaverRef.current = makeDebouncedSaver(workspaceId, PERSISTENCE_DEBOUNCE_MS);
+  }
+
+  useEffect(() => {
+    debouncedSaverRef.current!({
+      tabs: state.tabs,
+      activeKey: state.activeKey,
+      tabStates: state.tabStates,
+    });
+  }, [state.tabs, state.activeKey, state.tabStates]);
 
   const isDirty = useCallback((key: TabKey) => state.dirtyKeys.has(key), [state.dirtyKeys]);
   const isPinned = useCallback(

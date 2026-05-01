@@ -355,3 +355,44 @@ describe("TabProvider — dirty + save handler + pending close", () => {
     expect(result.current.tabs.map((t) => t.key)).not.toContain("/f");
   });
 });
+
+import * as persistenceModule from "../tab-persistence";
+
+describe("TabProvider — persistence", () => {
+  it("loads existing tabs from sessionStorage on mount", async () => {
+    persistenceModule.saveToSession("ws-1", {
+      tabs: [
+        {
+          key: "/a",
+          url: "/a",
+          title: "A",
+          pinned: false,
+          createdAt: 0,
+          lastVisitedAt: 0,
+        },
+      ],
+      activeKey: "/a",
+      tabStates: new Map(),
+    });
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    expect(result.current.tabs).toHaveLength(1);
+    expect(result.current.tabs[0]?.key).toBe("/a");
+    expect(result.current.activeKey).toBe("/a");
+  });
+
+  it("writes to sessionStorage when tabs change (debounced)", async () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+    });
+    expect(persistenceModule.loadFromSession("ws-1")).toBeNull();
+    await act(async () => {
+      vi.advanceTimersByTime(500);
+    });
+    const persisted = persistenceModule.loadFromSession("ws-1");
+    expect(persisted?.tabs).toHaveLength(1);
+    expect(persisted?.tabs[0]?.key).toBe("/a");
+    vi.useRealTimers();
+  });
+});
