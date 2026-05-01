@@ -87,4 +87,18 @@ describe("CodeGroupPopupLauncher", () => {
     });
     expect(screen.getByText("결과 없음")).toBeInTheDocument();
   });
+
+  it("closes popup on Escape key (a11y)", () => {
+    render(
+      <CodeGroupPopupLauncher
+        triggerLabel="회사"
+        items={items}
+        onSelect={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "회사" }));
+    expect(screen.getByText("ACME Corp")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByText("ACME Corp")).toBeNull();
+  });
 });
