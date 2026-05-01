@@ -14,9 +14,13 @@ export default async function AdminMenusPage() {
   const sessionId = headersList.get('x-session-id') ?? '';
   const session = await getSession(sessionId);
 
-  // Require ADMIN_ALL — consistent with admin layout guard
+  // Defense-in-depth: admin/layout.tsx already redirects non-admins to
+  // `/dashboard?error=forbidden`, but we re-check here so a future refactor
+  // (e.g. moving the page out of (app)/admin/) doesn't silently lose the
+  // guard. Match the layout's redirect target — sending an authenticated
+  // non-admin to /login causes a confusing reauth loop.
   if (!session || !hasPermission(session, PERMISSIONS.ADMIN_ALL)) {
-    redirect('/login');
+    redirect('/dashboard?error=forbidden');
   }
 
   const items = await getMenuTree(session.workspaceId);

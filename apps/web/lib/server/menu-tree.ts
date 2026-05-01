@@ -23,6 +23,11 @@ import type { JarvisSession } from "@jarvis/auth/types";
  *   the user is allowed to see, then delegates to `buildMenuTree`. DB errors
  *   are caught and logged so the global app shell does not 500 if this query
  *   fails for any reason — callers receive an empty tree instead.
+ *
+ * **Admin viewer uses a different function.** For unfiltered admin listings
+ * (e.g. `/admin/menus` viewer) use `getMenuTree(workspaceId)` at
+ * `apps/web/lib/queries/admin.ts` — that function returns ALL rows in the
+ * workspace and assumes the calling page has already enforced ADMIN_ALL.
  */
 
 export type MenuKind = "menu" | "action";

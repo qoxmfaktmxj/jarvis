@@ -80,6 +80,16 @@
       "wikiViolations": "Boundary Violations",
       "wikiReviewQueue": "Wiki Review Queue"
     },
+    "Menus": {
+      "title": "Menu Settings",
+      "description": "Read-only view of the DB-driven menu tree. Add or edit menus via packages/db/seed/menus.ts or a future edit UI.",
+      "kindMenu": "Sidebar Menus",
+      "kindAction": "Quick Actions (CommandPalette)",
+      "empty": "No items",
+      "childBadge": "child",
+      "visible": "visible",
+      "hidden": "hidden"
+    },
     "WikiReviewQueue": {
       "title": "Wiki Review Queue",
       "description": "Pending wiki auto/manual review items — {count} item(s).",
