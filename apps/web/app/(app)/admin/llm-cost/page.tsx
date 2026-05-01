@@ -39,7 +39,7 @@ export default async function LlmCostPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · LLM Cost"
         title="LLM Cost — 최근 7일"
         description="workspace × model 기준 집계. blocked = 예산 차단으로 기록된 호출 수."

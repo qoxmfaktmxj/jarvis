@@ -28,7 +28,7 @@ export default async function AdminMenusPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Menus"
         title={t('title')}
         description={t('description')}

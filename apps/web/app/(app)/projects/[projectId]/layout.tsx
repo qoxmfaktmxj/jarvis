@@ -31,7 +31,6 @@ export default async function ProjectDetailLayout({
         eyebrow="Project"
         title={project.name}
         description={project.description ?? undefined}
-        accent={project.name?.slice(0, 3).toUpperCase()}
       />
 
       <ProjectTabs projectId={projectId} />

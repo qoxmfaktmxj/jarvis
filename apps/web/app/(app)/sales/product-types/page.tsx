@@ -20,7 +20,7 @@ export default async function SalesProductTypesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader accent="SL" eyebrow="Sales · Product Types" title="제품군관리" description="영업 제품 유형 마스터를 관리합니다." />
+      <PageHeader eyebrow="Sales · Product Types" title="제품군관리" description="영업 제품 유형 마스터를 관리합니다." />
       <ProductTypesGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} />
     </div>
   );

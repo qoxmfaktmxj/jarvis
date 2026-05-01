@@ -91,7 +91,7 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Review Queue"
         title={t('title')}
         description={t('descriptionPending', { count: total })}

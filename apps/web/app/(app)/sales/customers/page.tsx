@@ -43,7 +43,7 @@ export default async function SalesCustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="SL"
+
         eyebrow="Sales · Customers"
         title="고객사관리"
         description="외부 거래처(고객사) 마스터를 관리합니다."

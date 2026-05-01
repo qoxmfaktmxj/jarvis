@@ -5,8 +5,6 @@ import type { JSX, ReactNode } from "react";
  * large mono left stamp (e.g. "W16") · kicker with mint accent dot · title · subtitle · right actions.
  */
 export interface PageHeaderProps {
-  /** Large mono left stamp (e.g. "W16" ISO week). Hidden when omitted. */
-  stamp?: string;
   /** Uppercase small label above title with a leading mint dot. */
   kicker?: string;
   /** Main title (30px bold). */
@@ -17,14 +15,16 @@ export interface PageHeaderProps {
   actions?: ReactNode;
 
   // ---- Back-compat aliases for existing call sites -----------------------
-  /** @deprecated Use `stamp`. */
-  accent?: string;
   /** @deprecated Use `kicker`. */
   eyebrow?: string;
   /** @deprecated Use `subtitle`. */
   description?: string;
   /** @deprecated Use `actions`. */
   meta?: ReactNode;
+  /** @deprecated No-op — accent stamp removed. */
+  accent?: string;
+  /** @deprecated No-op — accent stamp removed. */
+  stamp?: string;
 }
 
 /**
@@ -40,7 +40,6 @@ export interface PageHeaderProps {
  * at once — but new code should use the primary names.
  */
 export function PageHeader(props: PageHeaderProps): JSX.Element {
-  const stamp = props.stamp ?? props.accent;
   const kicker = props.kicker ?? props.eyebrow;
   const subtitle = props.subtitle ?? props.description;
   const actions = props.actions ?? props.meta;
@@ -48,15 +47,6 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
 
   return (
     <header className="mb-7 flex items-start gap-5">
-      {stamp ? (
-        <span
-          aria-hidden="true"
-          className="text-display select-none font-mono text-[72px] font-bold leading-[0.85] tracking-[-0.04em] text-(--fg-muted) pt-0.5"
-        >
-          {stamp}
-        </span>
-      ) : null}
-
       <div className="flex min-w-0 flex-1 items-start justify-between gap-5">
         <div className="min-w-0">
           {kicker ? (

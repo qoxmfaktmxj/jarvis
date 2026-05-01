@@ -290,7 +290,7 @@ export default async function WikiObservabilityPage() {
     <WikiObservabilityClient renderedAt={renderedAt}>
       <div className="space-y-6">
         <PageHeader
-          accent="AD"
+
           eyebrow="Admin · Wiki Observability"
           title="Wiki 운영 모니터링"
           description={`ingest 처리량, page-first 쿼리, commit 무결성, lint 결과 등 위키 파이프라인 건강 상태. Workspace: ${data.workspaceId}`}

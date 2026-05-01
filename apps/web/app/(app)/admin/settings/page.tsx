@@ -21,7 +21,7 @@ export default async function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Settings"
         title={t('title')}
         description={t('description')}

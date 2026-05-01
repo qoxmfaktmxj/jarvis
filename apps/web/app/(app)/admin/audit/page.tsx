@@ -28,7 +28,7 @@ export default async function AdminAuditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Audit"
         title={t('title')}
         description={t('description')}

@@ -44,7 +44,7 @@ export default async function AdminCompaniesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Companies"
         title={t("title")}
         description={t("description")}

@@ -24,7 +24,7 @@ export default async function SalesLicensesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader accent="SL" eyebrow="Sales · Licenses" title="라이센스관리" description="고객사별 라이센스 발급·만료를 관리합니다." />
+      <PageHeader eyebrow="Sales · Licenses" title="라이센스관리" description="고객사별 라이센스 발급·만료를 관리합니다." />
       <LicensesGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} licenseKindOptions={licenseKindOptions} />
     </div>
   );

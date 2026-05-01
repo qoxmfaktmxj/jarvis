@@ -20,7 +20,7 @@ export default async function SalesMailPersonsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader accent="SL" eyebrow="Sales · Mail Persons" title="메일담당자" description="영업·인사 메일 수신 담당자를 관리합니다." />
+      <PageHeader eyebrow="Sales · Mail Persons" title="메일담당자" description="영업·인사 메일 수신 담당자를 관리합니다." />
       <MailPersonsGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} />
     </div>
   );

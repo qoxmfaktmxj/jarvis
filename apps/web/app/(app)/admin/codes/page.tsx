@@ -24,7 +24,7 @@ export default function AdminCodesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Codes"
         title={t('title')}
         description={t('description')}

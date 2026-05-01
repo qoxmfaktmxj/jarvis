@@ -14,7 +14,7 @@ export default async function SearchAnalyticsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Search Analytics"
         title={t('title')}
         description={t('description')}

@@ -70,7 +70,7 @@ export default async function BoundaryViolationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        accent="AD"
+
         eyebrow="Admin · Wiki Boundary"
         title="Wiki 경계 위반"
         description={`LLM이 wiki/manual/**을, 사람이 wiki/auto/**을 건드린 커밋 기록. 최근 ${PAGE_SIZE}건.`}
