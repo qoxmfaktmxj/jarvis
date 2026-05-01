@@ -85,14 +85,14 @@ export function ProductCostMappingGrid({
 
   // URL-synced filter state (Task 4 I-1 / Task 6 pattern).
   // useMemo for stable FILTER_DEFAULTS reference — prevents useUrlFilters re-render loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const FILTER_DEFAULTS: FilterDefaults = useMemo(
     () => ({
       q: initialFilters?.q ?? "",
       productTypeId: initialFilters?.productTypeId ?? "",
       costId: initialFilters?.costId ?? "",
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [initialFilters?.q, initialFilters?.productTypeId, initialFilters?.costId],
+    [],
   );
 
   const { values, setValue } = useUrlFilters<FilterDefaults>({ defaults: FILTER_DEFAULTS });
