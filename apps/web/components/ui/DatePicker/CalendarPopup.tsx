@@ -1,0 +1,164 @@
+// apps/web/components/ui/DatePicker/CalendarPopup.tsx
+"use client";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useWorkspaceHolidays } from "./useWorkspaceHolidays";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+
+type Props = {
+  value: string | null;       // ISO yyyy-mm-dd or null
+  onSelect: (iso: string) => void;
+  onClose: () => void;
+  min?: string;
+  max?: string;
+};
+
+function fmt(year: number, monthIndex: number, day: number) {
+  return `${year}-${String(monthIndex + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function isInRange(iso: string, min?: string, max?: string) {
+  if (min && iso < min) return false;
+  if (max && iso > max) return false;
+  return true;
+}
+
+export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
+  const today = useMemo(() => {
+    const d = new Date();
+    return fmt(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
+  const initial = value ?? today;
+  const [year, setYear] = useState(Number(initial.slice(0, 4)));
+  const [monthIndex, setMonthIndex] = useState(Number(initial.slice(5, 7)) - 1);
+  const [focusISO, setFocusISO] = useState(initial);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { holidaysByDate } = useWorkspaceHolidays(year, monthIndex);
+
+  useEffect(() => {
+    gridRef.current?.focus();
+  }, []);
+
+  const firstDayOfMonth = new Date(Date.UTC(year, monthIndex, 1));
+  const startWeekday = firstDayOfMonth.getUTCDay(); // 0=Sun
+  const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+
+  // 6 weeks * 7 days = 42 cells. Pad with prev/next month days for grid alignment.
+  const cells: { iso: string; day: number; inMonth: boolean; weekday: number }[] = [];
+  for (let i = 0; i < 42; i++) {
+    const offset = i - startWeekday;
+    const date = new Date(Date.UTC(year, monthIndex, 1 + offset));
+    cells.push({
+      iso: fmt(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+      day: date.getUTCDate(),
+      inMonth: date.getUTCMonth() === monthIndex,
+      weekday: date.getUTCDay(),
+    });
+  }
+
+  const moveFocus = (deltaDays: number) => {
+    const [y, m, d] = focusISO.split("-").map(Number);
+    const next = new Date(Date.UTC(y, m - 1, d + deltaDays));
+    const nextISO = fmt(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate());
+    setFocusISO(nextISO);
+    if (next.getUTCFullYear() !== year || next.getUTCMonth() !== monthIndex) {
+      setYear(next.getUTCFullYear());
+      setMonthIndex(next.getUTCMonth());
+    }
+  };
+
+  const handleKey = (e: KeyboardEvent) => {
+    switch (e.key) {
+      case "ArrowLeft":  e.preventDefault(); moveFocus(-1); break;
+      case "ArrowRight": e.preventDefault(); moveFocus(1); break;
+      case "ArrowUp":    e.preventDefault(); moveFocus(-7); break;
+      case "ArrowDown":  e.preventDefault(); moveFocus(7); break;
+      case "PageUp":     e.preventDefault(); setMonthIndex((m) => (m === 0 ? 11 : m - 1)); if (monthIndex === 0) setYear((y) => y - 1); break;
+      case "PageDown":   e.preventDefault(); setMonthIndex((m) => (m === 11 ? 0 : m + 1)); if (monthIndex === 11) setYear((y) => y + 1); break;
+      case "Home":       e.preventDefault(); moveFocus(-(new Date(focusISO).getUTCDay())); break;
+      case "End":        e.preventDefault(); moveFocus(6 - new Date(focusISO).getUTCDay()); break;
+      case "Enter": case " ":
+        e.preventDefault();
+        if (isInRange(focusISO, min, max)) onSelect(focusISO);
+        break;
+      case "Escape":
+        e.preventDefault();
+        onClose();
+        break;
+    }
+  };
+
+  const goPrevMonth = () => { if (monthIndex === 0) { setYear((y) => y - 1); setMonthIndex(11); } else setMonthIndex((m) => m - 1); };
+  const goNextMonth = () => { if (monthIndex === 11) { setYear((y) => y + 1); setMonthIndex(0); } else setMonthIndex((m) => m + 1); };
+
+  return (
+    <div className="z-50 w-[280px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" onClick={goPrevMonth} aria-label="이전 달" className="rounded p-1 hover:bg-slate-100">
+          <ChevronLeft size={16} />
+        </button>
+        <div className="text-sm font-semibold text-slate-900">{year}년 {monthIndex + 1}월</div>
+        <button type="button" onClick={goNextMonth} aria-label="다음 달" className="rounded p-1 hover:bg-slate-100">
+          <ChevronRight size={16} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-medium text-slate-500">
+        {WEEKDAYS.map((w, i) => (
+          <div key={w} className={cn("py-1", i === 0 && "text-rose-500", i === 6 && "text-blue-500")}>{w}</div>
+        ))}
+      </div>
+      <div
+        ref={gridRef}
+        role="grid"
+        tabIndex={0}
+        onKeyDown={handleKey}
+        className="grid grid-cols-7 gap-0.5 outline-none"
+      >
+        {cells.map((c) => {
+          const holiday = holidaysByDate.get(c.iso);
+          const isWeekend0 = c.weekday === 0 || !!holiday;
+          const isWeekend6 = c.weekday === 6;
+          const isToday = c.iso === today;
+          const isSelected = c.iso === value;
+          const isFocused = c.iso === focusISO;
+          const inRange = isInRange(c.iso, min, max);
+
+          return (
+            <button
+              key={c.iso}
+              role="gridcell"
+              type="button"
+              aria-label={`${c.iso}${holiday ? ` (${holiday.name})` : ""}`}
+              aria-selected={isSelected}
+              title={holiday?.name}
+              disabled={!inRange}
+              onClick={() => onSelect(c.iso)}
+              className={cn(
+                "relative h-8 w-8 rounded text-[12px]",
+                !c.inMonth && "text-slate-300",
+                c.inMonth && isWeekend0 && "text-rose-600",
+                c.inMonth && isWeekend6 && "text-blue-600",
+                c.inMonth && !isWeekend0 && !isWeekend6 && "text-slate-900",
+                isFocused && !isSelected && "ring-2 ring-blue-300 ring-inset",
+                isSelected && "bg-blue-500 text-white",
+                isToday && !isSelected && "border border-blue-400",
+                inRange && !isSelected && "hover:bg-slate-100",
+                !inRange && "cursor-not-allowed opacity-40",
+              )}
+            >
+              {c.day}
+              {holiday && (
+                <span
+                  data-holiday-dot
+                  className="absolute right-1 top-1 h-1 w-1 rounded-full bg-rose-500"
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
