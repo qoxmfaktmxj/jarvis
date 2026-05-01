@@ -158,13 +158,78 @@
     },
     "Menus": {
       "title": "메뉴 설정",
-      "description": "DB 기반 메뉴 트리를 조회합니다. 메뉴 추가·수정은 packages/db/seed/menus.ts 를 통해 시드하거나 후속 편집 UI에서 처리합니다.",
-      "kindMenu": "사이드바 메뉴",
-      "kindAction": "빠른 액션 (CommandPalette)",
-      "empty": "항목 없음",
-      "childBadge": "하위",
-      "visible": "표시",
-      "hidden": "숨김"
+      "description": "사이드바·CommandPalette에 표시되는 메뉴와 권한 매핑을 관리합니다.",
+      "duplicates": "중복된 메뉴 코드가 있습니다: {codes}",
+      "saveSuccess": "저장되었습니다.",
+      "saveError": "저장 중 오류가 발생했습니다.",
+      "noDataToExport": "내려받을 데이터가 없습니다.",
+      "masterSection": {
+        "title": "메뉴 목록",
+        "filter": {
+          "code": "코드",
+          "label": "라벨",
+          "kind": "종류",
+          "kindAll": "전체",
+          "parent": "부모",
+          "parentAll": "전체",
+          "parentRoot": "(최상위)",
+          "visibleY": "표시",
+          "visibleN": "숨김",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "kind": {
+          "menu": "메뉴",
+          "action": "액션"
+        },
+        "columns": {
+          "no": "No",
+          "delete": "삭제",
+          "status": "상태",
+          "code": "코드",
+          "kind": "종류",
+          "parent": "부모",
+          "label": "라벨",
+          "icon": "아이콘",
+          "routePath": "경로",
+          "sortOrder": "순서",
+          "isVisible": "표시",
+          "description": "설명",
+          "permCnt": "권한수"
+        },
+        "toolbar": {
+          "insert": "입력",
+          "copy": "복사",
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "empty": "데이터가 없습니다."
+      },
+      "detailSection": {
+        "title": "메뉴 권한",
+        "filter": {
+          "code": "권한 코드",
+          "search": "조회",
+          "reset": "초기화"
+        },
+        "columns": {
+          "no": "No",
+          "status": "상태",
+          "permissionCode": "권한 코드",
+          "permissionDescription": "설명",
+          "assigned": "할당됨"
+        },
+        "toolbar": {
+          "save": "저장",
+          "saveCount": "저장 ({count})",
+          "export": "다운로드"
+        },
+        "emptyMaster": "메뉴를 선택하세요.",
+        "empty": "권한이 없습니다.",
+        "assignedY": "할당",
+        "assignedN": "미할당"
+      }
     },
     "Organizations": {
       "title": "조직",
