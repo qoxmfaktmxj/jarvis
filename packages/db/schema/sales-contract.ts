@@ -126,7 +126,7 @@ export const salesContract = pgTable(
 
     // Audit columns
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
   },
@@ -134,6 +134,9 @@ export const salesContract = pgTable(
     wsIdx: index("sales_contract_ws_idx").on(t.workspaceId),
     wsCustIdx: index("sales_contract_ws_cust_idx").on(t.workspaceId, t.customerNo),
     wsContYmdIdx: index("sales_contract_ws_cont_ymd_idx").on(t.workspaceId, t.contYmd),
+    // NOTE: PostgreSQL unique indexes do not enforce uniqueness when any
+    // key column is NULL. This guard is effective only after ETL populates
+    // all three legacy_* columns. Pre-ETL rows with NULL keys bypass dedup.
     legacyUniq: uniqueIndex("sales_contract_legacy_uniq").on(
       t.workspaceId,
       t.legacyEnterCd,
