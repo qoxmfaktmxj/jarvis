@@ -1,6 +1,9 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { listProductTypes, saveProductTypes } from "../actions";
 import type { ProductTypeRow } from "@jarvis/shared/validation/sales/product-type";
@@ -24,17 +27,18 @@ const COLUMNS: ColumnDef<ProductTypeRow>[] = [
   },
 ];
 
-const FILTERS: FilterDef<ProductTypeRow>[] = [
-  { key: "productCd", type: "text", placeholder: "제품코드" },
-  { key: "productNm", type: "text", placeholder: "제품명" },
-];
+const FILTERS: FilterDef<ProductTypeRow>[] = [];
 
 export function ProductTypesGridContainer({ rows: initialRows, total: initialTotal, page: initialPage, limit }: Props) {
   const [rows, setRows] = useState<ProductTypeRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [, startTransition] = useTransition();
+  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({});
+  const [isSearching, startTransition] = useTransition();
+
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback((nextPage: number, nextFilters: Record<string, string>) => {
     startTransition(async () => {
@@ -44,12 +48,38 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
   }, [limit]);
 
   return (
-    <DataGrid<ProductTypeRow>
-      rows={rows} total={total} columns={COLUMNS} filters={FILTERS}
-      page={page} limit={limit} makeBlankRow={makeBlankRow} filterValues={filterValues}
-      onPageChange={(p) => reload(p, filterValues)}
-      onFilterChange={(f) => reload(1, f)}
-      onSave={async (changes) => { const result = await saveProductTypes(changes); if (result.ok) await reload(page, filterValues); return result; }}
-    />
+    <div className="space-y-3">
+      <GridSearchForm
+        onSearch={() => reload(1, pendingFilters)}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="제품코드" className="w-[140px]">
+          <Input
+            type="text"
+            value={pendingFilters.productCd ?? ""}
+            onChange={(e) => setPending("productCd", e.target.value)}
+            placeholder="제품코드"
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label="제품명" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.productNm ?? ""}
+            onChange={(e) => setPending("productNm", e.target.value)}
+            placeholder="제품명"
+            className="h-8"
+          />
+        </GridFilterField>
+      </GridSearchForm>
+
+      <DataGrid<ProductTypeRow>
+        rows={rows} total={total} columns={COLUMNS} filters={FILTERS}
+        page={page} limit={limit} makeBlankRow={makeBlankRow} filterValues={filterValues}
+        onPageChange={(p) => reload(p, filterValues)}
+        onFilterChange={(f) => reload(1, f)}
+        onSave={async (changes) => { const result = await saveProductTypes(changes); if (result.ok) await reload(page, filterValues); return result; }}
+      />
+    </div>
   );
 }
