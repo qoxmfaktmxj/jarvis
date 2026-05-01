@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 export type EmployeeHit = { sabun: string; name: string; email: string };
 
@@ -16,6 +17,8 @@ export function EmployeePicker({ value, onSelect, search, placeholder }: Props) 
   const [active, setActive] = useState(-1);
   const [open, setOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reactId = useId();
+  const listboxId = `employee-listbox-${reactId}`;
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
@@ -47,26 +50,28 @@ export function EmployeePicker({ value, onSelect, search, placeholder }: Props) 
       <input
         role="combobox"
         aria-expanded={open}
-        aria-controls="employee-listbox"
+        aria-controls={listboxId}
         aria-autocomplete="list"
+        aria-activedescendant={open && active >= 0 ? `${listboxId}-opt-${active}` : undefined}
         value={text}
         onChange={onChange}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
-        className="h-7 w-full rounded border border-slate-300 px-2 text-sm"
+        className="h-7 w-full rounded border border-slate-300 px-2 text-[13px]"
       />
       {open && hits.length > 0 ? (
         <ul
-          id="employee-listbox"
+          id={listboxId}
           role="listbox"
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-slate-200 bg-white shadow-lg"
         >
           {hits.map((h, i) => (
             <li
               key={h.sabun}
+              id={`${listboxId}-opt-${i}`}
               role="option"
               aria-selected={i === active}
-              className={`cursor-pointer px-2 py-1 text-sm ${i === active ? "bg-blue-100" : ""}`}
+              className={cn("cursor-pointer px-2 py-1 text-[13px]", i === active && "bg-blue-100")}
               onMouseEnter={() => setActive(i)}
               onMouseDown={(e) => { e.preventDefault(); onSelect(h); setOpen(false); setText(h.sabun); }}
             >

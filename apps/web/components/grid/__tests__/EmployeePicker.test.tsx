@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
-import { afterEach, describe, it, expect, vi } from "vitest";
+import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 
 afterEach(() => cleanup());
 import { EmployeePicker } from "../EmployeePicker";
@@ -11,6 +11,8 @@ const mockSearch = vi.fn(async (q: string) => {
 });
 
 describe("EmployeePicker", () => {
+  beforeEach(() => mockSearch.mockClear());
+
   it("does not query for <2 chars", async () => {
     render(<EmployeePicker value="" onSelect={() => {}} search={mockSearch} />);
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "h" } });
