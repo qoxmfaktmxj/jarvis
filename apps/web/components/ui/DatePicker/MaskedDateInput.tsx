@@ -156,9 +156,9 @@ export const MaskedDateInput = forwardRef<MaskedDateInputHandle, Props>(
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
         className={cn(
-          "h-8 w-full bg-transparent px-2 text-[13px] text-slate-900 outline-none",
-          "focus:ring-2 focus:ring-blue-500 focus:ring-inset",
-          ariaInvalid && "ring-1 ring-rose-500 ring-inset",
+          "h-8 w-full bg-transparent px-2 text-[13px] text-warm-900 outline-none",
+          "focus:ring-2 focus:ring-notion-blue focus:ring-inset",
+          ariaInvalid && "ring-1 ring-red-500 ring-inset",
           className,
         )}
       />

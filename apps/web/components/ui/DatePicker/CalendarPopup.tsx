@@ -110,19 +110,19 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
   const goNextMonth = () => { if (monthIndex === 11) { setYear((y) => y + 1); setMonthIndex(0); } else setMonthIndex((m) => m + 1); };
 
   return (
-    <div className="z-50 w-[280px] rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+    <div className="z-50 w-[280px] rounded-lg border border-warm-200 bg-white p-3 shadow-lg">
       <div className="mb-2 flex items-center justify-between">
-        <button type="button" onClick={goPrevMonth} aria-label="이전 달" className="rounded p-1 hover:bg-slate-100">
+        <button type="button" onClick={goPrevMonth} aria-label="이전 달" className="rounded p-1 hover:bg-warm-100">
           <ChevronLeft size={16} />
         </button>
-        <div className="text-sm font-semibold text-slate-900">{year}년 {monthIndex + 1}월</div>
-        <button type="button" onClick={goNextMonth} aria-label="다음 달" className="rounded p-1 hover:bg-slate-100">
+        <div className="text-sm font-semibold text-warm-900">{year}년 {monthIndex + 1}월</div>
+        <button type="button" onClick={goNextMonth} aria-label="다음 달" className="rounded p-1 hover:bg-warm-100">
           <ChevronRight size={16} />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-medium text-slate-500">
+      <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-medium text-warm-500">
         {WEEKDAYS.map((w, i) => (
-          <div key={w} className={cn("py-1", i === 0 && "text-rose-500", i === 6 && "text-blue-500")}>{w}</div>
+          <div key={w} className={cn("py-1", i === 0 && "text-red-500", i === 6 && "text-notion-blue-text")}>{w}</div>
         ))}
       </div>
       <div
@@ -155,15 +155,15 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
                   disabled={!inRange}
                   onClick={() => onSelect(c.iso)}
                   className={cn(
-                    "relative h-8 w-8 rounded text-[12px]",
-                    !c.inMonth && "text-slate-300",
-                    c.inMonth && (isSunday || isHoliday) && "text-rose-600",
-                    c.inMonth && isSaturday && !isHoliday && "text-blue-600",
-                    c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-slate-900",
-                    isFocused && !isSelected && "ring-2 ring-blue-300 ring-inset",
-                    isSelected && "bg-blue-500 text-white",
-                    isToday && !isSelected && "border border-blue-400",
-                    inRange && !isSelected && "hover:bg-slate-100",
+                    "relative h-8 w-8 rounded text-[12px] transition-colors duration-150",
+                    !c.inMonth && "text-warm-300",
+                    c.inMonth && (isSunday || isHoliday) && "text-red-500",
+                    c.inMonth && isSaturday && !isHoliday && "text-notion-blue",
+                    c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-warm-900",
+                    isFocused && !isSelected && "ring-2 ring-notion-blue/40 ring-inset",
+                    isSelected && "bg-notion-blue text-white",
+                    isToday && !isSelected && "border border-notion-blue/60",
+                    inRange && !isSelected && "hover:bg-warm-100",
                     !inRange && "cursor-not-allowed opacity-40",
                   )}
                 >
@@ -171,7 +171,7 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
                   {holiday && (
                     <span
                       data-holiday-dot
-                      className="absolute right-1 top-1 h-1 w-1 rounded-full bg-rose-500"
+                      className="absolute right-1 top-1 h-1 w-1 rounded-full bg-red-500"
                     />
                   )}
                 </button>
