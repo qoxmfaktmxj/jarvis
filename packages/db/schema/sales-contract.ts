@@ -3,10 +3,10 @@
  *
  * 영업관리 계약 관련 테이블 (TBIZ030~TBIZ032, TBIZ010).
  *
- * - salesContract       (TBIZ030): 계약 마스터 (65 컬럼 nullable wide-table)
- * - salesContractMonth  (TBIZ031): 계약 월별 (planning/view/performance 3-way 데이터)
- * - salesContractService (TBIZ032): 계약 서비스 (3 컬럼 lightweight)
- * - salesContractAddinfo (TBIZ010 병합): 계약 추가정보
+ * - salesContract           (TBIZ030): 계약 마스터 (65 컬럼 nullable wide-table)
+ * - salesContractMonth      (TBIZ031): 계약 월별 (planning/view/performance 3-way 데이터)
+ * - salesContractAddinfo    (TBIZ032): 계약 부가정보 (5 컬럼 lightweight, contractId FK)
+ * - salesContractService    (TBIZ010): 서비스 인력 마스터 (37 컬럼, 인력정보)
  */
 
 import {
@@ -236,5 +236,98 @@ export const salesContractMonth = pgTable(
     wsIdx: index("sales_contract_month_ws_idx").on(t.workspaceId),
     contractIdx: index("sales_contract_month_contract_idx").on(t.contractId),
     contractYmIdx: index("sales_contract_month_contract_ym_idx").on(t.contractId, t.ym),
+  }),
+);
+
+export const salesContractAddinfo = pgTable(
+  "sales_contract_addinfo",
+  {
+    // PK + workspace
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+
+    // FK to sales_contract
+    contractId: uuid("contract_id").notNull().references(() => salesContract.id, { onDelete: "cascade" }),
+
+    // Legacy composite key (for ETL re-import)
+    legacyEnterCd: varchar("legacy_enter_cd", { length: 10 }),
+    legacyContYear: varchar("legacy_cont_year", { length: 4 }),
+    legacyContNo: varchar("legacy_cont_no", { length: 30 }),
+
+    // ===== TBIZ032 columns from dump line 387-399 =====
+    legacySabun: varchar("legacy_sabun", { length: 13 }),
+    mailId: varchar("mail_id", { length: 100 }),
+
+    // Audit columns
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    createdBy: uuid("created_by"),
+    updatedBy: uuid("updated_by"),
+  },
+  (t) => ({
+    wsIdx: index("sales_contract_addinfo_ws_idx").on(t.workspaceId),
+    contractIdx: index("sales_contract_addinfo_contract_idx").on(t.contractId),
+  }),
+);
+
+export const salesContractService = pgTable(
+  "sales_contract_service",
+  {
+    // PK + workspace
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id").notNull(),
+
+    // Legacy composite key
+    legacyEnterCd: varchar("legacy_enter_cd", { length: 10 }),
+    legacySymd: varchar("legacy_symd", { length: 8 }),
+    legacyServSabun: varchar("legacy_serv_sabun", { length: 20 }),
+
+    // ===== TBIZ010 columns from dump line 8-46 =====
+    // Personnel master info (37 cols)
+    servSabun: varchar("serv_sabun", { length: 20 }).notNull(),
+    servName: varchar("serv_name", { length: 100 }),
+    birYmd: varchar("bir_ymd", { length: 8 }),
+    symd: varchar("symd", { length: 8 }),
+    eymd: varchar("eymd", { length: 8 }),
+    cpyGbCd: varchar("cpy_gb_cd", { length: 20 }),
+    cpyName: varchar("cpy_name", { length: 200 }),
+    econtAmt: numeric("econt_amt"),
+    econtCnt: varchar("econt_cnt", { length: 20 }),
+    job: varchar("job", { length: 200 }),
+    tel: varchar("tel", { length: 50 }),
+    mail: varchar("mail", { length: 50 }),
+    addr: varchar("addr", { length: 500 }),
+    attendCd: varchar("attend_cd", { length: 10 }),
+    skillCd: varchar("skill_cd", { length: 10 }),
+    cmmncCd: varchar("cmmnc_cd", { length: 10 }),
+    rsponsCd: varchar("rspons_cd", { length: 10 }),
+    memo1: varchar("memo1", { length: 4000 }),
+    memo2: varchar("memo2", { length: 4000 }),
+    memo3: varchar("memo3", { length: 4000 }),
+    orgCd: varchar("org_cd", { length: 10 }),
+    manager: varchar("manager", { length: 13 }),
+    pjtCd: varchar("pjt_cd", { length: 20 }),
+    pjtNm: varchar("pjt_nm", { length: 300 }),
+    etc1: varchar("etc1", { length: 100 }),
+    etc2: varchar("etc2", { length: 100 }),
+    etc3: varchar("etc3", { length: 100 }),
+    etc4: varchar("etc4", { length: 100 }),
+    etc5: varchar("etc5", { length: 100 }),
+    etc6: varchar("etc6", { length: 100 }),
+    etc7: varchar("etc7", { length: 100 }),
+    etc8: varchar("etc8", { length: 100 }),
+    etc9: varchar("etc9", { length: 100 }),
+    etc10: varchar("etc10", { length: 100 }),
+
+    // Audit columns
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    createdBy: uuid("created_by"),
+    updatedBy: uuid("updated_by"),
+  },
+  (t) => ({
+    wsIdx: index("sales_contract_service_ws_idx").on(t.workspaceId),
+    wsServSabunIdx: index("sales_contract_service_ws_serv_sabun_idx").on(t.workspaceId, t.servSabun),
+    wsPjtIdx: index("sales_contract_service_ws_pjt_idx").on(t.workspaceId, t.pjtCd),
   }),
 );
