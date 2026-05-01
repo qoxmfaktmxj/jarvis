@@ -154,7 +154,7 @@ export function CompaniesGridContainer({
           <select
             value={pendingFilters.objectDiv ?? ""}
             onChange={(e) => setPending("objectDiv", e.target.value)}
-            className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
             <option value="">전체</option>
             {objectDivOptions.map((o) => (
@@ -168,7 +168,7 @@ export function CompaniesGridContainer({
           <select
             value={pendingFilters.groupCode ?? ""}
             onChange={(e) => setPending("groupCode", e.target.value)}
-            className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
             <option value="">전체</option>
             {groupOptions.map((o) => (
@@ -191,7 +191,7 @@ export function CompaniesGridContainer({
           <select
             value={pendingFilters.industryCode ?? ""}
             onChange={(e) => setPending("industryCode", e.target.value)}
-            className="h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
             <option value="">전체</option>
             {industryOptions.map((o) => (
