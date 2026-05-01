@@ -38,9 +38,12 @@ import {
 const MASTER_LIMIT = 100;
 const DETAIL_LIMIT = 500;
 
+type BusinessDivOption = { code: string; label: string };
+
 type Props = {
   initialGroups: CodeGroupRow[];
   initialGroupTotal: number;
+  businessDivOptions: BusinessDivOption[];
 };
 
 type MasterFilters = {
@@ -69,7 +72,11 @@ const DETAIL_DEFAULTS: DetailFilters = {
   useYn: "",
 };
 
-export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
+export function CodesPageClient({
+  initialGroups,
+  initialGroupTotal,
+  businessDivOptions,
+}: Props) {
   const t = useTranslations("Admin.Codes");
   const masterGrid = useCodeGroupGridState(initialGroups);
   const detailGrid = useCodeItemGridState([]);
@@ -415,6 +422,7 @@ export function CodesPageClient({ initialGroups, initialGroupTotal }: Props) {
           onCopy={handleMasterCopy}
           onSave={handleMasterSave}
           onExport={handleMasterExport}
+          businessDivOptions={businessDivOptions}
         />
         <CodeItemGrid
           grid={detailGrid}

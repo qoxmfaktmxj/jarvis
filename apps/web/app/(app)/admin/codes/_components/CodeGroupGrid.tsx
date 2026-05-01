@@ -37,6 +37,8 @@ type FilterValues = {
   kind: string;
 };
 
+type BusinessDivOption = { code: string; label: string };
+
 type Props = {
   grid: GridApi;
   total: number;
@@ -51,6 +53,8 @@ type Props = {
   onCopy: () => void;
   onSave: () => void;
   onExport: () => void;
+  /** BIZ_DIVISION 코드 그룹의 활성 항목 (RSC에서 주입). */
+  businessDivOptions: BusinessDivOption[];
 };
 
 export function CodeGroupGrid({
@@ -67,6 +71,7 @@ export function CodeGroupGrid({
   onCopy,
   onSave,
   onExport,
+  businessDivOptions,
 }: Props) {
   const t = useTranslations("Admin.Codes.groupSection");
   const update = useCallback(
@@ -78,6 +83,11 @@ export function CodeGroupGrid({
   const KIND_OPTIONS = KIND_OPTION_VALUES.map((value) => ({
     value,
     label: value === "C" ? t("filter.kindUser") : t("filter.kindSystem"),
+  }));
+
+  const BIZ_DIV_OPTIONS = businessDivOptions.map((o) => ({
+    value: o.code,
+    label: o.label,
   }));
 
   return (
@@ -279,16 +289,17 @@ export function CodeGroupGrid({
                         onCommit={(v) => update(row.id, "description", v)}
                       />
                     </td>
-                    {/* 업무구분 — TODO(Phase-2): MainMu lookup으로 select 변환.
-                        legacy getMainMuPrgMainMenuList 매핑 정해지면 EditableSelectCell. */}
+                    {/* 업무구분 — BIZ_DIVISION 코드 그룹 lookup (Phase-2 완료).
+                        legacy getMainMuPrgMainMenuList의 self-join을 정규화된 코드 테이블로 대체. */}
                     <td
                       className="h-8 p-0 align-middle"
                       data-col="businessDivCode"
                       data-cell-value={row.businessDivCode ?? ""}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <EditableTextCell
+                      <EditableSelectCell
                         value={row.businessDivCode}
+                        options={BIZ_DIV_OPTIONS}
                         onCommit={(v) => update(row.id, "businessDivCode", v)}
                       />
                     </td>

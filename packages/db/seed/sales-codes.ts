@@ -136,6 +136,23 @@ const SALES_CODE_GROUPS: SeedGroup[] = [
       { code: "03", name: "운영" },
     ],
   },
+  {
+    // 공통코드 마스터의 `업무구분` 컬럼에서 사용. legacy grpCdMgr.jsp의
+    // getMainMuPrgMainMenuList lookup 대체. Phase-2 기본 라벨이며 운영 데이터
+    // 확보 후 갱신 가능.
+    code: "BIZ_DIVISION",
+    name: "업무구분",
+    items: [
+      { code: "11", name: "공통" },
+      { code: "21", name: "인사" },
+      { code: "22", name: "급여" },
+      { code: "23", name: "근태" },
+      { code: "24", name: "복지" },
+      { code: "25", name: "교육" },
+      { code: "31", name: "조직" },
+      { code: "41", name: "시스템" },
+    ],
+  },
 ];
 
 async function upsertCodeGroup(

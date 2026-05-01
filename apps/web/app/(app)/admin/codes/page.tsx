@@ -18,6 +18,7 @@ import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { getCodesByGroup } from "@/lib/queries/admin";
 import { listCodeGroups } from "./actions";
 import { CodesPageClient } from "./_components/CodesPageClient";
 
@@ -31,7 +32,10 @@ export default async function AdminCodesPage() {
 
   const t = await getTranslations("Admin.Codes");
 
-  const initial = await listCodeGroups({ page: 1, limit: 100 });
+  const [initial, businessDivOptions] = await Promise.all([
+    listCodeGroups({ page: 1, limit: 100 }),
+    getCodesByGroup(session.workspaceId, "BIZ_DIVISION"),
+  ]);
   const initialGroups =
     "rows" in initial && Array.isArray(initial.rows) ? initial.rows : [];
   const initialGroupTotal =
@@ -47,6 +51,7 @@ export default async function AdminCodesPage() {
       <CodesPageClient
         initialGroups={initialGroups}
         initialGroupTotal={initialGroupTotal}
+        businessDivOptions={businessDivOptions}
       />
     </div>
   );
