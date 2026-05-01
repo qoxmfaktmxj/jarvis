@@ -23,6 +23,7 @@ type MenuItem = {
   sortOrder: number;
   isVisible: boolean;
   parentId: string | null;
+  permissions: Array<{ resource: string; action: string }>;
 };
 
 type Props = {
@@ -101,6 +102,18 @@ function Section({
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {item.routePath}
                   </p>
+                )}
+                {item.permissions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {item.permissions.map((p) => (
+                      <span
+                        key={`${p.resource}:${p.action}`}
+                        className="text-[10px] bg-blue-50 text-blue-700 rounded px-1.5 py-0.5 font-mono"
+                      >
+                        {p.resource}:{p.action}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
 

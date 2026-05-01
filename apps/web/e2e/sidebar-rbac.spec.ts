@@ -115,4 +115,21 @@ test.describe('Sidebar RBAC (DB-driven)', () => {
     // not /login. Used to be /login causing reauth loop.
     await expect(page).toHaveURL(/\/dashboard\?error=forbidden/);
   });
+
+  test('admin viewer renders permission badges per menu row', async ({ page }) => {
+    // Architecture review (Task 6 finding #11): the menu viewer must surface
+    // "which permissions gate this menu" — the most RBAC-relevant fact about
+    // a row. nav.ask is seeded with KNOWLEDGE_READ + ADMIN_ALL, so both
+    // badges should render in the same row as the "AI 질문" label.
+    await loginAsSeededUser(page, 'admin@jarvis.dev', 'ADMIN');
+    await page.goto('/admin/menus');
+
+    const askRow = page
+      .locator('div')
+      .filter({ hasText: 'AI 질문' })
+      .filter({ hasText: 'nav.ask' })
+      .first();
+    await expect(askRow.getByText('knowledge:read', { exact: true })).toBeVisible();
+    await expect(askRow.getByText('admin:all', { exact: true })).toBeVisible();
+  });
 });

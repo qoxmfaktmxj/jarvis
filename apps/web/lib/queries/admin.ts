@@ -1,7 +1,7 @@
 import { db } from '@jarvis/db/client';
 import {
-  user, organization, userRole, role,
-  menuItem, codeGroup, codeItem,
+  user, organization, userRole, role, permission,
+  menuItem, menuPermission, codeGroup, codeItem,
   auditLog, searchLog, popularSearch,
 } from '@jarvis/db/schema';
 import { and, eq, asc, desc, count, gte, lte, sql, inArray } from 'drizzle-orm';
@@ -170,21 +170,60 @@ export async function getOrgTree(workspaceId: string): Promise<OrgNode[]> {
 
 /**
  * Admin variant: returns ALL `menu_item` rows in the workspace, with no
- * permission filter. Used by `(app)/admin/menus/page.tsx` so administrators
- * can inspect the full menu catalog regardless of their personal permissions.
+ * permission filter, each annotated with the `permissions` that gate it
+ * (joined via `menu_permission`). Used by `(app)/admin/menus/page.tsx` so
+ * administrators can inspect "which menus require which permissions" — the
+ * RBAC-relevant question the architecture review (Task 6 finding #11) flagged
+ * as missing from the original viewer.
  *
  * **For the user-facing sidebar / CommandPalette use the RBAC-filtered
  * `getVisibleMenuTree(session, kind)` at `apps/web/lib/server/menu-tree.ts`
  * instead.** Two functions, opposite security postures: this one is admin-
  * gated by the calling page; the other is the runtime filter every signed-in
  * user gets.
+ *
+ * Two round trips (items + permission links) merged in JS — chosen over
+ * `array_agg` for readability; menu_item count per workspace is small (~31).
+ * Permissions are sorted by (resource, action) so badge render order is
+ * deterministic for tests.
  */
 export async function getMenuTree(workspaceId: string) {
-  return db
-    .select()
-    .from(menuItem)
-    .where(eq(menuItem.workspaceId, workspaceId))
-    .orderBy(asc(menuItem.sortOrder));
+  const [items, links] = await Promise.all([
+    db
+      .select()
+      .from(menuItem)
+      .where(eq(menuItem.workspaceId, workspaceId))
+      .orderBy(asc(menuItem.sortOrder)),
+    db
+      .select({
+        menuItemId: menuPermission.menuItemId,
+        resource: permission.resource,
+        action: permission.action,
+      })
+      .from(menuPermission)
+      .innerJoin(permission, eq(permission.id, menuPermission.permissionId))
+      .innerJoin(menuItem, eq(menuItem.id, menuPermission.menuItemId))
+      .where(eq(menuItem.workspaceId, workspaceId)),
+  ]);
+
+  const byItem = new Map<string, Array<{ resource: string; action: string }>>();
+  for (const link of links) {
+    const arr = byItem.get(link.menuItemId) ?? [];
+    arr.push({ resource: link.resource, action: link.action });
+    byItem.set(link.menuItemId, arr);
+  }
+  for (const arr of byItem.values()) {
+    arr.sort((a, b) =>
+      a.resource === b.resource
+        ? a.action.localeCompare(b.action)
+        : a.resource.localeCompare(b.resource),
+    );
+  }
+
+  return items.map((item) => ({
+    ...item,
+    permissions: byItem.get(item.id) ?? [],
+  }));
 }
 
 // ── Codes ─────────────────────────────────────────────────────────────────────
