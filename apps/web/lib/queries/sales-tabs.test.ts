@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildMemoTree } from "./sales-tabs";
+import { buildMemoTree, getCustomerTabCounts, getContactTabCounts } from "./sales-tabs";
 
 describe("buildMemoTree", () => {
   const flatRows = [
@@ -37,5 +37,28 @@ describe("buildMemoTree", () => {
       { comtSeq: 1, priorComtSeq: 99, memo: "orphan", authorName: "x", insdate: "2026-05-01", createdBy: "u9" },
     ];
     expect(buildMemoTree(orphan, "u1")).toEqual([]);
+  });
+});
+
+describe("getCustomerTabCounts (P2-BLOCKED)", () => {
+  it("returns 0 for opCnt and actCnt while P2 schema is not yet merged", async () => {
+    // No DB fixture — this test verifies the P2-BLOCKED contract: op/act always 0
+    // until the P2 schema is wired up. Real customer/comt counts require DB setup,
+    // covered by e2e tests (Task 9).
+    const counts = await getCustomerTabCounts("00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111");
+    expect(counts.opCnt).toBe(0);
+    expect(counts.actCnt).toBe(0);
+    expect(typeof counts.customerCnt).toBe("number");
+    expect(typeof counts.comtCnt).toBe("number");
+  });
+});
+
+describe("getContactTabCounts (P2-BLOCKED)", () => {
+  it("returns 0 for opCnt and actCnt; custCompanyCnt is 0 or 1", async () => {
+    const counts = await getContactTabCounts("00000000-0000-0000-0000-000000000000", "22222222-2222-2222-2222-222222222222");
+    expect(counts.opCnt).toBe(0);
+    expect(counts.actCnt).toBe(0);
+    expect([0, 1]).toContain(counts.custCompanyCnt);
+    expect(typeof counts.comtCnt).toBe("number");
   });
 });
