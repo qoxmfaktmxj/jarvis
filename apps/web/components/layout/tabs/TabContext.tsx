@@ -20,6 +20,7 @@ import type {
   TabContextValue,
   TabKey,
 } from "./tab-types";
+import { MAX_TABS } from "./tab-types";
 
 interface InternalState {
   tabs: Tab[];
@@ -51,14 +52,45 @@ const initialState: InternalState = {
 function reducer(state: InternalState, action: Action): InternalState {
   switch (action.type) {
     case "OPEN_TAB": {
-      // If the tab already exists, just focus it (atomic: no stale-closure issue).
+      // 1. If tab already exists, focus it (atomic).
       if (state.tabs.some((t) => t.key === action.tab.key)) {
         const tabs = state.tabs.map((t) =>
           t.key === action.tab.key ? { ...t, lastVisitedAt: action.tab.lastVisitedAt } : t,
         );
         return { ...state, tabs, activeKey: action.tab.key };
       }
-      return { ...state, tabs: [...state.tabs, action.tab], activeKey: action.tab.key };
+
+      // 2. If at MAX_TABS, evict oldest non-pinned (LRU). If all pinned, no-op.
+      if (state.tabs.length >= MAX_TABS) {
+        const candidates = state.tabs.filter((t) => !t.pinned);
+        if (candidates.length === 0) {
+          // All pinned — refuse to open. Caller detects via stateRef post-dispatch.
+          return state;
+        }
+        const victim = [...candidates].sort(
+          (a, b) => a.lastVisitedAt - b.lastVisitedAt,
+        )[0];
+        if (!victim) return state;
+        const tabsAfterEvict = state.tabs.filter((t) => t.key !== victim.key);
+        const tabStates = new Map(state.tabStates);
+        tabStates.delete(victim.key);
+        const dirtyKeys = new Set(state.dirtyKeys);
+        dirtyKeys.delete(victim.key);
+        return {
+          ...state,
+          tabs: [...tabsAfterEvict, action.tab],
+          activeKey: action.tab.key,
+          tabStates,
+          dirtyKeys,
+        };
+      }
+
+      // 3. Normal append.
+      return {
+        ...state,
+        tabs: [...state.tabs, action.tab],
+        activeKey: action.tab.key,
+      };
     }
     case "ADD_TAB": {
       if (state.tabs.some((t) => t.key === action.tab.key)) return state;
@@ -136,7 +168,15 @@ export function TabProvider({
   workspaceId: string;
   children: ReactNode;
 }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const stateRef = useRef<InternalState>(initialState);
+  const [state, dispatch] = useReducer(
+    (s: InternalState, a: Action): InternalState => {
+      const next = reducer(s, a);
+      stateRef.current = next;
+      return next;
+    },
+    initialState,
+  );
   const router = useRouter();
   const saveHandlersRef = useRef(new Map<TabKey, SaveHandler>());
 
@@ -187,20 +227,23 @@ export function TabProvider({
   const openTab = useCallback<TabContextValue["openTab"]>(async (url, fallbackTitle) => {
     const key = pathnameToTabKey(url);
     const now = Date.now();
-    // Use OPEN_TAB so the "already open?" check is inside the reducer,
-    // avoiding stale-closure bugs when multiple openTab calls happen in one act().
-    dispatch({
-      type: "OPEN_TAB",
-      tab: {
-        key,
-        url,
-        title: fallbackTitle,
-        pinned: false,
-        createdAt: now,
-        lastVisitedAt: now,
-      },
-    });
-    return true;
+    const tab: Tab = {
+      key,
+      url,
+      title: fallbackTitle,
+      pinned: false,
+      createdAt: now,
+      lastVisitedAt: now,
+    };
+    // Eagerly compute next state to determine if the dispatch will be a no-op
+    // (all-pinned case), without relying on async React flush timing.
+    const nextState = reducer(stateRef.current, { type: "OPEN_TAB", tab });
+    const wasNoOp = nextState === stateRef.current;
+    // Use OPEN_TAB so the "already open?" check and LRU eviction are inside the
+    // reducer, avoiding stale-closure bugs when multiple openTab calls happen in
+    // one act(). The wrapped reducer also keeps stateRef.current in sync.
+    dispatch({ type: "OPEN_TAB", tab });
+    return !wasNoOp;
   }, []);
 
   const closeTab = useCallback<TabContextValue["closeTab"]>(async (key) => {

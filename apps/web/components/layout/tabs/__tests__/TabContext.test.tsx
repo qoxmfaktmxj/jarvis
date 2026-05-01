@@ -113,3 +113,26 @@ describe("TabProvider — basic open/focus/close", () => {
     expect(result.current.tabs[0]?.title).toBe("Real Title");
   });
 });
+
+describe("TabProvider — LRU eviction", () => {
+  it("evicts oldest non-pinned tab when 6th opens", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/b", "B");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/c", "C");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/d", "D");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/e", "E");
+    });
+    expect(result.current.tabs).toHaveLength(5);
+    await act(async () => {
+      await result.current.openTab("/f", "F");
+    });
+    expect(result.current.tabs.map((t) => t.key)).toEqual(["/b", "/c", "/d", "/e", "/f"]);
+    expect(result.current.activeKey).toBe("/f");
+  });
+});
