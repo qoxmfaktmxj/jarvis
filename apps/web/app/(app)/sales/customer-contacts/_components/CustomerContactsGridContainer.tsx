@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
@@ -126,6 +126,50 @@ export function CustomerContactsGridContainer({
     [limit],
   );
 
+  // I-A: local state for chargerNm/hpNo/email inputs avoids cursor-jump race between
+  // the URL-derived value and the live input. Debounced (300ms) effect commits to
+  // URL + reload — mirrors Task 4 (14d6229) pattern verbatim, extended to 3 inputs.
+  const [chargerNmInput, setChargerNmInput] = useState(values.chargerNm);
+  const [hpNoInput, setHpNoInput] = useState(values.hpNo);
+  const [emailInput, setEmailInput] = useState(values.email);
+
+  // Reverse sync: URL → local (e.g. browser back/forward navigation).
+  useEffect(() => { setChargerNmInput(values.chargerNm); }, [values.chargerNm]);
+  useEffect(() => { setHpNoInput(values.hpNo); }, [values.hpNo]);
+  useEffect(() => { setEmailInput(values.email); }, [values.email]);
+
+  // Local → debounce → URL + reload. values/reload intentionally excluded from
+  // deps to prevent infinite restart; each input change is the sole trigger.
+  useEffect(() => {
+    if (chargerNmInput === values.chargerNm) return;
+    const t = setTimeout(() => {
+      setValue("chargerNm", chargerNmInput);
+      reload(1, { ...values, chargerNm: chargerNmInput });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chargerNmInput]);
+
+  useEffect(() => {
+    if (hpNoInput === values.hpNo) return;
+    const t = setTimeout(() => {
+      setValue("hpNo", hpNoInput);
+      reload(1, { ...values, hpNo: hpNoInput });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hpNoInput]);
+
+  useEffect(() => {
+    if (emailInput === values.email) return;
+    const t = setTimeout(() => {
+      setValue("email", emailInput);
+      reload(1, { ...values, email: emailInput });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailInput]);
+
   // makeBlankRowWithEmployee: factory passed to DataGrid as makeBlankRow.
   // If pendingEmployee ref is set (EmployeePicker just selected someone), the new row is
   // pre-filled with sabun=employeeId, custName=name, email=email. Otherwise produces a
@@ -174,49 +218,33 @@ export function CustomerContactsGridContainer({
 
   return (
     <>
-      {/* Extra search filter strips — separate from DataGrid's built-in filter bar.
+      {/* I-A: 3 filter inputs + EmployeePicker unified into DataGridToolbar children.
+          Per DataGridToolbar JSDoc: pass extra controls via children for a unified strip.
+          Replaces the old 2 separate strip divs + DataGridToolbar (4 strips → 1).
           custName remains in DataGrid's ColumnFilterRow (FILTERS above).
-          chargerNm / hpNo / email are rendered here as separate strips
-          (separate strips pattern — Task 4 / DataGridToolbar baseline). */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
+          sabun is Hidden:1 — EmployeePicker triggers insert with pre-filled row. */}
+      <DataGridToolbar onExport={handleExport} exportLabel={t("Common.Excel.label")}>
         <input
           type="text"
           placeholder={t("CustomerContacts.search.chargerNm")}
-          value={values.chargerNm}
-          onChange={(e) => {
-            setValue("chargerNm", e.target.value);
-            reload(1, { ...values, chargerNm: e.target.value });
-          }}
+          value={chargerNmInput}
+          onChange={(e) => setChargerNmInput(e.target.value)}
           className="w-32 rounded border border-slate-200 px-2 py-1 text-xs"
         />
         <input
           type="text"
           placeholder={t("CustomerContacts.search.hpNo")}
-          value={values.hpNo}
-          onChange={(e) => {
-            setValue("hpNo", e.target.value);
-            reload(1, { ...values, hpNo: e.target.value });
-          }}
+          value={hpNoInput}
+          onChange={(e) => setHpNoInput(e.target.value)}
           className="w-32 rounded border border-slate-200 px-2 py-1 text-xs"
         />
         <input
           type="text"
           placeholder={t("CustomerContacts.search.email")}
-          value={values.email}
-          onChange={(e) => {
-            setValue("email", e.target.value);
-            reload(1, { ...values, email: e.target.value });
-          }}
+          value={emailInput}
+          onChange={(e) => setEmailInput(e.target.value)}
           className="w-40 rounded border border-slate-200 px-2 py-1 text-xs"
         />
-      </div>
-
-      {/* sabun / EmployeePicker strip.
-          sabun은 Hidden:1 컬럼 — grid에 직접 편집 UI 없음.
-          EmployeePicker는 "신규 contact 등록" 트리거: 직원 선택 시 sabun/name/email이
-          미리 채워진 새 row를 grid에 추가한다. 기존 row의 sabun은 건드리지 않음.
-          (이전 DOM-based row capture 패턴 제거 — 정렬/필터 시 DOM 순서 불일치 위험) */}
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
         <span className="text-xs text-slate-500">{t("CustomerContacts.columns.sabun")}</span>
         <div className="w-56">
           <EmployeePicker
@@ -239,10 +267,7 @@ export function CustomerContactsGridContainer({
             placeholder={t("CustomerContacts.search.employeeAddPlaceholder")}
           />
         </div>
-      </div>
-
-      {/* DataGridToolbar (separate strip above DataGrid — per baseline JSDoc pattern). */}
-      <DataGridToolbar onExport={handleExport} exportLabel={t("Common.Excel.label")} />
+      </DataGridToolbar>
 
       {/* DataGrid: no onClick wrapper needed. Row selection is DataGrid-internal.
           makeBlankRowWithEmployee replaces the static makeBlankRow — it consumes
