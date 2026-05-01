@@ -30,6 +30,8 @@ export const listCustomersInput = z.object({
   custNm: z.string().optional(),
   custKindCd: z.string().optional(),
   custDivCd: z.string().optional(),
+  /** 영업담당(chargerNm) — searches salesCustomerCharger.name via EXISTS subquery */
+  chargerNm: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });

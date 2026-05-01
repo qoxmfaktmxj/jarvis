@@ -63,6 +63,55 @@
     "deprecationBanner": "This page uses a legacy route. Please use the new wiki viewer.",
     "deprecationLink": "Go to Wiki"
   },
+  "Sales": {
+    "nav": {
+      "title": "Sales",
+      "companies": "Companies",
+      "customers": "Customers",
+      "customerContacts": "Contacts",
+      "productTypes": "Product Types",
+      "productCostMapping": "Product-Cost Mapping",
+      "mailPersons": "Mail Persons"
+    },
+    "Common": {
+      "Excel": {
+        "label": "Export Excel",
+        "downloading": "Downloading...",
+        "filename": "{screen}_{date}.csv"
+      },
+      "Search": {
+        "placeholder": "Enter search term",
+        "reset": "Reset",
+        "noResults": "No results found"
+      },
+      "DupCheck": {
+        "title": "Duplicate Key Found",
+        "message": "{count} duplicate key(s) detected. Please fix before saving."
+      }
+    },
+    "Customers": {
+      "title": "Customer Management",
+      "description": "Manage customer master information.",
+      "columns": {
+        "custCd": "Customer Code",
+        "custNm": "Customer Name",
+        "ceoNm": "CEO Name",
+        "businessNo": "Business No.",
+        "telNo": "Phone",
+        "custKindCd": "Customer Kind",
+        "custDivCd": "Customer Division",
+        "exchangeTypeCd": "Exchange Type",
+        "businessKind": "Business Kind",
+        "homepage": "Homepage",
+        "addr1": "Address",
+        "memo": "Memo",
+        "insdate": "Created At"
+      },
+      "search": {
+        "chargerNm": "Sales Rep"
+      }
+    }
+  },
   "Admin": {
     "nav": {
       "title": "Admin",
