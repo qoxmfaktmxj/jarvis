@@ -510,6 +510,8 @@ PR-1 머지 후 main rebase → PR-4 진입. 같은 worktree 순차.
 
 **대응:** PR-4 task에 추가 — P2 머지본의 `listOpportunitiesAction` / `listActivitiesAction`에 `customerId?: uuid` + `contactId?: uuid` optional 필터 추가 (Zod input + queries WHERE 절). 별 commit.
 
+**부분 reduction (iter 3):** `apps/web/app/(app)/sales/customer-contacts/actions.ts:54` — `listCustomerContacts`는 **이미 `customerId` optional 필터 보유**. 즉 customers→[고객]→`/sales/customer-contacts?customerId=X` 진입 경로는 P1.5 머지 후 즉시 동작. 미해결: opportunities + activities (P2 신규 라우트) 2건만.
+
 **대안 검토:**
 - (A) inline list in sidebar (페이지 이동 X) — 단순하나 사용자가 전체 grid 못 봄, 사이드바 정보량↑
 - (B) PR-4가 P2 server actions 보강 (현 결정)
@@ -539,6 +541,16 @@ PR-1 머지 후 main rebase → PR-4 진입. 같은 worktree 순차.
 `ContactDetailSidebar` [고객사] 탭이 1:1 link하려면 `contact.customerId`가 non-null 필요. customer-contacts row의 customerId가 nullable(`uuid("customer_id")` — schema 121 line — `.notNull()` 없음)이라 null 가능.
 
 **대응:** `custCompanyCnt = contact.customerId ? 1 : 0` (이미 spec §5.1에 명시), null이면 [고객사 0] 칩 비활성 + 클릭 무동작. UI 가드 plan task에 명시.
+
+### 14.6 statusYn schema mismatch (본 spec 범위 외 — P3)
+
+`packages/db/schema/sales-customer.ts:133` — `statusYn: boolean("status_yn").default(true)`. 레거시 `bizActCustomerIpt.jsp:654` `<select id="statusYn">`은 코드 그룹 `B10032`(재직상태 enum: 재직/퇴직/이직 등 — 위치값 "30"=이직 → switComp 표시) 사용. **boolean은 잘못된 추정**.
+
+**대응:** P1.5 Task 9의 grid Hidden 정책에서 statusYn을 grid에서 제거하므로 P1.5 후 영향은 PR-4 ContactEditForm 1군데. 본 PR-4는 일단 `boolean` 그대로 사용 (UI에 체크박스), schema 재정의는 **P3 별 PR**로 deferred. plan 단계에서 명시적 known limitation.
+
+### 14.7 ko.json 네임스페이스 충돌 검증 (clear)
+
+`apps/web/messages/ko.json`에 `Sales.Customers`, `Sales.CustomerContacts` 네임스페이스 이미 존재. 하위에 `Tabs/Memo/Edit` 서브 키 신규 추가 — 충돌 없음 (iter 3 grep 검증). plan 단계에서 정확한 ko.json read로 기존 컬럼 라벨 키와 새 Edit.fields 라벨 일관 검증 필요 (예: `Sales.Customers.columns.custNm` vs `Sales.Customers.Edit.fields.custNm` — 둘 다 "고객사명"이어야).
 
 ### 14.5 본인 검증 e2e
 
