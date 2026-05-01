@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, ilike, inArray, max } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
+import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomerContact, salesCustomer, auditLog } from "@jarvis/db/schema";
+import { salesCustomerContact, salesCustomer, salesCustomerContactMemo, user, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomerContactsInput,
@@ -12,6 +12,13 @@ import {
   saveCustomerContactsInput,
   saveCustomerContactsOutput,
 } from "@jarvis/shared/validation/sales/customer-contact";
+import {
+  customerContactMemoListInput, customerContactMemoListOutput,
+  customerContactMemoCreateInput, customerContactMemoCreateOutput,
+  customerContactMemoDeleteInput, customerContactMemoDeleteOutput,
+  customerContactTabCountsInput, customerContactTabCountsOutput,
+} from "@jarvis/shared/validation/sales/customer-contact-memo";
+import { buildMemoTree, getContactTabCounts as queryContactTabCounts } from "@/lib/queries/sales-tabs";
 import type { z } from "zod";
 
 async function resolveSessionId(): Promise<string | null> {
@@ -144,4 +151,130 @@ export async function saveCustomerContacts(rawInput: z.input<typeof saveCustomer
   }
 
   return saveCustomerContactsOutput.parse({ ok: errors.length === 0, created, updated, deleted, errors: errors.length > 0 ? errors : undefined });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Tab counts + memo CRUD (Task 5)
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function getContactTabCounts(rawInput: z.input<typeof customerContactTabCountsInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const { contactId } = customerContactTabCountsInput.parse(rawInput);
+  const counts = await queryContactTabCounts(ctx.workspaceId, contactId);
+  return { ok: true as const, ...customerContactTabCountsOutput.parse(counts) };
+}
+
+export async function listContactMemos(rawInput: z.input<typeof customerContactMemoListInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [] };
+  const { contactId } = customerContactMemoListInput.parse(rawInput);
+
+  const rows = await db
+    .select({
+      comtSeq: salesCustomerContactMemo.comtSeq,
+      priorComtSeq: salesCustomerContactMemo.priorComtSeq,
+      memo: salesCustomerContactMemo.memo,
+      authorName: user.name,
+      insdate: salesCustomerContactMemo.createdAt,
+      createdBy: salesCustomerContactMemo.createdBy,
+    })
+    .from(salesCustomerContactMemo)
+    .leftJoin(user, eq(user.id, salesCustomerContactMemo.createdBy))
+    .where(and(
+      eq(salesCustomerContactMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerContactMemo.contactId, contactId),
+    ))
+    .orderBy(salesCustomerContactMemo.comtSeq);
+
+  const tree = buildMemoTree(
+    rows.map((r) => ({
+      comtSeq: r.comtSeq,
+      priorComtSeq: r.priorComtSeq,
+      memo: r.memo,
+      authorName: r.authorName,
+      insdate: r.insdate.toISOString().slice(0, 16).replace("T", " "),
+      createdBy: r.createdBy,
+    })),
+    ctx.userId ?? null,
+  );
+
+  return customerContactMemoListOutput.parse({ rows: tree });
+}
+
+export async function createContactMemo(rawInput: z.input<typeof customerContactMemoCreateInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return customerContactMemoCreateOutput.parse({ ok: false, comtSeq: null });
+  const { contactId, priorComtSeq, memo } = customerContactMemoCreateInput.parse(rawInput);
+
+  const nextSeq = await db.transaction(async (tx) => {
+    const maxRow = await tx
+      .select({ m: max(salesCustomerContactMemo.comtSeq) })
+      .from(salesCustomerContactMemo)
+      .where(and(
+        eq(salesCustomerContactMemo.workspaceId, ctx.workspaceId),
+        eq(salesCustomerContactMemo.contactId, contactId),
+      ));
+    const seq = (maxRow[0]?.m ?? 0) + 1;
+
+    await tx.insert(salesCustomerContactMemo).values({
+      workspaceId: ctx.workspaceId,
+      contactId,
+      comtSeq: seq,
+      priorComtSeq: priorComtSeq === 0 ? null : priorComtSeq,
+      memo,
+      createdBy: ctx.userId ?? undefined,
+    });
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.customer_contact.memo.create",
+      resourceType: "sales_customer_contact_memo",
+      resourceId: contactId,
+      details: { comtSeq: seq, priorComtSeq } as Record<string, unknown>,
+      success: true,
+    });
+    return seq;
+  });
+
+  return customerContactMemoCreateOutput.parse({ ok: true, comtSeq: nextSeq });
+}
+
+export async function deleteContactMemo(rawInput: z.input<typeof customerContactMemoDeleteInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return customerContactMemoDeleteOutput.parse({ ok: false });
+  const { contactId, comtSeq } = customerContactMemoDeleteInput.parse(rawInput);
+
+  const sessionId = await resolveSessionId();
+  const session = sessionId ? await getSession(sessionId) : null;
+  const adminBypass = session ? isAdmin(session) : false;
+
+  await db.transaction(async (tx) => {
+    const conds = [
+      eq(salesCustomerContactMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerContactMemo.contactId, contactId),
+      eq(salesCustomerContactMemo.comtSeq, comtSeq),
+    ];
+    if (!adminBypass && ctx.userId) conds.push(eq(salesCustomerContactMemo.createdBy, ctx.userId));
+    await tx.delete(salesCustomerContactMemo).where(and(...conds));
+
+    // Cascade: delete replies of this master (priorComtSeq = comtSeq)
+    await tx.delete(salesCustomerContactMemo).where(and(
+      eq(salesCustomerContactMemo.workspaceId, ctx.workspaceId),
+      eq(salesCustomerContactMemo.contactId, contactId),
+      eq(salesCustomerContactMemo.priorComtSeq, comtSeq),
+    ));
+
+    await tx.insert(auditLog).values({
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.customer_contact.memo.delete",
+      resourceType: "sales_customer_contact_memo",
+      resourceId: contactId,
+      details: { comtSeq } as Record<string, unknown>,
+      success: true,
+    });
+  });
+
+  return customerContactMemoDeleteOutput.parse({ ok: true });
 }
