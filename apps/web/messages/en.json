@@ -132,5 +132,115 @@
         "pageInfo": "{page} / {total}"
       }
     }
+  },
+  "Sales": {
+    "nav": {
+      "title": "Sales",
+      "companies": "Companies",
+      "customers": "Customers",
+      "customerContacts": "Contacts",
+      "productTypes": "Product Types",
+      "productCostMapping": "Product-Cost Mapping",
+      "mailPersons": "Mail Recipients"
+    },
+    "Customers": {
+      "title": "Customers",
+      "description": "Manage customer master information.",
+      "columns": {
+        "custCd": "Customer Code",
+        "custNm": "Customer Name",
+        "ceoNm": "CEO",
+        "businessNo": "Business No.",
+        "telNo": "Phone",
+        "custKindCd": "Customer Kind",
+        "custDivCd": "Customer Class",
+        "exchangeTypeCd": "Trade Type",
+        "businessKind": "Industry",
+        "homepage": "Homepage",
+        "addr1": "Address",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "CustomerContacts": {
+      "title": "Contacts",
+      "description": "Manage contact information per customer.",
+      "columns": {
+        "custMcd": "Master Code",
+        "custName": "Name",
+        "jikweeNm": "Title",
+        "orgNm": "Department",
+        "telNo": "Phone",
+        "hpNo": "Mobile",
+        "email": "Email",
+        "statusYn": "Active",
+        "sabun": "Employee No.",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "ProductTypes": {
+      "title": "Product Types",
+      "description": "Manage sales product type master.",
+      "columns": {
+        "productCd": "Product Code",
+        "productNm": "Product Name",
+        "productTypeCd": "Product Type",
+        "remark": "Remark",
+        "insdate": "Created"
+      }
+    },
+    "ProductCostMapping": {
+      "title": "Product-Cost Mapping",
+      "description": "Manage cost unit prices and application periods per product type.",
+      "filters": {
+        "productType": "Product Type",
+        "productTypeAll": "All",
+        "bizYn": "In Use",
+        "bizYnAll": "All",
+        "bizYnY": "Yes",
+        "bizYnN": "No"
+      },
+      "columns": {
+        "productType": "Product Type",
+        "cost": "Cost",
+        "sdate": "Start Date",
+        "edate": "End Date",
+        "bizYn": "In Use",
+        "note": "Note",
+        "createdAt": "Created"
+      }
+    },
+    "MailPersons": {
+      "title": "Mail Recipients",
+      "description": "Manage mail recipients for sales and HR.",
+      "columns": {
+        "sabun": "Employee No.",
+        "name": "Name",
+        "salesYn": "Sales",
+        "insaYn": "HR",
+        "mailId": "Mail ID",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "Common": {
+      "Excel": {
+        "button": "Download Excel",
+        "filename": "{screen}_{date}.xlsx",
+        "downloadStarted": "Download started."
+      },
+      "Search": {
+        "chargerNm": "Charger",
+        "searchYmd": "As of",
+        "searchYmdFrom": "From",
+        "searchYmdTo": "To",
+        "hpNo": "Mobile",
+        "email": "Email",
+        "searchMail": "Mail",
+        "searchCostNm": "Cost name",
+        "searchDevGbCd": "Type"
+      }
+    }
   }
 }
