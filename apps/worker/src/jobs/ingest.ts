@@ -490,9 +490,10 @@ async function processIngest(
           ingestResult = await legacyTwoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
         }
       } catch (err) {
-        // Log and capture. We intentionally do NOT re-throw so PII-redacted
-        // parsedContent still lands on raw_source, but the status reflects
-        // the failure (see status branching below).
+        // Capture the error for DB status recording below, then rethrow so
+        // pg-boss retryLimit applies. Infrastructure failures (LLM 5xx, git
+        // corruption, DB outage) are retryable — swallowing them would silently
+        // hide real failures and leave raw_source stuck in 'processing'.
         twoStepError = err instanceof Error ? err : new Error(String(err));
         logger.warn(
           { rawSourceId, err: twoStepError },
@@ -544,6 +545,11 @@ async function processIngest(
         { rawSourceId, durationMs, chars: safeText.length, err: twoStepError },
         '[ingest] failed (two-step error, raw_source marked error)',
       );
+      // Rethrow after recording DB state so pg-boss retryLimit applies.
+      // Non-retryable validate/business failures never reach here (they set
+      // ingestResult.ok=false without throwing); only infra errors land in
+      // twoStepError, and those are always worth retrying.
+      throw twoStepError;
     } else {
       logger.info(
         { rawSourceId, durationMs, chars: safeText.length },

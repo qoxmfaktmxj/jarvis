@@ -120,15 +120,59 @@ interface SubstitutedBlock {
   mode: "append" | "overwrite";
 }
 
+/**
+ * Validate that `rawPath` (from LLM output) is safe to write under the
+ * workspace's auto wiki subtree (`wiki/{workspaceId}/`).
+ *
+ * Returns the normalized relPath (forward-slash, no leading slash) on
+ * success, or null when the path must be rejected.
+ */
+function validateBlockPath(
+  rawPath: string,
+  workspaceId: string,
+): { relPath: string } | null {
+  // Normalize backslashes to forward slashes.
+  const normalized = rawPath.replace(/\\/g, "/");
+  // Strip leading slashes.
+  const relPath = normalized.replace(/^\/+/, "");
+
+  // Reject empty path.
+  if (relPath.length === 0) return null;
+  // Reject paths that don't end in .md.
+  if (!relPath.endsWith(".md")) return null;
+  // Reject absolute paths (POSIX or Windows drive letters).
+  if (path.isAbsolute(relPath) || /^[A-Za-z]:/.test(relPath)) return null;
+  // Reject any `..` segment (path traversal).
+  const parts = relPath.split("/");
+  if (parts.some((p) => p === ".." || p === ".")) return null;
+
+  // Confirm that the resolved path stays inside wiki/{workspaceId}/.
+  // We check this symbolically here; the atomicWrite site does a second
+  // check with the actual resolved absolute path.
+  const wikiPath = `wiki/${workspaceId}/${relPath}`;
+  const normalizedJoined = path.posix.normalize(wikiPath);
+  if (!normalizedJoined.startsWith(`wiki/${workspaceId}/`)) return null;
+
+  return { relPath };
+}
+
+type SubstituteFailure = { rule: "invalid-path" | "malformed-frontmatter"; detail: string };
+
 function substituteFrontmatter(
   block: FileBlock,
   workspaceId: string,
   rawSourceId: string,
   sourceSensitivity: WikiSensitivity,
-): SubstitutedBlock | null {
+): SubstitutedBlock | SubstituteFailure {
+  // Validate path before any other processing to prevent directory traversal.
+  const pathCheck = validateBlockPath(block.path, workspaceId);
+  if (pathCheck === null) {
+    return { rule: "invalid-path", detail: `block.path "${block.path}" failed boundary check (must be a non-empty .md path under wiki/${workspaceId}/ with no .. segments)` };
+  }
+
   // Bookkeeping files (index.md, log.md) typically don't have frontmatter —
   // pass them through untouched.
-  const relPath = block.path.replace(/^\/+/, "");
+  const relPath = pathCheck.relPath;
   const isBookkeeping =
     relPath === "index.md" ||
     relPath === "log.md" ||
@@ -153,9 +197,9 @@ function substituteFrontmatter(
   try {
     parsed = parseFrontmatter(block.content);
   } catch (err) {
-    // Malformed frontmatter — return null so validate logs it.
+    // Malformed frontmatter — return failure so validate logs it.
     void err;
-    return null;
+    return { rule: "malformed-frontmatter", detail: "YAML frontmatter failed to parse" };
   }
 
   const now = new Date().toISOString();
@@ -303,10 +347,51 @@ async function recordIngestDlq(input: {
 
 // ── DB projection ─────────────────────────────────────────────────────────
 
+/**
+ * Decide publishedStatus for a single wiki page:
+ * - "draft" when sensitivity is RESTRICTED or SECRET_REF_ONLY (conservative default for high-sensitivity LLM content)
+ * - "draft" when frontmatter has requiredPermission set to non-empty, non-default value
+ * - "draft" when frontmatter has reviewRequired: true
+ * - "draft" when frontmatter sensitivity was escalated above the source's baseline sensitivity
+ * - "draft" when the page is flagged in a contradiction/review signal
+ * - "published" otherwise
+ */
+function derivePublishedStatus(
+  fm: WikiFrontmatter,
+  sourceSensitivity: WikiSensitivity,
+  hasContradiction: boolean,
+): "draft" | "published" {
+  // High-sensitivity content always starts as draft.
+  if (fm.sensitivity === "RESTRICTED" || fm.sensitivity === "SECRET_REF_ONLY") {
+    return "draft";
+  }
+  // Sensitivity was bumped above source baseline → requires review.
+  if (SENSITIVITY_ORDER[fm.sensitivity] > SENSITIVITY_ORDER[sourceSensitivity]) {
+    return "draft";
+  }
+  // Non-default requiredPermission means restricted access → keep draft.
+  const perm = fm.requiredPermission ?? "";
+  if (perm.length > 0 && perm !== "knowledge:read") {
+    return "draft";
+  }
+  // Explicit frontmatter review flag.
+  if (fm["reviewRequired"] === true) {
+    return "draft";
+  }
+  // Contradiction signal from Step A / Step B.
+  if (hasContradiction) {
+    return "draft";
+  }
+  return "published";
+}
+
 async function projectPages(opts: {
   workspaceId: string;
   blocks: SubstitutedBlock[];
   commitSha: string;
+  sourceSensitivity: WikiSensitivity;
+  /** relPaths (not wikiPaths) of blocks that carry a contradiction signal. */
+  contradictionPaths: Set<string>;
   tx?: DbOrTx;
 }): Promise<{ pathToId: Map<string, string>; newCount: number; updatedCount: number }> {
   const pathToId = new Map<string, string>();
@@ -352,7 +437,12 @@ async function projectPages(opts: {
       frontmatter: fm as Record<string, unknown>,
       gitSha: opts.commitSha,
       stale: false,
-      publishedStatus: "published" as const,
+      // Draft pages require human review before going live.
+      publishedStatus: derivePublishedStatus(
+        fm,
+        opts.sourceSensitivity,
+        opts.contradictionPaths.has(block.relPath),
+      ),
     };
   });
 
@@ -498,11 +588,11 @@ export async function writeAndCommit(
       input.rawSourceId,
       input.sourceSensitivity,
     );
-    if (sub === null) {
+    if ("rule" in sub) {
       substitutionFailures.push({
         path: block.path,
-        rule: "malformed-frontmatter",
-        detail: "YAML frontmatter failed to parse",
+        rule: sub.rule,
+        detail: sub.detail,
       });
       continue;
     }
@@ -553,10 +643,23 @@ export async function writeAndCommit(
     });
     const wtRepo = new GitRepo(worktree.worktreePath);
 
+    // Defensive write boundary: every block must resolve inside the workspace's
+    // auto wiki subtree. validateBlockPath already ran during substitution, but
+    // we assert again here using the real worktree path so OS path resolution
+    // cannot surface a bypass (e.g. symlinks in worktreePath).
+    const allowedPrefix =
+      path.resolve(worktree.worktreePath, "wiki", input.workspaceId) + path.sep;
+
     // atomicWrite each file inside worktree (handles append for log.md).
     const filesForCommit: Record<string, string> = {};
     for (const block of subBlocks) {
       const absPath = path.join(worktree.worktreePath, block.wikiPath);
+      const resolvedAbs = path.resolve(absPath);
+      if (!resolvedAbs.startsWith(allowedPrefix)) {
+        throw new Error(
+          `[ingest:writeAndCommit] boundary violation: resolved path "${resolvedAbs}" is outside allowed prefix "${allowedPrefix}" for block.wikiPath="${block.wikiPath}"`,
+        );
+      }
       let finalContent = block.content;
       if (block.mode === "append" && (await exists(absPath))) {
         const prev = await fs.readFile(absPath, "utf-8");
@@ -609,6 +712,15 @@ export async function writeAndCommit(
     // referencing the merged commit. On tx failure we log + try to
     // record an `ingest_orphan` marker in wiki_commit_log so operators
     // can reconcile the git main ↔ DB mismatch.
+    // Build contradiction signal set from Step B review blocks (type="contradiction")
+    // so pages involved in contradictions stay draft until a human resolves them.
+    const contradictionPaths = new Set<string>(
+      input.reviewBlocks
+        .filter((rb) => rb.type === "contradiction")
+        .flatMap((rb) => rb.pages ?? [])
+        .map((p) => p.replace(/^wiki\/[^/]+\//, "").replace(/^\/+/, "")),
+    );
+
     let newCount = 0;
     let updatedCount = 0;
     try {
@@ -617,6 +729,8 @@ export async function writeAndCommit(
           workspaceId: input.workspaceId,
           blocks: subBlocks,
           commitSha: commitInfo.sha,
+          sourceSensitivity: input.sourceSensitivity,
+          contradictionPaths,
           tx,
         });
 
