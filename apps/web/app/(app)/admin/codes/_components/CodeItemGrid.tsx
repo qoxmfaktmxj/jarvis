@@ -216,10 +216,8 @@ export function CodeItemGrid({
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
-        onReset={onResetFilters}
         isSearching={saving || disabled}
         searchLabel={t("filter.search")}
-        resetLabel={t("filter.reset")}
       >
         <GridFilterField label={t("filter.code")} className="w-[140px]">
           <input
