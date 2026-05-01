@@ -153,6 +153,148 @@ const SALES_CODE_GROUPS: SeedGroup[] = [
       { code: "41", name: "시스템" },
     ],
   },
+  // Phase 2 — 영업기회/활동 코드 12종
+  {
+    code: "SALES_BIZ_STEP",
+    name: "영업단계",
+    items: [
+      { code: "01", name: "발굴" },
+      { code: "02", name: "접촉" },
+      { code: "03", name: "제안" },
+      { code: "04", name: "협상" },
+      { code: "05", name: "계약" },
+      { code: "06", name: "실패" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_BIZ_IMP",
+    name: "영업기회 중요도",
+    items: [
+      { code: "01", name: "최상" },
+      { code: "02", name: "상" },
+      { code: "03", name: "중" },
+      { code: "04", name: "하" },
+    ],
+  },
+  {
+    code: "SALES_SALE_TYPE",
+    name: "판매유형",
+    items: [
+      { code: "01", name: "직판" },
+      { code: "02", name: "간판" },
+      { code: "03", name: "OEM" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_BIZ_TYPE",
+    name: "사업유형",
+    items: [
+      { code: "01", name: "신규" },
+      { code: "02", name: "갱신" },
+      { code: "03", name: "확장" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_BIZ_TYPE_DETAIL",
+    name: "사업유형 상세",
+    items: [
+      { code: "01", name: "라이센스 신규" },
+      { code: "02", name: "라이센스 갱신" },
+      { code: "03", name: "유지보수" },
+      { code: "04", name: "교육" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_BIZ_OP_SOURCE",
+    name: "영업기회 출처",
+    items: [
+      { code: "01", name: "인바운드" },
+      { code: "02", name: "아웃바운드" },
+      { code: "03", name: "소개" },
+      { code: "04", name: "전시/행사" },
+      { code: "05", name: "웹사이트" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_INDUSTRY",
+    name: "산업구분",
+    items: [
+      { code: "01", name: "제조" },
+      { code: "02", name: "IT/SW" },
+      { code: "03", name: "유통/물류" },
+      { code: "04", name: "금융" },
+      { code: "05", name: "공공기관" },
+      { code: "06", name: "의료/제약" },
+      { code: "07", name: "건설/부동산" },
+      { code: "08", name: "서비스" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_CONT_PER",
+    name: "계약가능성",
+    items: [
+      { code: "01", name: "10%" },
+      { code: "02", name: "30%" },
+      { code: "03", name: "50%" },
+      { code: "04", name: "70%" },
+      { code: "05", name: "90%" },
+    ],
+  },
+  {
+    code: "SALES_BIZ_AREA",
+    name: "영업지역",
+    items: [
+      { code: "01", name: "서울" },
+      { code: "02", name: "경기" },
+      { code: "03", name: "인천" },
+      { code: "04", name: "강원" },
+      { code: "05", name: "충청" },
+      { code: "06", name: "전라" },
+      { code: "07", name: "경상" },
+      { code: "08", name: "제주" },
+      { code: "09", name: "해외" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_CUST_TYPE",
+    name: "고객유형",
+    items: [
+      { code: "01", name: "기존" },
+      { code: "02", name: "신규" },
+      { code: "03", name: "잠재" },
+    ],
+  },
+  {
+    code: "SALES_ACT_TYPE",
+    name: "영업활동 유형",
+    items: [
+      { code: "01", name: "전화" },
+      { code: "02", name: "방문" },
+      { code: "03", name: "이메일" },
+      { code: "04", name: "회의" },
+      { code: "05", name: "제안서 발송" },
+      { code: "06", name: "데모" },
+      { code: "99", name: "기타" },
+    ],
+  },
+  {
+    code: "SALES_ACCESS_ROUTE",
+    name: "접근경로",
+    items: [
+      { code: "01", name: "직접 방문" },
+      { code: "02", name: "전화" },
+      { code: "03", name: "온라인" },
+      { code: "04", name: "소개" },
+      { code: "99", name: "기타" },
+    ],
+  },
 ];
 
 async function upsertCodeGroup(
