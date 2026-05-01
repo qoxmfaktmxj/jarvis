@@ -1,0 +1,128 @@
+"use server";
+
+import { cookies, headers } from "next/headers";
+import { getSession } from "@jarvis/auth/session";
+import { hasPermission } from "@jarvis/auth";
+import { db } from "@jarvis/db/client";
+import { auditLog } from "@jarvis/db/schema";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import {
+  listHolidaysInput,
+  saveHolidaysInput,
+  type HolidayRow,
+} from "@jarvis/shared/validation/holidays";
+import {
+  createHoliday,
+  deleteHoliday,
+  listHolidays,
+  updateHoliday,
+} from "@/lib/queries/holidays";
+
+async function resolveSessionId(): Promise<string | null> {
+  const headerStore = await headers();
+  const cookieStore = await cookies();
+  return (
+    headerStore.get("x-session-id") ??
+    cookieStore.get("sessionId")?.value ??
+    cookieStore.get("jarvis_session")?.value ??
+    null
+  );
+}
+
+async function resolveContext() {
+  const sessionId = await resolveSessionId();
+  const session = await getSession(sessionId ?? "");
+  if (!session) return { ok: false as const, error: "Unauthorized" };
+  if (!hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN)) {
+    return { ok: false as const, error: "Forbidden" };
+  }
+  return { ok: true as const, session };
+}
+
+export async function listHolidaysAction(rawInput: unknown) {
+  const ctx = await resolveContext();
+  if (!ctx.ok) return { ok: false, error: ctx.error };
+
+  const input = listHolidaysInput.parse(rawInput);
+  const rows = await listHolidays({ workspaceId: ctx.session.workspaceId, year: input.year });
+  const serialized: HolidayRow[] = rows.map((r) => ({
+    id: r.id,
+    date: r.date,
+    name: r.name,
+    note: r.note ?? null,
+  }));
+  return { ok: true as const, rows: serialized };
+}
+
+export async function saveHolidaysAction(rawInput: unknown) {
+  const ctx = await resolveContext();
+  if (!ctx.ok) {
+    return { ok: false, created: 0, updated: 0, deleted: 0, errors: [{ code: "FORBIDDEN", message: ctx.error }] };
+  }
+  const input = saveHolidaysInput.parse(rawInput);
+  const ws = ctx.session.workspaceId;
+  let created = 0; let updated = 0; let deleted = 0;
+  const errors: { code: string; message: string; id?: string }[] = [];
+
+  try {
+    await db.transaction(async (tx) => {
+      const auditEntries: { action: string; resourceId: string }[] = [];
+
+      for (const c of input.creates) {
+        let createdId: string | null = null;
+        try {
+          await tx.transaction(async (nested) => {
+            const row = await createHoliday({
+              workspaceId: ws,
+              input: { date: c.date, name: c.name, note: c.note ?? undefined },
+              database: nested as unknown as typeof db,
+            });
+            createdId = row?.id ?? null;
+          });
+          created++;
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : "create failed";
+          if (msg.toLowerCase().includes("unique")) {
+            errors.push({ code: "DUPLICATE_DATE", message: `중복 날짜: ${c.date}` });
+          } else {
+            throw e;
+          }
+        }
+        if (createdId) auditEntries.push({ action: "holiday.create", resourceId: createdId });
+      }
+      for (const u of input.updates) {
+        const { id, ...rawPatch } = u;
+        const patch = { ...rawPatch, note: rawPatch.note === null ? undefined : rawPatch.note };
+        const ok = await updateHoliday({ workspaceId: ws, id, patch, database: tx as unknown as typeof db });
+        if (ok) {
+          updated++;
+          auditEntries.push({ action: "holiday.update", resourceId: id });
+        }
+      }
+      for (const id of input.deletes) {
+        const ok = await deleteHoliday({ workspaceId: ws, id, database: tx as unknown as typeof db });
+        if (ok) {
+          deleted++;
+          auditEntries.push({ action: "holiday.delete", resourceId: id });
+        }
+      }
+      if (auditEntries.length > 0) {
+        await tx.insert(auditLog).values(
+          auditEntries.map(({ action, resourceId }) => ({
+            workspaceId: ws,
+            userId: ctx.session.userId,
+            action,
+            resourceType: "holiday",
+            resourceId,
+            details: {} as Record<string, unknown>,
+            success: true,
+          })),
+        );
+      }
+    });
+  } catch (e: unknown) {
+    errors.push({ code: "SAVE_FAILED", message: e instanceof Error ? e.message : "save failed" });
+  }
+
+  return { ok: errors.length === 0, created, updated, deleted, errors };
+}

@@ -1,5 +1,5 @@
 {
-  "id": "4d3807c7-2031-41e5-8979-5ce2fb62ba57",
+  "id": "d03a5a34-026d-4856-8911-5cf8f8ccaf0e",
   "prevId": "61186096-7dae-44ff-a6af-e04d96d4a21a",
   "version": "7",
   "dialect": "postgresql",
@@ -9859,6 +9859,717 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.sales_freelancer": {
+      "name": "sales_freelancer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sabun": {
+          "name": "sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "res_no": {
+          "name": "res_no",
+          "type": "varchar(13)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_cd": {
+          "name": "pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_nm": {
+          "name": "pjt_nm",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sdate": {
+          "name": "sdate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edate": {
+          "name": "edate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "addr": {
+          "name": "addr",
+          "type": "varchar(400)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tel": {
+          "name": "tel",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mail_id": {
+          "name": "mail_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "belong_ym": {
+          "name": "belong_ym",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "business_cd": {
+          "name": "business_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tot_mon": {
+          "name": "tot_mon",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sales_freelancer_ws_idx": {
+          "name": "sales_freelancer_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_freelancer_ws_belong_ym_idx": {
+          "name": "sales_freelancer_ws_belong_ym_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "belong_ym",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_freelancer_ws_sabun_idx": {
+          "name": "sales_freelancer_ws_sabun_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_freelancer_legacy_uniq": {
+          "name": "sales_freelancer_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "belong_ym",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "business_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sales_cloud_people_base": {
+      "name": "sales_cloud_people_base",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cont_no": {
+          "name": "cont_no",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cont_year": {
+          "name": "cont_year",
+          "type": "varchar(4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pjt_code": {
+          "name": "pjt_code",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "company_cd": {
+          "name": "company_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "person_type": {
+          "name": "person_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calc_type": {
+          "name": "calc_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sdate": {
+          "name": "sdate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "edate": {
+          "name": "edate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "month_amt": {
+          "name": "month_amt",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "varchar(4000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sales_cloud_people_base_ws_idx": {
+          "name": "sales_cloud_people_base_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_cloud_people_base_ws_contract_idx": {
+          "name": "sales_cloud_people_base_ws_contract_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_no",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_cloud_people_base_ws_pjt_idx": {
+          "name": "sales_cloud_people_base_ws_pjt_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pjt_code",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_cloud_people_base_legacy_uniq": {
+          "name": "sales_cloud_people_base_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_no",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "person_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "calc_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sdate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.sales_cloud_people_calc": {
+      "name": "sales_cloud_people_calc",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cont_no": {
+          "name": "cont_no",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cont_year": {
+          "name": "cont_year",
+          "type": "varchar(4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "person_type": {
+          "name": "person_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "calc_type": {
+          "name": "calc_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ym": {
+          "name": "ym",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "person_cnt": {
+          "name": "person_cnt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_amt": {
+          "name": "total_amt",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "varchar(4000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refl_yn": {
+          "name": "refl_yn",
+          "type": "varchar(1)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refl_id": {
+          "name": "refl_id",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refl_date": {
+          "name": "refl_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "sales_cloud_people_calc_ws_idx": {
+          "name": "sales_cloud_people_calc_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_cloud_people_calc_ws_contract_ym_idx": {
+          "name": "sales_cloud_people_calc_ws_contract_ym_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_no",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ym",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "sales_cloud_people_calc_legacy_uniq": {
+          "name": "sales_cloud_people_calc_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_no",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "cont_year",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "seq",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "person_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "calc_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ym",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.infra_license": {
       "name": "infra_license",
       "schema": "",
@@ -11246,1494 +11957,6 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sales_contract": {
-      "name": "sales_contract",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legacy_enter_cd": {
-          "name": "legacy_enter_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_cont_year": {
-          "name": "legacy_cont_year",
-          "type": "varchar(4)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_cont_no": {
-          "name": "legacy_cont_no",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_type": {
-          "name": "company_type",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_cd": {
-          "name": "company_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_grp_nm": {
-          "name": "company_grp_nm",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_nm": {
-          "name": "company_nm",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_no": {
-          "name": "company_no",
-          "type": "varchar(40)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "customer_no": {
-          "name": "customer_no",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "customer_email": {
-          "name": "customer_email",
-          "type": "varchar(400)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cust_nm": {
-          "name": "cust_nm",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_nm": {
-          "name": "cont_nm",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_gb_cd": {
-          "name": "cont_gb_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_ymd": {
-          "name": "cont_ymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_symd": {
-          "name": "cont_symd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_eymd": {
-          "name": "cont_eymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "main_cont_type": {
-          "name": "main_cont_type",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "new_yn": {
-          "name": "new_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "in_out_type": {
-          "name": "in_out_type",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "start_amt": {
-          "name": "start_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "start_amt_rate": {
-          "name": "start_amt_rate",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_1": {
-          "name": "interim_amt_1",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_rate_1": {
-          "name": "interim_amt_rate_1",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_2": {
-          "name": "interim_amt_2",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_rate_2": {
-          "name": "interim_amt_rate_2",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_3": {
-          "name": "interim_amt_3",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_rate_3": {
-          "name": "interim_amt_rate_3",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_4": {
-          "name": "interim_amt_4",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_rate_4": {
-          "name": "interim_amt_rate_4",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_5": {
-          "name": "interim_amt_5",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_rate_5": {
-          "name": "interim_amt_rate_5",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remain_amt": {
-          "name": "remain_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remain_amt_rate": {
-          "name": "remain_amt_rate",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_impl_yn": {
-          "name": "cont_impl_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_publ_yn": {
-          "name": "cont_publ_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_grt_rate": {
-          "name": "cont_grt_rate",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "advan_impl_yn": {
-          "name": "advan_impl_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "advan_publ_yn": {
-          "name": "advan_publ_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "advan_grt_rate": {
-          "name": "advan_grt_rate",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defect_impl_yn": {
-          "name": "defect_impl_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defect_publ_yn": {
-          "name": "defect_publ_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defect_grt_rate": {
-          "name": "defect_grt_rate",
-          "type": "numeric(5, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "defect_eymd": {
-          "name": "defect_eymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "inspec_conf_ymd": {
-          "name": "inspec_conf_ymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "start_amt_plan_ymd": {
-          "name": "start_amt_plan_ymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "start_amt_publ_yn": {
-          "name": "start_amt_publ_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_plan_ymd_1": {
-          "name": "interim_amt_plan_ymd_1",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_publ_yn_1": {
-          "name": "interim_amt_publ_yn_1",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_plan_ymd_2": {
-          "name": "interim_amt_plan_ymd_2",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_publ_yn_2": {
-          "name": "interim_amt_publ_yn_2",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_plan_ymd_3": {
-          "name": "interim_amt_plan_ymd_3",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_publ_yn_3": {
-          "name": "interim_amt_publ_yn_3",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_plan_ymd_4": {
-          "name": "interim_amt_plan_ymd_4",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_publ_yn_4": {
-          "name": "interim_amt_publ_yn_4",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_plan_ymd_5": {
-          "name": "interim_amt_plan_ymd_5",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "interim_amt_publ_yn_5": {
-          "name": "interim_amt_publ_yn_5",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remain_amt_plan_ymd": {
-          "name": "remain_amt_plan_ymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remain_amt_publ_yn": {
-          "name": "remain_amt_publ_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bef_cont_no": {
-          "name": "bef_cont_no",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_cancel_yn": {
-          "name": "cont_cancel_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cont_init_yn": {
-          "name": "cont_init_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "file_seq": {
-          "name": "file_seq",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "doc_no": {
-          "name": "doc_no",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_addr": {
-          "name": "company_addr",
-          "type": "varchar(1000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "company_oner": {
-          "name": "company_oner",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "suc_prob": {
-          "name": "suc_prob",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "memo": {
-          "name": "memo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "sales_contract_ws_idx": {
-          "name": "sales_contract_ws_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_ws_cust_idx": {
-          "name": "sales_contract_ws_cust_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "customer_no",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_ws_cont_ymd_idx": {
-          "name": "sales_contract_ws_cont_ymd_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "cont_ymd",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_legacy_uniq": {
-          "name": "sales_contract_legacy_uniq",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_enter_cd",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_cont_year",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_cont_no",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sales_contract_addinfo": {
-      "name": "sales_contract_addinfo",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "contract_id": {
-          "name": "contract_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legacy_enter_cd": {
-          "name": "legacy_enter_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_cont_no": {
-          "name": "legacy_cont_no",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_sabun": {
-          "name": "legacy_sabun",
-          "type": "varchar(13)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mail_id": {
-          "name": "mail_id",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "sales_contract_addinfo_ws_idx": {
-          "name": "sales_contract_addinfo_ws_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_addinfo_contract_idx": {
-          "name": "sales_contract_addinfo_contract_idx",
-          "columns": [
-            {
-              "expression": "contract_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_addinfo_legacy_uniq": {
-          "name": "sales_contract_addinfo_legacy_uniq",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_enter_cd",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_cont_no",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "legacy_sabun",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sales_contract_addinfo_contract_id_sales_contract_id_fk": {
-          "name": "sales_contract_addinfo_contract_id_sales_contract_id_fk",
-          "tableFrom": "sales_contract_addinfo",
-          "tableTo": "sales_contract",
-          "columnsFrom": [
-            "contract_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sales_contract_month": {
-      "name": "sales_contract_month",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "contract_id": {
-          "name": "contract_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legacy_cont_year": {
-          "name": "legacy_cont_year",
-          "type": "varchar(4)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_cont_no": {
-          "name": "legacy_cont_no",
-          "type": "varchar(30)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_seq": {
-          "name": "legacy_seq",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_ym": {
-          "name": "legacy_ym",
-          "type": "varchar(6)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ym": {
-          "name": "ym",
-          "type": "varchar(6)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "bill_target_yn": {
-          "name": "bill_target_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_in_man_month": {
-          "name": "plan_in_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_out_man_month": {
-          "name": "plan_out_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_serv_sale_amt": {
-          "name": "plan_serv_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_prod_sale_amt": {
-          "name": "plan_prod_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_inf_sale_amt": {
-          "name": "plan_inf_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_serv_in_cost_amt": {
-          "name": "plan_serv_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_serv_out_cost_amt": {
-          "name": "plan_serv_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_prod_cost_amt": {
-          "name": "plan_prod_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_in_cost_amt": {
-          "name": "plan_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_out_cost_amt": {
-          "name": "plan_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_indirect_grp_amt": {
-          "name": "plan_indirect_grp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_indirect_com_amt": {
-          "name": "plan_indirect_com_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_rent_amt": {
-          "name": "plan_rent_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_sga_amt": {
-          "name": "plan_sga_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "plan_exp_amt": {
-          "name": "plan_exp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_in_man_month": {
-          "name": "view_in_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_out_man_month": {
-          "name": "view_out_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_serv_sale_amt": {
-          "name": "view_serv_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_prod_sale_amt": {
-          "name": "view_prod_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_inf_sale_amt": {
-          "name": "view_inf_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_serv_in_cost_amt": {
-          "name": "view_serv_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_serv_out_cost_amt": {
-          "name": "view_serv_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_prod_cost_amt": {
-          "name": "view_prod_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_in_cost_amt": {
-          "name": "view_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_out_cost_amt": {
-          "name": "view_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_indirect_grp_amt": {
-          "name": "view_indirect_grp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_indirect_com_amt": {
-          "name": "view_indirect_com_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_rent_amt": {
-          "name": "view_rent_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_sga_amt": {
-          "name": "view_sga_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "view_exp_amt": {
-          "name": "view_exp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_in_man_month": {
-          "name": "perf_in_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_out_man_month": {
-          "name": "perf_out_man_month",
-          "type": "numeric(15, 10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_serv_sale_amt": {
-          "name": "perf_serv_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_prod_sale_amt": {
-          "name": "perf_prod_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_inf_sale_amt": {
-          "name": "perf_inf_sale_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_serv_in_cost_amt": {
-          "name": "perf_serv_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_serv_out_cost_amt": {
-          "name": "perf_serv_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_prod_cost_amt": {
-          "name": "perf_prod_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_in_cost_amt": {
-          "name": "perf_in_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_out_cost_amt": {
-          "name": "perf_out_cost_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_indirect_grp_amt": {
-          "name": "perf_indirect_grp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_indirect_com_amt": {
-          "name": "perf_indirect_com_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_rent_amt": {
-          "name": "perf_rent_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_sga_amt": {
-          "name": "perf_sga_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "perf_exp_amt": {
-          "name": "perf_exp_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tax_order_amt": {
-          "name": "tax_order_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tax_serv_amt": {
-          "name": "tax_serv_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rfc_end_yn": {
-          "name": "rfc_end_yn",
-          "type": "varchar(1)",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'N'"
-        },
-        "note": {
-          "name": "note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "sales_contract_month_ws_idx": {
-          "name": "sales_contract_month_ws_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_month_contract_idx": {
-          "name": "sales_contract_month_contract_idx",
-          "columns": [
-            {
-              "expression": "contract_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_month_contract_ym_idx": {
-          "name": "sales_contract_month_contract_ym_idx",
-          "columns": [
-            {
-              "expression": "contract_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "ym",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sales_contract_month_contract_id_sales_contract_id_fk": {
-          "name": "sales_contract_month_contract_id_sales_contract_id_fk",
-          "tableFrom": "sales_contract_month",
-          "tableTo": "sales_contract",
-          "columnsFrom": [
-            "contract_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sales_contract_service": {
-      "name": "sales_contract_service",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workspace_id": {
-          "name": "workspace_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "legacy_enter_cd": {
-          "name": "legacy_enter_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_symd": {
-          "name": "legacy_symd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "legacy_serv_sabun": {
-          "name": "legacy_serv_sabun",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "serv_sabun": {
-          "name": "serv_sabun",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "serv_name": {
-          "name": "serv_name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "bir_ymd": {
-          "name": "bir_ymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "symd": {
-          "name": "symd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "eymd": {
-          "name": "eymd",
-          "type": "varchar(8)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cpy_gb_cd": {
-          "name": "cpy_gb_cd",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cpy_name": {
-          "name": "cpy_name",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "econt_amt": {
-          "name": "econt_amt",
-          "type": "numeric",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "econt_cnt": {
-          "name": "econt_cnt",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "job": {
-          "name": "job",
-          "type": "varchar(200)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tel": {
-          "name": "tel",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "mail": {
-          "name": "mail",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "addr": {
-          "name": "addr",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attend_cd": {
-          "name": "attend_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "skill_cd": {
-          "name": "skill_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cmmnc_cd": {
-          "name": "cmmnc_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rspons_cd": {
-          "name": "rspons_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "memo1": {
-          "name": "memo1",
-          "type": "varchar(4000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "memo2": {
-          "name": "memo2",
-          "type": "varchar(4000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "memo3": {
-          "name": "memo3",
-          "type": "varchar(4000)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "org_cd": {
-          "name": "org_cd",
-          "type": "varchar(10)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "manager": {
-          "name": "manager",
-          "type": "varchar(13)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pjt_cd": {
-          "name": "pjt_cd",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pjt_nm": {
-          "name": "pjt_nm",
-          "type": "varchar(300)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc1": {
-          "name": "etc1",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc2": {
-          "name": "etc2",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc3": {
-          "name": "etc3",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc4": {
-          "name": "etc4",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc5": {
-          "name": "etc5",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc6": {
-          "name": "etc6",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc7": {
-          "name": "etc7",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc8": {
-          "name": "etc8",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc9": {
-          "name": "etc9",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "etc10": {
-          "name": "etc10",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by": {
-          "name": "updated_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "sales_contract_service_ws_idx": {
-          "name": "sales_contract_service_ws_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_service_ws_serv_sabun_idx": {
-          "name": "sales_contract_service_ws_serv_sabun_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "serv_sabun",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "sales_contract_service_ws_pjt_idx": {
-          "name": "sales_contract_service_ws_pjt_idx",
-          "columns": [
-            {
-              "expression": "workspace_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "pjt_cd",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

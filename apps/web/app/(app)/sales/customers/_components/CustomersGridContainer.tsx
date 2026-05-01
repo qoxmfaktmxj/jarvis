@@ -6,6 +6,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -277,19 +278,17 @@ export function CustomersGridContainer({
           />
         </GridFilterField>
         <GridFilterField label={tCommon("Search.searchYmdFrom")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdFrom}
-            onChange={(e) => setPending("searchYmdFrom", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdFrom || null}
+            onChange={(v) => setPending("searchYmdFrom", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdFrom")}
           />
         </GridFilterField>
         <GridFilterField label={tCommon("Search.searchYmdTo")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdTo}
-            onChange={(e) => setPending("searchYmdTo", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdTo || null}
+            onChange={(v) => setPending("searchYmdTo", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdTo")}
           />
         </GridFilterField>
       </GridSearchForm>
