@@ -45,20 +45,20 @@ export function parseTsys305(sqlText: string): Tsys305Record[] {
     ] = fields;
 
     rows.push({
-      enterCd: unquote(enterCd),
-      employeeId: unquote(sabun),
-      loginId: nullable(id),
-      passwordHash: unquote(password),
+      enterCd: unquote(enterCd ?? ""),
+      employeeId: unquote(sabun ?? ""),
+      loginId: nullable(id ?? ""),
+      passwordHash: unquote(password ?? ""),
       status: rockingYn === "'Y'" ? "locked" : useYn === "'Y'" ? "active" : "inactive",
-      name: unquote(name),
-      email: nullable(mailId),
-      phone: nullable(handPhone),
-      position: nullable(jikweeNm),
-      jobTitle: nullable(jikchakNm),
+      name: unquote(name ?? ""),
+      email: nullable(mailId ?? ""),
+      phone: nullable(handPhone ?? ""),
+      position: nullable(jikweeNm ?? ""),
+      jobTitle: nullable(jikchakNm ?? ""),
       isOutsourced: outSourcedYn === "'Y'",
-      orgCode: nullable(orgCd),
-      orgName: nullable(orgNm),
-      updatedAt: parseToDate(chkdate),
+      orgCode: nullable(orgCd ?? ""),
+      orgName: nullable(orgNm ?? ""),
+      updatedAt: parseToDate(chkdate ?? ""),
     });
   }
   return rows;

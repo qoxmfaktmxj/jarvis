@@ -24,6 +24,7 @@ describe("parseTsys305", () => {
 
   it("maps SABUN → employeeId, NAME → name, MAIL_ID → email", () => {
     const [first] = parseTsys305(SAMPLE);
+    assert.ok(first);
     assert.equal(first.employeeId, "sd1712");
     assert.equal(first.name, "박성일");
     assert.equal(first.email, "parksi@isu.co.kr");
@@ -45,6 +46,7 @@ describe("parseTsys305", () => {
 
   it("maps OUT_SOURCED_YN=Y → isOutsourced=true", () => {
     const [first] = parseTsys305(SAMPLE);
+    assert.ok(first);
     assert.equal(first.isOutsourced, true);
   });
 
@@ -57,11 +59,13 @@ describe("parseTsys305", () => {
 
   it("preserves passwordHash verbatim", () => {
     const [first] = parseTsys305(SAMPLE);
+    assert.ok(first);
     assert.equal(first.passwordHash, "HASH=");
   });
 
   it("treats null marker correctly (HAND_PHONE=null)", () => {
     const [first] = parseTsys305(SAMPLE);
+    assert.ok(first);
     assert.equal(first.phone, null);
   });
 
@@ -72,6 +76,7 @@ describe("parseTsys305", () => {
 
   it("captures orgName from ORG_NM", () => {
     const [first] = parseTsys305(SAMPLE);
+    assert.ok(first);
     assert.equal(first.orgName, "SaaS서비스팀");
   });
 });
