@@ -27,6 +27,7 @@ vi.mock("@jarvis/db/client", () => ({
     transaction: async (fn: (tx: unknown) => unknown) => {
       const tx = {
         insert: () => ({ values: async () => undefined }),
+        transaction: async (innerFn: (nested: unknown) => unknown) => innerFn({}),
       };
       return fn(tx);
     },

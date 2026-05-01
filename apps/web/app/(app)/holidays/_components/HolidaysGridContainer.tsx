@@ -63,11 +63,11 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <label className="text-sm text-slate-600">{t("filters.year")}</label>
+        <label className="text-sm text-warm-700">{t("filters.year")}</label>
         <select
           value={year}
           onChange={(e) => reload(Number(e.currentTarget.value))}
-          className="h-8 rounded border border-slate-200 px-2 text-sm"
+          className="h-8 rounded border border-warm-200 px-2 text-sm"
         >
           {yearOptions.map((y) => (
             <option key={y} value={y}>{y}</option>

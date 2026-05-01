@@ -66,41 +66,54 @@ export async function saveHolidaysAction(rawInput: unknown) {
 
   try {
     await db.transaction(async (tx) => {
+      const auditEntries: { action: string; resourceId: string }[] = [];
+
       for (const c of input.creates) {
+        let createdId: string | null = null;
         try {
-          await createHoliday({ workspaceId: ws, input: { date: c.date, name: c.name, note: c.note ?? undefined }, database: tx as unknown as typeof db });
+          await tx.transaction(async (nested) => {
+            const row = await createHoliday({
+              workspaceId: ws,
+              input: { date: c.date, name: c.name, note: c.note ?? undefined },
+              database: nested as unknown as typeof db,
+            });
+            createdId = row?.id ?? null;
+          });
           created++;
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : "create failed";
           if (msg.toLowerCase().includes("unique")) {
             errors.push({ code: "DUPLICATE_DATE", message: `중복 날짜: ${c.date}` });
-          } else throw e;
+          } else {
+            throw e;
+          }
         }
+        if (createdId) auditEntries.push({ action: "holiday.create", resourceId: createdId });
       }
       for (const u of input.updates) {
         const { id, ...rawPatch } = u;
         const patch = { ...rawPatch, note: rawPatch.note === null ? undefined : rawPatch.note };
         const ok = await updateHoliday({ workspaceId: ws, id, patch, database: tx as unknown as typeof db });
-        if (ok) updated++;
+        if (ok) {
+          updated++;
+          auditEntries.push({ action: "holiday.update", resourceId: id });
+        }
       }
       for (const id of input.deletes) {
         const ok = await deleteHoliday({ workspaceId: ws, id, database: tx as unknown as typeof db });
-        if (ok) deleted++;
+        if (ok) {
+          deleted++;
+          auditEntries.push({ action: "holiday.delete", resourceId: id });
+        }
       }
-      // audit
-      const events = [
-        ...input.creates.map(() => "holiday.create"),
-        ...input.updates.map(() => "holiday.update"),
-        ...input.deletes.map(() => "holiday.delete"),
-      ];
-      if (events.length > 0) {
+      if (auditEntries.length > 0) {
         await tx.insert(auditLog).values(
-          events.map((action) => ({
+          auditEntries.map(({ action, resourceId }) => ({
             workspaceId: ws,
             userId: ctx.session.userId,
             action,
             resourceType: "holiday",
-            resourceId: null,
+            resourceId,
             details: {} as Record<string, unknown>,
             success: true,
           })),

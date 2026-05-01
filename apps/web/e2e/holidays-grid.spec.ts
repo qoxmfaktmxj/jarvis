@@ -4,7 +4,7 @@
  * Holidays admin grid smoke test:
  *  1. Admin can add a holiday via inline DatePicker
  *     - typing 8 digits ("20260505") auto-formats to "2026-05-05" via MaskedDateInput sanitize()
- *  2. Calendar popup shows weekend headers in correct colors (일=text-rose-500, 토=text-blue-500)
+ *  2. Calendar popup shows weekend headers in correct colors (일=text-red-500, 토=text-notion-blue-text)
  */
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
@@ -82,19 +82,19 @@ test.describe("Holidays admin grid", () => {
     await expect(calendarGrid).toBeVisible();
 
     // Weekday headers are div elements in a 7-column grid above the date grid.
-    // 일 (Sunday, index 0) → text-rose-500
-    // 토 (Saturday, index 6) → text-blue-500
-    // CalendarPopup renders: <div className={cn("py-1", i === 0 && "text-rose-500", i === 6 && "text-blue-500")}>{w}</div>
+    // 일 (Sunday, index 0) → text-red-500
+    // 토 (Saturday, index 6) → text-notion-blue-text
+    // CalendarPopup renders: <div className={cn("py-1", i === 0 && "text-red-500", i === 6 && "text-notion-blue-text")}>{w}</div>
     const sundayHeader = page
-      .locator("div.text-rose-500", { hasText: /^일$/ })
+      .locator("div.text-red-500", { hasText: /^일$/ })
       .first();
     await expect(sundayHeader).toBeVisible();
-    await expect(sundayHeader).toHaveClass(/text-rose-500/);
+    await expect(sundayHeader).toHaveClass(/text-red-500/);
 
     const saturdayHeader = page
-      .locator("div.text-blue-500", { hasText: /^토$/ })
+      .locator("div.text-notion-blue-text", { hasText: /^토$/ })
       .first();
     await expect(saturdayHeader).toBeVisible();
-    await expect(saturdayHeader).toHaveClass(/text-blue-500/);
+    await expect(saturdayHeader).toHaveClass(/text-notion-blue-text/);
   });
 });
