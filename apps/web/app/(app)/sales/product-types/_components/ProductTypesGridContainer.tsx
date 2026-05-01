@@ -8,13 +8,12 @@ import type { ProductTypeRow } from "@jarvis/shared/validation/sales/product-typ
 type Props = { rows: ProductTypeRow[]; total: number; page: number; limit: number };
 
 function makeBlankRow(): ProductTypeRow {
-  return { id: crypto.randomUUID(), productCd: "", productNm: "", costMappingJson: null };
+  return { id: crypto.randomUUID(), productCd: "", productNm: "" };
 }
 
 const COLUMNS: ColumnDef<ProductTypeRow>[] = [
   { key: "productCd", label: "제품코드", type: "text", width: 120, editable: true, required: true },
   { key: "productNm", label: "제품명", type: "text", editable: true, required: true },
-  { key: "costMappingJson", label: "코스트 매핑", type: "readonly", width: 200, render: (r) => r.costMappingJson ? JSON.stringify(r.costMappingJson).slice(0, 50) + "…" : "—" },
 ];
 
 const FILTERS: FilterDef<ProductTypeRow>[] = [

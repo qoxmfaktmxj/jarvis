@@ -46,7 +46,7 @@ export async function listProductTypes(rawInput: z.input<typeof listProductTypes
   ]);
 
   return listProductTypesOutput.parse({
-    rows: rows.map((r) => ({ id: r.id, productCd: r.productCd, productNm: r.productNm, costMappingJson: r.costMappingJson ?? null })),
+    rows: rows.map((r) => ({ id: r.id, productCd: r.productCd, productNm: r.productNm })),
     total: Number(countRows[0]?.count ?? 0),
   });
 }

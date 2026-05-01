@@ -4,7 +4,6 @@ export const productTypeRow = z.object({
   id: z.string().uuid(),
   productCd: z.string().min(1).max(50),
   productNm: z.string().min(1).max(300),
-  costMappingJson: z.unknown().nullable(),
 });
 
 export const listProductTypesInput = z.object({
