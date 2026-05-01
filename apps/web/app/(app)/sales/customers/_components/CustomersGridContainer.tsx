@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
@@ -78,12 +78,16 @@ export function CustomersGridContainer({
   // URL-synced filter state (replaces local useState filterValues).
   // useUrlFilters keeps searchParams in sync so page.tsx re-runs on navigation,
   // providing SSR-rendered initial rows (parity with legacy ibSheet searchXxx map).
-  const FILTER_DEFAULTS: FilterDefaults = {
-    custNm: initialFilters?.custNm ?? "",
-    custKindCd: initialFilters?.custKindCd ?? "",
-    custDivCd: initialFilters?.custDivCd ?? "",
-    chargerNm: initialFilters?.chargerNm ?? "",
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const FILTER_DEFAULTS: FilterDefaults = useMemo(
+    () => ({
+      custNm: initialFilters?.custNm ?? "",
+      custKindCd: initialFilters?.custKindCd ?? "",
+      custDivCd: initialFilters?.custDivCd ?? "",
+      chargerNm: initialFilters?.chargerNm ?? "",
+    }),
+    [],
+  );
 
   const { values, setValue } = useUrlFilters<FilterDefaults>({ defaults: FILTER_DEFAULTS });
 

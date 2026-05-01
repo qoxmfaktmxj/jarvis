@@ -34,7 +34,7 @@ test.describe("admin/infra/licenses grid (smoke)", () => {
   });
 
   test("filter q text input + 환경 select exist", async ({ page }) => {
-    const qInput = page.locator('input[placeholder*="회사코드"]').first();
+    const qInput = page.locator('input[placeholder*="검색어"]').first();
     await expect(qInput).toBeVisible();
     const devGbSelect = page.locator("select").filter({ hasText: /환경/ }).first();
     await expect(devGbSelect).toBeVisible();

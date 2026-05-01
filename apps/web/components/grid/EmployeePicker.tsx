@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { searchEmployees, type EmployeeMatch } from "@/lib/queries/employee-search";
 
 export type EmployeePickerProps = {
@@ -21,6 +21,7 @@ export function EmployeePicker({
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<EmployeeMatch[]>([]);
   const [open, setOpen] = useState(false);
+  const genRef = useRef(0);
 
   useEffect(() => {
     if (query.length < 2) {
@@ -28,8 +29,10 @@ export function EmployeePicker({
       setOpen(false);
       return;
     }
+    const myGen = ++genRef.current;
     const t = setTimeout(async () => {
       const rows = await searchEmployees(query);
+      if (myGen !== genRef.current) return; // newer query supersedes
       setResults(rows);
       setOpen(rows.length > 0);
     }, DEBOUNCE_MS);
