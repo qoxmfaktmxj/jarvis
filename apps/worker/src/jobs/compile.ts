@@ -7,7 +7,6 @@ import { eq, desc } from 'drizzle-orm';
 
 export interface CompileJobData {
   pageId: string;
-  skipEmbed?: boolean; // Skip embed chain (e.g. in tests)
 }
 
 function stripMarkdown(mdx: string): string {
@@ -36,7 +35,7 @@ export async function compileHandler(
 async function processCompile(
   job: PgBoss.Job<CompileJobData>,
 ): Promise<void> {
-  const { pageId, skipEmbed } = job.data;
+  const { pageId } = job.data;
   console.log(`[compile] Starting job for pageId=${pageId}`);
 
   const [page] = await db
@@ -69,11 +68,5 @@ async function processCompile(
     .where(eq(knowledgePage.id, pageId));
 
   console.log(`[compile] Done pageId=${pageId} summary_length=${summary.length}`);
-
-  // Chain: enqueue embed job so the page becomes vector-searchable
-  if (!skipEmbed && latestVersion?.mdxContent) {
-    const { boss } = await import('../lib/boss.js');
-    await boss.send('embed', { pageId });
-    console.log(`[compile] Enqueued embed job for pageId=${pageId}`);
-  }
+  // Phase-Harness (2026-04-23): embed pipeline removed — do NOT enqueue embed here.
 }
