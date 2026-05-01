@@ -168,7 +168,10 @@
       "customerContacts": "Contacts",
       "productTypes": "Product Types",
       "productCostMapping": "Product-Cost Mapping",
-      "mailPersons": "Mail Recipients"
+      "mailPersons": "Mail Recipients",
+      "contracts": "Contracts",
+      "contractMonths": "Contract Months",
+      "contractServices": "Service Staff"
     },
     "Customers": {
       "title": "Customers",
@@ -295,6 +298,49 @@
         "salesYn": "Sales",
         "insaYn": "HR",
         "mailId": "Mail ID",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "Contracts": {
+      "title": "Contracts",
+      "description": "Manage sales contract master information.",
+      "columns": {
+        "contNm": "Contract Name",
+        "custNm": "Customer",
+        "contGbCd": "Contract Type",
+        "contYmd": "Contract Date",
+        "contSymd": "Start Date",
+        "contEymd": "End Date",
+        "mainContType": "Contract Form",
+        "startAmt": "Contract Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "ContractMonths": {
+      "title": "Contract Months",
+      "description": "Manage planned, expected, and actual data per contract month.",
+      "columns": {
+        "contractId": "Contract ID",
+        "ym": "Year-Month",
+        "planAmt": "Plan Amount",
+        "expectAmt": "Expected Amount",
+        "actualAmt": "Actual Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "ContractServices": {
+      "title": "Service Staff",
+      "description": "Manage service staff allocated per contract.",
+      "columns": {
+        "contractId": "Contract ID",
+        "pjtCd": "Project Code",
+        "servName": "Service Name",
+        "job": "Title",
+        "attendCd": "Attendance Type",
+        "servSabun": "Employee No.",
         "memo": "Memo",
         "insdate": "Created"
       }
