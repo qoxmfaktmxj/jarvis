@@ -69,4 +69,19 @@ describe("useUrlFilters", () => {
     expect(url).toContain("page=1");
     expect(url).not.toContain("custNm=");
   });
+
+  it("setValue calls in same tick compose, not clobber (regression I-1)", () => {
+    currentSearch = "";
+    const { result } = renderHook(() =>
+      useUrlFilters({ defaults: { a: "", b: "" } }),
+    );
+    act(() => {
+      result.current.setValue("a", "x");
+      result.current.setValue("b", "y");
+    });
+    expect(replaceMock).toHaveBeenCalledTimes(2);
+    const lastUrl = replaceMock.mock.calls.at(-1)?.[0] as string;
+    expect(lastUrl).toContain("a=x");
+    expect(lastUrl).toContain("b=y");
+  });
 });
