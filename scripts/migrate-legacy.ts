@@ -24,14 +24,20 @@ oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
 export interface MigrationOptions {
   isDryRun: boolean;
   enterCd?: string;
+  /** Skip writing credentials.enc.json entirely (handled externally). */
+  noSecrets?: boolean;
+  /** Overwrite credentials.enc.json if it already exists. */
+  force?: boolean;
 }
 
 async function main(): Promise<void> {
   const isDryRun = process.argv.includes('--dry-run');
+  const noSecrets = process.argv.includes('--no-secrets');
+  const force = process.argv.includes('--force');
   const enterCdArg = process.argv.find((a) => a.startsWith('--enter-cd='));
   const enterCd = enterCdArg?.split('=')[1];
 
-  const opts: MigrationOptions = { isDryRun, enterCd };
+  const opts: MigrationOptions = { isDryRun, enterCd, noSecrets, force };
 
   console.log('='.repeat(60));
   console.log('Jarvis Data Migration: Oracle → PostgreSQL');
