@@ -150,7 +150,7 @@ export function CompaniesGridContainer({
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
-        <GridFilterField label="대상구분">
+        <GridFilterField label="대상구분" className="w-[140px]">
           <select
             value={pendingFilters.objectDiv ?? ""}
             onChange={(e) => setPending("objectDiv", e.target.value)}
@@ -164,7 +164,7 @@ export function CompaniesGridContainer({
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="그룹사">
+        <GridFilterField label="그룹사" className="w-[140px]">
           <select
             value={pendingFilters.groupCode ?? ""}
             onChange={(e) => setPending("groupCode", e.target.value)}
@@ -178,7 +178,7 @@ export function CompaniesGridContainer({
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="코드/회사명" className="flex-1 min-w-[200px]">
+        <GridFilterField label="코드/회사명" className="w-[210px]">
           <Input
             type="text"
             value={pendingFilters.q ?? ""}
@@ -187,7 +187,7 @@ export function CompaniesGridContainer({
             className="h-8"
           />
         </GridFilterField>
-        <GridFilterField label="업종">
+        <GridFilterField label="업종" className="w-[140px]">
           <select
             value={pendingFilters.industryCode ?? ""}
             onChange={(e) => setPending("industryCode", e.target.value)}

@@ -21,7 +21,7 @@ export function GridFilterField({ label, children, className }: Props) {
       className={`flex flex-col gap-1 text-[12px] font-medium text-slate-700 ${className ?? ""}`}
     >
       <span>{label}</span>
-      <div className="min-w-[140px]">{children}</div>
+      <div className="w-full">{children}</div>
     </label>
   );
 }
