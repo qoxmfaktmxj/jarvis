@@ -38,11 +38,14 @@ export function GridToolbar({
       <Button size="sm" variant="outline" onClick={onInsert} disabled={saving}>
         {insertLabel}
       </Button>
-      {onCopy && (
-        <Button size="sm" variant="outline" onClick={onCopy} disabled={saving}>
-          {copyLabel}
-        </Button>
-      )}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={onCopy}
+        disabled={saving || !onCopy}
+      >
+        {copyLabel}
+      </Button>
       <Button size="sm" disabled={dirtyCount === 0 || saving} onClick={onSave}>
         {saving ? savingLabel : dirtyCount > 0 ? `${saveLabel} (${dirtyCount})` : saveLabel}
       </Button>

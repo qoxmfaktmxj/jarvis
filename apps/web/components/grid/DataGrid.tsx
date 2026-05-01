@@ -157,12 +157,15 @@ export function DataGrid<T extends WithId>({
           saving={saving}
           onInsert={() => grid.insertBlank(makeBlankRow())}
           onCopy={
-            selected
-              ? () =>
-                  grid.duplicate(selected, (c) => ({
+            grid.rows.length > 0
+              ? () => {
+                  const target = selected ?? grid.rows[grid.rows.length - 1]?.data.id;
+                  if (!target) return;
+                  grid.duplicate(target, (c) => ({
                     ...c,
                     id: crypto.randomUUID(),
-                  }))
+                  }));
+                }
               : undefined
           }
           onSave={handleSave}
