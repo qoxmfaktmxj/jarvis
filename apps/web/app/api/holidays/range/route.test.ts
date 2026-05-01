@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { GET } from "./route";
 
@@ -16,6 +16,10 @@ vi.mock("@/lib/queries/holidays", () => ({
 }));
 
 describe("GET /api/holidays/range", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("returns holidays within range", async () => {
     const req = new NextRequest("http://localhost/api/holidays/range?from=2026-05-01&to=2026-05-31");
     const res = await GET(req);
