@@ -7,7 +7,22 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { CustomerContactsGridContainer } from "./_components/CustomerContactsGridContainer";
 import { listCustomerContacts } from "./actions";
 
-export default async function SalesCustomerContactsPage() {
+type SearchParams = {
+  page?: string;
+  custMcd?: string;
+  custName?: string;
+  chargerNm?: string;
+  hpNo?: string;
+  email?: string;
+  searchYmdFrom?: string;
+  searchYmdTo?: string;
+};
+
+export default async function SalesCustomerContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -15,20 +30,45 @@ export default async function SalesCustomerContactsPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const limit = 50;
-  const listResult = await listCustomerContacts({ page: 1, limit });
+
+  const listResult = await listCustomerContacts({
+    page,
+    limit,
+    custMcd: params.custMcd || undefined,
+    custName: params.custName || undefined,
+    chargerNm: params.chargerNm || undefined,
+    hpNo: params.hpNo || undefined,
+    email: params.email || undefined,
+    searchYmdFrom: params.searchYmdFrom || undefined,
+    searchYmdTo: params.searchYmdTo || undefined,
+  });
   const initialRows = !("error" in listResult) ? listResult.rows : [];
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
     <div className="space-y-6">
       <PageHeader
-
         eyebrow="Sales · Customer Contacts"
         title="고객담당자"
         description="고객사 측 담당자(컨택) 마스터를 관리합니다."
       />
-      <CustomerContactsGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} />
+      <CustomerContactsGridContainer
+        rows={initialRows}
+        total={initialTotal}
+        limit={limit}
+        initialFilters={{
+          custName: params.custName ?? "",
+          chargerNm: params.chargerNm ?? "",
+          hpNo: params.hpNo ?? "",
+          email: params.email ?? "",
+          searchYmdFrom: params.searchYmdFrom ?? "",
+          searchYmdTo: params.searchYmdTo ?? "",
+          page: String(page),
+        }}
+      />
     </div>
   );
 }

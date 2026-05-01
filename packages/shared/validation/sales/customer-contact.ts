@@ -22,8 +22,41 @@ export const listCustomerContactsInput = z.object({
   custMcd: z.string().optional(),
   custName: z.string().optional(),
   customerId: z.string().uuid().optional(),
+  // New search filters (Task 6 / P2-A)
+  chargerNm: z.string().trim().optional(),
+  hpNo: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  searchYmdFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  searchYmdTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
+});
+
+/**
+ * Input schema for Excel export — same filter fields as listCustomerContactsInput minus page/limit.
+ * The export action applies no pagination (full data export).
+ */
+export const exportCustomerContactsInput = z.object({
+  custMcd: z.string().optional(),
+  custName: z.string().optional(),
+  customerId: z.string().uuid().optional(),
+  chargerNm: z.string().trim().optional(),
+  hpNo: z.string().trim().optional(),
+  email: z.string().trim().optional(),
+  searchYmdFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  searchYmdTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 export const listCustomerContactsOutput = z.object({
@@ -47,5 +80,6 @@ export const saveCustomerContactsOutput = z.object({
 
 export type CustomerContactRow = z.infer<typeof customerContactRow>;
 export type ListCustomerContactsInput = z.infer<typeof listCustomerContactsInput>;
+export type ExportCustomerContactsInput = z.infer<typeof exportCustomerContactsInput>;
 export type SaveCustomerContactsInput = z.infer<typeof saveCustomerContactsInput>;
 export type SaveCustomerContactsOutput = z.infer<typeof saveCustomerContactsOutput>;

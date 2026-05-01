@@ -1,6 +1,6 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, lte } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -52,6 +52,29 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
+  // New search filters (Task 6 / P2-A):
+  // chargerNm → ILIKE on custName (contact person's name; legacy: searchChargerNm → 담당자명)
+  if (input.chargerNm) {
+    conditions.push(ilike(salesCustomerContact.custName, `%${input.chargerNm}%`));
+  }
+  // hpNo → ILIKE on hpNo (휴대폰)
+  if (input.hpNo) {
+    conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));
+  }
+  // email → ILIKE on email (이메일)
+  if (input.email) {
+    conditions.push(ilike(salesCustomerContact.email, `%${input.email}%`));
+  }
+  // Date range on createdAt (legacy: searchFromInsdate / searchToInsdate — 등록일자)
+  if (input.searchYmdFrom) {
+    conditions.push(gte(salesCustomerContact.createdAt, new Date(input.searchYmdFrom)));
+  }
+  if (input.searchYmdTo) {
+    // Include the full end date day by using start of next day
+    const toDate = new Date(input.searchYmdTo);
+    toDate.setDate(toDate.getDate() + 1);
+    conditions.push(lte(salesCustomerContact.createdAt, toDate));
+  }
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([
