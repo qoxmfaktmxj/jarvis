@@ -61,11 +61,11 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "nav.profile",      kind: "menu", label: "프로필",         icon: "User",          routePath: "/profile",            sortOrder: 140, permissions: [PERMISSIONS.ADMIN_ALL] },
 
   // SALES (150 ≤ sortOrder < 200)
-  { code: "sales.customers",         kind: "menu", label: "고객사관리",   icon: "Users",       routePath: "/sales/customers",         sortOrder: 150, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.customer-contacts", kind: "menu", label: "담당자관리",   icon: "Contact",     routePath: "/sales/customer-contacts", sortOrder: 155, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.product-types",     kind: "menu", label: "제품군관리",   icon: "ShoppingBag", routePath: "/sales/product-types",     sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.mail-persons",      kind: "menu", label: "메일담당자",   icon: "Mail",        routePath: "/sales/mail-persons",      sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.licenses",          kind: "menu", label: "라이센스관리", icon: "Key",         routePath: "/sales/licenses",          sortOrder: 170, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.customers",            kind: "menu", label: "고객사관리",     icon: "Users",       routePath: "/sales/customers",             sortOrder: 150, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.customer-contacts",    kind: "menu", label: "담당자관리",     icon: "Contact",     routePath: "/sales/customer-contacts",     sortOrder: 155, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.product-types",        kind: "menu", label: "제품군관리",     icon: "ShoppingBag", routePath: "/sales/product-types",         sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.product-cost-mapping", kind: "menu", label: "제품-코스트 매핑", icon: "Coins",       routePath: "/sales/product-cost-mapping",  sortOrder: 162, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.mail-persons",         kind: "menu", label: "메일담당자",     icon: "Mail",        routePath: "/sales/mail-persons",          sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL] },
@@ -81,6 +81,7 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "admin.wiki-observability", kind: "menu", label: "위키 운영",    icon: "Activity",    routePath: "/admin/observability/wiki",       sortOrder: 300, permissions: [PERMISSIONS.ADMIN_ALL] },
   { code: "admin.wiki-violations",    kind: "menu", label: "경계 위반",    icon: "ShieldAlert", routePath: "/admin/wiki/boundary-violations", sortOrder: 310, permissions: [PERMISSIONS.ADMIN_ALL] },
   { code: "admin.wiki-review",        kind: "menu", label: "위키 리뷰 큐", icon: "ListChecks",  routePath: "/admin/wiki/review-queue",        sortOrder: 320, permissions: [PERMISSIONS.ADMIN_ALL] },
+  { code: "admin.infra.licenses",     kind: "menu", label: "인프라 라이센스", icon: "ShieldCheck", routePath: "/admin/infra/licenses",        sortOrder: 330, permissions: [PERMISSIONS.ADMIN_ALL] },
 
   // ACTION (sortOrder >= 400) — for CommandPalette
   { code: "action.new-notice",  kind: "action", label: "새 공지 작성", icon: "FileText", routePath: "/notices/new",   sortOrder: 400, permissions: [PERMISSIONS.NOTICE_CREATE, PERMISSIONS.ADMIN_ALL] },

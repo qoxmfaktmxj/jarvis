@@ -30,7 +30,6 @@ import {
   HardDrive,
   Hash,
   Inbox,
-  Key,
   Library,
   ListChecks,
   ListTree,
@@ -92,8 +91,8 @@ export const SALES_ITEMS: readonly NavItem[] = [
   { id: "nav-sales-customers",         href: "/sales/customers",              label: "고객사관리",   icon: Users,     description: "고객사 마스터",       keywords: ["customer", "고객사"] },
   { id: "nav-sales-customer-contacts", href: "/sales/customer-contacts",      label: "담당자관리",   icon: Contact,   description: "고객 담당자 연락처",  keywords: ["contact", "담당자"] },
   { id: "nav-sales-product-types",     href: "/sales/product-types",          label: "제품군관리",   icon: ShoppingBag, description: "제품군 마스터",     keywords: ["product", "제품"] },
+  { id: "nav-sales-product-cost-mapping", href: "/sales/product-cost-mapping",label: "제품-코스트 매핑", icon: Coins, description: "제품군별 코스트 매핑", keywords: ["cost", "코스트", "매핑"] },
   { id: "nav-sales-mail-persons",      href: "/sales/mail-persons",           label: "메일담당자",   icon: Mail,      description: "메일 수신 담당자",    keywords: ["mail", "메일"] },
-  { id: "nav-sales-licenses",          href: "/sales/licenses",               label: "라이센스관리", icon: Key,       description: "고객사별 라이센스",   keywords: ["license", "라이센스"] },
 ];
 
 export const ADMIN_ITEM: NavItem = {
@@ -152,11 +151,12 @@ export const ROUTE_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["/contractors",              "외주인력관리"],
   ["/holidays",                 "공휴일 관리"],
   ["/profile",                  "프로필"],
-  ["/sales/customers",          "고객사관리"],
-  ["/sales/customer-contacts",  "담당자관리"],
-  ["/sales/product-types",      "제품군관리"],
-  ["/sales/mail-persons",       "메일담당자"],
-  ["/sales/licenses",           "라이센스관리"],
+  ["/sales/customers",             "고객사관리"],
+  ["/sales/customer-contacts",     "담당자관리"],
+  ["/sales/product-types",         "제품군관리"],
+  ["/sales/product-cost-mapping",  "제품-코스트 매핑"],
+  ["/sales/mail-persons",          "메일담당자"],
+  ["/admin/infra/licenses",        "인프라 라이센스"],
 ];
 
 export const LEGACY_REDIRECTS: Record<string, string> = {
