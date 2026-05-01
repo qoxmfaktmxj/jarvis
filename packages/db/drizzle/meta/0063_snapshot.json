@@ -1,6 +1,6 @@
 {
-  "id": "d03a5a34-026d-4856-8911-5cf8f8ccaf0e",
-  "prevId": "61186096-7dae-44ff-a6af-e04d96d4a21a",
+  "id": "49fcf5c9-6415-4c33-b5ea-b105bb8304a9",
+  "prevId": "d03a5a34-026d-4856-8911-5cf8f8ccaf0e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1594,6 +1594,831 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.project_beacon": {
+      "name": "project_beacon",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_beacon_mcd": {
+          "name": "legacy_beacon_mcd",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_beacon_ser": {
+          "name": "legacy_beacon_ser",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beacon_mcd": {
+          "name": "beacon_mcd",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beacon_ser": {
+          "name": "beacon_ser",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_cd": {
+          "name": "pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_nm": {
+          "name": "pjt_nm",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sdate": {
+          "name": "sdate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edate": {
+          "name": "edate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sabun": {
+          "name": "sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "out_yn": {
+          "name": "out_yn",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bigo": {
+          "name": "bigo",
+          "type": "varchar(4000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "project_beacon_ws_idx": {
+          "name": "project_beacon_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_beacon_ws_pjt_idx": {
+          "name": "project_beacon_ws_pjt_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pjt_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_beacon_ws_sabun_idx": {
+          "name": "project_beacon_ws_sabun_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_beacon_legacy_uniq": {
+          "name": "project_beacon_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_beacon_mcd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_beacon_ser",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_beacon_workspace_id_workspace_id_fk": {
+          "name": "project_beacon_workspace_id_workspace_id_fk",
+          "tableFrom": "project_beacon",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.project_history": {
+      "name": "project_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_sabun": {
+          "name": "legacy_sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_org_cd": {
+          "name": "legacy_org_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_pjt_cd": {
+          "name": "legacy_pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sabun": {
+          "name": "sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "org_cd": {
+          "name": "org_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_cd": {
+          "name": "pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_nm": {
+          "name": "pjt_nm",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cust_cd": {
+          "name": "cust_cd",
+          "type": "varchar(60)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cust_nm": {
+          "name": "cust_nm",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sdate": {
+          "name": "sdate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "edate": {
+          "name": "edate",
+          "type": "varchar(8)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reg_cd": {
+          "name": "reg_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reg_nm": {
+          "name": "reg_nm",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "de_reg": {
+          "name": "de_reg",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "flist": {
+          "name": "flist",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plist": {
+          "name": "plist",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role_cd": {
+          "name": "role_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role_nm": {
+          "name": "role_nm",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "module": {
+          "name": "module",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bigo": {
+          "name": "bigo",
+          "type": "varchar(4000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "memo": {
+          "name": "memo",
+          "type": "varchar(4000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etc1": {
+          "name": "etc1",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etc2": {
+          "name": "etc2",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etc3": {
+          "name": "etc3",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etc4": {
+          "name": "etc4",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "etc5": {
+          "name": "etc5",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "job_cd": {
+          "name": "job_cd",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "job_nm": {
+          "name": "job_nm",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reward_yn": {
+          "name": "reward_yn",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status_cd": {
+          "name": "status_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "beacon_mcd": {
+          "name": "beacon_mcd",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "project_history_ws_idx": {
+          "name": "project_history_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_history_ws_pjt_idx": {
+          "name": "project_history_ws_pjt_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pjt_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_history_ws_sabun_idx": {
+          "name": "project_history_ws_sabun_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_history_ws_dates_idx": {
+          "name": "project_history_ws_dates_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sdate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "edate",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_history_legacy_uniq": {
+          "name": "project_history_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_org_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_pjt_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_history_workspace_id_workspace_id_fk": {
+          "name": "project_history_workspace_id_workspace_id_fk",
+          "tableFrom": "project_history",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.project_module": {
+      "name": "project_module",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "workspace_id": {
+          "name": "workspace_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legacy_enter_cd": {
+          "name": "legacy_enter_cd",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_sabun": {
+          "name": "legacy_sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_pjt_cd": {
+          "name": "legacy_pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "legacy_module_cd": {
+          "name": "legacy_module_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sabun": {
+          "name": "sabun",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_cd": {
+          "name": "pjt_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pjt_nm": {
+          "name": "pjt_nm",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "module_cd": {
+          "name": "module_cd",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "module_nm": {
+          "name": "module_nm",
+          "type": "varchar(300)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "project_module_ws_idx": {
+          "name": "project_module_ws_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_module_ws_pjt_idx": {
+          "name": "project_module_ws_pjt_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "pjt_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_module_ws_sabun_idx": {
+          "name": "project_module_ws_sabun_idx",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "project_module_legacy_uniq": {
+          "name": "project_module_legacy_uniq",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_enter_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_sabun",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_pjt_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "legacy_module_cd",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "project_module_workspace_id_workspace_id_fk": {
+          "name": "project_module_workspace_id_workspace_id_fk",
+          "tableFrom": "project_module",
+          "tableTo": "workspace",
+          "columnsFrom": [
+            "workspace_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
