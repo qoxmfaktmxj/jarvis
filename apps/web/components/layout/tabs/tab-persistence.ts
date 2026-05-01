@@ -1,4 +1,5 @@
 import { PERSISTENCE_VERSION } from "./tab-types";
+import { isSafeInternalPath } from "@/lib/url";
 import type { StateKey, Tab, TabKey } from "./tab-types";
 
 interface PersistedShape {
@@ -29,9 +30,18 @@ export function loadFromSession(workspaceId: string): PersistableState | null {
     for (const [key, sub] of Object.entries(parsed.tabStates ?? {})) {
       tabStates.set(key, new Map(Object.entries(sub)));
     }
+    // I2: filter out tabs whose persisted URL or key is unsafe (defense-in-depth
+    // against same-origin XSS poisoning the cache). activeKey is also validated
+    // as a safe path independently — tab presence isn't required (the consumer
+    // re-derives active state on render).
+    const safeTabs = (parsed.tabs ?? []).filter(
+      (t) => isSafeInternalPath(t.key) && isSafeInternalPath(t.url),
+    );
+    const safeActiveKey =
+      parsed.activeKey && isSafeInternalPath(parsed.activeKey) ? parsed.activeKey : null;
     return {
-      tabs: parsed.tabs ?? [],
-      activeKey: parsed.activeKey ?? null,
+      tabs: safeTabs,
+      activeKey: safeActiveKey,
       tabStates,
     };
   } catch {

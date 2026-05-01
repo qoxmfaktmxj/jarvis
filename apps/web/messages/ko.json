@@ -1,4 +1,29 @@
 {
+  "Tabs": {
+    "fallbackTitle": "(제목 없음)",
+    "contextMenu": {
+      "close": "탭 닫기",
+      "closeLeft": "왼쪽 탭 닫기",
+      "closeRight": "오른쪽 탭 닫기",
+      "closeAll": "모든 탭 닫기",
+      "closeOthers": "다른 탭 모두 닫기",
+      "pin": "📌 핀 고정",
+      "unpin": "📌 핀 해제",
+      "reload": "🔄 새로고침 (데이터만)"
+    },
+    "unsaved": {
+      "title": "{tabTitle} 탭이 닫힙니다",
+      "titleBatch": "{count}개 탭이 닫힙니다",
+      "body": "저장 안 된 변경 {count}건이 있습니다. 어떻게 할까요?",
+      "bodyBatch": "{count}개 탭에 저장 안 된 변경이 있습니다. 모두 닫으시겠습니까?",
+      "discard": "닫기 (변경 버림)",
+      "saveAndClose": "저장 후 닫기",
+      "cancel": "취소"
+    },
+    "limit": {
+      "allPinned": "탭 5개 모두 핀 고정됨. 핀 해제 후 다시 시도하세요."
+    }
+  },
   "Nav": {
     "dashboard": "대시보드",
     "projects": "프로젝트",

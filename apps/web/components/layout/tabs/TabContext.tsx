@@ -198,18 +198,21 @@ export function TabProvider({
   const router = useRouter();
   const saveHandlersRef = useRef(new Map<TabKey, SaveHandler>());
 
-  const debouncedSaverRef = useRef<ReturnType<typeof makeDebouncedSaver> | null>(null);
-  if (!debouncedSaverRef.current) {
-    debouncedSaverRef.current = makeDebouncedSaver(workspaceId, PERSISTENCE_DEBOUNCE_MS);
-  }
+  // I3: re-create the saver when workspaceId changes so writes go to the
+  // correct sessionStorage key. (No workspace switcher today, but the prop
+  // type allows it and a stale closure here would be a silent data-loss bug.)
+  const debouncedSaver = useMemo(
+    () => makeDebouncedSaver(workspaceId, PERSISTENCE_DEBOUNCE_MS),
+    [workspaceId],
+  );
 
   useEffect(() => {
-    debouncedSaverRef.current!({
+    debouncedSaver({
       tabs: state.tabs,
       activeKey: state.activeKey,
       tabStates: state.tabStates,
     });
-  }, [state.tabs, state.activeKey, state.tabStates]);
+  }, [state.tabs, state.activeKey, state.tabStates, debouncedSaver]);
 
   const isDirty = useCallback((key: TabKey) => state.dirtyKeys.has(key), [state.dirtyKeys]);
   const isPinned = useCallback(
@@ -259,13 +262,19 @@ export function TabProvider({
   }, []);
 
   const requestUnsavedDialog = useCallback(
-    (tabs: Tab[], reason: "single" | "batch"): Promise<CloseAction> =>
-      new Promise<CloseAction>((resolve) => {
+    (tabs: Tab[], reason: "single" | "batch"): Promise<CloseAction> => {
+      // I1 guard: if a dialog is already open, refuse the new request rather
+      // than orphan the prior resolve(). Caller treats this as "cancel".
+      if (stateRef.current.pendingClose !== null) {
+        return Promise.resolve("cancel");
+      }
+      return new Promise<CloseAction>((resolve) => {
         dispatch({
           type: "SET_PENDING",
           req: { tabs, reason, resolve },
         });
-      }),
+      });
+    },
     [],
   );
 
@@ -276,14 +285,17 @@ export function TabProvider({
       if (action === "save") {
         const handler = saveHandlersRef.current.get(tab.key);
         if (!handler) {
+          // I4: NEVER silently discard the user's data. If the page hasn't
+          // registered a save handler yet, the user pressed "save" expecting
+          // their work to survive — refusing the close is the right answer.
+          // The dirty marker stays; user can save explicitly and retry close.
           if (process.env.NODE_ENV !== "production") {
             // eslint-disable-next-line no-console
             console.warn(
-              `[tabs] No save handler registered for ${tab.key}; falling back to discard.`,
+              `[tabs] No save handler registered for ${tab.key}; refusing close to preserve user data.`,
             );
           }
-          performCloseTab(tab.key);
-          return true;
+          return false;
         }
         const result = await handler();
         if (!result.ok) return false;
@@ -365,7 +377,7 @@ export function TabProvider({
         s.tabs.every((t) => t.pinned);
       return !blocked;
     },
-    [handleDirtyClose, performCloseTab],
+    [handleDirtyClose],
   );
 
   const closeTab = useCallback<TabContextValue["closeTab"]>(

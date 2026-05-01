@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pin, X } from "lucide-react";
 import { useTabContext } from "./TabContext";
 import { TabContextMenu } from "./TabContextMenu";
+import { isSafeInternalPath } from "@/lib/url";
 import type { Tab } from "./tab-types";
 
 /**
@@ -31,7 +32,9 @@ export function TabBar() {
             dirty={isDirty(tab.key)}
             onClick={() => {
               focusTab(tab.key);
-              router.push(tab.url);
+              // I2: defense-in-depth — never push an unsafe URL even if it
+              // somehow ended up persisted. Strip to the canonical key path.
+              router.push(isSafeInternalPath(tab.url) ? tab.url : tab.key);
             }}
             onClose={(e) => {
               e.stopPropagation();
@@ -74,10 +77,17 @@ function TabItem({
     <div
       role="tab"
       aria-selected={active}
+      tabIndex={active ? 0 : -1}
       data-testid={`tab-${tab.key}`}
       onClick={onClick}
       onContextMenu={onContextMenu}
-      className="flex items-center gap-2 px-3 border-r cursor-pointer select-none"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className="flex items-center gap-2 px-3 border-r cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       style={{
         borderColor: "var(--line)",
         background: active ? "var(--accent-soft, #eff6ff)" : "transparent",
