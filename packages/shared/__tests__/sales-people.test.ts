@@ -6,7 +6,7 @@ import {
   salesCloudPeopleBaseRowSchema,
   salesCloudPeopleCalcRowSchema,
   salesFreelancerRowSchema,
-} from "../validation/sales-people";
+} from "../validation/sales-people.js";
 
 describe("sales people validation", () => {
   it("requires freelancer natural key fields on create", () => {
@@ -51,4 +51,3 @@ describe("sales people validation", () => {
     expect(salesCloudPeopleCalcRowSchema.shape.totalAmt.safeParse("3000").success).toBe(true);
   });
 });
-
