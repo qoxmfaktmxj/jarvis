@@ -129,10 +129,17 @@ describe("TabProvider — LRU eviction", () => {
       await result.current.openTab("/e", "E");
     });
     expect(result.current.tabs).toHaveLength(5);
+
+    // Mark /a dirty before eviction; the eviction should clean it up.
+    act(() => result.current.setDirty("/a", true));
+    expect(result.current.isDirty("/a")).toBe(true);
+
     await act(async () => {
       await result.current.openTab("/f", "F");
     });
     expect(result.current.tabs.map((t) => t.key)).toEqual(["/b", "/c", "/d", "/e", "/f"]);
     expect(result.current.activeKey).toBe("/f");
+    // Cleanup: evicted tab's dirty flag must be cleared (no ghost flags).
+    expect(result.current.isDirty("/a")).toBe(false);
   });
 });

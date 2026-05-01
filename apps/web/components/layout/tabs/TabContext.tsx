@@ -235,15 +235,15 @@ export function TabProvider({
       createdAt: now,
       lastVisitedAt: now,
     };
-    // Eagerly compute next state to determine if the dispatch will be a no-op
-    // (all-pinned case), without relying on async React flush timing.
-    const nextState = reducer(stateRef.current, { type: "OPEN_TAB", tab });
-    const wasNoOp = nextState === stateRef.current;
-    // Use OPEN_TAB so the "already open?" check and LRU eviction are inside the
-    // reducer, avoiding stale-closure bugs when multiple openTab calls happen in
-    // one act(). The wrapped reducer also keeps stateRef.current in sync.
+    // Explicit blocked check (don't rely on reducer reference equality):
+    // Refuse only when at MAX_TABS, target doesn't already exist, and every existing tab is pinned.
+    const s = stateRef.current;
+    const blocked =
+      s.tabs.length >= MAX_TABS &&
+      !s.tabs.some((t) => t.key === key) &&
+      s.tabs.every((t) => t.pinned);
     dispatch({ type: "OPEN_TAB", tab });
-    return !wasNoOp;
+    return !blocked;
   }, []);
 
   const closeTab = useCallback<TabContextValue["closeTab"]>(async (key) => {
