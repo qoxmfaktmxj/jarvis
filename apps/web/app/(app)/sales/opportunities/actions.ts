@@ -78,6 +78,8 @@ export async function listOpportunities(rawInput: z.input<typeof listOpportuniti
   if (input.bizStepCode) conditions.push(eq(salesOpportunity.bizStepCode, input.bizStepCode));
   if (input.productTypeCode) conditions.push(eq(salesOpportunity.productTypeCode, input.productTypeCode));
   if (input.focusOnly) conditions.push(eq(salesOpportunity.focusMgrYn, true));
+  if (input.customerId) conditions.push(eq(salesOpportunity.customerId, input.customerId));
+  if (input.contactId) conditions.push(eq(salesOpportunity.contactId, input.contactId));
 
   const where = and(...conditions);
 
