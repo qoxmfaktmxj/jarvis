@@ -21,8 +21,8 @@ test.describe("sales/contract-services grid", () => {
   // ── 1. Page renders + lists ─────────────────────────────────────────────────
 
   test("page loads with heading and grid table", async ({ page }) => {
-    // PageHeader title="용역인원관리"
-    await expect(page.getByRole("heading", { name: "용역인원관리" })).toBeVisible();
+    // PageHeader title="서비스 인력" (i18n: Sales.ContractServices.title)
+    await expect(page.getByRole("heading", { name: "서비스 인력" })).toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });
 

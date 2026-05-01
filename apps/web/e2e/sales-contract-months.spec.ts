@@ -21,8 +21,8 @@ test.describe("sales/contract-months grid", () => {
   // ── 1. Page renders + lists ─────────────────────────────────────────────────
 
   test("page loads with heading and grid table", async ({ page }) => {
-    // PageHeader title="계약월별관리"
-    await expect(page.getByRole("heading", { name: "계약월별관리" })).toBeVisible();
+    // PageHeader title="계약 월별" (i18n: Sales.ContractMonths.title)
+    await expect(page.getByRole("heading", { name: "계약 월별" })).toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });
 

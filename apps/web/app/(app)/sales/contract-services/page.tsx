@@ -44,7 +44,7 @@ export default async function SalesContractServicesPage({
     <div className="space-y-6">
       <PageHeader
         eyebrow="Sales · Contract Services"
-        title="용역인원관리"
+        title="서비스 인력"
         description="계약 용역 인원 마스터를 관리합니다."
       />
       <ContractServicesGridContainer

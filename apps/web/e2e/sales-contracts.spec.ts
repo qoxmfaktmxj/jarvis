@@ -21,8 +21,8 @@ test.describe("sales/contracts grid", () => {
   // ── 1. Page renders + lists ─────────────────────────────────────────────────
 
   test("page loads with heading and grid table", async ({ page }) => {
-    // PageHeader title="계약관리"
-    await expect(page.getByRole("heading", { name: "계약관리" })).toBeVisible();
+    // PageHeader title="계약 관리" (i18n: Sales.Contracts.title)
+    await expect(page.getByRole("heading", { name: "계약 관리" })).toBeVisible();
     await expect(page.locator("table")).toBeVisible();
   });
 

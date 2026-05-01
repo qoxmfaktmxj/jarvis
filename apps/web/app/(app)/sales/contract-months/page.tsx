@@ -44,7 +44,7 @@ export default async function SalesContractMonthsPage({
     <div className="space-y-6">
       <PageHeader
         eyebrow="Sales · Contract Months"
-        title="계약월별관리"
+        title="계약 월별"
         description="계약별 월별 계획·예상·실적 데이터를 관리합니다."
       />
       <ContractMonthsGridContainer
