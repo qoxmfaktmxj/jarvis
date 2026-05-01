@@ -1,40 +1,57 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pin, X } from "lucide-react";
 import { useTabContext } from "./TabContext";
+import { TabContextMenu } from "./TabContextMenu";
 import type { Tab } from "./tab-types";
 
 /**
  * Tab strip rendered inside Topbar. Click = focus + router.push.
  * X button closes (with dirty dialog if applicable, handled by TabContext).
  * Pinned tabs hide the X. Dirty tabs show a dot prefix.
+ * Right-click opens a context menu with 7 actions.
  */
 export function TabBar() {
   const { tabs, activeKey, focusTab, closeTab, isDirty } = useTabContext();
   const router = useRouter();
+  const [menu, setMenu] = useState<{ tab: Tab; x: number; y: number } | null>(null);
 
   if (tabs.length === 0) return null;
 
   return (
-    <div className="flex items-stretch h-full overflow-hidden" role="tablist">
-      {tabs.map((tab) => (
-        <TabItem
-          key={tab.key}
-          tab={tab}
-          active={tab.key === activeKey}
-          dirty={isDirty(tab.key)}
-          onClick={() => {
-            focusTab(tab.key);
-            router.push(tab.url);
-          }}
-          onClose={(e) => {
-            e.stopPropagation();
-            void closeTab(tab.key);
-          }}
+    <>
+      <div className="flex items-stretch h-full overflow-hidden" role="tablist">
+        {tabs.map((tab) => (
+          <TabItem
+            key={tab.key}
+            tab={tab}
+            active={tab.key === activeKey}
+            dirty={isDirty(tab.key)}
+            onClick={() => {
+              focusTab(tab.key);
+              router.push(tab.url);
+            }}
+            onClose={(e) => {
+              e.stopPropagation();
+              void closeTab(tab.key);
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setMenu({ tab, x: e.clientX, y: e.clientY });
+            }}
+          />
+        ))}
+      </div>
+      {menu ? (
+        <TabContextMenu
+          tab={menu.tab}
+          position={{ x: menu.x, y: menu.y }}
+          onClose={() => setMenu(null)}
         />
-      ))}
-    </div>
+      ) : null}
+    </>
   );
 }
 
@@ -44,12 +61,14 @@ function TabItem({
   dirty,
   onClick,
   onClose,
+  onContextMenu,
 }: {
   tab: Tab;
   active: boolean;
   dirty: boolean;
   onClick: () => void;
   onClose: (e: React.MouseEvent) => void;
+  onContextMenu: (e: React.MouseEvent) => void;
 }) {
   return (
     <div
@@ -57,6 +76,7 @@ function TabItem({
       aria-selected={active}
       data-testid={`tab-${tab.key}`}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       className="flex items-center gap-2 px-3 border-r cursor-pointer select-none"
       style={{
         borderColor: "var(--line)",
