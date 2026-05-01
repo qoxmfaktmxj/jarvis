@@ -47,3 +47,28 @@ test.describe("sales/product-cost-mapping grid (smoke)", () => {
     await expect(saveBtn).toBeEnabled();
   });
 });
+
+test.describe("sales/product-cost-mapping baseline assertions (P2-A)", () => {
+  test("Excel 다운로드 button is visible", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/product-cost-mapping");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("button", { name: /엑셀 다운로드/i }),
+    ).toBeVisible();
+  });
+
+  test("search filter persists across reload via URL (q)", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/product-cost-mapping");
+    await page.waitForLoadState("networkidle");
+    // q input: placeholder from Sales.Common.Search.placeholder = "검색어 입력"
+    const input = page.locator('input[placeholder*="검색어"]').first();
+    await input.fill("test");
+    await page.waitForTimeout(500); // 300ms debounce + buffer
+    expect(page.url()).toContain("q=test");
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(input).toHaveValue("test");
+  });
+});

@@ -1,18 +1,17 @@
 /**
- * e2e/sales-mail-persons.spec.ts
+ * e2e/sales-product-types.spec.ts
  *
- * sales/mail-persons 그리드 smoke test (Task 8 / P1.5).
- * 레거시 ibSheet bizMailPersonMgr.jsp:26~35 Hidden:0 정책 검증:
- *  - sabun(PK) 컬럼은 보이지 않아야 함
- *  - name / mailId / salesYn / insaYn / memo / 등록일자 보임
+ * sales/product-types 그리드 smoke test + P2-A baseline assertions.
+ * 컬럼: 제품코드(productCd) / 제품명(productNm) / 등록일자.
+ * syncWithUrl=true (DataGrid) + DataGridToolbar export("엑셀 다운로드").
  */
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";
 
-test.describe("sales/mail-persons grid", () => {
+test.describe("sales/product-types grid", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/sales/mail-persons");
+    await page.goto("/sales/product-types");
     await page.waitForLoadState("networkidle");
   });
 
@@ -25,19 +24,11 @@ test.describe("sales/mail-persons grid", () => {
     await expect(insertBtn).toBeVisible();
   });
 
-  test("Hidden:0 columns visible (이름 / 메일 ID / 영업 / 인사 / 메모 / 등록일자)", async ({ page }) => {
+  test("core column headers visible (제품코드 / 제품명 / 등록일자)", async ({ page }) => {
     const header = page.locator("thead");
-    await expect(header).toContainText("이름");
-    await expect(header).toContainText("메일 ID");
-    await expect(header).toContainText("영업");
-    await expect(header).toContainText("인사");
-    await expect(header).toContainText("메모");
+    await expect(header).toContainText("제품코드");
+    await expect(header).toContainText("제품명");
     await expect(header).toContainText("등록일자");
-  });
-
-  test("sabun column is Hidden (PK) — not rendered as a header", async ({ page }) => {
-    const header = page.locator("thead");
-    await expect(header).not.toContainText("사번");
   });
 
   test("inline create row + save button enabled", async ({ page }) => {
@@ -47,24 +38,24 @@ test.describe("sales/mail-persons grid", () => {
   });
 });
 
-test.describe("sales/mail-persons baseline assertions (P2-A)", () => {
+test.describe("sales/product-types baseline assertions (P2-A)", () => {
   test("Excel 다운로드 button is visible", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/sales/mail-persons");
+    await page.goto("/sales/product-types");
     await page.waitForLoadState("networkidle");
     await expect(
       page.getByRole("button", { name: /엑셀 다운로드/i }),
     ).toBeVisible();
   });
 
-  test("search filter persists across reload via URL (name)", async ({ page }) => {
+  test("search filter persists across reload via URL (productNm)", async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto("/sales/mail-persons");
+    await page.goto("/sales/product-types");
     await page.waitForLoadState("networkidle");
-    const input = page.locator('input[placeholder*="이름"]').first();
+    const input = page.locator('input[placeholder*="제품명"]').first();
     await input.fill("test");
     await page.waitForTimeout(500); // 300ms debounce + buffer
-    expect(page.url()).toContain("name=test");
+    expect(page.url()).toContain("productNm=test");
     await page.reload();
     await page.waitForLoadState("networkidle");
     await expect(input).toHaveValue("test");

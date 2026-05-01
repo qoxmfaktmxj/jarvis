@@ -50,3 +50,27 @@ test.describe("sales/customer-contacts grid", () => {
     await expect(saveBtn).toBeEnabled();
   });
 });
+
+test.describe("sales/customer-contacts baseline assertions (P2-A)", () => {
+  test("Excel 다운로드 button is visible", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/customer-contacts");
+    await page.waitForLoadState("networkidle");
+    await expect(
+      page.getByRole("button", { name: /엑셀 다운로드/i }),
+    ).toBeVisible();
+  });
+
+  test("search filter persists across reload via URL (custName)", async ({ page }) => {
+    await loginAsAdmin(page);
+    await page.goto("/sales/customer-contacts");
+    await page.waitForLoadState("networkidle");
+    const input = page.locator('input[placeholder*="담당자명"]').first();
+    await input.fill("test");
+    await page.waitForTimeout(500); // 300ms debounce + buffer
+    expect(page.url()).toContain("custName=test");
+    await page.reload();
+    await page.waitForLoadState("networkidle");
+    await expect(input).toHaveValue("test");
+  });
+});
