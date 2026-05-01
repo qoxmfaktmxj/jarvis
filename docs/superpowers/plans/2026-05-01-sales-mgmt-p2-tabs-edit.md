@@ -10,7 +10,15 @@
 
 **Spec:** [`docs/superpowers/specs/2026-05-01-sales-mgmt-p2-tabs-edit-design.md`](../specs/2026-05-01-sales-mgmt-p2-tabs-edit-design.md)
 
-**Worktree:** `.claude/worktrees/angry-ishizaka-2c55af` · branch `claude/angry-ishizaka-2c55af` (base = main with P1.5 already rebased)
+**Worktree:** `.claude/worktrees/angry-ishizaka-2c55af` · branch `claude/angry-ishizaka-2c55af` (base = main with P1.5 + baseline already rebased)
+
+**Status (2026-05-01):**
+- ✅ baseline (festive-faraday-d0c615, PR #35) merged
+- ✅ P1.5 (eager-ritchie-9f4a82, PR #36) merged
+- ✅ P2-A (quirky-merkle-d9c2f2) merged earlier
+- ⏳ P2 (bold-noether-742a91) pending
+- 🚧 **PR-1 SDD in progress** — Task 4/5의 `opCnt`/`actCnt` SQL은 0 리턴(P2-BLOCKED 코드 주석 명시). PR-1 머지 후 P2 머지 시점에 follow-up commit으로 활성화.
+- ⏸️ PR-4: PR-1 머지 + P2 머지 후 진입.
 
 **Dependency:**
 - **P1.5** (eager-ritchie-9f4a82) — ✅ 머지됨 (main HEAD 9161fc4 시점). sales/customers + customer-contacts 그리드 Hidden 정책 적용. `CustomerRow.createdAt`, `CustomerContactRow.custNm`/`createdAt` 필드 추가됨. 본 plan은 그 위에서 작업.
