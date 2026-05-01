@@ -1,27 +1,19 @@
 "use client";
 
 /**
- * Topbar — 52px. 좌측 라우트 라벨, 중앙 커맨드 팔레트 트리거, 우측 테마/알림/유저.
+ * Topbar — 52px. 좌측 탭 스트립(TabBar), 우측 테마/알림/유저 + 커맨드 팔레트 트리거.
  *
  * 브랜드 Capy는 Sidebar 헤더로 이동했으므로 여기서는 제거.
- * 라우트 라벨은 usePathname 기반 정적 lookup (i18n 불필요).
+ * 좌측 라우트 라벨은 탭 기능 도입(2026-05) 시 TabBar로 대체됨.
  */
 
 import { useCallback } from "react";
-import { usePathname } from "next/navigation";
 import { Bell, Moon, Search, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
+import { TabBar } from "./tabs/TabBar";
 import { setTheme, useTheme } from "./uiPrefs";
-import { ROUTE_LABELS } from "@/lib/routes";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
-
-function routeLabel(pathname: string): string {
-  for (const [prefix, label] of ROUTE_LABELS) {
-    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return label;
-  }
-  return "";
-}
 
 export function Topbar({
   userName,
@@ -32,7 +24,6 @@ export function Topbar({
   menus: MenuTreeNode[];
   actions: MenuTreeNode[];
 }) {
-  const pathname = usePathname();
   const theme = useTheme();
   const isDark = theme === "dark";
 
@@ -59,14 +50,12 @@ export function Topbar({
           transition: "left .2s ease",
         }}
       >
-        <span
-          className="text-[13.5px] font-medium"
-          style={{ color: "var(--ink)" }}
+        <div
+          className="flex items-stretch h-full"
+          style={{ flex: 1, minWidth: 0 }}
         >
-          {routeLabel(pathname)}
-        </span>
-
-        <div className="flex-1" />
+          <TabBar />
+        </div>
 
         <button
           type="button"
