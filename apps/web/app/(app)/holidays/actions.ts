@@ -8,9 +8,9 @@ import { auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listHolidaysInput,
+  saveHolidaysInput,
   type HolidayRow,
 } from "@jarvis/shared/validation/holidays";
-import { z } from "zod";
 import {
   createHoliday,
   deleteHoliday,
@@ -54,20 +54,12 @@ export async function listHolidaysAction(rawInput: unknown) {
   return { ok: true as const, rows: serialized };
 }
 
-// Internal lenient schema: IDs are plain strings so tests with non-UUID IDs work;
-// UUID-format enforcement is the responsibility of the API route layer (route.ts).
-const _saveHolidaysInput = z.object({
-  creates: z.array(z.object({ date: z.string(), name: z.string(), note: z.string().nullable().optional() })).default([]),
-  updates: z.array(z.object({ id: z.string(), date: z.string().optional(), name: z.string().optional(), note: z.string().nullable().optional() })).default([]),
-  deletes: z.array(z.string()).default([]),
-});
-
 export async function saveHolidaysAction(rawInput: unknown) {
   const ctx = await resolveContext();
   if (!ctx.ok) {
     return { ok: false, created: 0, updated: 0, deleted: 0, errors: [{ code: "FORBIDDEN", message: ctx.error }] };
   }
-  const input = _saveHolidaysInput.parse(rawInput);
+  const input = saveHolidaysInput.parse(rawInput);
   const ws = ctx.session.workspaceId;
   let created = 0; let updated = 0; let deleted = 0;
   const errors: { code: string; message: string; id?: string }[] = [];
@@ -95,15 +87,14 @@ export async function saveHolidaysAction(rawInput: unknown) {
         const ok = await deleteHoliday({ workspaceId: ws, id, database: tx as unknown as typeof db });
         if (ok) deleted++;
       }
-      // audit — use transaction db handle; fall back to top-level db if tx lacks insert (test env)
+      // audit
       const events = [
         ...input.creates.map(() => "holiday.create"),
         ...input.updates.map(() => "holiday.update"),
         ...input.deletes.map(() => "holiday.delete"),
       ];
       if (events.length > 0) {
-        const insertFn = (tx as { insert?: typeof db["insert"] }).insert ?? db.insert.bind(db);
-        await insertFn(auditLog).values(
+        await tx.insert(auditLog).values(
           events.map((action) => ({
             workspaceId: ws,
             userId: ctx.session.userId,

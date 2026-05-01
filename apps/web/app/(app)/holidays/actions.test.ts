@@ -24,7 +24,12 @@ vi.mock("@/lib/queries/holidays", () => ({
 
 vi.mock("@jarvis/db/client", () => ({
   db: {
-    transaction: async (fn: (tx: unknown) => unknown) => fn({}),
+    transaction: async (fn: (tx: unknown) => unknown) => {
+      const tx = {
+        insert: () => ({ values: async () => undefined }),
+      };
+      return fn(tx);
+    },
     insert: () => ({ values: () => ({ returning: async () => [] }) }),
   },
 }));
@@ -57,13 +62,13 @@ describe("listHolidaysAction", () => {
 
 describe("saveHolidaysAction", () => {
   it("calls create/update/delete in batch", async () => {
-    createHoliday.mockResolvedValue({ id: "new-1" });
-    updateHoliday.mockResolvedValue({ id: "u-1" });
-    deleteHoliday.mockResolvedValue({ id: "d-1" });
+    createHoliday.mockResolvedValue({ id: "11111111-1111-1111-1111-111111111111" });
+    updateHoliday.mockResolvedValue({ id: "22222222-2222-2222-2222-222222222222" });
+    deleteHoliday.mockResolvedValue({ id: "33333333-3333-3333-3333-333333333333" });
     const res = await saveHolidaysAction({
       creates: [{ date: "2026-05-05", name: "어린이날", note: null }],
-      updates: [{ id: "u-1", name: "수정" }],
-      deletes: ["d-1"],
+      updates: [{ id: "22222222-2222-2222-2222-222222222222", name: "수정" }],
+      deletes: ["33333333-3333-3333-3333-333333333333"],
     });
     expect(res.ok).toBe(true);
     expect(res.created).toBe(1);
