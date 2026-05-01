@@ -9,18 +9,20 @@ describe("listCustomerContactsInput", () => {
     const result = listCustomerContactsInput.parse({ page: 1, limit: 50 });
     expect(result.page).toBe(1);
     expect(result.limit).toBe(50);
-    expect(result.chargerNm).toBeUndefined();
+    // chargerNm field was removed — "담당자명" search now writes to custName (Approach A).
+    expect((result as Record<string, unknown>).chargerNm).toBeUndefined();
     expect(result.hpNo).toBeUndefined();
     expect(result.email).toBeUndefined();
     expect(result.searchYmdFrom).toBeUndefined();
     expect(result.searchYmdTo).toBeUndefined();
   });
 
-  it("parses chargerNm and trims whitespace", () => {
+  it("parses custName (담당자명 search) and passes through as-is", () => {
+    // chargerNm was removed; UI "담당자명" input now writes custName to the URL key.
     const result = listCustomerContactsInput.parse({
-      chargerNm: "  홍길동  ",
+      custName: "홍길동",
     });
-    expect(result.chargerNm).toBe("홍길동");
+    expect(result.custName).toBe("홍길동");
   });
 
   it("parses hpNo and trims whitespace", () => {
@@ -59,9 +61,9 @@ describe("listCustomerContactsInput", () => {
   });
 
   it("accepts all new filter fields together", () => {
+    // chargerNm removed; custName now covers the "담당자명" search.
     const result = listCustomerContactsInput.parse({
       custName: "홍길동",
-      chargerNm: "김담당",
       hpNo: "010-0000-0001",
       email: "test@domain.com",
       searchYmdFrom: "2024-01-01",
@@ -69,7 +71,7 @@ describe("listCustomerContactsInput", () => {
       page: 2,
       limit: 50,
     });
-    expect(result.chargerNm).toBe("김담당");
+    expect(result.custName).toBe("홍길동");
     expect(result.hpNo).toBe("010-0000-0001");
     expect(result.email).toBe("test@domain.com");
     expect(result.searchYmdFrom).toBe("2024-01-01");
@@ -84,16 +86,15 @@ describe("exportCustomerContactsInput", () => {
   });
 
   it("parses all filter fields", () => {
+    // chargerNm removed; custName now covers the "담당자명" search.
     const result = exportCustomerContactsInput.parse({
       custName: "홍길동",
-      chargerNm: "  이담당  ",
       hpNo: "010-1234-5678",
       email: "test@example.com",
       searchYmdFrom: "2024-01-01",
       searchYmdTo: "2024-06-30",
     });
-    // chargerNm is trimmed
-    expect(result.chargerNm).toBe("이담당");
+    expect(result.custName).toBe("홍길동");
     expect(result.hpNo).toBe("010-1234-5678");
     expect(result.email).toBe("test@example.com");
     expect(result.searchYmdFrom).toBe("2024-01-01");

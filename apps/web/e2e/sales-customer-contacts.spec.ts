@@ -6,8 +6,8 @@
  * Covers:
  *  1. Legacy ibSheet bizActCustomerMgr.jsp:207~220 Hidden:0 정책 검증
  *  2. P2-A 신규: Excel 버튼 가시성 + 클릭 동작
- *  3. P2-A 신규: chargerNm 검색 URL 파라미터 유지 (persistence)
- *  4. P2-A 신규: custMcd 중복 시 저장 차단 (composite-key validation)
+ *  3. P2-A 신규: custName 검색 URL 파라미터 유지 (persistence) — "담당자명" 입력이 custName 키로 기록됨
+ *  4. P2-A 신규: custMcd 중복 시 저장 차단 (composite-key validation — unit-level vitest, see __tests__/composite-key.test.ts)
  *  5. P2-A 신규: pagination page 파라미터 반영
  */
 import { test, expect } from "@playwright/test";
@@ -79,17 +79,19 @@ test.describe("sales/customer-contacts grid", () => {
     }
   });
 
-  test("chargerNm search filter persists in URL on input", async ({ page }) => {
+  test("담당자명 search filter persists in URL as custName param on input", async ({ page }) => {
+    // "담당자명" input writes to custName URL key (chargerNm alias removed — Approach A).
     const input = page.locator("input[placeholder='담당자명']").first();
     await input.fill("홍");
     // useUrlFilters writes to URL via router.replace on each change
-    await page.waitForURL(/chargerNm=/, { timeout: 3000 }).catch(() => {
+    await page.waitForURL(/custName=/, { timeout: 3000 }).catch(() => {
       // Acceptable: URL update may use debounce or only on Enter
     });
     // Press Enter to trigger filter + URL update
     await input.press("Enter");
-    await page.waitForURL(/chargerNm=/, { timeout: 5000 });
-    expect(page.url()).toContain("chargerNm=");
+    await page.waitForURL(/custName=/, { timeout: 5000 });
+    expect(page.url()).toContain("custName=");
+    expect(page.url()).not.toContain("chargerNm=");
   });
 
   test("pagination page param changes URL on page change", async ({ page }) => {
@@ -100,17 +102,15 @@ test.describe("sales/customer-contacts grid", () => {
     expect(page.url()).toContain("page=1");
   });
 
-  test("composite-key custMcd duplicate blocked before save", async ({ page }) => {
-    // Insert two rows with same custMcd (the makeBlankRow assigns id.slice(0,12) as custMcd,
-    // but we can test by manipulating after insert — this test verifies the validation fires).
-    // Since we can't easily force two rows with the same custMcd from the UI alone (each blank row
-    // gets a unique UUID-derived custMcd), we verify the validation utility is wired:
-    // If the grid's onSave receives duplicate custMcd rows it returns an error without hitting the server.
-    // This is a unit-level concern; we assert the button path doesn't crash.
+  test("save succeeds when custMcd is unique (no false-positive block)", async ({ page }) => {
+    // custMcd is Hidden:1 — not editable from the UI. makeBlankRow assigns a UUID-derived value,
+    // so two blank rows always get distinct custMcd values. This test confirms the guard does NOT
+    // fire a false positive when all rows have unique custMcd.
+    // The duplicate-block scenarios are covered at the unit level in __tests__/composite-key.test.ts.
     await page.locator("button", { hasText: "입력" }).first().click();
     const saveBtn = page.locator("button", { hasText: /저장/ }).first();
     await expect(saveBtn).toBeEnabled();
-    // A single new row with a unique custMcd — save button stays enabled (no false positive)
+    // Grid remains intact — no error banner from false-positive duplicate check
     await expect(page.locator("table")).toBeVisible();
   });
 });

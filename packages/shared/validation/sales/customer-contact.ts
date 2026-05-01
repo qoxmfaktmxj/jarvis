@@ -23,7 +23,8 @@ export const listCustomerContactsInput = z.object({
   custName: z.string().optional(),
   customerId: z.string().uuid().optional(),
   // New search filters (Task 6 / P2-A)
-  chargerNm: z.string().trim().optional(),
+  // chargerNm is intentionally absent: the "담당자명" search input writes to custName in the URL.
+  // Both names refer to the same column (salesCustomerContact.custName is the contact person's name).
   hpNo: z.string().trim().optional(),
   email: z.string().trim().optional(),
   searchYmdFrom: z
@@ -46,7 +47,7 @@ export const exportCustomerContactsInput = z.object({
   custMcd: z.string().optional(),
   custName: z.string().optional(),
   customerId: z.string().uuid().optional(),
-  chargerNm: z.string().trim().optional(),
+  // chargerNm intentionally absent: UI "담당자명" input maps to custName key.
   hpNo: z.string().trim().optional(),
   email: z.string().trim().optional(),
   searchYmdFrom: z

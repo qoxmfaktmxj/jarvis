@@ -10,8 +10,9 @@ import { listCustomerContacts } from "./actions";
 type SearchParams = {
   page?: string;
   custMcd?: string;
+  // custName is used for both the "담당자명" search input AND the custMcd column filter.
+  // chargerNm was removed — the "담당자명" UI input now writes to custName directly (Approach A).
   custName?: string;
-  chargerNm?: string;
   hpNo?: string;
   email?: string;
   searchYmdFrom?: string;
@@ -39,7 +40,6 @@ export default async function SalesCustomerContactsPage({
     limit,
     custMcd: params.custMcd || undefined,
     custName: params.custName || undefined,
-    chargerNm: params.chargerNm || undefined,
     hpNo: params.hpNo || undefined,
     email: params.email || undefined,
     searchYmdFrom: params.searchYmdFrom || undefined,
@@ -61,7 +61,6 @@ export default async function SalesCustomerContactsPage({
         limit={limit}
         initialFilters={{
           custName: params.custName ?? "",
-          chargerNm: params.chargerNm ?? "",
           hpNo: params.hpNo ?? "",
           email: params.email ?? "",
           searchYmdFrom: params.searchYmdFrom ?? "",

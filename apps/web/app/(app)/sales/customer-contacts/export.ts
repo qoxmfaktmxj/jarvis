@@ -77,11 +77,9 @@ export async function exportCustomerContactsToExcel(
   // Build WHERE (same logic as listCustomerContacts, no page/limit)
   const conditions = [eq(salesCustomerContact.workspaceId, workspaceId)];
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
+  // custName covers "담당자명" search; chargerNm alias was removed (Approach A — UI writes custName key).
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
-  if (input.chargerNm) {
-    conditions.push(ilike(salesCustomerContact.custName, `%${input.chargerNm}%`));
-  }
   if (input.hpNo) {
     conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));
   }

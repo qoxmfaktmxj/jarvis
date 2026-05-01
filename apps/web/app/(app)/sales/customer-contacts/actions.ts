@@ -50,13 +50,11 @@ export async function listCustomerContacts(rawInput: z.input<typeof listCustomer
 
   const conditions = [eq(salesCustomerContact.workspaceId, ctx.workspaceId)];
   if (input.custMcd) conditions.push(ilike(salesCustomerContact.custMcd, `%${input.custMcd}%`));
+  // custName covers both direct "담당자명" search AND the legacy "chargerNm" search alias.
+  // The UI "담당자명" input writes to the custName URL key directly (Approach A from spec review).
   if (input.custName) conditions.push(ilike(salesCustomerContact.custName, `%${input.custName}%`));
   if (input.customerId) conditions.push(eq(salesCustomerContact.customerId, input.customerId));
   // New search filters (Task 6 / P2-A):
-  // chargerNm → ILIKE on custName (contact person's name; legacy: searchChargerNm → 담당자명)
-  if (input.chargerNm) {
-    conditions.push(ilike(salesCustomerContact.custName, `%${input.chargerNm}%`));
-  }
   // hpNo → ILIKE on hpNo (휴대폰)
   if (input.hpNo) {
     conditions.push(ilike(salesCustomerContact.hpNo, `%${input.hpNo}%`));

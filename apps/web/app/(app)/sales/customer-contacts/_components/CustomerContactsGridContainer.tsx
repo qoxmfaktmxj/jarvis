@@ -12,8 +12,8 @@ import { exportCustomerContactsToExcel } from "../export";
 import type { CustomerContactRow } from "@jarvis/shared/validation/sales/customer-contact";
 
 type FilterState = {
+  // custName doubles as the "담당자명" search (legacy chargerNm alias removed — Approach A).
   custName: string;
-  chargerNm: string;
   hpNo: string;
   email: string;
   searchYmdFrom: string;
@@ -77,7 +77,8 @@ const COLUMNS: ColumnDef<CustomerContactRow>[] = [
 ];
 
 // Only custName passed to DataGrid's built-in ColumnFilterRow;
-// chargerNm/hpNo/email/date-range are in the DataGridToolbar search form.
+// hpNo/email/date-range are in the DataGridToolbar search form.
+// The "담당자명" toolbar input also writes to custName (chargerNm alias removed — Approach A).
 const FILTERS: FilterDef<CustomerContactRow>[] = [
   { key: "custName", type: "text", placeholder: "담당자명" },
 ];
@@ -106,7 +107,6 @@ export function CustomerContactsGridContainer({
       startTransition(async () => {
         const res = await listCustomerContacts({
           custName: nextFilters.custName || undefined,
-          chargerNm: nextFilters.chargerNm || undefined,
           hpNo: nextFilters.hpNo || undefined,
           email: nextFilters.email || undefined,
           searchYmdFrom: nextFilters.searchYmdFrom || undefined,
@@ -128,7 +128,6 @@ export function CustomerContactsGridContainer({
     try {
       const result = await exportCustomerContactsToExcel({
         custName: urlFilters.custName || undefined,
-        chargerNm: urlFilters.chargerNm || undefined,
         hpNo: urlFilters.hpNo || undefined,
         email: urlFilters.email || undefined,
         searchYmdFrom: urlFilters.searchYmdFrom || undefined,
@@ -151,13 +150,14 @@ export function CustomerContactsGridContainer({
       >
         {/* Search form — new filter fields added per Task 6 / P2-A */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* "담당자명" input — writes to custName URL key (chargerNm alias removed, Approach A). */}
           <input
             type="text"
             placeholder={t("Search.chargerNm")}
-            value={urlFilters.chargerNm}
+            value={urlFilters.custName}
             onChange={(e) => {
-              setUrlFilter("chargerNm", e.target.value);
-              if (!e.target.value) reload(1, { ...urlFilters, chargerNm: "", page: "1" });
+              setUrlFilter("custName", e.target.value);
+              if (!e.target.value) reload(1, { ...urlFilters, custName: "", page: "1" });
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
