@@ -50,7 +50,8 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
       onChange={(e) => setDraft(e.target.value)}
       onBlur={() => {
         setEditing(false);
-        onCommit(draft || null);
+        const next = draft || null;
+        if (next !== value) onCommit(next);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter") (e.target as HTMLInputElement).blur();

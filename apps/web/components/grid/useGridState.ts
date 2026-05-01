@@ -40,6 +40,9 @@ export function useGridState<T extends { id: string }>(initial: T[]) {
     setRows((prev) =>
       prev.map((r) => {
         if (r.data.id !== id) return r;
+        // No-op: committing the same value (e.g. text cell blur with no edit)
+        // must not transition clean → dirty.
+        if (Object.is(r.data[key], value)) return r;
         const next = { ...r.data, [key]: value };
         if (r.state === "new") return { ...r, data: next };
         const original = r.original ?? r.data;
