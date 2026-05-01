@@ -23,6 +23,8 @@ export const listOpportunitiesInput = z.object({
   bizStepCode: z.string().optional(),
   productTypeCode: z.string().optional(),
   focusOnly: z.coerce.boolean().optional(),
+  customerId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });

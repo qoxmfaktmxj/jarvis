@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -99,6 +100,7 @@ export function CustomersGridContainer({
   initialFilters = {},
   codeOptions,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales");
   const tCommon = useTranslations("Sales.Common");
 
@@ -301,6 +303,7 @@ export function CustomersGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        onRowDoubleClick={(row) => router.push("/sales/customers/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => {

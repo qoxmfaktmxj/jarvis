@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -85,6 +86,7 @@ export function CustomerContactsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales.Common");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
@@ -258,6 +260,7 @@ export function CustomerContactsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        onRowDoubleClick={(row) => router.push("/sales/customer-contacts/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => {
