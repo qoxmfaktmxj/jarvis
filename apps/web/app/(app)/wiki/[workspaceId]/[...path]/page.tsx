@@ -1,10 +1,8 @@
 import { forbidden, notFound } from 'next/navigation';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { hasPermission } from '@jarvis/auth/rbac';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { loadWikiPageForView } from '@/lib/server/wiki-page-loader';
 import { loadOrphanOutboundSlugs } from '@/lib/server/wiki-page-orphans';
-import { canViewSensitivity } from '@/lib/server/wiki-sensitivity';
 import { mapDbRowToWikiPage } from '@/components/WikiPageView';
 import { WikiPageWithNav } from './_components/WikiPageWithNav';
 
@@ -54,32 +52,18 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
     forbidden();
   }
 
-  const loaded = await loadWikiPageForView(workspaceId, routeKey);
+  // Pass session so sensitivity + requiredPermission are filtered in the DB query.
+  // Both "not found" and "access denied" return null; use notFound() for both so
+  // callers cannot enumerate pages they lack access to.
+  const loaded = await loadWikiPageForView(workspaceId, routeKey, session);
   if (!loaded) {
-    // DB 에 페이지가 없거나 publishedStatus != 'published' / 디스크 drift → 404.
+    // DB 에 페이지가 없거나 publishedStatus != 'published' / 접근 권한 없음 / 디스크 drift → 404.
     notFound();
   }
 
-  // sensitivity 권한 필터: DB 의 4값(PUBLIC|INTERNAL|RESTRICTED|SECRET_REF_ONLY) 기준.
-  // 페이지는 존재하나 열람 권한이 없는 것이므로 403 이 맞다(404 로 숨기지 않는다 —
-  // Jarvis 는 내부 포털이라 enumeration 회피보다 상태코드 정확성이 우선).
-  if (!canViewSensitivity(session, loaded.meta.sensitivity)) {
-    forbidden();
-  }
-
-  // WIKI-AGENTS.md §6: frontmatter `requiredPermission` (최소 요구 권한) 서버 게이트.
-  // sensitivity 필터와 직교하는 추가 축 — URL 직접 접근 시 RBAC 우회 방지.
-  // ADMIN_ALL 은 항상 통과.
-  if (
-    loaded.meta.requiredPermission &&
-    !hasPermission(session, PERMISSIONS.ADMIN_ALL) &&
-    !hasPermission(session, loaded.meta.requiredPermission)
-  ) {
-    forbidden();
-  }
-
-  const page = mapDbRowToWikiPage(loaded.meta, loaded.bodyOnly);
-  const orphanSlugs = await loadOrphanOutboundSlugs(workspaceId, loaded.meta.id);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const page = mapDbRowToWikiPage(loaded!.meta, loaded!.bodyOnly);
+  const orphanSlugs = await loadOrphanOutboundSlugs(workspaceId, loaded!.meta.id);
 
   return (
     <WikiPageWithNav

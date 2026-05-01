@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -50,8 +51,32 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
     );
   }
 
+  // --- Path traversal guard (P1) ---
+  // Normalize backslashes to forward slashes first.
+  const normalizedSlug = slug.replace(/\\/g, "/");
+
+  // Reject slugs that:
+  //   - start with "/" (absolute path injection)
+  //   - do not end with ".md" (only markdown files are valid)
+  //   - contain null bytes
+  //   - have any segment that is exactly ".." (directory traversal)
+  if (
+    normalizedSlug.startsWith("/") ||
+    !normalizedSlug.endsWith(".md") ||
+    normalizedSlug.includes("\0") ||
+    normalizedSlug.split("/").some((seg) => seg === "..")
+  ) {
+    notFound();
+  }
+
   const repoRoot = getWikiRepoRoot();
-  const fileAbs = path.join(repoRoot, "wiki", workspaceId, "manual", `${slug}.md`);
+  const manualBase = path.resolve(repoRoot, "wiki", workspaceId, "manual");
+  const fileAbs = path.resolve(manualBase, normalizedSlug);
+
+  // Boundary check: resolved absolute path must stay inside the manual tree.
+  if (fileAbs !== manualBase && !fileAbs.startsWith(manualBase + path.sep)) {
+    notFound();
+  }
 
   let initialContent = EMPTY_TEMPLATE;
   if (await exists(fileAbs)) {
@@ -73,14 +98,14 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
 
       <PageHeader
         eyebrow="Wiki · Manual"
-        title={`wiki/manual/${slug}`}
+        title={`wiki/manual/${normalizedSlug}`}
         description={`workspace: ${workspaceId}`}
       />
 
       <EditPageClientShell
         initialContent={initialContent}
         workspaceId={workspaceId}
-        pageSlug={slug}
+        pageSlug={normalizedSlug}
       />
     </div>
   );

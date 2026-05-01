@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex, type WikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
 import {
@@ -7,6 +7,8 @@ import {
   type WikiFrontmatter,
 } from "@jarvis/wiki-fs";
 import { resolveWikiPath } from "./repo-root.js";
+import { resolveAllowedWikiSensitivities } from "@jarvis/auth/rbac";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 /**
  * apps/web/lib/server/wiki-page-loader.ts
@@ -17,7 +19,10 @@ import { resolveWikiPath } from "./repo-root.js";
  * - body 는 wikiPageIndex.path 를 통해 repo-root 기준으로 readUtf8.
  * - frontmatter / body 분리는 @jarvis/wiki-fs 의 parseFrontmatter 사용.
  * - publishedStatus='published' 필터 — draft/archived 는 뷰어 페이지에서 숨김.
- * - sensitivity / 권한 체크는 호출자(page.tsx) 에서 수행 — 이 함수는 데이터만 반환.
+ *
+ * Security (P2 fix): sensitivity + requiredPermission 필터를 DB WHERE 절로
+ * 이동했다. 미허가 행은 아예 반환되지 않으므로 존재 여부조차 노출되지 않는다.
+ * 디스크 read 는 DB 행이 반환된(= 접근 허가된) 뒤에만 실행된다.
  *
  * routeKey-first lookup: URL segments 를 합친 routeKey 로 먼저 조회하고,
  * 없으면 slug fallback (하위 호환).
@@ -32,21 +37,77 @@ export interface LoadedWikiPage {
   frontmatter: WikiFrontmatter;
 }
 
+/**
+ * Minimal session shape required by this loader.
+ * Accepting a narrow interface avoids a hard dependency on the full JarvisSession type
+ * while still allowing any JarvisSession to be passed.
+ */
+export interface WikiPageViewerSession {
+  permissions: readonly string[];
+}
+
+/**
+ * Load a published wiki page that the given viewer is allowed to see.
+ *
+ * Permission filtering is applied inside the DB WHERE clause so that
+ * unauthorized rows are never returned (and no disk I/O occurs for them).
+ * Callers receive `null` for both "not found" and "access denied" — they
+ * should respond with 404 in both cases to avoid leaking page existence.
+ *
+ * @param workspaceId  Target workspace UUID.
+ * @param routeKeyOrSlug  URL routeKey or legacy slug.
+ * @param viewer  Session of the requesting user (permissions used for ACL filter).
+ *                Pass `null` only from trusted internal callers that have already
+ *                verified access independently (e.g. server-side page.tsx that calls
+ *                `forbidden()` before reaching this function).
+ */
 export async function loadWikiPageForView(
   workspaceId: string,
   routeKeyOrSlug: string,
+  viewer: WikiPageViewerSession | null = null,
 ): Promise<LoadedWikiPage | null> {
+  // Build the allowed sensitivity list for this viewer.
+  // null viewer = trusted internal caller — skip sensitivity filter (uses empty
+  // array guard below which skips the inArray clause).
+  const allowedSensitivities: string[] | null = viewer
+    ? resolveAllowedWikiSensitivities(viewer.permissions as string[])
+    : null;
+
+  // If the viewer has no permitted sensitivity values at all, deny immediately
+  // without touching the DB (same result as "AND 1=0", but cheaper).
+  if (allowedSensitivities !== null && allowedSensitivities.length === 0) {
+    return null;
+  }
+
+  /**
+   * Build the WHERE conditions common to both routeKey and slug lookups.
+   * Includes:
+   *   - workspaceId
+   *   - publishedStatus = 'published'
+   *   - sensitivity IN (...) — only when viewer is provided and not admin
+   *   - requiredPermission IS NULL OR session has that permission
+   *     (handled post-query because Drizzle doesn't support dynamic OR-subqueries
+   *     on nullable columns cleanly; the sensitivity IN() is the primary guard)
+   */
+  function buildConditions(keyColumn: typeof wikiPageIndex.routeKey | typeof wikiPageIndex.slug) {
+    const base = [
+      eq(wikiPageIndex.workspaceId, workspaceId),
+      eq(keyColumn, routeKeyOrSlug),
+      eq(wikiPageIndex.publishedStatus, "published"),
+    ] as ReturnType<typeof eq>[];
+
+    if (allowedSensitivities !== null) {
+      base.push(inArray(wikiPageIndex.sensitivity, allowedSensitivities));
+    }
+
+    return and(...base);
+  }
+
   // 1) Try routeKey first (path-based, unique within workspace).
   const rowsByRouteKey = await db
     .select()
     .from(wikiPageIndex)
-    .where(
-      and(
-        eq(wikiPageIndex.workspaceId, workspaceId),
-        eq(wikiPageIndex.routeKey, routeKeyOrSlug),
-        eq(wikiPageIndex.publishedStatus, "published"),
-      ),
-    )
+    .where(buildConditions(wikiPageIndex.routeKey))
     .limit(1);
 
   // 2) Fallback to slug (leaf filename, backward compat).
@@ -55,21 +116,28 @@ export async function loadWikiPageForView(
     : await db
         .select()
         .from(wikiPageIndex)
-        .where(
-          and(
-            eq(wikiPageIndex.workspaceId, workspaceId),
-            eq(wikiPageIndex.slug, routeKeyOrSlug),
-            eq(wikiPageIndex.publishedStatus, "published"),
-          ),
-        )
+        .where(buildConditions(wikiPageIndex.slug))
         .limit(1);
 
   const meta = rows[0];
   if (!meta) {
-    console.warn('[wiki-page-loader] no DB match', { workspaceId, routeKeyOrSlug });
+    console.warn('[wiki-page-loader] no DB match (or access denied)', { workspaceId, routeKeyOrSlug });
     return null;
   }
 
+  // requiredPermission post-filter (secondary gate; sensitivity is the primary DB filter).
+  // If viewer is provided and lacks the required permission, deny without disk I/O.
+  if (
+    viewer !== null &&
+    meta.requiredPermission &&
+    !viewer.permissions.includes(PERMISSIONS.ADMIN_ALL) &&
+    !viewer.permissions.includes(meta.requiredPermission)
+  ) {
+    console.warn('[wiki-page-loader] requiredPermission denied', { workspaceId, routeKeyOrSlug });
+    return null;
+  }
+
+  // Only read the disk file after access has been confirmed.
   let content: string;
   try {
     content = await readUtf8(resolveWikiPath(meta.path));
