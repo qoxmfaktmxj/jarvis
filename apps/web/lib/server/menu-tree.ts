@@ -41,6 +41,17 @@ export type FlatMenuItem = {
   icon: string | null;
   routePath: string | null;
   sortOrder: number;
+  /**
+   * Optional sidebar label badge (e.g. "AI"). Marked optional so older test
+   * fixtures and external callers don't have to backfill it. Sidebar treats
+   * `undefined` and `null` identically (no badge rendered).
+   */
+  badge?: string | null;
+  /**
+   * Optional fuzzy-search keywords for CommandPalette. Optional for the same
+   * reason as `badge`.
+   */
+  keywords?: string[] | null;
 };
 
 export type MenuTreeNode = FlatMenuItem & { children: MenuTreeNode[] };
@@ -124,6 +135,8 @@ export async function getVisibleMenuTree(
         icon: menuItem.icon,
         routePath: menuItem.routePath,
         sortOrder: menuItem.sortOrder,
+        badge: menuItem.badge,
+        keywords: menuItem.keywords,
       })
       .from(menuItem)
       .innerJoin(menuPermission, eq(menuPermission.menuItemId, menuItem.id))

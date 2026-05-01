@@ -39,49 +39,53 @@ interface MenuSeed {
   routePath: string;
   sortOrder: number;
   permissions: Permission[];
+  /** Sidebar label badge (e.g. "AI"). Optional. */
+  badge?: string;
+  /** CommandPalette fuzzy-match terms. Optional. */
+  keywords?: string[];
 }
 
 const MENU_SEEDS: MenuSeed[] = [
   // NAV (sortOrder < 200)
-  { code: "nav.notices",      kind: "menu", label: "공지사항",       icon: "Megaphone",     routePath: "/notices",            sortOrder:  10, permissions: [PERMISSIONS.NOTICE_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.ask",          kind: "menu", label: "AI 질문",        icon: "MessageSquare", routePath: "/ask",                sortOrder:  20, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.search",       kind: "menu", label: "검색",           icon: "Search",        routePath: "/search",             sortOrder:  30, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.wiki",         kind: "menu", label: "위키",           icon: "Library",       routePath: "/wiki",               sortOrder:  40, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.wiki-graph",   kind: "menu", label: "위키 그래프",    icon: "GitFork",       routePath: "/wiki/graph",         sortOrder:  50, permissions: [PERMISSIONS.GRAPH_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.wiki-ingest",  kind: "menu", label: "위키 수동수집",  icon: "FilePlus",      routePath: "/wiki/ingest/manual", sortOrder:  60, permissions: [PERMISSIONS.KNOWLEDGE_CREATE, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.knowledge",    kind: "menu", label: "Knowledge",      icon: "BookOpen",      routePath: "/knowledge",          sortOrder:  70, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.projects",     kind: "menu", label: "프로젝트",       icon: "Server",        routePath: "/projects",           sortOrder:  80, permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.architecture", kind: "menu", label: "아키텍처",       icon: "Network",       routePath: "/architecture",       sortOrder:  90, permissions: [PERMISSIONS.GRAPH_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.infra",        kind: "menu", label: "인프라",         icon: "HardDrive",     routePath: "/infra",              sortOrder: 100, permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.add-dev",      kind: "menu", label: "추가개발",       icon: "ClipboardList", routePath: "/add-dev",            sortOrder: 110, permissions: [PERMISSIONS.ADDITIONAL_DEV_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.contractors",  kind: "menu", label: "외주인력관리",   icon: "Users",         routePath: "/contractors",        sortOrder: 120, permissions: [PERMISSIONS.CONTRACTOR_READ, PERMISSIONS.ADMIN_ALL] },
-  { code: "nav.holidays",     kind: "menu", label: "공휴일 관리",    icon: "CalendarX",     routePath: "/holidays",           sortOrder: 130, permissions: [PERMISSIONS.CONTRACTOR_ADMIN, PERMISSIONS.ADMIN_ALL] },
+  { code: "nav.notices",      kind: "menu", label: "공지사항",       icon: "Megaphone",     routePath: "/notices",            sortOrder:  10, permissions: [PERMISSIONS.NOTICE_READ, PERMISSIONS.ADMIN_ALL], keywords: ["공지", "공지사항", "notice"] },
+  { code: "nav.ask",          kind: "menu", label: "AI 질문",        icon: "MessageSquare", routePath: "/ask",                sortOrder:  20, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL], badge: "AI", keywords: ["AI", "질문", "검색", "ask"] },
+  { code: "nav.search",       kind: "menu", label: "검색",           icon: "Search",        routePath: "/search",             sortOrder:  30, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL], keywords: ["검색", "search"] },
+  { code: "nav.wiki",         kind: "menu", label: "위키",           icon: "Library",       routePath: "/wiki",               sortOrder:  40, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL], keywords: ["위키", "wiki"] },
+  { code: "nav.wiki-graph",   kind: "menu", label: "위키 그래프",    icon: "GitFork",       routePath: "/wiki/graph",         sortOrder:  50, permissions: [PERMISSIONS.GRAPH_READ, PERMISSIONS.ADMIN_ALL], keywords: ["그래프", "graph", "wiki"] },
+  { code: "nav.wiki-ingest",  kind: "menu", label: "위키 수동수집",  icon: "FilePlus",      routePath: "/wiki/ingest/manual", sortOrder:  60, permissions: [PERMISSIONS.KNOWLEDGE_CREATE, PERMISSIONS.ADMIN_ALL], keywords: ["수집", "ingest", "wiki"] },
+  { code: "nav.knowledge",    kind: "menu", label: "Knowledge",      icon: "BookOpen",      routePath: "/knowledge",          sortOrder:  70, permissions: [PERMISSIONS.KNOWLEDGE_READ, PERMISSIONS.ADMIN_ALL], keywords: ["지식", "knowledge", "kb"] },
+  { code: "nav.projects",     kind: "menu", label: "프로젝트",       icon: "Server",        routePath: "/projects",           sortOrder:  80, permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ADMIN_ALL], keywords: ["프로젝트", "project"] },
+  { code: "nav.architecture", kind: "menu", label: "아키텍처",       icon: "Network",       routePath: "/architecture",       sortOrder:  90, permissions: [PERMISSIONS.GRAPH_READ, PERMISSIONS.ADMIN_ALL], keywords: ["아키텍처", "architecture"] },
+  { code: "nav.infra",        kind: "menu", label: "인프라",         icon: "HardDrive",     routePath: "/infra",              sortOrder: 100, permissions: [PERMISSIONS.PROJECT_READ, PERMISSIONS.ADMIN_ALL], keywords: ["인프라", "infra"] },
+  { code: "nav.add-dev",      kind: "menu", label: "추가개발",       icon: "ClipboardList", routePath: "/add-dev",            sortOrder: 110, permissions: [PERMISSIONS.ADDITIONAL_DEV_READ, PERMISSIONS.ADMIN_ALL], keywords: ["추가개발", "additional", "dev"] },
+  { code: "nav.contractors",  kind: "menu", label: "외주인력관리",   icon: "Users",         routePath: "/contractors",        sortOrder: 120, permissions: [PERMISSIONS.CONTRACTOR_READ, PERMISSIONS.ADMIN_ALL], keywords: ["외주", "인력", "contractor"] },
+  { code: "nav.holidays",     kind: "menu", label: "공휴일 관리",    icon: "CalendarX",     routePath: "/holidays",           sortOrder: 130, permissions: [PERMISSIONS.CONTRACTOR_ADMIN, PERMISSIONS.ADMIN_ALL], keywords: ["공휴일", "휴일", "holiday"] },
   // NOTE: nav.profile only carries ADMIN_ALL — non-admin roles will not see it.
   // Per original plan; revisit in a follow-up if every logged-in user should see profile.
-  { code: "nav.profile",      kind: "menu", label: "프로필",         icon: "User",          routePath: "/profile",            sortOrder: 140, permissions: [PERMISSIONS.ADMIN_ALL] },
+  { code: "nav.profile",      kind: "menu", label: "프로필",         icon: "User",          routePath: "/profile",            sortOrder: 140, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["프로필", "profile"] },
 
   // SALES (150 ≤ sortOrder < 200)
-  { code: "sales.customers",            kind: "menu", label: "고객사관리",     icon: "Users",       routePath: "/sales/customers",             sortOrder: 150, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.customer-contacts",    kind: "menu", label: "담당자관리",     icon: "Contact",     routePath: "/sales/customer-contacts",     sortOrder: 155, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.product-types",        kind: "menu", label: "제품군관리",     icon: "ShoppingBag", routePath: "/sales/product-types",         sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.product-cost-mapping", kind: "menu", label: "제품-코스트 매핑", icon: "Coins",       routePath: "/sales/product-cost-mapping",  sortOrder: 162, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
-  { code: "sales.mail-persons",         kind: "menu", label: "메일담당자",     icon: "Mail",        routePath: "/sales/mail-persons",          sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL] },
+  { code: "sales.customers",            kind: "menu", label: "고객사관리",     icon: "Users",       routePath: "/sales/customers",             sortOrder: 150, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["고객", "고객사", "customer", "sales"] },
+  { code: "sales.customer-contacts",    kind: "menu", label: "담당자관리",     icon: "Contact",     routePath: "/sales/customer-contacts",     sortOrder: 155, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["담당자", "contact", "sales"] },
+  { code: "sales.product-types",        kind: "menu", label: "제품군관리",     icon: "ShoppingBag", routePath: "/sales/product-types",         sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["제품", "product", "sales"] },
+  { code: "sales.product-cost-mapping", kind: "menu", label: "제품-코스트 매핑", icon: "Coins",       routePath: "/sales/product-cost-mapping",  sortOrder: 162, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["코스트", "cost", "매핑", "sales"] },
+  { code: "sales.mail-persons",         kind: "menu", label: "메일담당자",     icon: "Mail",        routePath: "/sales/mail-persons",          sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["메일", "mail", "sales"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
-  { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.users",              kind: "menu", label: "사용자",       icon: "Users",       routePath: "/admin/users",                    sortOrder: 210, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.organizations",      kind: "menu", label: "조직",         icon: "Building",    routePath: "/admin/organizations",            sortOrder: 220, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.menus",              kind: "menu", label: "메뉴",         icon: "ListTree",    routePath: "/admin/menus",                    sortOrder: 230, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.codes",              kind: "menu", label: "코드",         icon: "Hash",        routePath: "/admin/codes",                    sortOrder: 240, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.review-queue",       kind: "menu", label: "검토 대기",    icon: "Inbox",       routePath: "/admin/review-queue",             sortOrder: 250, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.audit",              kind: "menu", label: "감사 로그",    icon: "ScrollText",  routePath: "/admin/audit",                    sortOrder: 260, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.search-analytics",   kind: "menu", label: "검색 분석",    icon: "BarChart3",   routePath: "/admin/search-analytics",         sortOrder: 270, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.settings",           kind: "menu", label: "설정",         icon: "Settings",    routePath: "/admin/settings",                 sortOrder: 280, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.llm-cost",           kind: "menu", label: "LLM 비용",     icon: "Coins",       routePath: "/admin/llm-cost",                 sortOrder: 290, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.wiki-observability", kind: "menu", label: "위키 운영",    icon: "Activity",    routePath: "/admin/observability/wiki",       sortOrder: 300, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.wiki-violations",    kind: "menu", label: "경계 위반",    icon: "ShieldAlert", routePath: "/admin/wiki/boundary-violations", sortOrder: 310, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.wiki-review",        kind: "menu", label: "위키 리뷰 큐", icon: "ListChecks",  routePath: "/admin/wiki/review-queue",        sortOrder: 320, permissions: [PERMISSIONS.ADMIN_ALL] },
-  { code: "admin.infra.licenses",     kind: "menu", label: "인프라 라이센스", icon: "ShieldCheck", routePath: "/admin/infra/licenses",        sortOrder: 330, permissions: [PERMISSIONS.ADMIN_ALL] },
+  { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },
+  { code: "admin.users",              kind: "menu", label: "사용자",       icon: "Users",       routePath: "/admin/users",                    sortOrder: 210, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["사용자", "유저", "user"] },
+  { code: "admin.organizations",      kind: "menu", label: "조직",         icon: "Building",    routePath: "/admin/organizations",            sortOrder: 220, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["조직", "organization", "org"] },
+  { code: "admin.menus",              kind: "menu", label: "메뉴",         icon: "ListTree",    routePath: "/admin/menus",                    sortOrder: 230, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["메뉴", "menu"] },
+  { code: "admin.codes",              kind: "menu", label: "코드",         icon: "Hash",        routePath: "/admin/codes",                    sortOrder: 240, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["코드", "공통코드", "code"] },
+  { code: "admin.review-queue",       kind: "menu", label: "검토 대기",    icon: "Inbox",       routePath: "/admin/review-queue",             sortOrder: 250, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["검토", "review", "queue"] },
+  { code: "admin.audit",              kind: "menu", label: "감사 로그",    icon: "ScrollText",  routePath: "/admin/audit",                    sortOrder: 260, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["감사", "audit", "log"] },
+  { code: "admin.search-analytics",   kind: "menu", label: "검색 분석",    icon: "BarChart3",   routePath: "/admin/search-analytics",         sortOrder: 270, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["검색", "분석", "analytics"] },
+  { code: "admin.settings",           kind: "menu", label: "설정",         icon: "Settings",    routePath: "/admin/settings",                 sortOrder: 280, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["설정", "settings"] },
+  { code: "admin.llm-cost",           kind: "menu", label: "LLM 비용",     icon: "Coins",       routePath: "/admin/llm-cost",                 sortOrder: 290, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["LLM", "비용", "cost"] },
+  { code: "admin.wiki-observability", kind: "menu", label: "위키 운영",    icon: "Activity",    routePath: "/admin/observability/wiki",       sortOrder: 300, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["위키", "운영", "observability"] },
+  { code: "admin.wiki-violations",    kind: "menu", label: "경계 위반",    icon: "ShieldAlert", routePath: "/admin/wiki/boundary-violations", sortOrder: 310, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["위반", "violation", "boundary"] },
+  { code: "admin.wiki-review",        kind: "menu", label: "위키 리뷰 큐", icon: "ListChecks",  routePath: "/admin/wiki/review-queue",        sortOrder: 320, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["위키", "리뷰", "review"] },
+  { code: "admin.infra.licenses",     kind: "menu", label: "인프라 라이센스", icon: "ShieldCheck", routePath: "/admin/infra/licenses",        sortOrder: 330, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["라이센스", "license", "infra"] },
 
   // ACTION (sortOrder >= 400) — for CommandPalette
   { code: "action.new-notice",  kind: "action", label: "새 공지 작성", icon: "FileText", routePath: "/notices/new",   sortOrder: 400, permissions: [PERMISSIONS.NOTICE_CREATE, PERMISSIONS.ADMIN_ALL] },
@@ -112,6 +116,8 @@ export async function seedMenuTree(
         icon: seed.icon,
         routePath: seed.routePath,
         sortOrder: seed.sortOrder,
+        badge: seed.badge ?? null,
+        keywords: seed.keywords ?? null,
       })
       .onConflictDoUpdate({
         target: [menuItem.workspaceId, menuItem.code],
@@ -121,6 +127,8 @@ export async function seedMenuTree(
           icon: sql`excluded.icon`,
           routePath: sql`excluded.route_path`,
           sortOrder: sql`excluded.sort_order`,
+          badge: sql`excluded.badge`,
+          keywords: sql`excluded.keywords`,
         },
       });
   }

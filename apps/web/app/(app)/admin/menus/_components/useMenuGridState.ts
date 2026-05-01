@@ -21,6 +21,8 @@ export function makeBlankMenu(): MenuRow {
     sortOrder: 0,
     description: null,
     isVisible: true,
+    badge: null,
+    keywords: null,
     permCnt: 0,
   } satisfies MenuRow;
 }

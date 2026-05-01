@@ -14,9 +14,9 @@
  * "menu")` 결과를 props로 받는다. RBAC 필터링은 서버에서 끝났으므로 여기서는
  * `code` prefix(`nav.*` / `admin.*`)로 그룹만 분리해 렌더한다.
  *
- * 알려진 상실 기능: 기존 NAV_ITEMS의 `badge`(`nav.ask: "AI"`)는 MenuTreeNode
- * 모델에 없다. badge가 다시 필요하면 menu_item에 컬럼을 추가하거나 사이드카
- * 테이블을 만들어야 한다 (TODO).
+ * Badge 지원: `MenuTreeNode.badge`(menu_item.badge 컬럼) 값이 있으면 라벨
+ * 옆에 작은 태그를 렌더한다 (expanded 모드에서만 — rail에서는 라벨 자체가
+ * 안 보이므로 배지도 생략). nav.ask 의 "AI" 표시가 대표 케이스.
  */
 
 import Link from "next/link";
@@ -45,6 +45,8 @@ type RenderItem = {
   href: string;
   label: string;
   Icon: LucideIcon;
+  /** Optional sidebar badge text (e.g. "AI"). Empty/null → no badge. */
+  badge: string | null;
 };
 
 /**
@@ -80,11 +82,14 @@ function toRenderItem(node: MenuTreeNode): RenderItem | null {
     }
     return null;
   }
+  // Trim badge so empty-string admin entries don't render a blank pill.
+  const trimmedBadge = node.badge?.trim();
   return {
     code: node.code,
     href: node.routePath,
     label: node.label,
     Icon: resolveIcon(node.icon),
+    badge: trimmedBadge && trimmedBadge.length > 0 ? trimmedBadge : null,
   };
 }
 
@@ -97,7 +102,7 @@ function NavButton({
   active: boolean;
   expanded: boolean;
 }) {
-  const { Icon, href, label } = item;
+  const { Icon, href, label, badge } = item;
   return (
     <Link
       href={href}
@@ -133,9 +138,20 @@ function NavButton({
         <Icon className="h-4 w-4" aria-hidden />
       </span>
       {expanded ? <span className="truncate">{label}</span> : null}
-      {/* TODO: badge support — MenuTreeNode 모델에는 badge 필드가 없다.
-          기존 NAV_ITEMS의 `nav.ask: "AI"` 뱃지가 사라졌다. menu_item.badge
-          컬럼이나 사이드카 테이블을 추가하면 부활시킬 수 있다. */}
+      {/* Badge — expanded 모드에서만 (rail에서는 라벨이 숨겨지므로 배지도
+          생략). menu_item.badge 가 비어 있지 않은 행에만 렌더된다. */}
+      {expanded && badge ? (
+        <span
+          aria-label={`${label} ${badge}`}
+          className="ml-auto inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+          style={{
+            background: "color-mix(in oklab, var(--brand-primary) 14%, transparent)",
+            color: "var(--brand-primary)",
+          }}
+        >
+          {badge}
+        </span>
+      ) : null}
     </Link>
   );
 }

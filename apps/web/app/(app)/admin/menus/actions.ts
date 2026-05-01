@@ -121,6 +121,8 @@ export async function listMenus(rawInput: z.input<typeof listMenusInput>) {
         sortOrder: menuItem.sortOrder,
         description: menuItem.description,
         isVisible: menuItem.isVisible,
+        badge: menuItem.badge,
+        keywords: menuItem.keywords,
         permCnt: permCntExpr,
       })
       .from(menuItem)
@@ -154,11 +156,48 @@ export async function listMenus(rawInput: z.input<typeof listMenusInput>) {
         sortOrder: r.sortOrder,
         description: r.description ?? null,
         isVisible: r.isVisible,
+        badge: r.badge ?? null,
+        // Convert text[] → comma-separated string for grid editing UX.
+        // null/empty → null so the cell renders empty.
+        keywords:
+          Array.isArray(r.keywords) && r.keywords.length > 0
+            ? r.keywords.join(", ")
+            : null,
         permCnt: Number(r.permCnt ?? 0),
       } satisfies MenuRow),
     ),
     total: Number(totalRows[0]?.total ?? 0),
   });
+}
+
+/**
+ * Parse a comma-separated keyword string into a `text[]` for DB write.
+ *
+ * - `null` / `undefined` → `null` (no change to keywords; or "clear" if part
+ *   of an explicit patch). Keeps Drizzle from sending `'{NULL}'` etc.
+ * - empty / whitespace-only string → `null` (treat blank input as cleared)
+ * - otherwise → split on `,`, trim each, drop empties, dedupe (case-insensitive
+ *   prefix match using lower-case key) so duplicate user input doesn't grow
+ *   the array on every save.
+ */
+function parseKeywordsString(
+  raw: string | null | undefined,
+): string[] | null {
+  if (raw === null || raw === undefined) return null;
+  const parts = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (parts.length === 0) return null;
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const k = p.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(p);
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +249,7 @@ export async function saveMenus(rawInput: z.input<typeof saveMenusInput>) {
           errors.push({ id: c.id, message: parent.reason });
           continue;
         }
+        const keywordsArr = parseKeywordsString(c.keywords);
         await tx.insert(menuItem).values({
           id: c.id,
           workspaceId,
@@ -222,6 +262,8 @@ export async function saveMenus(rawInput: z.input<typeof saveMenusInput>) {
           routePath: c.routePath ?? null,
           sortOrder: c.sortOrder,
           isVisible: c.isVisible,
+          badge: c.badge ?? null,
+          keywords: keywordsArr,
         });
         await tx.insert(auditLog).values({
           workspaceId,
@@ -233,6 +275,8 @@ export async function saveMenus(rawInput: z.input<typeof saveMenusInput>) {
             code: c.code,
             kind: c.kind,
             label: c.label,
+            badge: c.badge ?? null,
+            keywords: keywordsArr,
           } as Record<string, unknown>,
           success: true,
         });
@@ -261,6 +305,14 @@ export async function saveMenus(rawInput: z.input<typeof saveMenusInput>) {
             continue;
           }
           patch.parentId = parent.id;
+        }
+        // keywords (boundary representation: comma-string) → text[] for DB.
+        // We only convert when the patch explicitly carries the field so we
+        // don't accidentally clear an unrelated row's keywords.
+        if ("keywords" in u.patch) {
+          patch.keywords = parseKeywordsString(
+            u.patch.keywords as string | null | undefined,
+          );
         }
         if (Object.keys(patch).length > 0) {
           await tx
