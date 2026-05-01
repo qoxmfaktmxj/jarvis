@@ -164,54 +164,26 @@ type ChatCreateParams = Parameters<OpenAI["chat"]["completions"]["create"]>[0];
 type ChatMessage = ChatCreateParams extends { messages: infer M } ? (M extends ReadonlyArray<infer E> ? E : never) : never;
 
 /**
- * Extract all slug strings seen in successful tool results so that we can
- * later cross-check [[slug]] citations in the final answer.
+ * Extract slugs that count as **grounded** citation sources for the final
+ * answer. Only successful `wiki_read` results count, and only the primary
+ * `data.slug` (the page that was actually loaded from disk).
  *
- * Handles the data shapes of all four registered tools:
- *  - wiki_grep   → data.matches[].slug
- *  - wiki_read   → data.slug  (+  data.outbound_wikilinks[])
- *  - wiki_follow_link → data.links[].slug
- *  - wiki_graph_query → data.nodes[].id  (wiki-page kind nodes)
+ * Why this is restrictive:
+ *  - `wiki_grep` matches, `wiki_follow_link` candidates, `wiki_graph_query`
+ *    nodes, and a `wiki_read` page's `outbound_wikilinks` are all *candidate*
+ *    references the model has merely **seen the existence of**. Citing them
+ *    without actually reading the body would let `[[slug]]` pass validation
+ *    even when the answer has no ground truth.
+ *  - The SSE adapter (`sse-adapter.ts`) already harvests `sources` from
+ *    `wiki_read` results only, so this matches the user-facing source list.
  */
-function collectSlugsFromResult(result: ToolResult<unknown>): string[] {
+function collectSlugsFromResult(toolName: string, result: ToolResult<unknown>): string[] {
   if (!result.ok) return [];
+  if (toolName !== "wiki_read") return [];
   const data = result.data as Record<string, unknown> | undefined;
   if (!data) return [];
-
-  const slugs: string[] = [];
-
-  // wiki_grep
-  if (Array.isArray(data["matches"])) {
-    for (const m of data["matches"] as Array<Record<string, unknown>>) {
-      if (typeof m["slug"] === "string") slugs.push(m["slug"]);
-    }
-  }
-
-  // wiki_read: primary slug + outbound wikilinks
-  if (typeof data["slug"] === "string") slugs.push(data["slug"]);
-  if (Array.isArray(data["outbound_wikilinks"])) {
-    for (const s of data["outbound_wikilinks"] as unknown[]) {
-      if (typeof s === "string") slugs.push(s);
-    }
-  }
-
-  // wiki_follow_link
-  if (Array.isArray(data["links"])) {
-    for (const l of data["links"] as Array<Record<string, unknown>>) {
-      if (typeof l["slug"] === "string") slugs.push(l["slug"]);
-    }
-  }
-
-  // wiki_graph_query — wiki-page kind nodes; id is the slug
-  if (Array.isArray(data["nodes"])) {
-    for (const n of data["nodes"] as Array<Record<string, unknown>>) {
-      if (n["kind"] === "wiki-page" && typeof n["id"] === "string") {
-        slugs.push(n["id"]);
-      }
-    }
-  }
-
-  return slugs;
+  if (typeof data["slug"] !== "string") return [];
+  return [data["slug"]];
 }
 
 /**
@@ -352,8 +324,10 @@ export async function askAgent(
 
     for (const { tc, input, result } of results) {
       toolCalls.push({ name: tc.function.name, input, ok: result.ok });
-      // Collect slugs from successful results for citation validation.
-      for (const slug of collectSlugsFromResult(result)) seenSlugs.add(slug);
+      // Collect slugs from successful wiki_read results only — see
+      // collectSlugsFromResult() for why other tools' candidate slugs
+      // do NOT count as grounded citation sources.
+      for (const slug of collectSlugsFromResult(tc.function.name, result)) seenSlugs.add(slug);
       messages.push({
         role: "tool",
         tool_call_id: tc.id,
@@ -524,8 +498,10 @@ export async function* askAgentStream(
 
     // 4) tool-result 이벤트 yield + messages 에 tool 메시지 push
     for (const { tc, result } of results) {
-      // Collect slugs from successful results for citation validation.
-      for (const slug of collectSlugsFromResult(result)) seenSlugs.add(slug);
+      // Collect slugs from successful wiki_read results only — see
+      // collectSlugsFromResult() for why other tools' candidate slugs
+      // do NOT count as grounded citation sources.
+      for (const slug of collectSlugsFromResult(tc.function.name, result)) seenSlugs.add(slug);
       const errorMsg = !result.ok ? result.error : undefined;
       yield {
         type: "tool-result",
