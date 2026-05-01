@@ -1,10 +1,11 @@
 /**
  * packages/db/__tests__/schema/sales-contract-schema.test.ts
  *
- * Task 1 — sales_contract schema (TBIZ030 1:1 매핑)
+ * Tasks 1-3 — sales_contract domain schemas
  *
- * TBIZ030 65컬럼 nullable wide-table + uuid PK + workspaceId + legacy composite key
- * preservation + 4 indexes (ws / customer / cont_ymd / legacy uniq).
+ * Verifies salesContract (TBIZ030), salesContractMonth (TBIZ031),
+ * salesContractAddinfo (TBIZ032), salesContractService (TBIZ010)
+ * column presence, FK shape, and legacy ETL key preservation.
  *
  * 실행: `pnpm test`
  */

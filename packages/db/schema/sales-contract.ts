@@ -266,6 +266,16 @@ export const salesContractAddinfo = pgTable(
   (t) => ({
     wsIdx: index("sales_contract_addinfo_ws_idx").on(t.workspaceId),
     contractIdx: index("sales_contract_addinfo_contract_idx").on(t.contractId),
+    // NOTE: PostgreSQL unique indexes do not enforce uniqueness when any
+    // key column is NULL. This guard is effective only after ETL populates
+    // all three legacy_* columns. Pre-ETL rows with NULL keys bypass dedup.
+    // TBIZ032 PK: (ENTER_CD, CONT_NO, SABUN). No CONT_YEAR exists.
+    legacyUniq: uniqueIndex("sales_contract_addinfo_legacy_uniq").on(
+      t.workspaceId,
+      t.legacyEnterCd,
+      t.legacyContNo,
+      t.legacySabun,
+    ),
   }),
 );
 
