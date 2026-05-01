@@ -17,8 +17,16 @@ import { wikiRead } from "./tools/wiki-read.js";
 import { wikiFollowLink } from "./tools/wiki-follow-link.js";
 import { wikiGraphQuery } from "./tools/wiki-graph-query.js";
 import { generateNonce, wrapUserContent } from "./prompt-nonce.js";
+import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
 
 export const MAX_TOOL_STEPS = 8;
+
+/**
+ * Maximum total individual tool calls across the entire conversation.
+ * Set equal to MAX_TOOL_STEPS to preserve the original intent: a model that
+ * emits 12 tool_calls in a single turn cannot bypass the cap.
+ */
+export const MAX_TOOL_CALLS = 8;
 
 /**
  * 요청마다 새 nonce 를 받아 시스템 프롬프트를 동적으로 생성한다.
@@ -155,6 +163,78 @@ function parseJson(s: string): unknown {
 type ChatCreateParams = Parameters<OpenAI["chat"]["completions"]["create"]>[0];
 type ChatMessage = ChatCreateParams extends { messages: infer M } ? (M extends ReadonlyArray<infer E> ? E : never) : never;
 
+/**
+ * Extract all slug strings seen in successful tool results so that we can
+ * later cross-check [[slug]] citations in the final answer.
+ *
+ * Handles the data shapes of all four registered tools:
+ *  - wiki_grep   → data.matches[].slug
+ *  - wiki_read   → data.slug  (+  data.outbound_wikilinks[])
+ *  - wiki_follow_link → data.links[].slug
+ *  - wiki_graph_query → data.nodes[].id  (wiki-page kind nodes)
+ */
+function collectSlugsFromResult(result: ToolResult<unknown>): string[] {
+  if (!result.ok) return [];
+  const data = result.data as Record<string, unknown> | undefined;
+  if (!data) return [];
+
+  const slugs: string[] = [];
+
+  // wiki_grep
+  if (Array.isArray(data["matches"])) {
+    for (const m of data["matches"] as Array<Record<string, unknown>>) {
+      if (typeof m["slug"] === "string") slugs.push(m["slug"]);
+    }
+  }
+
+  // wiki_read: primary slug + outbound wikilinks
+  if (typeof data["slug"] === "string") slugs.push(data["slug"]);
+  if (Array.isArray(data["outbound_wikilinks"])) {
+    for (const s of data["outbound_wikilinks"] as unknown[]) {
+      if (typeof s === "string") slugs.push(s);
+    }
+  }
+
+  // wiki_follow_link
+  if (Array.isArray(data["links"])) {
+    for (const l of data["links"] as Array<Record<string, unknown>>) {
+      if (typeof l["slug"] === "string") slugs.push(l["slug"]);
+    }
+  }
+
+  // wiki_graph_query — wiki-page kind nodes; id is the slug
+  if (Array.isArray(data["nodes"])) {
+    for (const n of data["nodes"] as Array<Record<string, unknown>>) {
+      if (n["kind"] === "wiki-page" && typeof n["id"] === "string") {
+        slugs.push(n["id"]);
+      }
+    }
+  }
+
+  return slugs;
+}
+
+/**
+ * Validate that a final answer contains at least one [[slug]] citation that
+ * is grounded in the tool results collected during this conversation.
+ * Returns the set of valid (grounded) citation slugs found in the text.
+ */
+function validateCitations(text: string, seenSlugs: Set<string>): Set<string> {
+  const links = parseWikilinks(text);
+  const valid = new Set<string>();
+  for (const link of links) {
+    if (seenSlugs.has(link.target)) {
+      valid.add(link.target);
+    }
+  }
+  return valid;
+}
+
+const CITATION_REMINDER =
+  "이전 검색 결과를 바탕으로 답변에 반드시 `[[slug]]` 형식의 citation 을 포함하세요. " +
+  "citation 은 이번 대화에서 wiki_grep / wiki_read / wiki_follow_link / wiki_graph_query 가 " +
+  "실제로 반환한 slug 값만 사용해야 합니다. 추측하거나 없는 slug 를 만들어 내지 마세요.";
+
 export async function askAgent(
   question: string,
   ctx: ToolContext,
@@ -171,12 +251,21 @@ export async function askAgent(
   ];
 
   const toolCalls: AskAgentToolCall[] = [];
+  /** Slugs returned by any successful tool call this run. */
+  const seenSlugs = new Set<string>();
+  /** Running count of individual tool calls executed (not turns). */
+  let totalToolCallsExecuted = 0;
+  /** Whether we're in the forced final-answer pass (no tools offered). */
+  let forceFinalAnswerPass = false;
+  /** Whether we already injected a citation reminder. */
+  let citationReminderInjected = false;
 
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
     const res = await options.client.chat.completions.create({
       model,
       messages,
-      tools: openaiTools,
+      // In forced final-answer mode we omit tools so the model cannot call any.
+      ...(forceFinalAnswerPass ? {} : { tools: openaiTools }),
     } as ChatCreateParams) as Awaited<ReturnType<OpenAI["chat"]["completions"]["create"]>>;
 
     const choice = (res as { choices?: Array<{ message?: unknown }> }).choices?.[0];
@@ -198,20 +287,55 @@ export async function askAgent(
 
     // 종료 조건: LLM 이 tool 없이 content 만 반환
     if (!msg.tool_calls || msg.tool_calls.length === 0) {
+      const text = msg.content ?? "";
+
+      // Citation validation
+      if (seenSlugs.size > 0) {
+        const validCitations = validateCitations(text, seenSlugs);
+        if (validCitations.size === 0 && !citationReminderInjected) {
+          const remainingBudget = MAX_TOOL_CALLS - totalToolCallsExecuted;
+          if (remainingBudget > 0 && step + 1 < MAX_TOOL_STEPS) {
+            // Push the bare assistant answer + a reminder, then continue the loop.
+            messages.push(msg as unknown as ChatMessage);
+            messages.push({
+              role: "user",
+              content: CITATION_REMINDER,
+            } as unknown as ChatMessage);
+            citationReminderInjected = true;
+            // Do NOT return — let the loop continue with the reminder in context.
+            continue;
+          }
+          // No budget or no steps left — return structured ungrounded error.
+          return {
+            answer: JSON.stringify({ status: "ungrounded", reason: "no valid citations" }),
+            toolCalls,
+            steps: step + 1,
+            finishReason: "error",
+          };
+        }
+      }
+
       return {
-        answer: msg.content ?? "",
+        answer: text,
         toolCalls,
         steps: step + 1,
         finishReason: "stop",
       };
     }
 
+    // FIX 1 — Tool budget enforcement.
+    const remaining = MAX_TOOL_CALLS - totalToolCallsExecuted;
+
+    // Separate admitted vs dropped calls.
+    const admittedCalls = msg.tool_calls.slice(0, remaining);
+    const droppedCalls = msg.tool_calls.slice(remaining);
+
     // Assistant 메시지(= tool_calls 포함) 를 conversation 에 그대로 push
     messages.push(msg as unknown as ChatMessage);
 
-    // 각 tool_call 을 병렬로 실행
+    // Execute admitted tool calls in parallel.
     const results = await Promise.all(
-      msg.tool_calls.map(async (tc) => {
+      admittedCalls.map(async (tc) => {
         const input = parseJson(tc.function.arguments);
         const tool = tools[tc.function.name];
         let result: ToolResult<unknown>;
@@ -224,13 +348,42 @@ export async function askAgent(
       }),
     );
 
+    totalToolCallsExecuted += admittedCalls.length;
+
     for (const { tc, input, result } of results) {
       toolCalls.push({ name: tc.function.name, input, ok: result.ok });
+      // Collect slugs from successful results for citation validation.
+      for (const slug of collectSlugsFromResult(result)) seenSlugs.add(slug);
       messages.push({
         role: "tool",
         tool_call_id: tc.id,
         content: JSON.stringify(result),
       } as unknown as ChatMessage);
+    }
+
+    // Synthesize "budget exhausted" tool_results for dropped calls.
+    if (droppedCalls.length > 0) {
+      for (const tc of droppedCalls) {
+        const budgetResult: ToolResult<never> = {
+          ok: false,
+          code: "unknown",
+          error: "tool budget exhausted — no further tool calls allowed this turn",
+        };
+        toolCalls.push({ name: tc.function.name, input: parseJson(tc.function.arguments), ok: false });
+        messages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: JSON.stringify(budgetResult),
+        } as unknown as ChatMessage);
+      }
+    }
+
+    // If budget is now exhausted, force the next turn to be a final answer pass.
+    if (totalToolCallsExecuted >= MAX_TOOL_CALLS) {
+      console.warn(
+        `[ask-agent] tool call budget (MAX_TOOL_CALLS=${MAX_TOOL_CALLS}) exhausted after step ${step + 1}; forcing final answer pass`,
+      );
+      forceFinalAnswerPass = true;
     }
   }
 
@@ -264,12 +417,21 @@ export async function* askAgentStream(
 
   // Phase B3: accumulate total_tokens across all steps.
   let totalTokens = 0;
+  /** Slugs returned by any successful tool call this run. */
+  const seenSlugs = new Set<string>();
+  /** Running count of individual tool calls executed (not turns). */
+  let totalToolCallsExecuted = 0;
+  /** Whether we're in the forced final-answer pass (no tools offered). */
+  let forceFinalAnswerPass = false;
+  /** Whether we already injected a citation reminder. */
+  let citationReminderInjected = false;
 
   for (let step = 0; step < MAX_TOOL_STEPS; step++) {
     const res = (await options.client.chat.completions.create({
       model,
       messages,
-      tools: openaiTools,
+      // In forced final-answer mode we omit tools so the model cannot call any.
+      ...(forceFinalAnswerPass ? {} : { tools: openaiTools }),
     } as ChatCreateParams)) as Awaited<ReturnType<OpenAI["chat"]["completions"]["create"]>>;
 
     // Accumulate usage tokens from each step response.
@@ -297,28 +459,59 @@ export async function* askAgentStream(
     }
 
     if (!msg.tool_calls || msg.tool_calls.length === 0) {
-      if (msg.content && msg.content.length > 0) {
-        yield { type: "text", text: msg.content };
+      const text = msg.content ?? "";
+
+      // Citation validation
+      if (seenSlugs.size > 0) {
+        const validCitations = validateCitations(text, seenSlugs);
+        if (validCitations.size === 0 && !citationReminderInjected) {
+          const remainingBudget = MAX_TOOL_CALLS - totalToolCallsExecuted;
+          if (remainingBudget > 0 && step + 1 < MAX_TOOL_STEPS) {
+            // Push the bare assistant answer + a reminder, then continue the loop.
+            messages.push(msg as unknown as ChatMessage);
+            messages.push({
+              role: "user",
+              content: CITATION_REMINDER,
+            } as unknown as ChatMessage);
+            citationReminderInjected = true;
+            // Do NOT return — let the loop continue with the reminder in context.
+            continue;
+          }
+          // No budget or no steps left — yield error done event.
+          yield { type: "done", finishReason: "error", steps: step + 1, totalTokens };
+          return;
+        }
+      }
+
+      if (text.length > 0) {
+        yield { type: "text", text };
       }
       yield { type: "done", finishReason: "stop", steps: step + 1, totalTokens };
       return;
     }
 
-    // 1) tool-call 이벤트를 먼저 모두 yield (UI 즉시 반영)
-    const parsed = msg.tool_calls.map((tc) => ({
+    // FIX 1 — Tool budget enforcement.
+    const remaining = MAX_TOOL_CALLS - totalToolCallsExecuted;
+
+    // Separate admitted vs dropped calls.
+    const allParsed = msg.tool_calls.map((tc) => ({
       tc,
       input: parseJson(tc.function.arguments),
     }));
-    for (const { tc, input } of parsed) {
+    const admittedParsed = allParsed.slice(0, remaining);
+    const droppedParsed = allParsed.slice(remaining);
+
+    // 1) tool-call 이벤트를 먼저 모두 yield (UI 즉시 반영) — admitted calls only.
+    for (const { tc, input } of admittedParsed) {
       yield { type: "tool-call", name: tc.function.name, input, callId: tc.id };
     }
 
     // 2) assistant 메시지 conversation 에 추가
     messages.push(msg as unknown as ChatMessage);
 
-    // 3) 병렬 실행
+    // 3) 병렬 실행 (admitted only)
     const results = await Promise.all(
-      parsed.map(async ({ tc, input }) => {
+      admittedParsed.map(async ({ tc, input }) => {
         const tool = tools[tc.function.name];
         const result: ToolResult<unknown> = tool
           ? await tool.execute(input, ctx)
@@ -327,8 +520,12 @@ export async function* askAgentStream(
       }),
     );
 
+    totalToolCallsExecuted += admittedParsed.length;
+
     // 4) tool-result 이벤트 yield + messages 에 tool 메시지 push
     for (const { tc, result } of results) {
+      // Collect slugs from successful results for citation validation.
+      for (const slug of collectSlugsFromResult(result)) seenSlugs.add(slug);
       const errorMsg = !result.ok ? result.error : undefined;
       yield {
         type: "tool-result",
@@ -343,6 +540,41 @@ export async function* askAgentStream(
         tool_call_id: tc.id,
         content: JSON.stringify(result),
       } as unknown as ChatMessage);
+    }
+
+    // 5) Synthesize "budget exhausted" tool_results for dropped calls and yield events.
+    if (droppedParsed.length > 0) {
+      for (const { tc, input } of droppedParsed) {
+        const budgetResult: ToolResult<never> = {
+          ok: false,
+          code: "unknown",
+          error: "tool budget exhausted — no further tool calls allowed this turn",
+        };
+        yield {
+          type: "tool-result",
+          name: tc.function.name,
+          callId: tc.id,
+          ok: false,
+          error: budgetResult.error,
+        };
+        messages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: JSON.stringify(budgetResult),
+        } as unknown as ChatMessage);
+        // Also push as a no-op tool-call event so the UI pair is consistent.
+        // (We do NOT yield a tool-call event for dropped calls to avoid confusion
+        //  since they were never actually dispatched.)
+        void input; // input captured for symmetry; not needed for budget error
+      }
+    }
+
+    // If budget is now exhausted, force the next turn to be a final answer pass.
+    if (totalToolCallsExecuted >= MAX_TOOL_CALLS) {
+      console.warn(
+        `[ask-agent] tool call budget (MAX_TOOL_CALLS=${MAX_TOOL_CALLS}) exhausted after step ${step + 1}; forcing final answer pass`,
+      );
+      forceFinalAnswerPass = true;
     }
   }
 
