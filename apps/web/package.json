@@ -73,6 +73,7 @@
     "tailwind-merge": "^2.6.0",
     "tiptap-markdown": "^0.9.0",
     "vis-network": "^10.0.2",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
     "zod": "^3.24.1"
   },
   "devDependencies": {
