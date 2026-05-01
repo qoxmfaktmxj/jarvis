@@ -46,7 +46,7 @@ export async function listMailPersons(rawInput: z.input<typeof listMailPersonsIn
   ]);
 
   return listMailPersonsOutput.parse({
-    rows: rows.map((r) => ({ id: r.id, sabun: r.sabun, name: r.name, salesYn: r.salesYn, insaYn: r.insaYn })),
+    rows: rows.map((r) => ({ id: r.id, sabun: r.sabun, name: r.name, mailId: r.mailId, salesYn: r.salesYn, insaYn: r.insaYn, memo: r.memo })),
     total: Number(countRows[0]?.count ?? 0),
   });
 }

@@ -8,7 +8,7 @@ import type { MailPersonRow } from "@jarvis/shared/validation/sales/mail-person"
 type Props = { rows: MailPersonRow[]; total: number; page: number; limit: number };
 
 function makeBlankRow(): MailPersonRow {
-  return { id: crypto.randomUUID(), sabun: "", name: "", salesYn: false, insaYn: false };
+  return { id: crypto.randomUUID(), sabun: "", name: "", mailId: "", salesYn: false, insaYn: false, memo: null };
 }
 
 const COLUMNS: ColumnDef<MailPersonRow>[] = [
