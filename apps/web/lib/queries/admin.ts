@@ -254,7 +254,7 @@ export type CodeOption = { code: string; label: string };
 
 export async function getCodesByGroup(
   workspaceId: string,
-  groupCode: 'POSITION' | 'JOB_TITLE',
+  groupCode: 'POSITION' | 'JOB_TITLE' | 'BIZ_DIVISION',
 ): Promise<CodeOption[]> {
   const rows = await db
     .select({
