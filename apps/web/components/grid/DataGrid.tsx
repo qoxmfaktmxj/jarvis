@@ -64,6 +64,8 @@ export type DataGridProps<T extends WithId> = {
    * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
    */
   groupHeaders?: GroupHeader[];
+  /** 행 더블클릭 콜백 (master-detail 진입용) */
+  onRowDoubleClick?: (row: T) => void;
 };
 
 export function DataGrid<T extends WithId>({
@@ -80,6 +82,7 @@ export function DataGrid<T extends WithId>({
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
+  onRowDoubleClick,
 }: DataGridProps<T>) {
   if (groupHeaders && process.env.NODE_ENV !== "production") {
     const sum = groupHeaders.reduce((acc, g) => acc + g.span, 0);
@@ -218,6 +221,7 @@ export function DataGrid<T extends WithId>({
                   key={r.data.id}
                   data-row-status={r.state}
                   onClick={() => setSelected(r.data.id)}
+                  onDoubleClick={() => onRowDoubleClick?.(r.data)}
                   className={[
                     "border-b border-slate-100 transition-colors duration-150",
                     "hover:bg-slate-50",
