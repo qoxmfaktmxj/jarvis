@@ -4,6 +4,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
+import { MemoModal } from "./MemoModal";
 
 type Option = { value: string; label: string };
 
@@ -18,6 +19,31 @@ type Props = {
     exchangeType: Option[];
   };
 };
+
+function CountChips({
+  counts,
+  onMemoClick,
+}: {
+  counts: { customer: number; op: number; act: number; comt: number };
+  onMemoClick: () => void;
+}) {
+  return (
+    <div className="flex gap-1 text-[11px]">
+      <span className="rounded bg-slate-100 px-2 py-0.5">고객 {counts.customer}</span>
+      <span className="rounded bg-slate-100 px-2 py-0.5">기회 {counts.op}</span>
+      <span className="rounded bg-slate-100 px-2 py-0.5">활동 {counts.act}</span>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onMemoClick();
+        }}
+        className="rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
+      >
+        의견 {counts.comt}
+      </button>
+    </div>
+  );
+}
 
 function makeBlankRow(): CustomerRow {
   // Legacy ibSheet bizActCustCompanyMgr.jsp:221~233 marks `custCd` Hidden:1 (PK, system-assigned).
@@ -60,6 +86,7 @@ export function CustomersGridContainer({
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [, startTransition] = useTransition();
 
   const reload = useCallback(
@@ -92,6 +119,21 @@ export function CustomersGridContainer({
     { key: "ceoNm", label: "대표자", type: "text", width: 150, editable: true },
     { key: "telNo", label: "전화번호", type: "text", width: 130, editable: true },
     {
+      key: "counts",
+      label: "탭",
+      type: "readonly",
+      width: 220,
+      render: (row) =>
+        row.counts ? (
+          <CountChips
+            counts={row.counts}
+            onMemoClick={() => setMemoTarget({ id: row.id, name: row.custNm })}
+          />
+        ) : (
+          <span className="text-slate-300">—</span>
+        ),
+    },
+    {
       key: "createdAt",
       label: "등록일자",
       type: "readonly",
@@ -107,24 +149,32 @@ export function CustomersGridContainer({
   ];
 
   return (
-    <DataGrid<CustomerRow>
-      rows={rows}
-      total={total}
-      columns={COLUMNS}
-      filters={FILTERS}
-      page={page}
-      limit={limit}
-      makeBlankRow={makeBlankRow}
-      filterValues={filterValues}
-      onPageChange={(p) => reload(p, filterValues)}
-      onFilterChange={(f) => reload(1, f)}
-      onSave={async (changes) => {
-        const result = await saveCustomers(changes);
-        if (result.ok) {
-          await reload(page, filterValues);
-        }
-        return result;
-      }}
-    />
+    <>
+      <DataGrid<CustomerRow>
+        rows={rows}
+        total={total}
+        columns={COLUMNS}
+        filters={FILTERS}
+        page={page}
+        limit={limit}
+        makeBlankRow={makeBlankRow}
+        filterValues={filterValues}
+        onPageChange={(p) => reload(p, filterValues)}
+        onFilterChange={(f) => reload(1, f)}
+        onSave={async (changes) => {
+          const result = await saveCustomers(changes);
+          if (result.ok) {
+            await reload(page, filterValues);
+          }
+          return result;
+        }}
+      />
+      <MemoModal
+        customerId={memoTarget?.id ?? null}
+        customerName={memoTarget?.name}
+        onClose={() => setMemoTarget(null)}
+        onCountChange={() => reload(page, filterValues)}
+      />
+    </>
   );
 }
