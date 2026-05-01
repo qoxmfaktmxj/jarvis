@@ -17,7 +17,7 @@ export type DataGridToolbarProps = {
  * - passing GridToolbar's controls into `children` for a unified strip.
  *
  * All visible labels (`exportLabel`) are passthrough props — baseline carries
- * no i18n. Callers wire `t('Sales.Common.Excel.label')` etc.
+ * no i18n. Callers wire `t('Sales.Common.Excel.button')` etc.
  */
 export function DataGridToolbar({
   children,

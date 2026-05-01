@@ -1,6 +1,14 @@
 import * as XLSX from "xlsx";
 import type { ColumnDef } from "@/components/grid/types";
 
+/**
+ * Excel filename convention: callers compose the filename via
+ *   t('Sales.Common.Excel.filename', { screen: <localized title>, date: 'YYYY-MM-DD' })
+ * The {screen} placeholder receives the localized screen title (e.g.
+ * t('Sales.Customers.title')) so filenames are user-locale consistent.
+ * The {date} placeholder receives ISO date (YYYY-MM-DD).
+ */
+
 export type ExportArgs<T> = {
   rows: T[];
   /**

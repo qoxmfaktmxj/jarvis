@@ -231,14 +231,14 @@
         "downloadStarted": "Download started."
       },
       "Search": {
-        "chargerNm": "Charger",
+        "chargerNm": "Owner",
         "searchYmd": "As of",
         "searchYmdFrom": "From",
         "searchYmdTo": "To",
         "hpNo": "Mobile",
         "email": "Email",
-        "searchMail": "Mail",
-        "searchCostNm": "Cost name",
+        "searchMail": "Mail Address",
+        "searchCostNm": "Cost Name",
         "searchDevGbCd": "Type"
       }
     }
