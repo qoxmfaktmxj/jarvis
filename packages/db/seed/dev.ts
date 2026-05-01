@@ -47,7 +47,16 @@ async function seed() {
     await seedCompaniesFromTsmt001(wsId);
     const { seedSalesCodes } = await import('./sales-codes.js');
     await seedSalesCodes(wsId);
-    console.log('[seed] Dev seed complete (codes + companies + sales only — workspace already existed)');
+    // Re-seed menus + permissions so menu_item changes (badge / keywords /
+    // route / sortOrder / label) flow through `pnpm db:seed` idempotently
+    // against existing workspaces. seedPermissions is itself idempotent
+    // (onConflictDoNothing on (resource, action)) and returns the
+    // key->id map needed to wire menu_permission links.
+    const { seedPermissions } = await import('./permissions.js');
+    const { seedMenuTree } = await import('./menus.js');
+    const permKeyToId = await seedPermissions();
+    await seedMenuTree(wsId, permKeyToId);
+    console.log('[seed] Dev seed complete (codes + companies + sales + menus)');
     return;
   }
 
