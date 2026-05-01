@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
@@ -108,6 +108,28 @@ export function CustomersGridContainer({
     [limit],
   );
 
+  // I-2/I-3: local state for chargerNm input avoids cursor-jump race between
+  // the URL-derived value and the live input. Debounced (300ms) effect commits
+  // to URL + reload — mirrors EmployeePicker debounce pattern.
+  const [chargerNmInput, setChargerNmInput] = useState(values.chargerNm);
+
+  // Reverse sync: URL → local (e.g. browser back/forward navigation).
+  useEffect(() => {
+    setChargerNmInput(values.chargerNm);
+  }, [values.chargerNm]);
+
+  // Local → debounce → URL + reload. values/reload intentionally excluded from
+  // deps to prevent infinite restart; chargerNmInput change is the sole trigger.
+  useEffect(() => {
+    if (chargerNmInput === values.chargerNm) return;
+    const timer = setTimeout(() => {
+      setValue("chargerNm", chargerNmInput);
+      reload(1, { ...values, chargerNm: chargerNmInput });
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chargerNmInput]);
+
   // Hidden:0 (visible) columns per legacy ibSheet bizActCustCompanyMgr.jsp:221~233.
   // custCd / businessNo / businessKind / homepage / addr1 are Hidden:1 — intentionally omitted.
   const COLUMNS: ColumnDef<CustomerRow>[] = [
@@ -150,27 +172,21 @@ export function CustomersGridContainer({
 
   return (
     <>
-      {/* chargerNm filter strip — separate from DataGrid's built-in filter bar.
-          Placed above DataGridToolbar so it appears logically as "extra search criteria"
-          before the export button row (separate strips pattern). */}
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-white px-3 py-2">
-        <input
-          type="text"
-          placeholder={t("Customers.search.chargerNm")}
-          value={values.chargerNm}
-          onChange={(e) => {
-            setValue("chargerNm", e.target.value);
-            reload(1, { ...values, chargerNm: e.target.value });
-          }}
-          className="w-32 rounded border border-slate-200 px-2 py-1 text-xs"
-        />
-      </div>
-
-      {/* DataGridToolbar (separate strip above DataGrid — per baseline JSDoc pattern). */}
+      {/* I-4: chargerNm input unified into DataGridToolbar children — one toolbar strip.
+          Per DataGridToolbar JSDoc: pass extra controls via children for a unified strip.
+          Replaces the old separate chargerNm div + DataGridToolbar (2 strips → 1). */}
       <DataGridToolbar
         onExport={handleExport}
         exportLabel={t("Common.Excel.label")}
-      />
+      >
+        <input
+          type="text"
+          placeholder={t("Customers.search.chargerNm")}
+          value={chargerNmInput}
+          onChange={(e) => setChargerNmInput(e.target.value)}
+          className="w-32 rounded border border-slate-200 px-2 py-1 text-xs"
+        />
+      </DataGridToolbar>
 
       <DataGrid<CustomerRow>
         rows={rows}
