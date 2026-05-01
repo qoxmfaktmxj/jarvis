@@ -11,7 +11,6 @@
 
 import {
   index,
-  integer,
   numeric,
   pgTable,
   text,
@@ -116,7 +115,7 @@ export const salesContract = pgTable(
     befContNo: varchar("bef_cont_no", { length: 30 }),
     contCancelYn: varchar("cont_cancel_yn", { length: 1 }),
     contInitYn: varchar("cont_init_yn", { length: 1 }),
-    fileSeq: integer("file_seq"),
+    fileSeq: numeric("file_seq"),
     docNo: varchar("doc_no", { length: 200 }),
     companyAddr: varchar("company_addr", { length: 1000 }),
     companyOner: varchar("company_oner", { length: 200 }),
