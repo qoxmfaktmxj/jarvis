@@ -60,7 +60,7 @@ describe("sales_contract_month schema", () => {
     assert.ok(cols.includes("contractId"), "missing contractId column");
   });
 
-  it("has 3-way (PLAN/VIEW/PERF) × 13 amount columns + man_month + tax + finalize", () => {
+  it("has 3-way (PLAN/VIEW/PERF) × 15 columns per group + tax + finalize", () => {
     const cols = Object.keys(salesContractMonth);
     // PLAN
     assert.ok(cols.includes("planInManMonth"), "missing planInManMonth");
