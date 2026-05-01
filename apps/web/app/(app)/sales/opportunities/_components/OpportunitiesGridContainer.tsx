@@ -9,9 +9,11 @@ import { useCallback, useMemo, useState, useTransition } from "react";
 import { type OpportunityRow } from "@jarvis/shared/validation/sales/opportunity";
 import { listOpportunities, saveOpportunities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
-import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import type { ColumnDef } from "@/components/grid/types";
 import { MemoModal } from "./MemoModal";
 
 type Opportunity = OpportunityRow;
@@ -66,7 +68,15 @@ export function OpportunitiesGridContainer({
   });
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+
+  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>(() => {
+    const v: Record<string, string> = {};
+    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
+    return v;
+  });
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -124,12 +134,6 @@ export function OpportunitiesGridContainer({
     [codeOptions.productType, codeOptions.bizStep, codeOptions.bizOpSource],
   );
 
-  const FILTERS: FilterDef<Opportunity>[] = [
-    { key: "bizOpNm" as keyof Opportunity & string, type: "text", placeholder: "영업기회명" },
-    { key: "bizStepCode" as keyof Opportunity & string, type: "select", options: codeOptions.bizStep },
-    { key: "productTypeCode" as keyof Opportunity & string, type: "select", options: codeOptions.productType },
-  ];
-
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
@@ -160,20 +164,56 @@ export function OpportunitiesGridContainer({
 
   return (
     <div className="space-y-3">
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel="엑셀 다운로드"
-        isExporting={isExporting}
-      />
+      <GridSearchForm
+        onSearch={() => reload(1, pendingFilters)}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="영업기회단계" className="w-[140px]">
+          <select
+            value={pendingFilters.bizStepCode ?? ""}
+            onChange={(e) => setPending("bizStepCode", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {codeOptions.bizStep.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="제품군" className="w-[140px]">
+          <select
+            value={pendingFilters.productTypeCode ?? ""}
+            onChange={(e) => setPending("productTypeCode", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {codeOptions.productType.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="영업기회명" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.q ?? ""}
+            onChange={(e) => setPending("q", e.target.value)}
+            placeholder="영업기회명"
+            className="h-8"
+          />
+        </GridFilterField>
+      </GridSearchForm>
+
       <DataGrid<Opportunity>
         rows={rows}
         total={totalCount}
         columns={COLUMNS}
-        filters={FILTERS}
+        filters={[]}
         page={page}
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => {
