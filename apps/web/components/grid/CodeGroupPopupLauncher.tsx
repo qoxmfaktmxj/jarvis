@@ -50,8 +50,6 @@ export function CodeGroupPopupLauncher({
 
       {open ? (
         <div
-          role="dialog"
-          aria-modal="true"
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
           onClick={() => {
             setOpen(false);
@@ -59,6 +57,9 @@ export function CodeGroupPopupLauncher({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={triggerLabel}
             className="max-h-[60vh] w-80 overflow-auto rounded bg-white p-3 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
