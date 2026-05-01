@@ -1258,6 +1258,22 @@
       },
       "errors": {
         "duplicateCustCd": "중복된 고객코드가 있습니다: {codes}"
+      },
+      "Edit": {
+        "fields": {
+          "custCd": "고객사코드",
+          "custNm": "고객사명",
+          "ceoNm": "대표자명",
+          "telNo": "전화번호",
+          "businessNo": "사업자등록번호",
+          "homepage": "홈페이지",
+          "addr1": "주소",
+          "addr2": "상세주소"
+        },
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "삭제하시겠습니까?"
       }
     },
     "CustomerContacts": {
@@ -1292,6 +1308,23 @@
         "empty": "등록된 의견이 없습니다.",
         "memoLabel": "의견",
         "memoPlaceholder": "의견을 입력하세요"
+      },
+      "Edit": {
+        "fields": {
+          "custName": "고객명",
+          "custNm": "고객사명",
+          "orgNm": "부서",
+          "jikweeNm": "직위",
+          "hpNo": "핸드폰",
+          "telNo": "전화번호",
+          "email": "이메일",
+          "statusYn": "재직상태",
+          "switComp": "이직회사"
+        },
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "삭제하시겠습니까?"
       }
     },
     "ProductTypes": {
