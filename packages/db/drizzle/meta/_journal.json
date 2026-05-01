@@ -435,6 +435,13 @@
       "when": 1777656314664,
       "tag": "0061_daffy_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1777671647522,
+      "tag": "0062_omniscient_the_phantom",
+      "breakpoints": true
     }
   ]
 }
