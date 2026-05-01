@@ -32,9 +32,10 @@ function sanitize(raw: string): string {
   // accept "yyyymmdd" or "yyyy-mm-dd" or partial; emit "yyyy-mm-dd" up to typed length
   const digits = raw.replace(/\D/g, "").slice(0, 8);
   let out = digits.slice(0, 4);
+  let mm = "";
   if (digits.length === 4) out += "-";
   if (digits.length > 4) {
-    let mm = digits.slice(4, 6);
+    mm = digits.slice(4, 6);
     if (mm.length === 1 && Number(mm) > 1) mm = "0" + mm;
     if (mm.length === 2) {
       const n = Number(mm);
@@ -43,7 +44,7 @@ function sanitize(raw: string): string {
     out += "-" + mm;
     if (mm.length === 2) out += "-";
   }
-  if (digits.length > 6) {
+  if (digits.length > 6 && mm.length === 2) {
     let dd = digits.slice(6, 8);
     if (dd.length === 1 && Number(dd) > 3) dd = "0" + dd;
     if (dd.length === 2) {

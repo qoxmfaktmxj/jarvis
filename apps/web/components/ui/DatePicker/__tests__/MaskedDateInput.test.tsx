@@ -83,6 +83,7 @@ describe("MaskedDateInput", () => {
     await user.keyboard("{Backspace}{Backspace}");
     await user.keyboard("{Escape}");
     expect(input.value).toBe("2026-05-12");
+    expect(onCommit).not.toHaveBeenCalled();
   });
 
   it("recognizes pasted yyyy-mm-dd", async () => {
@@ -105,5 +106,15 @@ describe("MaskedDateInput", () => {
     await user.paste("20260512");
     fireEvent.blur(input);
     expect(onCommit).toHaveBeenCalledWith("2026-05-12");
+  });
+
+  it("paste of invalid month produces clean partial", async () => {
+    const user = userEvent.setup();
+    const onCommit = vi.fn();
+    render(<MaskedDateInput value={null} onCommit={onCommit} />);
+    const input = screen.getByRole("textbox") as HTMLInputElement;
+    await user.click(input);
+    await user.paste("20260001");
+    expect(input.value).toBe("2026-0");
   });
 });
