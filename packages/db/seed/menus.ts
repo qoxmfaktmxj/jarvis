@@ -70,6 +70,10 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "sales.product-types",        kind: "menu", label: "제품군관리",     icon: "ShoppingBag", routePath: "/sales/product-types",         sortOrder: 160, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["제품", "product", "sales"] },
   { code: "sales.product-cost-mapping", kind: "menu", label: "제품-코스트 매핑", icon: "Coins",       routePath: "/sales/product-cost-mapping",  sortOrder: 162, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["코스트", "cost", "매핑", "sales"] },
   { code: "sales.mail-persons",         kind: "menu", label: "메일담당자",     icon: "Mail",        routePath: "/sales/mail-persons",          sortOrder: 165, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["메일", "mail", "sales"] },
+  // Phase 2 — 영업기회/활동/대시보드
+  { code: "sales.opportunities",            kind: "menu", label: "영업기회",       icon: "Target",      routePath: "/sales/opportunities",             sortOrder: 170, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["영업기회", "opportunity", "sales", "biz"] },
+  { code: "sales.activities",               kind: "menu", label: "영업활동",       icon: "Activity",    routePath: "/sales/activities",                sortOrder: 175, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["영업활동", "activity", "sales", "biz"] },
+  { code: "sales.opportunities.dashboard",  kind: "menu", label: "영업기회현황",   icon: "TrendingUp",  routePath: "/sales/opportunities/dashboard",   sortOrder: 180, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["대시보드", "dashboard", "현황", "sales"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },

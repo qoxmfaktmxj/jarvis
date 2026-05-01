@@ -1169,7 +1169,57 @@
       "customerContacts": "담당자관리",
       "productTypes": "제품군관리",
       "productCostMapping": "제품-코스트 매핑",
-      "mailPersons": "메일담당자"
+      "mailPersons": "메일담당자",
+      "opportunities": "영업기회",
+      "activities": "영업활동",
+      "dashboard": "영업기회현황"
+    },
+    "Opportunities": {
+      "title": "영업기회",
+      "description": "영업기회를 관리하고 단계별로 추적합니다.",
+      "columns": {
+        "bizOpNm": "영업기회명",
+        "customerName": "고객사명",
+        "productType": "제품군",
+        "bizStep": "영업기회단계",
+        "bizStepYmd": "단계 변경일",
+        "orgNm": "담당부서",
+        "insName": "영업담당",
+        "bizOpSource": "영업기회출처",
+        "insdate": "등록일자",
+        "memo": "메모"
+      }
+    },
+    "Activities": {
+      "title": "영업활동",
+      "description": "고객 접촉 및 활동을 기록합니다.",
+      "columns": {
+        "bizActNm": "활동명",
+        "opportunity": "영업기회",
+        "customerName": "고객사",
+        "actYmd": "활동일",
+        "actType": "활동유형",
+        "accessRoute": "접근경로",
+        "attendee": "참석자",
+        "bizStep": "단계",
+        "productType": "제품군",
+        "insdate": "등록일자",
+        "memo": "메모"
+      }
+    },
+    "Dashboard": {
+      "title": "영업기회현황",
+      "description": "단계 분포 + 월별 신규 영업기회.",
+      "kpis": {
+        "total": "전체 영업기회",
+        "inProgressAmt": "진행 중 예상금액",
+        "monthNew": "이번달 신규",
+        "focus": "집중관리"
+      },
+      "charts": {
+        "stepDistribution": "단계별 영업기회 분포",
+        "monthlyNew": "월별 신규 영업기회"
+      }
     },
     "Customers": {
       "title": "고객사관리",
