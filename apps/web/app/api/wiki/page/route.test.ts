@@ -5,8 +5,6 @@ import { NextRequest } from 'next/server';
 // 실제 구현은 @/lib/server/api-auth 에서 requireApiSession 을 가져온다.
 const mockSession = vi.fn();
 const mockLoad = vi.fn();
-const mockCanView = vi.fn();
-const mockHasPermission = vi.fn();
 const mockOrphans = vi.fn();
 
 vi.mock('@/lib/server/api-auth', () => ({
@@ -15,17 +13,13 @@ vi.mock('@/lib/server/api-auth', () => ({
 vi.mock('@/lib/server/wiki-page-loader', () => ({
   loadWikiPageForView: (...a: unknown[]) => mockLoad(...a),
 }));
-vi.mock('@/lib/server/wiki-sensitivity', () => ({
-  canViewSensitivity: (...a: unknown[]) => mockCanView(...a),
-}));
-vi.mock('@jarvis/auth/rbac', () => ({
-  hasPermission: (...a: unknown[]) => mockHasPermission(...a),
-}));
 vi.mock('@/lib/server/wiki-page-orphans', () => ({
   loadOrphanOutboundSlugs: (...a: unknown[]) => mockOrphans(...a),
 }));
 
 import { GET } from './route';
+
+const TEST_SESSION = { workspaceId: 'ws1', permissions: ['knowledge:read'] };
 
 function makeReq(qs: string): NextRequest {
   return new NextRequest(`http://localhost/api/wiki/page?${qs}`);
@@ -35,9 +29,7 @@ describe('GET /api/wiki/page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     // requireApiSession returns { session, response?: never } on success
-    mockSession.mockResolvedValue({ session: { workspaceId: 'ws1', permissions: ['ADMIN_ALL'] } });
-    mockCanView.mockReturnValue(true);
-    mockHasPermission.mockReturnValue(true);
+    mockSession.mockResolvedValue({ session: TEST_SESSION });
     mockOrphans.mockResolvedValue([]);
   });
 
@@ -59,17 +51,18 @@ describe('GET /api/wiki/page', () => {
     expect(res.status).toBe(403);
   });
 
-  it('404 when loader returns null', async () => {
+  it('404 when loader returns null (not found)', async () => {
     mockLoad.mockResolvedValue(null);
     const res = await GET(makeReq('workspaceId=ws1&path=foo.md'));
     expect(res.status).toBe(404);
   });
 
-  it('403 when canViewSensitivity is false', async () => {
-    mockLoad.mockResolvedValue({ meta: { id: 'p1', sensitivity: 'SECRET_REF_ONLY' }, bodyOnly: '...' });
-    mockCanView.mockReturnValue(false);
-    const res = await GET(makeReq('workspaceId=ws1&path=foo.md'));
-    expect(res.status).toBe(403);
+  it('404 when loader returns null (access denied — not distinguishable from not found)', async () => {
+    // The loader returns null for both missing pages and unauthorized access,
+    // and the route responds 404 in both cases to avoid leaking existence.
+    mockLoad.mockResolvedValue(null);
+    const res = await GET(makeReq('workspaceId=ws1&path=secret.md'));
+    expect(res.status).toBe(404);
   });
 
   it('200 with body+meta+orphanSlugs on success', async () => {
@@ -86,15 +79,13 @@ describe('GET /api/wiki/page', () => {
     expect(json.orphanSlugs).toEqual(['bar']);
   });
 
-  it('403 when meta.requiredPermission is set and user lacks it (and is not ADMIN_ALL)', async () => {
+  it('passes session as third argument to loadWikiPageForView', async () => {
     mockLoad.mockResolvedValue({
-      meta: { id: 'p1', title: 'Foo', sensitivity: 'INTERNAL', requiredPermission: 'WIKI_RESTRICTED_READ' },
+      meta: { id: 'p1', title: 'Foo', sensitivity: 'INTERNAL', path: 'foo.md', slug: 'foo' },
       bodyOnly: '...',
     });
-    // ADMIN_ALL check: false; specific permission check: false → 403
-    mockHasPermission.mockReturnValue(false);
-    const res = await GET(makeReq('workspaceId=ws1&path=foo.md'));
-    expect(res.status).toBe(403);
+    await GET(makeReq('workspaceId=ws1&path=foo.md'));
+    expect(mockLoad).toHaveBeenCalledWith('ws1', 'foo', TEST_SESSION);
   });
 
   it('decodes encoded path segments and strips .md before lookup', async () => {
@@ -105,6 +96,6 @@ describe('GET /api/wiki/page', () => {
     // ingest worker는 routeKey를 `.md` 없이 db에 저장하므로 (write-and-commit.ts:340),
     // API도 caller가 `.md`를 붙여 보내든 안 보내든 strip 후 lookup 한다.
     await GET(makeReq('workspaceId=ws1&path=' + encodeURIComponent('한글/page.md')));
-    expect(mockLoad).toHaveBeenCalledWith('ws1', '한글/page');
+    expect(mockLoad).toHaveBeenCalledWith('ws1', '한글/page', TEST_SESSION);
   });
 });
