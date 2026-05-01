@@ -226,7 +226,7 @@ export function CustomersGridContainer({
     setValue("searchYmdFrom", pendingFilters.searchYmdFrom);
     setValue("searchYmdTo", pendingFilters.searchYmdTo);
     setValue("page", "1");
-    reload(1, { ...pendingFilters, page: "1" });
+    reload(1, pendingFilters);
   }, [pendingFilters, setValue, reload]);
 
   return (

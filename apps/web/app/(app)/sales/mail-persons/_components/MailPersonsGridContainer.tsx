@@ -27,7 +27,6 @@
  * (enterCd is implicit via workspaceId; name is a display field.)
  */
 import { useCallback, useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -86,7 +85,6 @@ export function MailPersonsGridContainer({
   limit,
   initialFilters,
 }: Props) {
-  const t = useTranslations("Sales.Common");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
