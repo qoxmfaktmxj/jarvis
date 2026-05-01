@@ -4,29 +4,23 @@
  *
  * 영업 제품군 × 코스트 매핑 그리드 (sales_product_type_cost / TBIZ024 row mapping).
  *
- * Phase-Sales P1.5 Task 6 (2026-05-01).
+ * Phase-Sales P1.5 Task 6 (2026-05-01): initial implementation.
+ * Phase-Sales P2-A Task 7.7 (2026-05-01):
+ *   - DataGridToolbar + Excel export (exportProductCostMappingToExcel)
+ *   - useUrlFilters for searchYmd, searchCostNm, page
+ *   - findDuplicateKeys validation on 4-key composite (productTypeId|costId|sdate)
+ *     Legacy JSP confirmed: enterCd|productTypeCd|costCd|sdate (line 76 productTypeMgr.jsp).
+ *     In normalized schema, productTypeCd→productTypeId, costCd→costId, enterCd=workspaceId(implicit).
+ *   - Search form additions: searchYmd (date), searchCostNm (text)
  *
- * Task 5 (admin/infra/licenses)와 동일한 커스텀 테이블 패턴: 공유 cell/hook
- * (useGridState · EditableTextCell · EditableSelectCell · EditableDateCell ·
- * EditableBooleanCell · GridToolbar · RowStatusBadge · UnsavedChangesDialog) 직접 조립.
- * <DataGrid>는 Phase-Sales P1.5 forbidden list 이므로 의도적으로 사용하지 않는다.
+ * Composite key for duplicate check: productTypeId | costId | sdate
+ * (workspaceId is session-scoped, not stored in row object).
  *
- * 디자인 표준은 admin/companies와 동일: h-8 행, sticky bg-slate-50 헤더,
- * 신규/변경/삭제 상태 배지·행 색상.
- *
- * 컬럼 (ground-truth = packages/db/schema/sales-product-type.ts):
- *  - 제품군         (productTypeNm; EditableSelectCell, productTypeId 편집)
- *  - 코스트         (costNm;        EditableSelectCell, costId 편집)
- *  - 시작일         (sdate;         EditableDateCell, NOT NULL)
- *  - 종료일         (edate;         EditableDateCell, nullable)
- *  - 사용중         (bizYn;         EditableBooleanCell, NOT NULL default false)
- *  - 비고           (note;          EditableTextCell, nullable)
- *  - 등록일/등록자  (createdAt/createdBy; read-only display)
- *
- * Note: ko.json `Sales.ProductCostMapping.*` 키는 Task 10에서 도입. P1.5 동안은
- * inline Korean placeholder 문자열 (다른 sales/* 라우트도 동일).
+ * Existing useProductCostMappingGridState hook is unchanged.
+ * URL filter integration is at the container level (this component).
  */
 import { useCallback, useMemo, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
@@ -34,13 +28,22 @@ import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
 import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
 import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { Button } from "@/components/ui/button";
+import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { triggerDownload } from "@/lib/utils/triggerDownload";
 import type { ProductCostMappingRow } from "@jarvis/shared/validation/sales/product-type-cost";
 import { listProductCostMapping, saveProductCostMapping } from "../actions";
+import { exportProductCostMappingToExcel } from "../export";
 import {
   makeBlankProductCostMapping,
   useProductCostMappingGridState,
 } from "./useProductCostMappingGridState";
+
+/** Keys that form the duplicate-check composite (legacy JSP: enterCd|productTypeCd|costCd|sdate).
+ *  workspaceId = enterCd is session-scoped and not part of the row; productTypeCd→productTypeId, costCd→costId. */
+const COMPOSITE_KEYS = ["productTypeId", "costId", "sdate"] as const satisfies readonly (keyof ProductCostMappingRow)[];
 
 type Option = { value: string; label: string };
 
@@ -49,6 +52,8 @@ type Props = {
   initialTotal: number;
   page: number;
   limit: number;
+  initialSearchYmd: string;
+  initialSearchCostNm: string;
   productTypeOptions: Option[];
   costOptions: Option[];
 };
@@ -58,35 +63,45 @@ export function ProductCostMappingGrid({
   initialTotal,
   page: initialPage,
   limit,
+  initialSearchYmd,
+  initialSearchCostNm,
   productTypeOptions,
   costOptions,
 }: Props) {
+  const t = useTranslations("Sales");
   const grid = useProductCostMappingGridState(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<{
-    q: string;
-    productTypeId: string;
-    costId: string;
-  }>({
-    q: "",
-    productTypeId: "",
-    costId: "",
-  });
   const [saving, startSave] = useTransition();
+  const [exporting, startExport] = useTransition();
   const [, startReload] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // URL filter state — drives reload and persists through navigation
+  const { values: filterValues, setValue: setFilterValue } = useUrlFilters({
+    defaults: {
+      q: "",
+      productTypeId: "",
+      costId: "",
+      searchYmd: initialSearchYmd,
+      searchCostNm: initialSearchCostNm,
+      page: String(initialPage),
+    },
+  });
 
   const reload = useCallback(
     (
       nextPage: number,
-      nextFilters: { q: string; productTypeId: string; costId: string },
+      nextFilters: typeof filterValues,
     ) => {
       startReload(async () => {
         const res = await listProductCostMapping({
           q: nextFilters.q || undefined,
           productTypeId: nextFilters.productTypeId || undefined,
           costId: nextFilters.costId || undefined,
+          searchYmd: nextFilters.searchYmd || undefined,
+          searchCostNm: nextFilters.searchCostNm || undefined,
           page: nextPage,
           limit,
         });
@@ -94,7 +109,7 @@ export function ProductCostMappingGrid({
           grid.reset(res.rows as ProductCostMappingRow[]);
           setTotal(res.total);
           setPage(nextPage);
-          setFilterValues(nextFilters);
+          setValidationErrors([]);
         }
       });
     },
@@ -109,7 +124,21 @@ export function ProductCostMappingGrid({
     [grid.dirtyCount],
   );
 
-  const handleSave = useCallback(() => {
+  // Validate duplicate keys before save
+  const validateAndSave = useCallback(() => {
+    const allRows = grid.rows
+      .filter((r) => r.state !== "deleted")
+      .map((r) => r.data);
+    const dups = findDuplicateKeys(allRows, COMPOSITE_KEYS);
+    if (dups.length > 0) {
+      setValidationErrors(
+        dups.map(
+          (key) => `중복된 키가 있습니다: 제품군·코스트·시작일 (${key})`,
+        ),
+      );
+      return;
+    }
+    setValidationErrors([]);
     startSave(async () => {
       const changes = grid.toBatch();
       const result = await saveProductCostMapping({
@@ -126,10 +155,25 @@ export function ProductCostMappingGrid({
     });
   }, [grid, page, filterValues, reload]);
 
+  const handleExport = useCallback(() => {
+    startExport(async () => {
+      const result = await exportProductCostMappingToExcel({
+        q: filterValues.q || undefined,
+        productTypeId: filterValues.productTypeId || undefined,
+        costId: filterValues.costId || undefined,
+        searchYmd: filterValues.searchYmd || undefined,
+        searchCostNm: filterValues.searchCostNm || undefined,
+      });
+      if (result.ok) {
+        triggerDownload(result.bytes, result.filename);
+      } else {
+        alert(`엑셀 다운로드 실패: ${result.error}`);
+      }
+    });
+  }, [filterValues]);
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  // id → label lookups (for display fallback when join projection is missing
-  // on a freshly-typed row before reload).
   const productTypeLabel = useMemo(() => {
     const m = new Map<string, string>();
     for (const o of productTypeOptions) m.set(o.value, o.label);
@@ -143,36 +187,78 @@ export function ProductCostMappingGrid({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
+      {/* DataGridToolbar: Excel export button */}
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel={t("Common.Excel.button")}
+        isExporting={exporting}
+      >
         <GridToolbar
           dirtyCount={grid.dirtyCount}
           saving={saving}
           onInsert={() => grid.insertBlank(makeBlankProductCostMapping())}
-          onSave={handleSave}
+          onSave={validateAndSave}
         />
+      </DataGridToolbar>
+
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {validationErrors.map((e, i) => (
+            <div key={i}>{e}</div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
       </div>
 
-      {/* Filter row */}
+      {/* Filter row — existing filters + new searchYmd + searchCostNm */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <input
           type="text"
           placeholder="제품/코스트/비고"
           value={filterValues.q}
-          onChange={(e) => {
-            const next = { ...filterValues, q: e.target.value };
-            setFilterValues(next);
-          }}
+          onChange={(e) => setFilterValue("q", e.target.value)}
           onBlur={() => guarded(() => reload(1, filterValues))}
           onKeyDown={(e) => {
             if (e.key === "Enter") guarded(() => reload(1, filterValues));
           }}
-          className="h-8 w-64 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {/* searchCostNm — new in P2-A */}
+        <input
+          type="text"
+          aria-label={t("Common.Search.searchCostNm")}
+          placeholder={t("Common.Search.searchCostNm")}
+          value={filterValues.searchCostNm}
+          onChange={(e) => setFilterValue("searchCostNm", e.target.value)}
+          onBlur={() => guarded(() => reload(1, filterValues))}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") guarded(() => reload(1, filterValues));
+          }}
+          className="h-8 w-40 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {/* searchYmd — new in P2-A */}
+        <label className="flex items-center gap-1 text-[13px] text-slate-600">
+          <span>{t("Common.Search.searchYmd")}</span>
+          <input
+            type="date"
+            aria-label={t("Common.Search.searchYmd")}
+            value={filterValues.searchYmd}
+            onChange={(e) => {
+              setFilterValue("searchYmd", e.target.value);
+              guarded(() => reload(1, { ...filterValues, searchYmd: e.target.value }));
+            }}
+            className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </label>
         <select
           value={filterValues.productTypeId}
           onChange={(e) => {
             const next = { ...filterValues, productTypeId: e.target.value };
+            setFilterValue("productTypeId", e.target.value);
             guarded(() => reload(1, next));
           }}
           className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
@@ -189,6 +275,7 @@ export function ProductCostMappingGrid({
           value={filterValues.costId}
           onChange={(e) => {
             const next = { ...filterValues, costId: e.target.value };
+            setFilterValue("costId", e.target.value);
             guarded(() => reload(1, next));
           }}
           className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
@@ -210,25 +297,25 @@ export function ProductCostMappingGrid({
               <th className="w-10 px-2 py-2 text-left">No</th>
               <th className="w-10 px-2 py-2">삭제</th>
               <th className="px-2 py-2 text-left" style={{ width: 240 }}>
-                제품군
+                {t("ProductCostMapping.columns.productType")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 240 }}>
-                코스트
+                {t("ProductCostMapping.columns.cost")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 130 }}>
-                시작일
+                {t("ProductCostMapping.columns.sdate")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 130 }}>
-                종료일
+                {t("ProductCostMapping.columns.edate")}
               </th>
               <th className="px-2 py-2 text-center" style={{ width: 70 }}>
-                사용중
+                {t("ProductCostMapping.columns.bizYn")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 240 }}>
-                비고
+                {t("ProductCostMapping.columns.note")}
               </th>
               <th className="px-2 py-2 text-left" style={{ width: 150 }}>
-                등록일
+                {t("ProductCostMapping.columns.createdAt")}
               </th>
               <th className="w-16 px-2 py-2 text-left">상태</th>
             </tr>
@@ -379,7 +466,11 @@ export function ProductCostMappingGrid({
           size="sm"
           variant="outline"
           disabled={page <= 1 || saving}
-          onClick={() => guarded(() => reload(page - 1, filterValues))}
+          onClick={() => {
+            const next = page - 1;
+            setFilterValue("page", String(next));
+            guarded(() => reload(next, filterValues));
+          }}
         >
           이전
         </Button>
@@ -390,7 +481,11 @@ export function ProductCostMappingGrid({
           size="sm"
           variant="outline"
           disabled={page >= totalPages || saving}
-          onClick={() => guarded(() => reload(page + 1, filterValues))}
+          onClick={() => {
+            const next = page + 1;
+            setFilterValue("page", String(next));
+            guarded(() => reload(next, filterValues));
+          }}
         >
           다음
         </Button>
@@ -400,7 +495,7 @@ export function ProductCostMappingGrid({
         open={pendingNav !== null}
         count={grid.dirtyCount}
         onSaveAndContinue={async () => {
-          handleSave();
+          validateAndSave();
           pendingNav?.();
           setPendingNav(null);
         }}

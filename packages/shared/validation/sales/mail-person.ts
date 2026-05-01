@@ -13,10 +13,18 @@ export const mailPersonRow = z.object({
 });
 
 export const listMailPersonsInput = z.object({
-  sabun: z.string().optional(),
-  name: z.string().optional(),
+  sabun: z.string().trim().optional(),
+  name: z.string().trim().optional(),
+  searchMail: z.string().trim().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
+});
+
+/** Export variant: same filters, no pagination. */
+export const exportMailPersonsInput = z.object({
+  sabun: z.string().trim().optional(),
+  name: z.string().trim().optional(),
+  searchMail: z.string().trim().optional(),
 });
 
 export const listMailPersonsOutput = z.object({
@@ -40,5 +48,6 @@ export const saveMailPersonsOutput = z.object({
 
 export type MailPersonRow = z.infer<typeof mailPersonRow>;
 export type ListMailPersonsInput = z.infer<typeof listMailPersonsInput>;
+export type ExportMailPersonsInput = z.infer<typeof exportMailPersonsInput>;
 export type SaveMailPersonsInput = z.infer<typeof saveMailPersonsInput>;
 export type SaveMailPersonsOutput = z.infer<typeof saveMailPersonsOutput>;

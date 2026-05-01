@@ -65,9 +65,30 @@ export const listProductCostMappingInput = z.object({
   q: z.string().optional(),
   productTypeId: z.string().uuid().optional(),
   costId: z.string().uuid().optional(),
+  /** "active on this date" filter: sdate <= searchYmd AND (edate >= searchYmd OR edate IS NULL) */
+  searchYmd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  /** ILIKE filter on joined costNm */
+  searchCostNm: z.string().trim().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });
+
+// Export filter input — same fields as list but without pagination
+export const exportProductCostMappingInput = z.object({
+  q: z.string().optional(),
+  productTypeId: z.string().uuid().optional(),
+  costId: z.string().uuid().optional(),
+  searchYmd: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  searchCostNm: z.string().trim().optional(),
+});
+
+export type ExportProductCostMappingInput = z.infer<typeof exportProductCostMappingInput>;
 
 export const listProductCostMappingOutput = z.object({
   rows: z.array(productCostMappingRow),

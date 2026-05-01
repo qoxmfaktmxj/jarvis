@@ -112,10 +112,11 @@ export async function listInfraLicenses(rawInput: z.input<typeof listInfraLicens
   const offset = (input.page - 1) * input.limit;
 
   // q: 회사명/legacy code/도메인/IP에서 부분일치
-  // q is matched against company.code/name via subquery (companyId in (...))
+  // searchDevGbCd: B10025 code group filter (URL param from useUrlFilters, alias for devGbCode)
+  const effectiveDevGbCode = input.searchDevGbCd || input.devGbCode;
   const where = and(
     eq(infraLicense.workspaceId, ctx.workspaceId),
-    input.devGbCode ? eq(infraLicense.devGbCode, input.devGbCode) : undefined,
+    effectiveDevGbCode ? eq(infraLicense.devGbCode, effectiveDevGbCode) : undefined,
     input.companyId ? eq(infraLicense.companyId, input.companyId) : undefined,
     input.q
       ? or(

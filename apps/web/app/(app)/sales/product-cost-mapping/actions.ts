@@ -11,7 +11,7 @@
  * 감사: sales.product_type_cost.{create,update,delete}
  */
 import { cookies, headers } from "next/headers";
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNull, lte, or } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -84,6 +84,18 @@ export async function listProductCostMapping(
           ilike(salesCostMaster.costNm, `%${input.q}%`),
           ilike(salesProductTypeCost.note, `%${input.q}%`),
         )
+      : undefined,
+    // searchYmd: "row is valid on this date" — sdate <= searchYmd AND (edate >= searchYmd OR edate IS NULL)
+    input.searchYmd ? lte(salesProductTypeCost.sdate, input.searchYmd) : undefined,
+    input.searchYmd
+      ? or(
+          gte(salesProductTypeCost.edate, input.searchYmd),
+          isNull(salesProductTypeCost.edate),
+        )
+      : undefined,
+    // searchCostNm: ILIKE on joined cost name
+    input.searchCostNm
+      ? ilike(salesCostMaster.costNm, `%${input.searchCostNm}%`)
       : undefined,
   );
 

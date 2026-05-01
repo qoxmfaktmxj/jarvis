@@ -20,7 +20,11 @@ async function loadCodeOptions(workspaceId: string, groupCode: string) {
   return rows.map((r) => ({ value: r.code, label: r.name }));
 }
 
-export default async function SalesCustomersPage() {
+export default async function SalesCustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
   const headerStore = await headers();
   const sessionId = headerStore.get("x-session-id") ?? "";
   const session = await getSession(sessionId);
@@ -28,10 +32,20 @@ export default async function SalesCustomersPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.page) || 1);
   const limit = 50;
+  const filters = {
+    custNm: sp.custNm,
+    custKindCd: sp.custKindCd,
+    custDivCd: sp.custDivCd,
+    chargerNm: sp.chargerNm,
+    searchYmdFrom: sp.searchYmdFrom,
+    searchYmdTo: sp.searchYmdTo,
+  };
 
   const [listResult, custKindOptions, custDivOptions, exchangeTypeOptions] = await Promise.all([
-    listCustomers({ page: 1, limit }),
+    listCustomers({ page, limit, ...filters }),
     loadCodeOptions(session.workspaceId, "SALES_CUST_KIND"),
     loadCodeOptions(session.workspaceId, "SALES_CUST_DIV"),
     loadCodeOptions(session.workspaceId, "SALES_EXCHANGE_TYPE"),
@@ -43,7 +57,6 @@ export default async function SalesCustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-
         eyebrow="Sales · Customers"
         title="고객사관리"
         description="외부 거래처(고객사) 마스터를 관리합니다."
@@ -51,8 +64,9 @@ export default async function SalesCustomersPage() {
       <CustomersGridContainer
         rows={initialRows}
         total={initialTotal}
-        page={1}
+        page={page}
         limit={limit}
+        initialFilters={filters}
         codeOptions={{
           custKind: custKindOptions,
           custDiv: custDivOptions,

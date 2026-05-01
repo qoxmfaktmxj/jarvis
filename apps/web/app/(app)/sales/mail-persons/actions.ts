@@ -9,6 +9,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listMailPersonsInput,
   listMailPersonsOutput,
+  exportMailPersonsInput,
   saveMailPersonsInput,
   saveMailPersonsOutput,
 } from "@jarvis/shared/validation/sales/mail-person";
@@ -29,16 +30,24 @@ async function resolveSalesContext() {
   return { ok: true as const, userId: session.userId, workspaceId: session.workspaceId };
 }
 
+function buildConditions(
+  workspaceId: string,
+  filters: { sabun?: string; name?: string; searchMail?: string },
+) {
+  const conditions = [eq(salesMailPerson.workspaceId, workspaceId)];
+  if (filters.sabun) conditions.push(ilike(salesMailPerson.sabun, `%${filters.sabun}%`));
+  if (filters.name) conditions.push(ilike(salesMailPerson.name, `%${filters.name}%`));
+  if (filters.searchMail) conditions.push(ilike(salesMailPerson.mailId, `%${filters.searchMail}%`));
+  return and(...conditions);
+}
+
 export async function listMailPersons(rawInput: z.input<typeof listMailPersonsInput>) {
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [], total: 0 };
 
   const input = listMailPersonsInput.parse(rawInput);
   const offset = (input.page - 1) * input.limit;
-  const conditions = [eq(salesMailPerson.workspaceId, ctx.workspaceId)];
-  if (input.sabun) conditions.push(ilike(salesMailPerson.sabun, `%${input.sabun}%`));
-  if (input.name) conditions.push(ilike(salesMailPerson.name, `%${input.name}%`));
-  const where = and(...conditions);
+  const where = buildConditions(ctx.workspaceId, input);
 
   const [rows, countRows] = await Promise.all([
     db.select().from(salesMailPerson).where(where).orderBy(salesMailPerson.sabun).limit(input.limit).offset(offset),
@@ -58,6 +67,45 @@ export async function listMailPersons(rawInput: z.input<typeof listMailPersonsIn
     })),
     total: Number(countRows[0]?.count ?? 0),
   });
+}
+
+export async function exportMailPersonsRows(rawInput: z.input<typeof exportMailPersonsInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [] as ReturnType<typeof mapRow>[] };
+
+  const input = exportMailPersonsInput.parse(rawInput);
+  const where = buildConditions(ctx.workspaceId, input);
+
+  const rows = await db
+    .select()
+    .from(salesMailPerson)
+    .where(where)
+    .orderBy(salesMailPerson.sabun);
+
+  await db.insert(auditLog).values({
+    workspaceId: ctx.workspaceId,
+    userId: ctx.userId,
+    action: "sales.mail_person.export",
+    resourceType: "sales_mail_person",
+    resourceId: null,
+    details: { filters: input } as Record<string, unknown>,
+    success: true,
+  });
+
+  return { ok: true as const, rows: rows.map(mapRow) };
+}
+
+function mapRow(r: typeof salesMailPerson.$inferSelect) {
+  return {
+    id: r.id,
+    sabun: r.sabun,
+    name: r.name,
+    mailId: r.mailId,
+    salesYn: r.salesYn,
+    insaYn: r.insaYn,
+    memo: r.memo,
+    createdAt: r.createdAt.toISOString(),
+  };
 }
 
 export async function saveMailPersons(rawInput: z.input<typeof saveMailPersonsInput>) {

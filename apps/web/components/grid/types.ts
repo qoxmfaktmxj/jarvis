@@ -10,7 +10,7 @@ export type RowStatus = "clean" | "new" | "dirty" | "deleted";
 
 export type ColumnDef<T> = {
   key: keyof T & string;
-  label: string; // i18n key suffix (tNamespace + ".columns." + label)
+  label: string; // Display string. Callers resolve i18n via t(...) before constructing the ColumnDef.
   type: "text" | "textarea" | "select" | "date" | "boolean" | "numeric" | "readonly";
   width?: number;
   editable?: boolean;
