@@ -73,4 +73,24 @@ describe("exportToExcel", () => {
     const sheet = wb.Sheets["s"]!;
     expect(sheet["B2"]?.v ?? "").toBe("");
   });
+
+  it("supports caller-side column filtering (Phase 2 pattern)", async () => {
+    // ColumnDef has no `hidden` field — callers pre-filter before passing.
+    // This mirrors legacy ibsheet semantics: visible grid columns = exported columns.
+    const allColumns: ColumnDef<Row>[] = [
+      { key: "id", label: "ID", type: "readonly" },
+      { key: "name", label: "Name", type: "text" },
+      { key: "secret" as never, label: "Secret", type: "text" },
+    ];
+    const exportColumns = allColumns.filter((c) => c.key !== "secret");
+    const buf = await exportToExcel<Row>({
+      rows: [{ id: "1", name: "a" }],
+      columns: exportColumns,
+      sheetName: "s",
+    });
+    const wb = XLSX.read(buf, { type: "buffer" });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const csv = XLSX.utils.sheet_to_csv(wb.Sheets["s"]!);
+    expect(csv).not.toContain("Secret");
+  });
 });
