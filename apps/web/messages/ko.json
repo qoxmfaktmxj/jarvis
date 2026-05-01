@@ -1198,7 +1198,10 @@
       "mailPersons": "메일담당자",
       "opportunities": "영업기회",
       "activities": "영업활동",
-      "dashboard": "영업기회현황"
+      "dashboard": "영업기회현황",
+      "contracts": "계약 관리",
+      "contractMonths": "계약 월별",
+      "contractServices": "서비스 인력"
     },
     "Opportunities": {
       "title": "영업기회",
@@ -1394,6 +1397,49 @@
         "salesYn": "영업",
         "insaYn": "인사",
         "mailId": "메일 ID",
+        "memo": "메모",
+        "insdate": "등록일자"
+      }
+    },
+    "Contracts": {
+      "title": "계약 관리",
+      "description": "영업 계약 마스터를 관리합니다.",
+      "columns": {
+        "contNm": "계약명",
+        "custNm": "고객사명",
+        "contGbCd": "계약구분",
+        "contYmd": "계약일자",
+        "contSymd": "계약시작일",
+        "contEymd": "계약종료일",
+        "mainContType": "계약형태",
+        "startAmt": "계약금액",
+        "memo": "메모",
+        "insdate": "등록일자"
+      }
+    },
+    "ContractMonths": {
+      "title": "계약 월별",
+      "description": "계약별 월별 계획·예상·실적 데이터를 관리합니다.",
+      "columns": {
+        "contractId": "계약ID",
+        "ym": "년월",
+        "planAmt": "계획금액",
+        "expectAmt": "예상금액",
+        "actualAmt": "실적금액",
+        "memo": "메모",
+        "insdate": "등록일자"
+      }
+    },
+    "ContractServices": {
+      "title": "서비스 인력",
+      "description": "계약별 배치된 서비스 인력을 관리합니다.",
+      "columns": {
+        "contractId": "계약ID",
+        "pjtCd": "프로젝트코드",
+        "servName": "서비스명",
+        "job": "직급",
+        "attendCd": "근태구분",
+        "servSabun": "인력사번",
         "memo": "메모",
         "insdate": "등록일자"
       }

@@ -449,6 +449,13 @@
       "when": 1777673885420,
       "tag": "0063_awesome_lilandra",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1777675390298,
+      "tag": "0064_bright_shooting_star",
+      "breakpoints": true
     }
   ]
 }

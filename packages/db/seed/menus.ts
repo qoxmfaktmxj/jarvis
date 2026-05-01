@@ -74,6 +74,10 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "sales.opportunities",            kind: "menu", label: "영업기회",       icon: "Target",      routePath: "/sales/opportunities",             sortOrder: 170, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["영업기회", "opportunity", "sales", "biz"] },
   { code: "sales.activities",               kind: "menu", label: "영업활동",       icon: "Activity",    routePath: "/sales/activities",                sortOrder: 175, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["영업활동", "activity", "sales", "biz"] },
   { code: "sales.opportunities.dashboard",  kind: "menu", label: "영업기회현황",   icon: "TrendingUp",  routePath: "/sales/opportunities/dashboard",   sortOrder: 180, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["대시보드", "dashboard", "현황", "sales"] },
+  // Phase 3 — 계약 관리 (Task 13/14)
+  { code: "sales.contracts",                kind: "menu", label: "계약 관리",      icon: "FileText",    routePath: "/sales/contracts",                 sortOrder: 181, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "contract", "sales"] },
+  { code: "sales.contract-months",          kind: "menu", label: "계약 월별",      icon: "CalendarDays",routePath: "/sales/contract-months",           sortOrder: 182, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "월별", "contract", "sales"] },
+  { code: "sales.contract-services",        kind: "menu", label: "서비스 인력",    icon: "Users",       routePath: "/sales/contract-services",         sortOrder: 183, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["서비스", "인력", "contract", "sales"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },

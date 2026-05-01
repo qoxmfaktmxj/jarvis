@@ -18,7 +18,7 @@
     "studio": "drizzle-kit studio",
     "seed": "tsx seed/dev.ts",
     "type-check": "tsc --noEmit",
-    "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts ./__tests__/schema/user-global-unique.test.ts ./__tests__/schema/sales-people-schema.test.ts ./__tests__/schema/project-extension.test.ts"
+    "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts ./__tests__/schema/user-global-unique.test.ts ./__tests__/schema/sales-contract-schema.test.ts ./__tests__/schema/sales-people-schema.test.ts ./__tests__/schema/project-extension.test.ts"
   },
   "dependencies": {
     "@jarvis/shared": "workspace:*",
