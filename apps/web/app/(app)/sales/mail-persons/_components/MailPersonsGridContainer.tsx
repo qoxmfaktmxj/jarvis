@@ -156,7 +156,7 @@ export function MailPersonsGridContainer({
     };
   }, []);
 
-  // CSV export: Hidden:0 columns only (mirrors COLUMNS above).
+  // CSV export: visible columns + sabun (Hidden:1 PK) for audit completeness.
   const handleExport = () => {
     const csv = rowsToCsv(rows, [
       { key: "sabun", header: "사번" },
