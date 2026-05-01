@@ -4,8 +4,12 @@ export const mailPersonRow = z.object({
   id: z.string().uuid(),
   sabun: z.string().min(1).max(20),
   name: z.string().min(1).max(100),
+  mailId: z.string().min(1).max(200),
   salesYn: z.boolean(),
   insaYn: z.boolean(),
+  memo: z.string().nullable(),
+  // 등록일자 (read-only display; server sets defaultNow on insert).
+  createdAt: z.string().nullable().optional(),
 });
 
 export const listMailPersonsInput = z.object({

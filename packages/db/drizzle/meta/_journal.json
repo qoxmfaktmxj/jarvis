@@ -365,6 +365,34 @@
       "when": 1777563595376,
       "tag": "0051_typical_wrecking_crew",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1777606512168,
+      "tag": "0052_drop_sales_license",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1777692912168,
+      "tag": "0053_normalize_sales_product_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1777779312168,
+      "tag": "0054_add_mail_id_memo_to_mail_person",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1777865712168,
+      "tag": "0055_create_infra_license",
+      "breakpoints": true
     }
   ]
 }

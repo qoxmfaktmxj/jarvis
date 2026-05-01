@@ -127,6 +127,15 @@ const SALES_CODE_GROUPS: SeedGroup[] = [
       { code: "99", name: "기타" },
     ],
   },
+  {
+    code: "INFRA_DEV_GB",
+    name: "환경구분",
+    items: [
+      { code: "01", name: "개발" },
+      { code: "02", name: "스테이징" },
+      { code: "03", name: "운영" },
+    ],
+  },
 ];
 
 async function upsertCodeGroup(

@@ -13,9 +13,14 @@ type Props = {
 };
 
 function makeBlankRow(): CustomerContactRow {
+  // Legacy ibSheet bizActCustomerMgr.jsp:207~220 marks `custMcd` Hidden:1 (PK, system-assigned).
+  // Until a code-generation popup is wired up, derive a placeholder from the row id so the
+  // NOT NULL + (workspace, custMcd) UNIQUE constraint is satisfied. createdAt is omitted on
+  // new rows — DB defaultNow assigns on save; UI shows "—".
+  const id = crypto.randomUUID();
   return {
-    id: crypto.randomUUID(),
-    custMcd: "",
+    id,
+    custMcd: id.slice(0, 12),
     customerId: null,
     custName: null,
     jikweeNm: null,
@@ -25,24 +30,38 @@ function makeBlankRow(): CustomerContactRow {
     email: null,
     statusYn: true,
     sabun: null,
+    custNm: null,
+    createdAt: null,
   };
 }
 
+// Hidden:0 (visible) columns per legacy ibSheet bizActCustomerMgr.jsp:207~220.
+// custMcd / statusYn / sabun are Hidden:1 — intentionally omitted from grid columns.
 const COLUMNS: ColumnDef<CustomerContactRow>[] = [
-  { key: "custMcd", label: "마스터코드", type: "text", width: 130, editable: true, required: true },
-  { key: "custName", label: "이름", type: "text", width: 130, editable: true },
+  {
+    key: "custNm",
+    label: "고객사명",
+    type: "readonly",
+    width: 180,
+    render: (row) => row.custNm ?? "—",
+  },
+  { key: "custName", label: "담당자명", type: "text", width: 130, editable: true },
   { key: "jikweeNm", label: "직위", type: "text", width: 120, editable: true },
-  { key: "orgNm", label: "부서", type: "text", width: 150, editable: true },
+  { key: "orgNm", label: "소속", type: "text", width: 150, editable: true },
   { key: "telNo", label: "전화", type: "text", width: 130, editable: true },
   { key: "hpNo", label: "휴대폰", type: "text", width: 130, editable: true },
   { key: "email", label: "이메일", type: "text", width: 200, editable: true },
-  { key: "statusYn", label: "활성", type: "boolean", width: 80, editable: true },
-  { key: "sabun", label: "담당사번", type: "text", width: 100, editable: true },
+  {
+    key: "createdAt",
+    label: "등록일자",
+    type: "readonly",
+    width: 110,
+    render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
+  },
 ];
 
 const FILTERS: FilterDef<CustomerContactRow>[] = [
-  { key: "custMcd", type: "text", placeholder: "마스터코드" },
-  { key: "custName", type: "text", placeholder: "이름" },
+  { key: "custName", type: "text", placeholder: "담당자명" },
 ];
 
 export function CustomerContactsGridContainer({ rows: initialRows, total: initialTotal, page: initialPage, limit }: Props) {
@@ -56,7 +75,6 @@ export function CustomerContactsGridContainer({ rows: initialRows, total: initia
     (nextPage: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listCustomerContacts({
-          custMcd: nextFilters.custMcd || undefined,
           custName: nextFilters.custName || undefined,
           page: nextPage,
           limit,

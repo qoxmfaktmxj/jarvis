@@ -28,7 +28,55 @@
       "llmCost": "LLM 비용",
       "wikiObservability": "위키 운영",
       "wikiViolations": "경계 위반",
-      "wikiReviewQueue": "위키 리뷰 큐"
+      "wikiReviewQueue": "위키 리뷰 큐",
+      "infraLicenses": "인프라 라이센스"
+    },
+    "Infra": {
+      "Licenses": {
+        "title": "인프라 라이센스",
+        "description": "회사별 환경별 모듈 라이센스를 관리합니다.",
+        "columns": {
+          "company": "회사",
+          "symd": "시작일",
+          "eymd": "종료일",
+          "devGb": "환경",
+          "domainAddr": "도메인",
+          "ipAddr": "IP",
+          "userCnt": "사용자수",
+          "corpCnt": "법인수",
+          "createdAt": "등록일자"
+        },
+        "modules": {
+          "emp": "채용",
+          "hr": "인사",
+          "org": "조직",
+          "edu": "교육",
+          "pap": "급여",
+          "car": "차량",
+          "cpn": "쿠폰",
+          "tim": "근태",
+          "ben": "복지",
+          "app": "앱",
+          "eis": "EIS",
+          "sys": "시스템",
+          "year": "연말정산",
+          "board": "게시판",
+          "wl": "워크플로우",
+          "pds": "자료실",
+          "idp": "IDP",
+          "abhr": "AB-HR",
+          "work": "작업관리",
+          "sec": "보안",
+          "doc": "전자결재",
+          "dis": "파견"
+        },
+        "groupHeaders": {
+          "userMgmt": "사용자/관리",
+          "payrollAttn": "급여/근태/복지",
+          "portalSystem": "포털/시스템",
+          "collabSecurity": "협업/보안/IDP"
+        }
+      }
     },
     "Users": {
       "title": "사용자 관리",
@@ -986,8 +1034,8 @@
       "customers": "고객사관리",
       "customerContacts": "담당자관리",
       "productTypes": "제품군관리",
-      "mailPersons": "메일담당자",
-      "licenses": "라이센스관리"
+      "productCostMapping": "제품-코스트 매핑",
+      "mailPersons": "메일담당자"
     },
     "Customers": {
       "title": "고객사관리",
@@ -1003,7 +1051,9 @@
         "exchangeTypeCd": "거래유형",
         "businessKind": "업종",
         "homepage": "홈페이지",
-        "addr1": "주소"
+        "addr1": "주소",
+        "memo": "메모",
+        "insdate": "등록일자"
       }
     },
     "CustomerContacts": {
@@ -1018,7 +1068,9 @@
         "hpNo": "휴대폰",
         "email": "이메일",
         "statusYn": "활성",
-        "sabun": "담당사번"
+        "sabun": "담당사번",
+        "memo": "메모",
+        "insdate": "등록일자"
       }
     },
     "ProductTypes": {
@@ -1028,7 +1080,29 @@
         "productCd": "제품코드",
         "productNm": "제품명",
         "productTypeCd": "제품군",
-        "remark": "비고"
+        "remark": "비고",
+        "insdate": "등록일자"
+      }
+    },
+    "ProductCostMapping": {
+      "title": "제품-코스트 매핑",
+      "description": "제품군별 코스트 단가와 적용 기간을 관리합니다.",
+      "filters": {
+        "productType": "제품군",
+        "productTypeAll": "전체",
+        "bizYn": "영업 사용",
+        "bizYnAll": "전체",
+        "bizYnY": "사용",
+        "bizYnN": "미사용"
+      },
+      "columns": {
+        "productType": "제품군",
+        "cost": "코스트",
+        "sdate": "시작일",
+        "edate": "종료일",
+        "bizYn": "영업 사용",
+        "note": "비고",
+        "createdAt": "등록일자"
       }
     },
     "MailPersons": {
@@ -1038,20 +1112,10 @@
         "sabun": "사번",
         "name": "이름",
         "salesYn": "영업",
-        "insaYn": "인사"
-      }
-    },
-    "Licenses": {
-      "title": "라이센스관리",
-      "description": "고객사별 라이센스 발급·만료를 관리합니다.",
-      "columns": {
-        "licenseNo": "라이센스 번호",
-        "productCd": "제품코드",
-        "licenseKindCd": "라이센스 종류",
-        "sdate": "시작일",
-        "edate": "종료일",
-        "qty": "수량",
-        "remark": "비고"
+        "insaYn": "인사",
+        "mailId": "메일 ID",
+        "memo": "메모",
+        "insdate": "등록일자"
       }
     }
   }

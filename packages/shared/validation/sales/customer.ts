@@ -20,6 +20,8 @@ export const customerRow = z.object({
   addrNo: z.string().nullable(),
   addr1: z.string().nullable(),
   addr2: z.string().nullable(),
+  // 등록일자 (read-only display; server sets defaultNow on insert).
+  createdAt: z.string().nullable().optional(),
 });
 
 export const listCustomersInput = z.object({
