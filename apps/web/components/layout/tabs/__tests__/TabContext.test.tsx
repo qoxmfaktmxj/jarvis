@@ -143,3 +143,55 @@ describe("TabProvider — LRU eviction", () => {
     expect(result.current.isDirty("/a")).toBe(false);
   });
 });
+
+describe("TabProvider — pin policy", () => {
+  it("pinTab marks a tab as pinned, unpinTab clears it", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+    });
+    expect(result.current.isPinned("/a")).toBe(false);
+    act(() => result.current.pinTab("/a"));
+    expect(result.current.isPinned("/a")).toBe(true);
+    act(() => result.current.unpinTab("/a"));
+    expect(result.current.isPinned("/a")).toBe(false);
+  });
+
+  it("LRU eviction skips pinned tabs", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      await result.current.openTab("/a", "A");
+      result.current.pinTab("/a");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/b", "B");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/c", "C");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/d", "D");
+      await new Promise((r) => setTimeout(r, 1));
+      await result.current.openTab("/e", "E");
+    });
+    await act(async () => {
+      await result.current.openTab("/f", "F");
+    });
+    expect(result.current.tabs.map((t) => t.key)).toContain("/a"); // /a survived even though oldest
+    expect(result.current.tabs.map((t) => t.key)).not.toContain("/b"); // oldest non-pinned evicted
+  });
+
+  it("openTab returns false when all 5 tabs are pinned", async () => {
+    const { result } = renderHook(() => useTabContext(), { wrapper });
+    await act(async () => {
+      for (const k of ["/a", "/b", "/c", "/d", "/e"]) {
+        await result.current.openTab(k, k);
+        result.current.pinTab(k);
+      }
+    });
+    let ok = true;
+    await act(async () => {
+      ok = await result.current.openTab("/f", "F");
+    });
+    expect(ok).toBe(false);
+    expect(result.current.tabs).toHaveLength(5);
+    expect(result.current.tabs.map((t) => t.key)).not.toContain("/f");
+  });
+});
