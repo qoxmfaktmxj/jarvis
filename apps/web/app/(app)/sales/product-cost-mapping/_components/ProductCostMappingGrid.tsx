@@ -33,6 +33,7 @@ import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -265,12 +266,10 @@ export function ProductCostMappingGrid({
           />
         </GridFilterField>
         <GridFilterField label={t("Common.Search.searchYmd")} className="w-[160px]">
-          <input
-            type="date"
-            aria-label={t("Common.Search.searchYmd")}
-            value={pendingFilters.searchYmd}
-            onChange={(e) => setPending("searchYmd", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmd || null}
+            onChange={(v) => setPending("searchYmd", v ?? "")}
+            ariaLabel={t("Common.Search.searchYmd")}
           />
         </GridFilterField>
         <GridFilterField label="제품/코스트/비고" className="w-[210px]">

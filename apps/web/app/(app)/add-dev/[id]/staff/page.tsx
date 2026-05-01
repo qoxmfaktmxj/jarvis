@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StaffTable } from "@/components/add-dev/StaffTable";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 type StaffRow = {
   id: string;
@@ -21,6 +22,8 @@ export default function AddDevStaffPage() {
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [staffStartDate, setStaffStartDate] = React.useState<string | null>(null);
+  const [staffEndDate, setStaffEndDate] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setLoading(true);
@@ -49,6 +52,8 @@ export default function AddDevStaffPage() {
       }
       setData((prev) => [...prev, payload.data]);
       form.reset();
+      setStaffStartDate(null);
+      setStaffEndDate(null);
       router.refresh();
     } finally {
       setSubmitting(false);
@@ -70,8 +75,10 @@ export default function AddDevStaffPage() {
         ) : null}
         <Input name="userId" placeholder="사용자 UUID" />
         <Input name="role" placeholder="역할" />
-        <Input type="date" name="startDate" placeholder="시작일" />
-        <Input type="date" name="endDate" placeholder="종료일" />
+        <input type="hidden" name="startDate" value={staffStartDate ?? ""} readOnly />
+        <DatePicker value={staffStartDate} onChange={setStaffStartDate} placeholder="시작일" />
+        <input type="hidden" name="endDate" value={staffEndDate ?? ""} readOnly />
+        <DatePicker value={staffEndDate} onChange={setStaffEndDate} placeholder="종료일" />
         <Button type="submit" disabled={submitting}>
           {submitting ? "추가 중..." : "추가"}
         </Button>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 type AddDevFormValues = {
   projectId: string;
@@ -83,6 +84,8 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
     projectId: initialProjectId,
     ...defaultValues,
   });
+  const [devStartDate, setDevStartDate] = React.useState<string | null>(vals.devStartDate || null);
+  const [devEndDate, setDevEndDate] = React.useState<string | null>(vals.devEndDate || null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -265,11 +268,13 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("devStartDate")}</span>
-            <Input type="date" name="devStartDate" defaultValue={vals.devStartDate} />
+            <input type="hidden" name="devStartDate" value={devStartDate ?? ""} readOnly />
+            <DatePicker value={devStartDate} onChange={setDevStartDate} />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("devEndDate")}</span>
-            <Input type="date" name="devEndDate" defaultValue={vals.devEndDate} />
+            <input type="hidden" name="devEndDate" value={devEndDate ?? ""} readOnly />
+            <DatePicker value={devEndDate} onChange={setDevEndDate} />
           </label>
         </div>
 
