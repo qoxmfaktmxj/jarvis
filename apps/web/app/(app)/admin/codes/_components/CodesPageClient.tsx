@@ -15,17 +15,18 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
+import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
-import type { CodeGroupRow } from "@jarvis/shared/validation/admin/code";
+import type { CodeGroupRow, CodeItemRow } from "@jarvis/shared/validation/admin/code";
 import {
   listCodeGroups,
   listCodeItems,
   saveCodeGroups,
   saveCodeItems,
 } from "../actions";
-import { CodeGroupGrid } from "./CodeGroupGrid";
-import { CodeItemGrid } from "./CodeItemGrid";
+import { CodeGroupGrid, getCodeGroupExportColumns } from "./CodeGroupGrid";
+import { CodeItemGrid, getCodeItemExportColumns } from "./CodeItemGrid";
 import {
   makeBlankCodeGroup,
   useCodeGroupGridState,
@@ -78,6 +79,8 @@ export function CodesPageClient({
   businessDivOptions,
 }: Props) {
   const t = useTranslations("Admin.Codes");
+  const tGroup = useTranslations("Admin.Codes.groupSection");
+  const tItem = useTranslations("Admin.Codes.itemSection");
   const masterGrid = useCodeGroupGridState(initialGroups);
   const detailGrid = useCodeItemGridState([]);
 
@@ -308,75 +311,74 @@ export function CodesPageClient({
     }));
   }, [detailGrid, selectedGroupId]);
 
-  // ---- Export (CSV fallback; Excel via makeHiddenSkipCol is Phase-2) ----
-  const exportToCsv = useCallback(
-    <T extends Record<string, unknown>>(filename: string, rows: T[], headers: { key: keyof T; label: string }[]) => {
-      if (rows.length === 0) {
-        alert("내려받을 데이터가 없습니다.");
-        return;
-      }
-      const escape = (v: unknown) => {
-        if (v === null || v === undefined) return "";
-        const s = typeof v === "boolean" ? (v ? "Y" : "N") : String(v);
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-      };
-      const lines = [
-        headers.map((h) => escape(h.label)).join(","),
-        ...rows.map((r) => headers.map((h) => escape(r[h.key])).join(",")),
-      ];
-      const blob = new Blob(["\uFEFF" + lines.join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    },
-    [],
-  );
+  // ---- Export — Excel(.xlsx) via shared exportToExcel utility ----
+  // Boolean → 사용/사용안함, select code → option label은 cellFormatter로 매핑.
+  // 삭제 예정(state==="deleted") 행은 제외해 사용자 의도를 따른다.
 
   const handleMasterExport = useCallback(() => {
-    exportToCsv(
-      "code_groups.csv",
-      masterGrid.rows.map((r) => r.data),
-      [
-        { key: "code", label: "그룹코드" },
-        { key: "name", label: "코드명" },
-        { key: "description", label: "코드설명" },
-        { key: "businessDivCode", label: "업무구분" },
-        { key: "kindCode", label: "구분" },
-        { key: "subCnt", label: "세부 코드수" },
-      ],
-    );
-  }, [exportToCsv, masterGrid.rows]);
+    const rows = masterGrid.rows
+      .filter((r) => r.state !== "deleted")
+      .map((r) => r.data);
+    if (rows.length === 0) {
+      alert("내려받을 데이터가 없습니다.");
+      return;
+    }
+    const columns = getCodeGroupExportColumns(tGroup);
+    void exportToExcel<CodeGroupRow, (typeof columns)[number]>({
+      filename: "공통코드_그룹",
+      sheetName: tGroup("title"),
+      columns,
+      rows,
+      cellFormatter: (row, col) => {
+        const v = row[col.key as keyof CodeGroupRow];
+        if (col.key === "businessDivCode") {
+          return (
+            businessDivOptions.find((o) => o.code === v)?.label ??
+            (v === null || v === undefined ? "" : String(v))
+          );
+        }
+        if (col.key === "kindCode") {
+          if (v === "C") return tGroup("filter.kindUser");
+          if (v === "N") return tGroup("filter.kindSystem");
+          return v === null || v === undefined ? "" : String(v);
+        }
+        if (v === null || v === undefined) return "";
+        if (typeof v === "boolean" || typeof v === "number" || typeof v === "string") {
+          return v;
+        }
+        return String(v);
+      },
+    });
+  }, [masterGrid.rows, businessDivOptions, tGroup]);
 
   const handleDetailExport = useCallback(() => {
-    exportToCsv(
-      `code_items_${selectedGroupCode ?? "group"}.csv`,
-      detailGrid.rows.map((r) => r.data),
-      [
-        { key: "code", label: "세부코드" },
-        { key: "name", label: "세부코드명" },
-        { key: "sortOrder", label: "순서" },
-        { key: "isActive", label: "사용유무" },
-        { key: "nameEn", label: "영문명" },
-        { key: "note1", label: "비고1" },
-        { key: "note2", label: "비고2" },
-        { key: "note3", label: "비고3" },
-        { key: "note4", label: "비고4" },
-        { key: "note5", label: "비고5" },
-        { key: "note6", label: "비고6" },
-        { key: "note7", label: "비고7" },
-        { key: "note8", label: "비고8" },
-        { key: "note9", label: "비고9" },
-        { key: "numNote", label: "비고(숫자형)" },
-        { key: "sdate", label: "시작일" },
-        { key: "edate", label: "종료일" },
-      ],
-    );
-  }, [exportToCsv, detailGrid.rows, selectedGroupCode]);
+    const rows = detailGrid.rows
+      .filter((r) => r.state !== "deleted")
+      .map((r) => r.data);
+    if (rows.length === 0) {
+      alert("내려받을 데이터가 없습니다.");
+      return;
+    }
+    const columns = getCodeItemExportColumns(tItem);
+    const filename = `공통코드_세부_${selectedGroupCode ?? "group"}`;
+    void exportToExcel<CodeItemRow, (typeof columns)[number]>({
+      filename,
+      sheetName: tItem("title"),
+      columns,
+      rows,
+      cellFormatter: (row, col) => {
+        const v = row[col.key as keyof CodeItemRow];
+        if (col.key === "isActive") {
+          return v ? tItem("filter.useY") : tItem("filter.useN");
+        }
+        if (v === null || v === undefined) return "";
+        if (typeof v === "boolean" || typeof v === "number" || typeof v === "string") {
+          return v;
+        }
+        return String(v);
+      },
+    });
+  }, [detailGrid.rows, selectedGroupCode, tItem]);
 
   // ---- Master filter apply / reset ----
   const applyMasterFilters = useCallback(() => {

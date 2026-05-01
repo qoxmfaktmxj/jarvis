@@ -4,33 +4,55 @@
  *
  * 공통코드 — 세부코드(detail) 그리드.
  *
- * 컬럼: No / 삭제 / 상태 / *세부코드 / 세부코드명 / 순서 / 사용유무 / 영문명 /
- *       비고1~9 / 비고(숫자형) / *시작일 / *종료일
+ * 컬럼: No / 삭제 / 상태 / *세부코드 / 세부코드명 / 순서(numeric) / 사용유무(boolean) /
+ *       영문명 / 비고1~9(textarea) / 비고(숫자형, numeric) / *시작일 / *종료일
  *
- * Custom-table 패턴(InfraLicensesGrid mirror) 사용 — 이유:
- *   1) sortOrder/numNote 가 EditableNumericCell이 필요한데 공유 <DataGrid>는
- *      type="text|select|date|boolean|readonly"만 지원함 (numeric type 부재).
- *   2) 비고1~9 + 그 외 메타가 12+ 컬럼이라 가로 스크롤 + sticky 헤더가 더 잘 맞음.
+ * **하이브리드 채택 — `<DataGrid>` 풀 도입 X. 사유는 `CodeGroupGrid` 헤더 참고.**
  *
- * 사용유무는 boolean(`isActive`)이고 EditableBooleanCell 체크박스로 렌더한다.
- * (스펙의 'Y/N select 변환'은 wrapper 비용이 더 높아 boolean 직결로 단순화 — 화면
- *  의미는 동일.)
+ *   추가로 detail-grid 고유 사정:
+ *   1) `selectedGroupId === null` 일 때 그리드 전체가 disabled 상태로
+ *      "그룹코드를 먼저 선택하세요" 안내를 표시한다 (`<DataGrid>` 미지원).
+ *   2) 비고1~9 + 메타까지 14+ 컬럼이라 가로 스크롤 + sticky 헤더가 필요하다.
  *
- * 세부코드(`code`)는 신규 행에서만 편집 가능 (legacy KeyField:1 의미).
+ * **선언형(`ColumnDef[]`)으로 옮긴 부분:**
+ *
+ *   - 컬럼 메타(label/key/type/width)를 `COLUMNS` 배열로 단일 정의
+ *     (legacy 비고1~9 반복도 generate해 9줄 → 1 loop).
+ *   - 본문 `<td>`는 `COLUMNS.map(...)` 으로 렌더.
+ *   - Excel export 헤더는 `COLUMNS`에서 `(key, label)` 쌍을 그대로 추출.
  */
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
+import { EditableTextAreaCell } from "@/components/grid/cells/EditableTextAreaCell";
 import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { EditableNumericCell } from "@/components/grid/cells/EditableNumericCell";
 import { Button } from "@/components/ui/button";
+import type { ColumnDef } from "@/components/grid/types";
 import type { CodeItemRow } from "@jarvis/shared/validation/admin/code";
 import type { useGridState } from "@/components/grid/useGridState";
 
 type GridApi = ReturnType<typeof useGridState<CodeItemRow>>;
+
+/** detail grid 전용 메타 — `lockOnExisting`는 `<DataGrid>` 표준 외 확장. */
+type CodeItemColumnDef = ColumnDef<CodeItemRow> & {
+  lockOnExisting?: boolean;
+};
+
+const NOTE_KEYS = [
+  "note1",
+  "note2",
+  "note3",
+  "note4",
+  "note5",
+  "note6",
+  "note7",
+  "note8",
+  "note9",
+] as const satisfies readonly (keyof CodeItemRow & string)[];
 
 type FilterValues = {
   q: string;
@@ -80,18 +102,80 @@ export function CodeItemGrid({
 
   const disabled = !selectedGroupId;
 
-  // 비고1~9 헬퍼
-  const NOTE_KEYS = [
-    "note1",
-    "note2",
-    "note3",
-    "note4",
-    "note5",
-    "note6",
-    "note7",
-    "note8",
-    "note9",
-  ] as const;
+  // Declarative column spec.
+  const COLUMNS: CodeItemColumnDef[] = useMemo(() => {
+    const noteCols: CodeItemColumnDef[] = NOTE_KEYS.map((k, idx) => ({
+      key: k,
+      label: t("columns.note", { n: idx + 1 }),
+      type: "textarea",
+      width: 140,
+      editable: true,
+    }));
+    return [
+      {
+        key: "code",
+        label: `*${t("columns.code")}`,
+        type: "text",
+        width: 140,
+        editable: true,
+        required: true,
+        lockOnExisting: true,
+      },
+      {
+        key: "name",
+        label: t("columns.name"),
+        type: "text",
+        width: 200,
+        editable: true,
+        required: true,
+      },
+      {
+        key: "sortOrder",
+        label: t("columns.sortOrder"),
+        type: "numeric",
+        width: 80,
+        editable: true,
+      },
+      {
+        key: "isActive",
+        label: t("columns.useYn"),
+        type: "boolean",
+        width: 90,
+        editable: true,
+      },
+      {
+        key: "nameEn",
+        label: t("columns.nameEn"),
+        type: "text",
+        width: 160,
+        editable: true,
+      },
+      ...noteCols,
+      {
+        key: "numNote",
+        label: t("columns.numNote"),
+        type: "numeric",
+        width: 110,
+        editable: true,
+      },
+      {
+        key: "sdate",
+        label: `*${t("columns.sdate")}`,
+        type: "date",
+        width: 140,
+        editable: true,
+        required: true,
+      },
+      {
+        key: "edate",
+        label: `*${t("columns.edate")}`,
+        type: "date",
+        width: 140,
+        editable: true,
+        required: true,
+      },
+    ];
+  }, [t]);
 
   return (
     <div className="space-y-2">
@@ -194,51 +278,40 @@ export function CodeItemGrid({
               <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
               <th className="w-10 px-2 py-2">{t("columns.delete")}</th>
               <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
-              <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *{t("columns.code")}
-              </th>
-              <th className="px-2 py-2 text-left" style={{ minWidth: 200 }}>
-                {t("columns.name")}
-              </th>
-              <th className="px-2 py-2 text-right" style={{ minWidth: 80 }}>
-                {t("columns.sortOrder")}
-              </th>
-              <th className="px-2 py-2 text-center" style={{ minWidth: 90 }}>
-                {t("columns.useYn")}
-              </th>
-              <th className="px-2 py-2 text-left" style={{ minWidth: 160 }}>
-                {t("columns.nameEn")}
-              </th>
-              {NOTE_KEYS.map((k, idx) => (
+              {COLUMNS.map((col) => (
                 <th
-                  key={k}
-                  className="px-2 py-2 text-left"
-                  style={{ minWidth: 140 }}
+                  key={col.key}
+                  className={[
+                    "px-2 py-2",
+                    col.type === "numeric"
+                      ? "text-right"
+                      : col.type === "boolean"
+                        ? "text-center"
+                        : "text-left",
+                  ].join(" ")}
+                  style={col.width ? { minWidth: col.width } : undefined}
                 >
-                  {t("columns.note", { n: idx + 1 })}
+                  {col.label}
                 </th>
               ))}
-              <th className="px-2 py-2 text-right" style={{ minWidth: 110 }}>
-                {t("columns.numNote")}
-              </th>
-              <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *{t("columns.sdate")}
-              </th>
-              <th className="px-2 py-2 text-left" style={{ minWidth: 140 }}>
-                *{t("columns.edate")}
-              </th>
             </tr>
           </thead>
           <tbody>
             {!selectedGroupId ? (
               <tr>
-                <td colSpan={20} className="px-4 py-12 text-center text-sm text-slate-400">
+                <td
+                  colSpan={COLUMNS.length + 3}
+                  className="px-4 py-12 text-center text-sm text-slate-400"
+                >
                   {t("emptyMaster")}
                 </td>
               </tr>
             ) : grid.rows.length === 0 ? (
               <tr>
-                <td colSpan={20} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td
+                  colSpan={COLUMNS.length + 3}
+                  className="px-4 py-12 text-center text-sm text-slate-500"
+                >
                   데이터가 없습니다.
                 </td>
               </tr>
@@ -276,116 +349,119 @@ export function CodeItemGrid({
                     <td className="h-8 w-16 px-2 align-middle">
                       <RowStatusBadge state={r.state} />
                     </td>
-                    {/* 세부코드 — edit only when new */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="code"
-                      data-cell-value={row.code}
-                    >
-                      {isNew ? (
-                        <EditableTextCell
-                          value={row.code || null}
-                          onCommit={(v) => update(row.id, "code", v ?? "")}
-                          required
-                        />
-                      ) : (
-                        <div className="px-2 py-1 text-[13px] font-mono text-slate-900">
-                          {row.code}
-                        </div>
-                      )}
-                    </td>
-                    {/* 세부코드명 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="name"
-                      data-cell-value={row.name}
-                    >
-                      <EditableTextCell
-                        value={row.name || null}
-                        onCommit={(v) => update(row.id, "name", v ?? "")}
-                        required
-                      />
-                    </td>
-                    {/* 순서 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="sortOrder"
-                      data-cell-value={String(row.sortOrder)}
-                    >
-                      <EditableNumericCell
-                        value={row.sortOrder}
-                        onChange={(v) => update(row.id, "sortOrder", v ?? 0)}
-                      />
-                    </td>
-                    {/* 사용유무 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="isActive"
-                      data-cell-value={String(row.isActive)}
-                    >
-                      <EditableBooleanCell
-                        value={row.isActive}
-                        onCommit={(v) => update(row.id, "isActive", v)}
-                      />
-                    </td>
-                    {/* 영문명 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="nameEn"
-                      data-cell-value={row.nameEn ?? ""}
-                    >
-                      <EditableTextCell
-                        value={row.nameEn}
-                        onCommit={(v) => update(row.id, "nameEn", v)}
-                      />
-                    </td>
-                    {/* 비고1~9 */}
-                    {NOTE_KEYS.map((k) => (
-                      <td
-                        key={k}
-                        className="h-8 p-0 align-middle"
-                        data-col={k}
-                        data-cell-value={row[k] ?? ""}
-                      >
-                        <EditableTextCell
-                          value={row[k]}
-                          onCommit={(v) => update(row.id, k, v)}
-                        />
-                      </td>
-                    ))}
-                    {/* 비고(숫자형) */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="numNote"
-                      data-cell-value={row.numNote === null ? "" : String(row.numNote)}
-                    >
-                      <EditableNumericCell
-                        value={row.numNote}
-                        onChange={(v) => update(row.id, "numNote", v)}
-                      />
-                    </td>
-                    {/* 시작일 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="sdate"
-                      data-cell-value={row.sdate}
-                    >
-                      <EditableDateCell
-                        value={row.sdate}
-                        onCommit={(v) => update(row.id, "sdate", v ?? "1900-01-01")}
-                      />
-                    </td>
-                    {/* 종료일 */}
-                    <td
-                      className="h-8 p-0 align-middle"
-                      data-col="edate"
-                      data-cell-value={row.edate}
-                    >
-                      <EditableDateCell
-                        value={row.edate}
-                        onCommit={(v) => update(row.id, "edate", v ?? "2999-12-31")}
-                      />
-                    </td>
+                    {COLUMNS.map((col) => {
+                      const val = row[col.key];
+                      const lockedExisting = col.lockOnExisting && !isNew;
+                      const editable = col.editable !== false && !lockedExisting;
+                      const cellClass = "h-8 p-0 align-middle";
+
+                      if (lockedExisting) {
+                        // text key (e.g. 세부코드) display-only
+                        return (
+                          <td
+                            key={col.key}
+                            className={cellClass}
+                            data-col={col.key}
+                            data-cell-value={String(val ?? "")}
+                          >
+                            <div className="px-2 py-1 text-[13px] font-mono text-slate-900">
+                              {String(val ?? "")}
+                            </div>
+                          </td>
+                        );
+                      }
+
+                      if (!editable) {
+                        // not used in detail (no readonly numeric here), but keep symmetry
+                        return (
+                          <td
+                            key={col.key}
+                            className="h-8 px-2 align-middle text-[13px] text-slate-700"
+                            data-col={col.key}
+                            data-cell-value={String(val ?? "")}
+                          >
+                            {String(val ?? "")}
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td
+                          key={col.key}
+                          className={cellClass}
+                          data-col={col.key}
+                          data-cell-value={
+                            val === null || val === undefined ? "" : String(val)
+                          }
+                        >
+                          {col.type === "text" && (
+                            <EditableTextCell
+                              value={(val as string | null) || null}
+                              onCommit={(v) =>
+                                update(
+                                  row.id,
+                                  col.key,
+                                  (col.required ? (v ?? "") : v) as CodeItemRow[typeof col.key],
+                                )
+                              }
+                              required={col.required}
+                            />
+                          )}
+                          {col.type === "textarea" && (
+                            <EditableTextAreaCell
+                              value={val as string | null}
+                              onCommit={(v) =>
+                                update(row.id, col.key, v as CodeItemRow[typeof col.key])
+                              }
+                              required={col.required}
+                            />
+                          )}
+                          {col.type === "numeric" && (
+                            <EditableNumericCell
+                              value={
+                                val === null || val === undefined || val === ""
+                                  ? null
+                                  : Number(val)
+                              }
+                              onChange={(v) => {
+                                // sortOrder is non-null in CodeItemRow → fall back to 0
+                                const next =
+                                  col.key === "sortOrder" ? (v ?? 0) : v;
+                                update(
+                                  row.id,
+                                  col.key,
+                                  next as CodeItemRow[typeof col.key],
+                                );
+                              }}
+                            />
+                          )}
+                          {col.type === "boolean" && (
+                            <EditableBooleanCell
+                              value={Boolean(val)}
+                              onCommit={(v) =>
+                                update(row.id, col.key, v as CodeItemRow[typeof col.key])
+                              }
+                            />
+                          )}
+                          {col.type === "date" && (
+                            <EditableDateCell
+                              value={val as string | null}
+                              onCommit={(v) => {
+                                // sdate/edate are non-null with legacy default ranges
+                                const fallback =
+                                  col.key === "sdate" ? "1900-01-01" : "2999-12-31";
+                                update(
+                                  row.id,
+                                  col.key,
+                                  (v ?? fallback) as CodeItemRow[typeof col.key],
+                                );
+                              }}
+                            />
+                          )}
+                          {/* type === "select" 는 detail grid에서 사용하지 않음. */}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })
@@ -395,4 +471,32 @@ export function CodeItemGrid({
       </div>
     </div>
   );
+}
+
+/**
+ * Excel export용 컬럼 메타 추출 헬퍼.
+ * 라벨에 붙는 `*` 마커는 제거.
+ */
+export function getCodeItemExportColumns(
+  t: (key: string, vars?: Record<string, string | number | Date>) => string,
+) {
+  return [
+    { key: "code", header: t("columns.code") },
+    { key: "name", header: t("columns.name") },
+    { key: "sortOrder", header: t("columns.sortOrder") },
+    { key: "isActive", header: t("columns.useYn") },
+    { key: "nameEn", header: t("columns.nameEn") },
+    { key: "note1", header: t("columns.note", { n: 1 }) },
+    { key: "note2", header: t("columns.note", { n: 2 }) },
+    { key: "note3", header: t("columns.note", { n: 3 }) },
+    { key: "note4", header: t("columns.note", { n: 4 }) },
+    { key: "note5", header: t("columns.note", { n: 5 }) },
+    { key: "note6", header: t("columns.note", { n: 6 }) },
+    { key: "note7", header: t("columns.note", { n: 7 }) },
+    { key: "note8", header: t("columns.note", { n: 8 }) },
+    { key: "note9", header: t("columns.note", { n: 9 }) },
+    { key: "numNote", header: t("columns.numNote") },
+    { key: "sdate", header: t("columns.sdate") },
+    { key: "edate", header: t("columns.edate") },
+  ] as const;
 }

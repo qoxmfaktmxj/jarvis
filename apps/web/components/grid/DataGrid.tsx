@@ -19,6 +19,7 @@ import { ColumnFilterRow } from "./ColumnFilterRow";
 import { RowStatusBadge } from "./RowStatusBadge";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 import { EditableTextCell } from "./cells/EditableTextCell";
+import { EditableTextAreaCell } from "./cells/EditableTextAreaCell";
 import { EditableSelectCell } from "./cells/EditableSelectCell";
 import { EditableDateCell } from "./cells/EditableDateCell";
 import { EditableBooleanCell } from "./cells/EditableBooleanCell";
@@ -278,6 +279,13 @@ export function DataGrid<T extends WithId>({
                       >
                         {col.type === "text" && (
                           <EditableTextCell
+                            value={val as string | null}
+                            onCommit={commit}
+                            required={col.required}
+                          />
+                        )}
+                        {col.type === "textarea" && (
+                          <EditableTextAreaCell
                             value={val as string | null}
                             onCommit={commit}
                             required={col.required}

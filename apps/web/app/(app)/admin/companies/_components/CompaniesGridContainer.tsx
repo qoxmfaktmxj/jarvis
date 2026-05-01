@@ -6,10 +6,12 @@
  * 기존 CompaniesGrid를 DataGrid<Company> 기반으로 교체.
  * admin/companies/page.tsx에서 import해 사용.
  */
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { listCompanies, saveCompanies } from "../actions";
 import { DataGrid, type DataGridProps } from "@/components/grid/DataGrid";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { exportToExcel } from "@/components/grid/utils/excelExport";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
 type Company = CompanyRow;
@@ -58,6 +60,7 @@ export function CompaniesGridContainer({
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useState(1);
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [isExporting, setIsExporting] = useState(false);
   const [, startTransition] = useTransition();
 
   const reload = useCallback(
@@ -82,16 +85,19 @@ export function CompaniesGridContainer({
     [],
   );
 
-  const COLUMNS: ColumnDef<Company>[] = [
-    { key: "objectDiv", label: "대상구분", type: "select", width: 110, editable: true, required: true, options: objectDivOptions },
-    { key: "groupCode", label: "그룹사", type: "select", width: 120, editable: true, options: groupOptions },
-    { key: "code", label: "회사코드", type: "text", width: 110, editable: true, required: true },
-    { key: "name", label: "회사명", type: "text", editable: true, required: true },
-    { key: "representCompany", label: "대표사", type: "boolean", width: 90, editable: true },
-    { key: "startDate", label: "설립일", type: "date", width: 130, editable: true },
-    { key: "industryCode", label: "업종", type: "select", width: 130, editable: true, options: industryOptions },
-    { key: "zip", label: "우편번호", type: "text", width: 90, editable: true },
-  ];
+  const COLUMNS: ColumnDef<Company>[] = useMemo(
+    () => [
+      { key: "objectDiv", label: "대상구분", type: "select", width: 110, editable: true, required: true, options: objectDivOptions },
+      { key: "groupCode", label: "그룹사", type: "select", width: 120, editable: true, options: groupOptions },
+      { key: "code", label: "회사코드", type: "text", width: 110, editable: true, required: true },
+      { key: "name", label: "회사명", type: "text", editable: true, required: true },
+      { key: "representCompany", label: "대표사", type: "boolean", width: 90, editable: true },
+      { key: "startDate", label: "설립일", type: "date", width: 130, editable: true },
+      { key: "industryCode", label: "업종", type: "select", width: 130, editable: true, options: industryOptions },
+      { key: "zip", label: "우편번호", type: "text", width: 90, editable: true },
+    ],
+    [objectDivOptions, groupOptions, industryOptions],
+  );
 
   const FILTERS: FilterDef<Company>[] = [
     { key: "objectDiv" as keyof Company & string, type: "select", options: objectDivOptions },
@@ -103,32 +109,75 @@ export function CompaniesGridContainer({
     // zip — skip
   ];
 
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const exportColumns = COLUMNS.map((c) => ({
+        key: c.key as string,
+        header: c.label,
+      }));
+      const objectDivMap = new Map(objectDivOptions.map((o) => [o.value, o.label]));
+      const groupMap = new Map(groupOptions.map((o) => [o.value, o.label]));
+      const industryMap = new Map(industryOptions.map((o) => [o.value, o.label]));
+      await exportToExcel({
+        filename: "회사마스터",
+        sheetName: "회사",
+        columns: exportColumns,
+        rows,
+        cellFormatter: (row, col) => {
+          const v = (row as Record<string, unknown>)[col.key];
+          if (col.key === "representCompany") return v ? "Y" : "N";
+          if (col.key === "objectDiv" && typeof v === "string")
+            return objectDivMap.get(v) ?? v;
+          if (col.key === "groupCode" && typeof v === "string")
+            return groupMap.get(v) ?? v;
+          if (col.key === "industryCode" && typeof v === "string")
+            return industryMap.get(v) ?? v;
+          if (col.key === "startDate" && typeof v === "string") return v.slice(0, 10);
+          if (v === null || v === undefined) return "";
+          if (typeof v === "string" || typeof v === "number" || typeof v === "boolean")
+            return v;
+          return String(v);
+        },
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  }, [COLUMNS, rows, objectDivOptions, groupOptions, industryOptions]);
+
   return (
-    <DataGrid<Company>
-      rows={rows}
-      total={totalCount}
-      columns={COLUMNS}
-      filters={FILTERS}
-      page={page}
-      limit={PAGE_SIZE}
-      makeBlankRow={makeBlankRow}
-      filterValues={filterValues}
-      onPageChange={(p) => reload(p, filterValues)}
-      onFilterChange={(f) => reload(1, f)}
-      onSave={async (changes) => {
-        const result = await saveCompanies({
-          creates: changes.creates,
-          updates: changes.updates.map((u) => ({ id: u.id, ...u.patch })),
-          deletes: changes.deletes,
-        });
-        if (result.ok) {
-          await reload(page, filterValues);
-        }
-        return {
-          ok: result.ok,
-          errors: result.ok ? [] : result.errors?.map((e) => ({ message: e.message })),
-        };
-      }}
-    />
+    <div className="space-y-3">
+      <DataGridToolbar
+        onExport={handleExport}
+        exportLabel="엑셀 다운로드"
+        isExporting={isExporting}
+      />
+      <DataGrid<Company>
+        rows={rows}
+        total={totalCount}
+        columns={COLUMNS}
+        filters={FILTERS}
+        page={page}
+        limit={PAGE_SIZE}
+        makeBlankRow={makeBlankRow}
+        filterValues={filterValues}
+        onPageChange={(p) => reload(p, filterValues)}
+        onFilterChange={(f) => reload(1, f)}
+        onSave={async (changes) => {
+          const result = await saveCompanies({
+            creates: changes.creates,
+            updates: changes.updates.map((u) => ({ id: u.id, ...u.patch })),
+            deletes: changes.deletes,
+          });
+          if (result.ok) {
+            await reload(page, filterValues);
+          }
+          return {
+            ok: result.ok,
+            errors: result.ok ? [] : result.errors?.map((e) => ({ message: e.message })),
+          };
+        }}
+      />
+    </div>
   );
 }
