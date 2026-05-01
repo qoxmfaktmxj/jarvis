@@ -27,11 +27,38 @@ export const customerRow = z.object({
 export const listCustomersInput = z.object({
   q: z.string().optional(),
   custCd: z.string().optional(),
-  custNm: z.string().optional(),
+  custNm: z.string().trim().optional(),
   custKindCd: z.string().optional(),
   custDivCd: z.string().optional(),
+  chargerNm: z.string().trim().optional(),
+  searchYmdFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  searchYmdTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
+});
+
+/** Same filters as listCustomersInput but without page/limit — for full-data export */
+export const exportCustomersInput = z.object({
+  q: z.string().optional(),
+  custCd: z.string().optional(),
+  custNm: z.string().trim().optional(),
+  custKindCd: z.string().optional(),
+  custDivCd: z.string().optional(),
+  chargerNm: z.string().trim().optional(),
+  searchYmdFrom: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  searchYmdTo: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 
 export const listCustomersOutput = z.object({
@@ -55,5 +82,6 @@ export const saveCustomersOutput = z.object({
 
 export type CustomerRow = z.infer<typeof customerRow>;
 export type ListCustomersInput = z.infer<typeof listCustomersInput>;
+export type ExportCustomersInput = z.infer<typeof exportCustomersInput>;
 export type SaveCustomersInput = z.infer<typeof saveCustomersInput>;
 export type SaveCustomersOutput = z.infer<typeof saveCustomersOutput>;

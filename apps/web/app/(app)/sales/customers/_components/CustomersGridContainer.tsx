@@ -1,8 +1,14 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
-import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
+import { triggerDownload } from "@/lib/utils/triggerDownload";
+import type { ColumnDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
+import { exportCustomersToExcel } from "../export";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
 
 type Option = { value: string; label: string };
@@ -12,6 +18,14 @@ type Props = {
   total: number;
   page: number;
   limit: number;
+  initialFilters?: {
+    custNm?: string;
+    custKindCd?: string;
+    custDivCd?: string;
+    chargerNm?: string;
+    searchYmdFrom?: string;
+    searchYmdTo?: string;
+  };
   codeOptions: {
     custKind: Option[];
     custDiv: Option[];
@@ -54,29 +68,56 @@ export function CustomersGridContainer({
   total: initialTotal,
   page: initialPage,
   limit,
+  initialFilters = {},
   codeOptions,
 }: Props) {
+  const t = useTranslations("Sales");
+  const tCommon = useTranslations("Sales.Common");
+
+  const { values, setValue } = useUrlFilters<{
+    page: string;
+    custNm: string;
+    custKindCd: string;
+    custDivCd: string;
+    chargerNm: string;
+    searchYmdFrom: string;
+    searchYmdTo: string;
+  }>({
+    defaults: {
+      page: String(initialPage),
+      custNm: initialFilters.custNm ?? "",
+      custKindCd: initialFilters.custKindCd ?? "",
+      custDivCd: initialFilters.custDivCd ?? "",
+      chargerNm: initialFilters.chargerNm ?? "",
+      searchYmdFrom: initialFilters.searchYmdFrom ?? "",
+      searchYmdTo: initialFilters.searchYmdTo ?? "",
+    },
+  });
+
   const [rows, setRows] = useState<CustomerRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
-  const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [isExporting, setIsExporting] = useState(false);
   const [, startTransition] = useTransition();
 
+  // Derive current filter values from URL state
+  const currentPage = Math.max(1, Number(values.page) || 1);
+
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextFilters: Omit<typeof values, "page">) => {
       startTransition(async () => {
         const res = await listCustomers({
           custNm: nextFilters.custNm || undefined,
           custKindCd: nextFilters.custKindCd || undefined,
           custDivCd: nextFilters.custDivCd || undefined,
+          chargerNm: nextFilters.chargerNm || undefined,
+          searchYmdFrom: nextFilters.searchYmdFrom || undefined,
+          searchYmdTo: nextFilters.searchYmdTo || undefined,
           page: nextPage,
           limit,
         });
         if (!("error" in res)) {
           setRows(res.rows as CustomerRow[]);
           setTotal(res.total);
-          setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
@@ -86,45 +127,179 @@ export function CustomersGridContainer({
   // Hidden:0 (visible) columns per legacy ibSheet bizActCustCompanyMgr.jsp:221~233.
   // custCd / businessNo / businessKind / homepage / addr1 are Hidden:1 — intentionally omitted.
   const COLUMNS: ColumnDef<CustomerRow>[] = [
-    { key: "custNm", label: "고객명", type: "text", editable: true, required: true },
-    { key: "custKindCd", label: "고객종류", type: "select", width: 120, editable: true, options: codeOptions.custKind },
-    { key: "custDivCd", label: "고객구분", type: "select", width: 120, editable: true, options: codeOptions.custDiv },
-    { key: "ceoNm", label: "대표자", type: "text", width: 150, editable: true },
-    { key: "telNo", label: "전화번호", type: "text", width: 130, editable: true },
+    { key: "custNm", label: t("Customers.columns.custNm"), type: "text", editable: true, required: true },
+    { key: "custKindCd", label: t("Customers.columns.custKindCd"), type: "select", width: 120, editable: true, options: codeOptions.custKind },
+    { key: "custDivCd", label: t("Customers.columns.custDivCd"), type: "select", width: 120, editable: true, options: codeOptions.custDiv },
+    { key: "ceoNm", label: t("Customers.columns.ceoNm"), type: "text", width: 150, editable: true },
+    { key: "telNo", label: t("Customers.columns.telNo"), type: "text", width: 130, editable: true },
     {
       key: "createdAt",
-      label: "등록일자",
+      label: t("Customers.columns.insdate"),
       type: "readonly",
       width: 110,
       render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
     },
   ];
 
-  const FILTERS: FilterDef<CustomerRow>[] = [
-    { key: "custNm", type: "text", placeholder: "고객명" },
-    { key: "custKindCd", type: "select", options: codeOptions.custKind },
-    { key: "custDivCd", type: "select", options: codeOptions.custDiv },
-  ];
+  // Search form section — rendered inside DataGridToolbar children
+  const searchForm = (
+    <div className="flex flex-wrap items-center gap-2">
+      {/* custNm */}
+      <input
+        type="text"
+        className="rounded border border-slate-300 px-2 py-1 text-sm"
+        placeholder={t("Customers.columns.custNm")}
+        value={values.custNm}
+        onChange={(e) => setValue("custNm", e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            setValue("page", "1");
+            reload(1, { ...values, custNm: values.custNm });
+          }
+        }}
+      />
+      {/* custKindCd */}
+      <select
+        className="rounded border border-slate-300 px-2 py-1 text-sm"
+        value={values.custKindCd}
+        onChange={(e) => {
+          const v = e.target.value;
+          setValue("custKindCd", v);
+          setValue("page", "1");
+          reload(1, { ...values, custKindCd: v });
+        }}
+      >
+        <option value="">{t("Customers.columns.custKindCd")}</option>
+        {codeOptions.custKind.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {/* custDivCd */}
+      <select
+        className="rounded border border-slate-300 px-2 py-1 text-sm"
+        value={values.custDivCd}
+        onChange={(e) => {
+          const v = e.target.value;
+          setValue("custDivCd", v);
+          setValue("page", "1");
+          reload(1, { ...values, custDivCd: v });
+        }}
+      >
+        <option value="">{t("Customers.columns.custDivCd")}</option>
+        {codeOptions.custDiv.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+      {/* chargerNm */}
+      <input
+        type="text"
+        className="rounded border border-slate-300 px-2 py-1 text-sm"
+        placeholder={tCommon("Search.chargerNm")}
+        value={values.chargerNm}
+        onChange={(e) => setValue("chargerNm", e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            setValue("page", "1");
+            reload(1, { ...values, chargerNm: values.chargerNm });
+          }
+        }}
+      />
+      {/* searchYmdFrom ~ searchYmdTo */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-slate-500">{tCommon("Search.searchYmd")}</span>
+        <input
+          type="date"
+          className="rounded border border-slate-300 px-2 py-1 text-sm"
+          placeholder={tCommon("Search.searchYmdFrom")}
+          value={values.searchYmdFrom}
+          onChange={(e) => {
+            const v = e.target.value;
+            setValue("searchYmdFrom", v);
+            setValue("page", "1");
+            reload(1, { ...values, searchYmdFrom: v });
+          }}
+        />
+        <span className="text-xs text-slate-400">~</span>
+        <input
+          type="date"
+          className="rounded border border-slate-300 px-2 py-1 text-sm"
+          placeholder={tCommon("Search.searchYmdTo")}
+          value={values.searchYmdTo}
+          onChange={(e) => {
+            const v = e.target.value;
+            setValue("searchYmdTo", v);
+            setValue("page", "1");
+            reload(1, { ...values, searchYmdTo: v });
+          }}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <DataGrid<CustomerRow>
-      rows={rows}
-      total={total}
-      columns={COLUMNS}
-      filters={FILTERS}
-      page={page}
-      limit={limit}
-      makeBlankRow={makeBlankRow}
-      filterValues={filterValues}
-      onPageChange={(p) => reload(p, filterValues)}
-      onFilterChange={(f) => reload(1, f)}
-      onSave={async (changes) => {
-        const result = await saveCustomers(changes);
-        if (result.ok) {
-          await reload(page, filterValues);
-        }
-        return result;
-      }}
-    />
+    <div className="space-y-0">
+      <DataGridToolbar
+        exportLabel={tCommon("Excel.button")}
+        isExporting={isExporting}
+        onExport={async () => {
+          setIsExporting(true);
+          try {
+            const r = await exportCustomersToExcel({
+              custNm: values.custNm || undefined,
+              custKindCd: values.custKindCd || undefined,
+              custDivCd: values.custDivCd || undefined,
+              chargerNm: values.chargerNm || undefined,
+              searchYmdFrom: values.searchYmdFrom || undefined,
+              searchYmdTo: values.searchYmdTo || undefined,
+            });
+            triggerDownload(r.bytes, r.filename);
+          } finally {
+            setIsExporting(false);
+          }
+        }}
+      >
+        {searchForm}
+      </DataGridToolbar>
+      <DataGrid<CustomerRow>
+        rows={rows}
+        total={total}
+        columns={COLUMNS}
+        filters={[]}
+        page={currentPage}
+        limit={limit}
+        makeBlankRow={makeBlankRow}
+        filterValues={{}}
+        onPageChange={(p) => {
+          setValue("page", String(p));
+          reload(p, values);
+        }}
+        onFilterChange={() => {
+          // Filters are handled by the toolbar search form above
+        }}
+        onSave={async (changes) => {
+          // Composite-key duplicate check: custCd is the UI dedup key
+          const allRows = [
+            ...changes.creates,
+            ...rows.filter((r) => !changes.deletes.includes(r.id)).map((r) => {
+              const patch = changes.updates.find((u) => u.id === r.id)?.patch;
+              return patch ? { ...r, ...patch } : r;
+            }),
+          ];
+          const dups = findDuplicateKeys(allRows, ["custCd"]);
+          if (dups.length > 0) {
+            return {
+              ok: false,
+              errors: [{ message: `중복된 고객코드가 있습니다: ${dups.join(", ")}` }],
+            };
+          }
+
+          const result = await saveCustomers(changes);
+          if (result.ok) {
+            reload(currentPage, values);
+          }
+          return result;
+        }}
+      />
+    </div>
   );
 }

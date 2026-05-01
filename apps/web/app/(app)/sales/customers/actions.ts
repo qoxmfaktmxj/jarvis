@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, eq, ilike, inArray } from "drizzle-orm";
+import { and, count, eq, gte, ilike, inArray, lte } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesCustomer, auditLog } from "@jarvis/db/schema";
+import { salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCustomersInput,
@@ -67,16 +67,35 @@ export async function listCustomers(rawInput: z.input<typeof listCustomersInput>
 
   const conditions = [eq(salesCustomer.workspaceId, ctx.workspaceId)];
   if (input.q) {
-    conditions.push(
-      and(
-        ilike(salesCustomer.custNm, `%${input.q}%`),
-      )!,
-    );
+    conditions.push(ilike(salesCustomer.custNm, `%${input.q}%`));
   }
   if (input.custCd) conditions.push(ilike(salesCustomer.custCd, `%${input.custCd}%`));
   if (input.custNm) conditions.push(ilike(salesCustomer.custNm, `%${input.custNm}%`));
   if (input.custKindCd) conditions.push(eq(salesCustomer.custKindCd, input.custKindCd));
   if (input.custDivCd) conditions.push(eq(salesCustomer.custDivCd, input.custDivCd));
+  // chargerNm: filter by related charger's name via subquery on sales_customer_charger
+  if (input.chargerNm) {
+    const chargerSubquery = db
+      .selectDistinct({ customerId: salesCustomerCharger.customerId })
+      .from(salesCustomerCharger)
+      .where(
+        and(
+          eq(salesCustomerCharger.workspaceId, ctx.workspaceId),
+          ilike(salesCustomerCharger.name, `%${input.chargerNm}%`),
+        ),
+      );
+    conditions.push(inArray(salesCustomer.id, chargerSubquery));
+  }
+  // searchYmd date range: filter on salesCustomer.createdAt::date
+  if (input.searchYmdFrom) {
+    conditions.push(gte(salesCustomer.createdAt, new Date(input.searchYmdFrom)));
+  }
+  if (input.searchYmdTo) {
+    // Include the full end date day by using start of next day
+    const toDate = new Date(input.searchYmdTo);
+    toDate.setDate(toDate.getDate() + 1);
+    conditions.push(lte(salesCustomer.createdAt, toDate));
+  }
 
   const where = and(...conditions);
 
