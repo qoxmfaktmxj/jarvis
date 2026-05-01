@@ -58,7 +58,10 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
   }
 
   const moveFocus = (deltaDays: number) => {
-    const [y, m, d] = focusISO.split("-").map(Number);
+    const parts = focusISO.split("-").map(Number);
+    const y = parts[0]!;
+    const m = parts[1]!;
+    const d = parts[2]!;
     const next = new Date(Date.UTC(y, m - 1, d + deltaDays));
     const nextISO = fmt(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate());
     setFocusISO(nextISO);
