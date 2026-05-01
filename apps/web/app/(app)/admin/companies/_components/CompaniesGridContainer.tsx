@@ -9,9 +9,11 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { listCompanies, saveCompanies } from "../actions";
-import { DataGrid, type DataGridProps } from "@/components/grid/DataGrid";
+import { DataGrid } from "@/components/grid/DataGrid";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
 type Company = CompanyRow;
@@ -58,10 +60,18 @@ export function CompaniesGridContainer({
 }: Props) {
   const [rows, setRows] = useState<Company[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useState(1);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  // Tab-state-aware: page + filterValues survive tab switches (sessionStorage).
+  const [page, setPage] = useTabState<number>("companies.page", 1);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "companies.filters",
+    {},
+  );
   const [isExporting, setIsExporting] = useState(false);
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [, startTransition] = useTransition();
+
+  // Tab dirty marker — based on grid's reported dirty count.
+  useTabDirty(dirtyCount > 0);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -161,6 +171,7 @@ export function CompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onDirtyChange={setDirtyCount}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => {

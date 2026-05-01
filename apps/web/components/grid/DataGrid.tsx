@@ -11,7 +11,7 @@
  * - 인라인 편집: 클릭 시 파란 ring, blur에서 커밋
  * - 상태 배지: new/dirty/deleted 색상 pill
  */
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useGridState } from "./useGridState";
 import { GridToolbar } from "./GridToolbar";
@@ -60,6 +60,11 @@ export type DataGridProps<T extends WithId> = {
   /** 빈 상태 메시지 */
   emptyMessage?: string;
   /**
+   * 그리드의 dirty 행 수가 바뀔 때마다 호출. 탭 dirty 마커 + 저장 핸들러
+   * 등록에 사용. (옵션 — 미지정이면 호출 안 함.)
+   */
+  onDirtyChange?: (dirtyCount: number) => void;
+  /**
    * 컬럼 헤더 위에 한 줄 더 렌더링할 그룹 헤더 행.
    * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
    */
@@ -80,6 +85,7 @@ export function DataGrid<T extends WithId>({
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
+  onDirtyChange,
 }: DataGridProps<T>) {
   if (groupHeaders && process.env.NODE_ENV !== "production") {
     const sum = groupHeaders.reduce((acc, g) => acc + g.span, 0);
@@ -97,6 +103,11 @@ export function DataGrid<T extends WithId>({
   const [localFilterValues, setLocalFilterValues] = useState<Record<string, string>>({});
 
   const filterValues = externalFilterValues ?? localFilterValues;
+
+  // Notify parent when dirty count changes (e.g. for tab dirty marker).
+  useEffect(() => {
+    onDirtyChange?.(grid.dirtyCount);
+  }, [grid.dirtyCount, onDirtyChange]);
 
   const guarded = useCallback(
     (action: () => void) => {
