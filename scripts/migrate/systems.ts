@@ -6,21 +6,115 @@
 //   2. Generates a vault:// secret_ref URI for each non-empty credential.
 //   3. Writes ONLY the secret_ref URI to PostgreSQL — never the raw value.
 //   4. Accumulates { ref, value } pairs in credentialsRegistry.
-//   5. At the end, writes credentialsRegistry to credentials.enc.json
-//      (a SOPS-encrypted file — values are written ONLY there, not to the DB).
+//   5. At the end, SOPS-encrypts the registry to credentials.enc.json:
+//      a. Aborts if `sops` binary is not found on PATH (unless --no-secrets).
+//      b. Writes plaintext to a temp file (credentials.plaintext.tmp in os.tmpdir()).
+//      c. Runs: sops --encrypt credentials.plaintext.tmp > credentials.enc.json
+//      d. Securely deletes the temp file in a finally block:
+//           Unix: shred -u (if available), else overwrite + unlink.
+//           Windows: overwrite with random bytes + fsync + unlink.
 //
-// After migration:
-//   sops --encrypt --age <recipient> credentials.enc.json > credentials.enc.sops.json
-//   shred -u credentials.enc.json   # delete the plaintext file
+// Run flags (passed via MigrationOptions):
+//   --dry-run        : preview without writing to DB or disk.
+//   --no-secrets     : skip credential file entirely (useful when vault
+//                      population is handled by a separate pipeline).
+//   --force          : overwrite credentials.enc.json if it already exists.
 
 import { randomUUID } from 'crypto';
-import { writeFileSync } from 'fs';
-import { resolve } from 'path';
+import { writeFileSync, existsSync, openSync, writeSync, fsyncSync, closeSync, unlinkSync } from 'fs';
+import { resolve, join } from 'path';
+import { tmpdir } from 'os';
+import { spawnSync } from 'child_process';
 import type { Connection } from 'oracledb';
 import type { Pool } from 'pg';
 import type { IdMap } from './id-map';
 import type { MigrationOptions } from '../migrate-legacy';
 import type { LegacyInfraManage } from './types';
+
+// ── SOPS helpers ─────────────────────────────────────────────────────────────
+
+/** Returns true if `sops` is available on PATH. */
+function isSopsAvailable(): boolean {
+  const result = spawnSync('sops', ['--version'], { encoding: 'utf8', timeout: 5000 });
+  return result.status === 0;
+}
+
+/**
+ * Securely overwrites `filePath` with random bytes then unlinks it.
+ * On Unix tries `shred -u` first; falls back to manual overwrite + unlink.
+ * On Windows always does manual overwrite + fsync + unlink.
+ */
+function secureDelete(filePath: string): void {
+  if (process.platform !== 'win32') {
+    // Try shred first (Linux coreutils)
+    const shred = spawnSync('shred', ['-u', filePath], { timeout: 10000 });
+    if (shred.status === 0) return;
+  }
+  // Fallback (Windows or no shred): overwrite with random bytes then unlink
+  try {
+    const { randomBytes } = require('crypto') as typeof import('crypto');
+    const { statSync } = require('fs') as typeof import('fs');
+    const size = statSync(filePath).size;
+    const fd = openSync(filePath, 'r+');
+    try {
+      writeSync(fd, randomBytes(Math.max(size, 1)));
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+    }
+  } catch {
+    // If we can't overwrite, still attempt unlink below
+  }
+  unlinkSync(filePath);
+}
+
+/**
+ * Writes `payload` to a temp file, encrypts it via SOPS to `outPath`,
+ * then securely deletes the temp file.
+ *
+ * @throws if sops exits non-zero or if outPath already exists and !force.
+ */
+function writeEncryptedCredentials(payload: unknown, outPath: string, force: boolean): void {
+  if (existsSync(outPath) && !force) {
+    throw new Error(
+      `credentials.enc.json already exists at ${outPath}. ` +
+      `Pass --force to overwrite, or delete it manually.`,
+    );
+  }
+
+  const tmpPath = join(tmpdir(), `credentials.plaintext.tmp`);
+  writeFileSync(tmpPath, JSON.stringify(payload, null, 2), { mode: 0o600 });
+
+  try {
+    // sops --encrypt reads the input file and writes encrypted JSON to stdout.
+    // We redirect stdout to the final output file via spawnSync stdio.
+    const result = spawnSync(
+      'sops',
+      ['--encrypt', tmpPath],
+      {
+        encoding: 'buffer',
+        timeout: 30000,
+        maxBuffer: 50 * 1024 * 1024, // 50 MB
+      },
+    );
+
+    if (result.status !== 0) {
+      const stderr = result.stderr?.toString('utf8') ?? '';
+      throw new Error(`sops encryption failed (exit ${result.status ?? 'null'}): ${stderr.trim()}`);
+    }
+
+    // Write the encrypted output atomically (same mode restriction)
+    writeFileSync(outPath, result.stdout, { mode: 0o600 });
+  } finally {
+    // Always remove the plaintext temp file, even on error
+    try {
+      secureDelete(tmpPath);
+    } catch (cleanupErr) {
+      console.error(`[WARN] Failed to securely delete temp file ${tmpPath}:`, cleanupErr);
+      console.error(`[WARN] Please manually delete: ${tmpPath}`);
+    }
+  }
+}
 
 interface CredentialEntry {
   ref: string;           // vault:// URI stored in PostgreSQL
@@ -156,27 +250,46 @@ export async function migrateSystems(
 
   // ── Write credentials to SOPS-encrypted file ──────────────────────────────
   // The credentialsRegistry NEVER goes to PostgreSQL.
-  // After writing, encrypt with SOPS and shred the plaintext file.
-  if (!opts.isDryRun && credentialsRegistry.length > 0) {
-    const outPath = resolve(process.cwd(), 'credentials.enc.json');
-    const payload = {
-      _sops_hint: 'Encrypt this file with: sops --encrypt --age <recipient> credentials.enc.json',
-      _warning: 'DELETE THIS PLAINTEXT FILE AFTER ENCRYPTING. Run: shred -u credentials.enc.json',
-      migrated_at: new Date().toISOString(),
-      credentials: credentialsRegistry.map(({ ref, field, systemId, legacySeq, value }) => ({
-        ref,
-        field,
-        systemId,
-        legacySeq,
-        value,  // plain text — only lives in this file until SOPS-encrypted
-      })),
-    };
-
-    writeFileSync(outPath, JSON.stringify(payload, null, 2), { mode: 0o600 });
-    console.log(`  IMPORTANT: credentials written to ${outPath}`);
-    console.log(`  NEXT STEP: sops --encrypt --age <recipient> credentials.enc.json`);
-    console.log(`  NEXT STEP: shred -u credentials.enc.json`);
-  } else if (opts.isDryRun) {
+  // Flow:
+  //   1. Abort (or skip) if sops is not on PATH.
+  //   2. Write plaintext to a non-misleading temp file in os.tmpdir().
+  //   3. Encrypt via `sops --encrypt` → credentials.enc.json.
+  //   4. Securely delete the temp file in a finally block.
+  if (opts.isDryRun) {
     console.log(`  [dry-run] would write ${credentialsRegistry.length} credential entries to credentials.enc.json`);
+    return;
   }
+
+  if (credentialsRegistry.length === 0) {
+    console.log(`  no credentials to write.`);
+    return;
+  }
+
+  if (opts.noSecrets) {
+    console.log(`  [--no-secrets] skipping credential file write (${credentialsRegistry.length} entries discarded).`);
+    return;
+  }
+
+  // Guard: SOPS must be available before we touch any credentials on disk.
+  if (!isSopsAvailable()) {
+    throw new Error(
+      'SOPS required to write credentials. ' +
+      'Install sops (https://github.com/getsops/sops) or pass --no-secrets to skip credentials.',
+    );
+  }
+
+  const outPath = resolve(process.cwd(), 'credentials.enc.json');
+  const payload = {
+    migrated_at: new Date().toISOString(),
+    credentials: credentialsRegistry.map(({ ref, field, systemId, legacySeq, value }) => ({
+      ref,
+      field,
+      systemId,
+      legacySeq,
+      value,
+    })),
+  };
+
+  writeEncryptedCredentials(payload, outPath, opts.force ?? false);
+  console.log(`  credentials encrypted and written to ${outPath}`);
 }
