@@ -42,13 +42,20 @@ export function TabContextMenu({ tab, position, onClose }: Props) {
       ref={ref}
       role="menu"
       data-testid="tab-context-menu"
-      className="fixed z-50 rounded-md border bg-white shadow-lg py-1 min-w-[220px]"
+      className="fixed z-[var(--z-dropdown)]"
       style={{
         left: position.x,
         top: position.y,
-        background: "var(--panel, #fff)",
-        borderColor: "var(--line, #cbd5e1)",
-        fontSize: 13,
+        minWidth: 224,
+        padding: 4,
+        background: "var(--panel)",
+        border: "1px solid var(--line)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-elev-4)",
+        fontSize: 12.5,
+        color: "var(--ink)",
+        animation: "tab-menu-in var(--duration-fast) var(--ease-out-expo)",
+        transformOrigin: "top left",
       }}
     >
       <Item testid="ctx-close" onClick={wrap(() => closeTab(tab.key))}>
@@ -105,10 +112,38 @@ function Item({
       data-testid={testid}
       onClick={onClick}
       disabled={disabled}
-      className="block w-full text-left px-3 py-1.5 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="block w-full text-left"
       style={{
+        padding: "6px 10px",
         background: "transparent",
         border: "none",
+        borderRadius: "var(--radius-sm)",
+        color: disabled ? "var(--faint)" : "var(--ink)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.6 : 1,
+        transition:
+          "background var(--duration-fast) var(--ease-out-quart), color var(--duration-fast) var(--ease-out-quart)",
+        font: "inherit",
+      }}
+      onMouseEnter={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.background = "var(--accent-tint)";
+        e.currentTarget.style.color = "var(--accent-ink)";
+      }}
+      onMouseLeave={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--ink)";
+      }}
+      onFocus={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.background = "var(--accent-tint)";
+        e.currentTarget.style.color = "var(--accent-ink)";
+      }}
+      onBlur={(e) => {
+        if (disabled) return;
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--ink)";
       }}
     >
       {children}
@@ -117,5 +152,15 @@ function Item({
 }
 
 function Divider() {
-  return <div className="my-1" style={{ height: 1, background: "var(--line, #e2e8f0)" }} />;
+  return (
+    <div
+      aria-hidden
+      style={{
+        height: 1,
+        background: "var(--line)",
+        marginBlock: 4,
+        marginInline: 2,
+      }}
+    />
+  );
 }

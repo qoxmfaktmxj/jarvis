@@ -658,6 +658,44 @@
     },
     "tabs": {
       "addDev": "추가개발"
+    },
+    "Common": {
+      "search": "검색어",
+      "excel": {
+        "button": "다운로드",
+        "downloading": "다운로드 중..."
+      }
+    },
+    "Beacons": {
+      "title": "비콘관리",
+      "description": "프로젝트 반출 비콘과 담당자 이력을 관리합니다.",
+      "searchPlaceholder": "비콘번호·프로젝트명 검색",
+      "filters": {
+        "projectCode": "프로젝트코드",
+        "employee": "사번",
+        "outYn": "반출여부"
+      }
+    },
+    "History": {
+      "title": "프로젝트수행이력관리",
+      "description": "프로젝트 수행 인력, 기간, 역할과 근무 이력을 관리합니다.",
+      "searchPlaceholder": "사번·프로젝트·고객사 검색",
+      "filters": {
+        "periodFrom": "근무시작",
+        "periodTo": "근무종료",
+        "employee": "사번",
+        "projectCode": "프로젝트코드"
+      }
+    },
+    "Modules": {
+      "title": "프로젝트모듈관리",
+      "description": "프로젝트별 담당 모듈 배정을 관리합니다.",
+      "searchPlaceholder": "사번·프로젝트·모듈 검색",
+      "filters": {
+        "employee": "사번",
+        "projectCode": "프로젝트코드",
+        "moduleCode": "모듈코드"
+      }
     }
   },
   "Ask": {
@@ -1443,6 +1481,12 @@
         "startAmt": "계약금액",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "Edit": {
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "이 계약을 삭제하시겠습니까?"
       }
     },
     "ContractMonths": {
@@ -1456,6 +1500,12 @@
         "actualAmt": "실적금액",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "Edit": {
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "이 월별 항목을 삭제하시겠습니까?"
       }
     },
     "ContractServices": {

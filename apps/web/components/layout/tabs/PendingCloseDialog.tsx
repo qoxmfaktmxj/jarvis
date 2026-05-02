@@ -13,10 +13,36 @@ export function PendingCloseDialog() {
   const isBatch = pendingClose.reason === "batch";
   const firstTab = pendingClose.tabs[0];
   const count = pendingClose.tabs.length;
-  const title = isBatch
+  const titleText = isBatch
     ? t("titleBatch", { count })
     : t("title", { tabTitle: firstTab?.title ?? "" });
   const body = isBatch ? t("bodyBatch", { count }) : t("body", { count });
+
+  // Title with a leading amber pulse — visually echoes the dirty dot in TabBar
+  // so the dialog feels continuous with the tab strip that triggered it.
+  const title = (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+      }}
+    >
+      <span
+        aria-hidden
+        style={{
+          display: "inline-block",
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          background: "var(--amber)",
+          flexShrink: 0,
+          animation: "tab-dirty-pulse 1.8s var(--ease-out-expo) infinite",
+        }}
+      />
+      <span>{titleText}</span>
+    </span>
+  );
 
   return (
     <UnsavedChangesDialog
