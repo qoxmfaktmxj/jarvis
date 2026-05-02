@@ -166,7 +166,11 @@ export function ProductCostMappingGrid({
         await reload(page, filterValues);
       } else {
         const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
-        alert(msg);
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description: msg,
+        });
       }
     });
   }, [grid, page, filterValues, reload]);

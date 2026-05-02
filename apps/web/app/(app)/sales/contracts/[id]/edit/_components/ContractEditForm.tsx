@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { saveContracts } from "@/app/(app)/sales/contracts/actions";
+import { toast } from "@/hooks/use-toast";
 import type { SalesContractRow } from "@jarvis/shared/validation/sales-contract";
 
 // ---------------------------------------------------------------------------
@@ -234,7 +235,11 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
         router.push("/sales/contracts");
       } else {
         const msg = result.errors?.[0]?.message ?? "저장 실패";
-        alert(msg);
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description: msg,
+        });
       }
     });
   }

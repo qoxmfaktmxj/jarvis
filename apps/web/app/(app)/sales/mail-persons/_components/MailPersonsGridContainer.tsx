@@ -33,6 +33,7 @@ import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
 import type { ColumnDef } from "@/components/grid/types";
+import { toast } from "@/hooks/use-toast";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -168,7 +169,11 @@ export function MailPersonsGridContainer({
             "errors" in result
               ? result.errors?.map((e: { message: string }) => e.message).join("\n")
               : undefined;
-          alert(msg ?? "저장 실패");
+          toast({
+            variant: "destructive",
+            title: "저장 실패",
+            description: msg ?? "저장 실패",
+          });
         }
       });
     },

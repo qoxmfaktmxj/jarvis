@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { useTranslations } from "next-intl";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import type { CodeGroupRow, CodeItemRow } from "@jarvis/shared/validation/admin/code";
@@ -199,7 +200,11 @@ export function CodesPageClient({
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(t("duplicates", { codes: dups.join(", ") }));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: t("duplicates", { codes: dups.join(", ") }),
+      });
       return;
     }
     startMasterSave(async () => {
@@ -221,7 +226,12 @@ export function CodesPageClient({
           setDetailTotal(0);
         }
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -241,7 +251,11 @@ export function CodesPageClient({
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(t("duplicates", { codes: dups.join(", ") }));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: t("duplicates", { codes: dups.join(", ") }),
+      });
       return;
     }
     startDetailSave(async () => {
@@ -256,7 +270,12 @@ export function CodesPageClient({
         // master subCnt 갱신을 위해 master도 reload
         reloadMaster(masterUrlFilters);
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -276,7 +295,12 @@ export function CodesPageClient({
 
   const handleMasterCopy = useCallback(() => {
     if (!selectedGroupId) {
-      alert(t("groupSection.filter.code") + ": " + t("itemSection.emptyMaster"));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description:
+          t("groupSection.filter.code") + ": " + t("itemSection.emptyMaster"),
+      });
       return;
     }
     masterGrid.duplicate(selectedGroupId, (clone) => ({
@@ -289,7 +313,11 @@ export function CodesPageClient({
 
   const handleDetailInsert = useCallback(() => {
     if (!selectedGroupId) {
-      alert(t("itemSection.emptyMaster"));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: t("itemSection.emptyMaster"),
+      });
       return;
     }
     detailGrid.insertBlank(makeBlankCodeItem(selectedGroupId));
@@ -301,7 +329,10 @@ export function CodesPageClient({
     // (No multi-row selection in this grid; pick top non-deleted row.)
     const source = detailGrid.rows.find((r) => r.state !== "deleted");
     if (!source) {
-      alert("복사할 세부코드가 없습니다.");
+      toast({
+        title: "안내",
+        description: "복사할 세부코드가 없습니다.",
+      });
       return;
     }
     detailGrid.duplicate(source.data.id, (clone) => ({
@@ -320,7 +351,10 @@ export function CodesPageClient({
       .filter((r) => r.state !== "deleted")
       .map((r) => r.data);
     if (rows.length === 0) {
-      alert("내려받을 데이터가 없습니다.");
+      toast({
+        title: "안내",
+        description: "내려받을 데이터가 없습니다.",
+      });
       return;
     }
     const columns = getCodeGroupExportColumns(tGroup);
@@ -356,7 +390,10 @@ export function CodesPageClient({
       .filter((r) => r.state !== "deleted")
       .map((r) => r.data);
     if (rows.length === 0) {
-      alert("내려받을 데이터가 없습니다.");
+      toast({
+        title: "안내",
+        description: "내려받을 데이터가 없습니다.",
+      });
       return;
     }
     const columns = getCodeItemExportColumns(tItem);
