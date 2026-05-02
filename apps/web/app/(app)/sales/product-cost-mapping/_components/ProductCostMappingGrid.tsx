@@ -34,6 +34,7 @@ import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { toast } from "@/hooks/use-toast";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -182,10 +183,14 @@ export function ProductCostMappingGrid({
       if (result.ok) {
         triggerDownload(result.bytes, result.filename);
       } else {
-        alert(`엑셀 다운로드 실패: ${result.error}`);
+        toast({
+          variant: "destructive",
+          title: t("Common.Excel.exportFailed"),
+          description: t("Common.Excel.exportFailedDesc", { message: result.error ?? "" }),
+        });
       }
     });
-  }, [filterValues]);
+  }, [filterValues, t]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

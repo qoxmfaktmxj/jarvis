@@ -4,6 +4,16 @@ import type { ProjectHistoryRow } from "@jarvis/shared/validation/project";
 /**
  * Hidden:0|1 SoT: legacy projectHisMgr.jsp initdata1.Cols.
  * System columns (sNo, sDelete, sStatus) are omitted.
+ *
+ * etc1~etc5 — legacy free-form columns retained in the schema for round-trip
+ * fidelity but removed from the grid (33 visible columns was beyond reasonable
+ * UX). Power users can still query/edit via SQL or admin tooling. If a real
+ * use case emerges, restore the rows below.
+ *
+ * workHours (DB: work_hours) — was named `bigo` in legacy Oracle TBIZ011 but
+ * always carried "근무시간" semantics in JSP, verified by dump samples
+ * ('08:00~17:00' …). Renamed at the schema level in migration 0067.
+ *
  * JSP SaveName gaps:
  * - name has no row field; sabun remains the visible employee identifier.
  * - duration is derived in JSP; this grid keeps sdate/edate as editable source fields.
@@ -21,7 +31,7 @@ export const historyColumns: ColumnDef<ProjectHistoryRow>[] = [
   { key: "roleCd", label: "역할", type: "select", width: 110, editable: true }, // codeGroup: B20000
   { key: "module", label: "모듈", type: "text", width: 150, editable: true },
   { key: "jobNm", label: "직무", type: "text", width: 120, editable: true },
-  { key: "bigo", label: "근무시간", type: "textarea", width: 120, editable: true },
+  { key: "workHours", label: "근무시간", type: "textarea", width: 120, editable: true },
   { key: "memo", label: "특이사항", type: "textarea", width: 160, editable: true },
   { key: "custCd", label: "고객사코드", type: "text", width: 100, editable: true },
   { key: "pjtCd", label: "프로젝트 코드", type: "text", width: 110, editable: true },
@@ -47,11 +57,6 @@ export const historyColumns: ColumnDef<ProjectHistoryRow>[] = [
   { key: "legacySabun", label: "레거시 사번", type: "text", width: 100, editable: false },
   { key: "legacyOrgCd", label: "레거시 소속", type: "text", width: 100, editable: false },
   { key: "legacyPjtCd", label: "레거시 프로젝트", type: "text", width: 120, editable: false },
-  { key: "etc1", label: "기타1", type: "text", width: 100, editable: true },
-  { key: "etc2", label: "기타2", type: "text", width: 100, editable: true },
-  { key: "etc3", label: "기타3", type: "text", width: 100, editable: true },
-  { key: "etc4", label: "기타4", type: "text", width: 100, editable: true },
-  { key: "etc5", label: "기타5", type: "text", width: 100, editable: true },
   { key: "createdAt", label: "등록일자", type: "readonly", width: 150 },
   { key: "updatedAt", label: "수정일자", type: "readonly", width: 150 },
 ];
@@ -73,11 +78,6 @@ export const historyVisibleColumns = historyColumns.filter(
       "legacySabun",
       "legacyOrgCd",
       "legacyPjtCd",
-      "etc1",
-      "etc2",
-      "etc3",
-      "etc4",
-      "etc5",
       "createdAt",
       "updatedAt",
     ].includes(c.key),

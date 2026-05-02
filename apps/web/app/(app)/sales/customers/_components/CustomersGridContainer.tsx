@@ -7,6 +7,7 @@ import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -214,12 +215,16 @@ export function CustomersGridContainer({
       if (r.ok) {
         triggerDownload(r.bytes, r.filename);
       } else {
-        alert(r.error);
+        toast({
+          variant: "destructive",
+          title: tCommon("Excel.exportFailed"),
+          description: tCommon("Excel.exportFailedDesc", { message: r.error ?? "" }),
+        });
       }
     } finally {
       setIsExporting(false);
     }
-  }, [values]);
+  }, [values, tCommon]);
 
   const handleSearch = useCallback(() => {
     setValue("custNm", pendingFilters.custNm);

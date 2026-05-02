@@ -124,7 +124,7 @@ export const projectHistoryRowSchema = z.object({
   roleCd: nullableString,
   roleNm: nullableString,
   module: nullableString,
-  bigo: nullableString,
+  workHours: nullableString,
   memo: nullableString,
   etc1: nullableString,
   etc2: nullableString,

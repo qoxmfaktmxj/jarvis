@@ -7,6 +7,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import type { ColumnDef } from "@/components/grid/types";
@@ -58,7 +59,7 @@ function makeBlankRow(): ProjectHistoryRow {
     roleCd: null,
     roleNm: null,
     module: null,
-    bigo: null,
+    workHours: null,
     memo: null,
     etc1: null,
     etc2: null,
@@ -141,7 +142,12 @@ export function HistoryGridContainer({
         baseEymd: urlFilters.baseEymd || undefined,
       });
       if (result.ok) triggerDownload(result.bytes, result.filename);
-      else alert(result.error);
+      else
+        toast({
+          variant: "destructive",
+          title: common("excel.exportFailed"),
+          description: common("excel.exportFailedDesc", { message: result.error }),
+        });
     } finally {
       setIsExporting(false);
     }

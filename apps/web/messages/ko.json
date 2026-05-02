@@ -663,7 +663,14 @@
       "search": "검색어",
       "excel": {
         "button": "다운로드",
-        "downloading": "다운로드 중..."
+        "downloading": "다운로드 중...",
+        "exportFailed": "엑셀 내보내기 실패",
+        "exportFailedDesc": "{message}"
+      },
+      "yn": {
+        "all": "전체",
+        "y": "Y",
+        "n": "N"
       }
     },
     "Beacons": {
@@ -1634,7 +1641,9 @@
         "button": "다운로드",
         "downloading": "다운로드 중…",
         "filename": "{screen}_{date}.xlsx",
-        "downloadStarted": "다운로드를 시작했습니다."
+        "downloadStarted": "다운로드를 시작했습니다.",
+        "exportFailed": "엑셀 내보내기 실패",
+        "exportFailedDesc": "{message}"
       },
       "Search": {
         "chargerNm": "담당자명",

@@ -6,6 +6,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import type { ColumnDef, GridChanges, GridSaveResult } from "@/components/grid/types";
@@ -110,7 +111,11 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
       if (res.ok) {
         triggerDownload(res.bytes, res.filename);
       } else {
-        alert(res.error);
+        toast({
+          variant: "destructive",
+          title: common("Excel.exportFailed"),
+          description: common("Excel.exportFailedDesc", { message: res.error ?? "" }),
+        });
       }
     } finally {
       setIsExporting(false);

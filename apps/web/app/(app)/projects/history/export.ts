@@ -43,7 +43,7 @@ function serialize(row: typeof projectHistory.$inferSelect): ProjectHistoryRow {
     roleCd: row.roleCd ?? null,
     roleNm: row.roleNm ?? null,
     module: row.module ?? null,
-    bigo: row.bigo ?? null,
+    workHours: row.workHours ?? null,
     memo: row.memo ?? null,
     etc1: row.etc1 ?? null,
     etc2: row.etc2 ?? null,

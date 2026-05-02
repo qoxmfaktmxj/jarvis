@@ -1,10 +1,12 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -84,6 +86,7 @@ export function ContractServicesGridContainer({
   initialFilters,
 }: Props) {
   const router = useRouter();
+  const common = useTranslations("Sales.Common");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
@@ -137,7 +140,11 @@ export function ContractServicesGridContainer({
       if (result.ok) {
         triggerDownload(result.bytes, result.filename);
       } else {
-        alert(result.error);
+        toast({
+          variant: "destructive",
+          title: common("Excel.exportFailed"),
+          description: common("Excel.exportFailedDesc", { message: result.error ?? "" }),
+        });
       }
     } finally {
       setIsExporting(false);

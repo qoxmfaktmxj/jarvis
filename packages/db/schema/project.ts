@@ -147,7 +147,13 @@ export const projectHistory = pgTable("project_history", {
   roleCd: varchar("role_cd", { length: 20 }),
   roleNm: varchar("role_nm", { length: 20 }),
   module: varchar("module", { length: 500 }),
-  bigo: varchar("bigo", { length: 4000 }),
+  /**
+   * Daily work hours (e.g. "08:00~17:00"). Originally named `bigo` (비고/memo)
+   * in the legacy Oracle TBIZ011, but operationally repurposed as a work-hours
+   * field — verified by JSP `Header:"근무시간"` mapping and dump samples.
+   * Renamed to `work_hours` here to remove the misleading legacy name.
+   */
+  workHours: varchar("work_hours", { length: 4000 }),
   memo: varchar("memo", { length: 4000 }),
   etc1: varchar("etc1", { length: 100 }),
   etc2: varchar("etc2", { length: 100 }),
