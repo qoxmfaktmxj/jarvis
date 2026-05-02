@@ -316,6 +316,12 @@
         "startAmt": "Contract Amount",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "Edit": {
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete this contract?"
       }
     },
     "ContractMonths": {
@@ -329,6 +335,12 @@
         "actualAmt": "Actual Amount",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "Edit": {
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete this month record?"
       }
     },
     "ContractServices": {
