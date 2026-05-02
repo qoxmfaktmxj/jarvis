@@ -1,7 +1,10 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { savePlanViewPerformanceMonths } from "../../../actions";
 
 type Master = {
   id: string;
@@ -27,27 +30,19 @@ type Master = {
   expAmt: number | null;
 };
 
-type Month = {
-  id: string;
-  ym: string;
-  serOrderAmt: number | null;
-  prdOrderAmt: number | null;
-  infOrderAmt: number | null;
-  servAmt: number | null;
-  prodAmt: number | null;
-  inManMonth: number | null;
-  outManMonth: number | null;
-  dirInAmt: number | null;
-  dirOutAmt: number | null;
-  indirOrgAmt: number | null;
-  indirAllAmt: number | null;
-  sgaAmt: number | null;
-  expAmt: number | null;
-};
+type MonthKey =
+  | "serOrderAmt" | "prdOrderAmt" | "infOrderAmt"
+  | "servAmt" | "prodAmt"
+  | "inManMonth" | "outManMonth"
+  | "dirInAmt" | "dirOutAmt"
+  | "indirOrgAmt" | "indirAllAmt"
+  | "sgaAmt" | "expAmt";
+
+type Month = { id: string; ym: string } & Record<MonthKey, number | null>;
 
 const fmt = (v: number | null): string => (v == null ? "" : v.toLocaleString("ko-KR"));
 
-const MONTH_COLS: Array<{ key: keyof Omit<Month, "id" | "ym">; label: string }> = [
+const MONTH_COLS: Array<{ key: MonthKey; label: string }> = [
   { key: "serOrderAmt", label: "서비스 수주" },
   { key: "prdOrderAmt", label: "상품 수주" },
   { key: "infOrderAmt", label: "인프라 수주" },
@@ -74,8 +69,68 @@ function MasterField({ label, value }: { label: string; value: string | number |
   );
 }
 
+function parseNumeric(s: string): number | null {
+  const trimmed = s.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed.replace(/,/g, ""));
+  return Number.isFinite(n) ? n : null;
+}
+
 export function PlanViewPerfDetailView({ master, months }: { master: Master; months: Month[] }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const initial = useMemo(() => new Map(months.map((m) => [m.id, m])), [months]);
+  const [draft, setDraft] = useState<Map<string, Month>>(initial);
+
+  const dirtyIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const [id, row] of draft.entries()) {
+      const orig = initial.get(id);
+      if (!orig) continue;
+      const changed = MONTH_COLS.some((c) => row[c.key] !== orig[c.key]);
+      if (changed) ids.push(id);
+    }
+    return ids;
+  }, [draft, initial]);
+
+  function patchCell(id: string, key: MonthKey, raw: string) {
+    const value = parseNumeric(raw);
+    setDraft((prev) => {
+      const next = new Map(prev);
+      const row = next.get(id);
+      if (!row) return prev;
+      next.set(id, { ...row, [key]: value });
+      return next;
+    });
+  }
+
+  function handleSave() {
+    if (dirtyIds.length === 0) {
+      toast({ title: "변경 사항이 없습니다." });
+      return;
+    }
+    const rows = dirtyIds.map((id) => {
+      const r = draft.get(id)!;
+      return {
+        id,
+        ym: r.ym,
+        ...Object.fromEntries(MONTH_COLS.map((c) => [c.key, r[c.key]])),
+      };
+    });
+    startTransition(async () => {
+      const result = await savePlanViewPerformanceMonths({ planId: master.id, rows });
+      if (result.ok) {
+        toast({ title: "저장 완료", description: `${result.updated}건 갱신` });
+        router.refresh();
+      } else {
+        toast({ title: "저장 실패", description: result.error });
+      }
+    });
+  }
+
+  function handleReset() {
+    setDraft(new Map(initial));
+  }
 
   return (
     <div className="space-y-4" data-testid="pvp-detail-root">
@@ -104,7 +159,16 @@ export function PlanViewPerfDetailView({ master, months }: { master: Master; mon
       </div>
 
       <div className="rounded-md border border-slate-200 bg-white p-6">
-        <h3 className="mb-4 text-sm font-semibold text-slate-700">월별 상세 ({months.length}개월)</h3>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-700">월별 상세 ({months.length}개월)</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500" data-testid="pvp-month-dirty-count">{dirtyIds.length}건 변경</span>
+            <Button type="button" variant="outline" size="sm" onClick={handleReset} disabled={isPending || dirtyIds.length === 0}>되돌리기</Button>
+            <Button type="button" size="sm" onClick={handleSave} disabled={isPending || dirtyIds.length === 0} data-testid="pvp-month-save">
+              {isPending ? "저장 중…" : `저장 (${dirtyIds.length})`}
+            </Button>
+          </div>
+        </div>
         {months.length === 0 ? (
           <div className="text-sm text-slate-500">월별 데이터가 없습니다.</div>
         ) : (
@@ -119,16 +183,29 @@ export function PlanViewPerfDetailView({ master, months }: { master: Master; mon
                 </tr>
               </thead>
               <tbody>
-                {months.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50">
-                    <td className="sticky left-0 border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-900">{m.ym}</td>
-                    {MONTH_COLS.map((c) => (
-                      <td key={c.key} className="border border-slate-200 px-2 py-1.5 text-right tabular-nums text-slate-700">{fmt(m[c.key])}</td>
-                    ))}
-                  </tr>
-                ))}
+                {months.map((m) => {
+                  const row = draft.get(m.id) ?? m;
+                  const isDirty = dirtyIds.includes(m.id);
+                  return (
+                    <tr key={m.id} className={isDirty ? "bg-amber-50" : "hover:bg-slate-50"}>
+                      <td className="sticky left-0 border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-900">{m.ym}</td>
+                      {MONTH_COLS.map((c) => (
+                        <td key={c.key} className="border border-slate-200 p-0">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            className="h-7 w-full bg-transparent px-2 text-right tabular-nums text-slate-700 outline-none focus:bg-blue-50 focus:ring-1 focus:ring-inset focus:ring-blue-500"
+                            value={fmt(row[c.key])}
+                            onChange={(e) => patchCell(m.id, c.key, e.target.value)}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+            <p className="mt-2 text-xs text-slate-500">셀 클릭 → 숫자 입력 (콤마 자동 무시) · 변경 행은 노란색 강조 · 저장 버튼으로 일괄 반영.</p>
           </div>
         )}
       </div>

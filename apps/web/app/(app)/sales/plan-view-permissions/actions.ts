@@ -360,3 +360,94 @@ export async function getPlanViewPerformance(input: { id: string }) {
     })),
   };
 }
+
+// ---------------------------------------------------------------------------
+// savePlanViewPerformanceMonths — batch upsert 12 monthly rows
+// (legacy mmPlanViewPerMgrDetailPop.jsp 의 DoSave 매칭)
+// ---------------------------------------------------------------------------
+import { z as _z } from "zod";
+
+const monthRowPatch = _z.object({
+  id: _z.string().uuid(),
+  ym: _z.string().regex(/^\d{6}$/),
+  serOrderAmt: _z.number().nullable().optional(),
+  prdOrderAmt: _z.number().nullable().optional(),
+  infOrderAmt: _z.number().nullable().optional(),
+  servAmt: _z.number().nullable().optional(),
+  prodAmt: _z.number().nullable().optional(),
+  inManMonth: _z.number().nullable().optional(),
+  outManMonth: _z.number().nullable().optional(),
+  dirInAmt: _z.number().nullable().optional(),
+  dirOutAmt: _z.number().nullable().optional(),
+  indirOrgAmt: _z.number().nullable().optional(),
+  indirAllAmt: _z.number().nullable().optional(),
+  sgaAmt: _z.number().nullable().optional(),
+  expAmt: _z.number().nullable().optional(),
+});
+
+const savePlanViewPerformanceMonthsInput = _z.object({
+  planId: _z.string().uuid(),
+  rows: _z.array(monthRowPatch),
+});
+
+export async function savePlanViewPerformanceMonths(rawInput: unknown) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const input = savePlanViewPerformanceMonthsInput.parse(rawInput);
+
+  const [master] = await db
+    .select({ id: salesPlanViewPerformance.id })
+    .from(salesPlanViewPerformance)
+    .where(and(
+      eq(salesPlanViewPerformance.id, input.planId),
+      eq(salesPlanViewPerformance.workspaceId, ctx.workspaceId),
+    ))
+    .limit(1);
+  if (!master) return { ok: false as const, error: "NotFound" };
+
+  const now = new Date();
+  let updated = 0;
+  await db.transaction(async (tx) => {
+    for (const r of input.rows) {
+      const patch: Record<string, unknown> = {
+        updatedAt: now,
+        updatedBy: ctx.userId,
+      };
+      const numericKeys = [
+        "serOrderAmt", "prdOrderAmt", "infOrderAmt",
+        "servAmt", "prodAmt",
+        "inManMonth", "outManMonth",
+        "dirInAmt", "dirOutAmt",
+        "indirOrgAmt", "indirAllAmt",
+        "sgaAmt", "expAmt",
+      ] as const;
+      for (const k of numericKeys) {
+        const v = r[k];
+        if (v !== undefined) patch[k] = v == null ? null : String(v);
+      }
+      const res = await tx.update(salesPlanViewPerformanceMonth)
+        .set(patch)
+        .where(and(
+          eq(salesPlanViewPerformanceMonth.id, r.id),
+          eq(salesPlanViewPerformanceMonth.workspaceId, ctx.workspaceId),
+          eq(salesPlanViewPerformanceMonth.planId, input.planId),
+        ))
+        .returning({ id: salesPlanViewPerformanceMonth.id });
+      if (res.length > 0) updated += 1;
+    }
+    if (updated > 0) {
+      await tx.insert(auditLog).values({
+        workspaceId: ctx.workspaceId,
+        userId: ctx.userId,
+        action: "sales.plan_view_performance_month.update",
+        resourceType: "sales_plan_view_performance_month",
+        resourceId: input.planId,
+        details: { count: updated },
+        success: true,
+      });
+    }
+  });
+
+  revalidatePath(`/sales/plan-view-permissions/${input.planId}/detail`);
+  return { ok: true as const, updated };
+}
