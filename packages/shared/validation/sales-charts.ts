@@ -20,11 +20,19 @@ export const AdminPerfInput = z.object({
   orgCd: OrgCd,
 });
 
-export const TrendInput = z.object({
+const TrendCommon = z.object({
   years: z.array(Year).min(1).max(5),
   orgCd: OrgCd,
-  metric: TrendGbEnum,
 });
+
+// Sale trend always reports SALES. metric is fixed.
+export const SaleTrendInput = TrendCommon;
+
+// Profit trend always reports OP_INCOME (operating income). metric is fixed.
+export const ProfitTrendInput = TrendCommon;
+
+// Generic input retained for callers that need to choose metric (currently unused outside actions.ts).
+export const TrendInput = TrendCommon.extend({ metric: TrendGbEnum });
 
 export const PlanPerfChartInput = z.object({
   year: Year,

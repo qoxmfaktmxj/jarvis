@@ -155,7 +155,19 @@ function mockForbiddenSession() {
 // ---------------------------------------------------------------------------
 // Import actions AFTER mocks are registered
 // ---------------------------------------------------------------------------
-import { getMarketingByActivity, getMarketingByProduct } from "../actions";
+import {
+  getMarketingByActivity,
+  getMarketingByProduct,
+  getAdminPerf,
+  getSaleTrend,
+  getProfitTrend,
+  getPlanPerfChart,
+  getDashboardSalesTrend,
+  getDashboardSucProb,
+  getDashboardSucProbHap,
+  getDashboardOpIncome,
+  getDashboardBA,
+} from "../actions";
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -323,8 +335,6 @@ describe("getMarketingByProduct", () => {
 // ---------------------------------------------------------------------------
 // Task 6: getAdminPerf
 // ---------------------------------------------------------------------------
-import { getAdminPerf } from "../actions";
-
 describe("getAdminPerf", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -358,8 +368,6 @@ describe("getAdminPerf", () => {
 // ---------------------------------------------------------------------------
 // Task 7: getSaleTrend / getProfitTrend / getPlanPerfChart
 // ---------------------------------------------------------------------------
-import { getSaleTrend, getProfitTrend, getPlanPerfChart } from "../actions";
-
 describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -368,7 +376,7 @@ describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
   });
 
   it("getSaleTrend returns 12 ym rows × years[0]", async () => {
-    const res = await getSaleTrend({ years: [2024], metric: "SALES" });
+    const res = await getSaleTrend({ years: [2024] });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.rows.length).toBe(12);
@@ -377,8 +385,8 @@ describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
     }
   });
 
-  it("getProfitTrend defaults metric=OP_INCOME", async () => {
-    const res = await getProfitTrend({ years: [2024], metric: "OP_INCOME" });
+  it("getProfitTrend always uses OP_INCOME metric", async () => {
+    const res = await getProfitTrend({ years: [2024] });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.rows.length).toBeGreaterThan(0);
@@ -400,11 +408,6 @@ describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
 // ---------------------------------------------------------------------------
 // Task 8: Dashboard actions (5 functions)
 // ---------------------------------------------------------------------------
-import {
-  getDashboardSalesTrend, getDashboardSucProb, getDashboardSucProbHap,
-  getDashboardOpIncome, getDashboardBA,
-} from "../actions";
-
 describe("dashboard actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();

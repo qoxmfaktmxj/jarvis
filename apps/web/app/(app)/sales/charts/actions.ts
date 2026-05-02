@@ -10,7 +10,8 @@ import {
   AdminPerfInput,
   MarketingByActivityInput,
   MarketingByProductInput,
-  TrendInput,
+  SaleTrendInput,
+  ProfitTrendInput,
   PlanPerfChartInput,
   DashboardSalesTrendInput,
   DashboardSucProbInput,
@@ -81,7 +82,7 @@ export async function getMarketingByProduct(raw: unknown) {
   const rows = await db
     .select({
       productTypeCode: o.productTypeCode,
-      totalAmt: sql<number>`COALESCE(SUM(${o.contExpecAmt}), 0)`,
+      totalAmt: sql<string>`COALESCE(SUM(${o.contExpecAmt}), 0)::text`,
     })
     .from(o)
     .where(
@@ -112,6 +113,8 @@ export async function getAdminPerf(raw: unknown) {
   const yearStr = String(input.year);
   const orgFilter = input.orgCd ? sql`AND ${p.orgCd} = ${input.orgCd}` : sql``;
 
+  // Invariant: ym is always exactly 6 chars (varchar(6) + Zod regex /^\d{6}$/).
+  // Year view emits SUBSTRING(ym, 5, 2) → "01".."12"; quarter view emits Q1..Q4.
   const rawRows = await db.execute<{
     period: string; gubun_cd: string; total: string;
   }>(sql`
@@ -198,18 +201,18 @@ async function aggregateMonthlyByGubun(
 }
 
 export async function getSaleTrend(raw: unknown) {
-  const input = TrendInput.parse(raw);
+  const input = SaleTrendInput.parse(raw);
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
-  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, input.metric, input.orgCd);
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, "SALES", input.orgCd);
   return { ok: true as const, rows };
 }
 
 export async function getProfitTrend(raw: unknown) {
-  const input = TrendInput.parse(raw);
+  const input = ProfitTrendInput.parse(raw);
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
-  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, input.metric, input.orgCd);
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, "OP_INCOME", input.orgCd);
   return { ok: true as const, rows };
 }
 
