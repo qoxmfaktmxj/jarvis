@@ -12,8 +12,10 @@ import { listCompanies, saveCompanies } from "../actions";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
-import { DataGrid, type DataGridProps } from "@/components/grid/DataGrid";
+import { DataGrid } from "@/components/grid/DataGrid";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
 type Company = CompanyRow;
@@ -60,11 +62,23 @@ export function CompaniesGridContainer({
 }: Props) {
   const [rows, setRows] = useState<Company[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useState(1);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({});
+  // Tab-state-aware: page + filterValues + pending filter form state survive
+  // tab switches (sessionStorage scoped per workspace).
+  const [page, setPage] = useTabState<number>("companies.page", 1);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "companies.filters",
+    {},
+  );
+  const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
+    "companies.pendingFilters",
+    {},
+  );
   const [isExporting, setIsExporting] = useState(false);
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
+
+  // Tab dirty marker — based on grid's reported dirty count.
+  useTabDirty(dirtyCount > 0);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -212,6 +226,7 @@ export function CompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

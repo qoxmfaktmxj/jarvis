@@ -19,6 +19,7 @@ import { Search } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { resolveIcon } from "./icon-map";
+import { useTabContext } from "./tabs/TabContext";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 type PaletteItem = {
@@ -84,6 +85,7 @@ export function CommandPalette({ menus, actions }: Props) {
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const router = useRouter();
+  const { openTab } = useTabContext();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -151,15 +153,27 @@ export function CommandPalette({ menus, actions }: Props) {
 
   const flat = useMemo(() => [...bySection.navigate, ...bySection.actions], [bySection]);
 
-  const run = (it: PaletteItem) => {
-    router.push(it.href);
+  const run = async (it: PaletteItem) => {
     setOpen(false);
+    const ok = await openTab(it.href, it.label);
+    if (ok) {
+      router.push(it.href);
+    } else if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[CommandPalette] openTab refused for ${it.href} — likely all 5 tabs are pinned.`,
+      );
+    }
   };
 
   const onKeyDownList = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown") { e.preventDefault(); setActiveIdx((i) => Math.min(i + 1, flat.length - 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActiveIdx((i) => Math.max(i - 1, 0)); }
-    else if (e.key === "Enter" && flat[activeIdx]) { e.preventDefault(); run(flat[activeIdx]); }
+    else if (e.key === "Enter" && flat[activeIdx]) {
+      e.preventDefault();
+      const target = flat[activeIdx];
+      if (target) void run(target);
+    }
   };
 
   let runningIdx = -1;
@@ -206,7 +220,7 @@ export function CommandPalette({ menus, actions }: Props) {
                         <button
                           type="button"
                           onMouseEnter={() => setActiveIdx(flat.indexOf(it))}
-                          onClick={() => run(it)}
+                          onClick={() => void run(it)}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
                             active ? "bg-isu-100 text-isu-900" : "text-surface-700 hover:bg-surface-50"
