@@ -538,6 +538,18 @@
   100% { transform: translate(33%, -50%) scale(1); opacity: 1; }
 }
 
+/* Tab context menu enter — soft scale+fade from cursor */
+@keyframes tab-menu-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Tab dirty dot — amber halo pulse for "unsaved changes" affordance */
+@keyframes tab-dirty-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(221 91 0 / 0); }
+  50%      { box-shadow: 0 0 0 3px rgb(221 91 0 / 0.28); }
+}
+
 /* Reduced motion — respect OS preference */
 @media (prefers-reduced-motion: reduce) {
   :root {
