@@ -368,3 +368,46 @@ export async function deleteActivityMemo(rawInput: z.input<typeof activityMemoDe
 
   return activityMemoDeleteOutput.parse({ ok: true });
 }
+
+// ---------------------------------------------------------------------------
+// getActivity — single activity fetch for /[id]/edit page
+// ---------------------------------------------------------------------------
+export async function getActivity(input: { id: string }) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const attendee = aliasedTable(user, "att_user");
+  const [row] = await db
+    .select({
+      id: salesActivity.id,
+      bizActNm: salesActivity.bizActNm,
+      opportunityId: salesActivity.opportunityId,
+      customerId: salesActivity.customerId,
+      contactId: salesActivity.contactId,
+      customerName: salesCustomer.custNm,
+      actYmd: salesActivity.actYmd,
+      actTypeCode: salesActivity.actTypeCode,
+      accessRouteCode: salesActivity.accessRouteCode,
+      bizStepCode: salesActivity.bizStepCode,
+      productTypeCode: salesActivity.productTypeCode,
+      actContent: salesActivity.actContent,
+      attendeeUserId: salesActivity.attendeeUserId,
+      attendeeUserName: attendee.name,
+      memo: salesActivity.memo,
+      insDate: salesActivity.insDate,
+    })
+    .from(salesActivity)
+    .leftJoin(salesCustomer, eq(salesActivity.customerId, salesCustomer.id))
+    .leftJoin(attendee, eq(salesActivity.attendeeUserId, attendee.id))
+    .where(and(eq(salesActivity.id, input.id), eq(salesActivity.workspaceId, ctx.workspaceId)))
+    .limit(1);
+
+  if (!row) return { ok: false as const, error: "NotFound" as const };
+  return {
+    ok: true as const,
+    activity: {
+      ...row,
+      insDate: row.insDate ? row.insDate.toISOString() : null,
+    },
+  };
+}
