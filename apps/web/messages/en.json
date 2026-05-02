@@ -363,6 +363,59 @@
         "searchCostNm": "Cost Name",
         "searchDevGbCd": "Type"
       }
+    },
+    "Charts": {
+      "Topbar": {
+        "marketing": "Marketing",
+        "admin": "Admin",
+        "sales": "Sales / Profit",
+        "upload": "Plan Upload",
+        "dashboard": "Dashboard"
+      },
+      "Common": {
+        "empty": "No data to display.",
+        "noData": "No data",
+        "year": "Year",
+        "quarter": "Quarter",
+        "ym": "Year-Month",
+        "all": "All"
+      },
+      "Marketing": {
+        "title": "Marketing Charts",
+        "byActivity": "By Activity Type",
+        "byProduct": "By Product Revenue",
+        "ymLabel": "Year-Month"
+      },
+      "Admin": {
+        "title": "Overall Performance (Admin)",
+        "viewYear": "By Month",
+        "viewQuarter": "By Quarter",
+        "metricSales": "Sales",
+        "metricGross": "Gross Profit",
+        "metricOpIncome": "Operating Income",
+        "plan": "Plan",
+        "actual": "Actual",
+        "forecast": "Forecast"
+      },
+      "Sales": {
+        "title": "Sales / Profit Trend",
+        "saleTrend": "Sales Trend",
+        "profitTrend": "Operating Income Trend",
+        "planPerf": "Plan vs Actual vs Forecast"
+      },
+      "Upload": {
+        "placeholderTitle": "Plan / Actual Upload",
+        "p3Notice": "Excel upload will be available in a follow-up PR (P3).",
+        "p3CTA": "Charts are currently shown with seed data."
+      },
+      "Dashboard": {
+        "title": "Sales Dashboard",
+        "sales": "Sales Trend",
+        "sucProb": "Success Probability by Grade",
+        "sucProbHap": "Success Probability Summary",
+        "opIncome": "Operating Income",
+        "ba": "Plan vs Actual by Division"
+      }
     }
   }
 }

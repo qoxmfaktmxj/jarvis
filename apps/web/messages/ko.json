@@ -1469,6 +1469,59 @@
         "insdate": "등록일자"
       }
     },
+    "Charts": {
+      "Topbar": {
+        "marketing": "마케팅",
+        "admin": "관리자",
+        "sales": "매출/이익",
+        "upload": "계획/실적 업로드",
+        "dashboard": "대시보드"
+      },
+      "Common": {
+        "empty": "표시할 데이터가 없습니다.",
+        "noData": "데이터 없음",
+        "year": "연도",
+        "quarter": "분기",
+        "ym": "연월",
+        "all": "전체"
+      },
+      "Marketing": {
+        "title": "마케팅 차트",
+        "byActivity": "활동유형별",
+        "byProduct": "제품별 매출",
+        "ymLabel": "연월"
+      },
+      "Admin": {
+        "title": "전체실적 (관리자)",
+        "viewYear": "연도별",
+        "viewQuarter": "분기별",
+        "metricSales": "매출",
+        "metricGross": "매출총이익",
+        "metricOpIncome": "영업이익",
+        "plan": "계획",
+        "actual": "실적",
+        "forecast": "전망"
+      },
+      "Sales": {
+        "title": "매출/이익 트렌드",
+        "saleTrend": "매출 트렌드",
+        "profitTrend": "영업이익 트렌드",
+        "planPerf": "계획 vs 실적 vs 전망"
+      },
+      "Upload": {
+        "placeholderTitle": "계획/실적 업로드",
+        "p3Notice": "Excel 업로드 기능은 후속 PR(P3)에서 제공됩니다.",
+        "p3CTA": "지금은 차트만 시드 데이터로 표시됩니다."
+      },
+      "Dashboard": {
+        "title": "영업 대시보드",
+        "sales": "매출 트렌드",
+        "sucProb": "성공확률 등급별",
+        "sucProbHap": "성공확률 합산",
+        "opIncome": "영업이익 추이",
+        "ba": "본부별 계획 vs 실적"
+      }
+    },
     "Common": {
       "Excel": {
         "button": "다운로드",
