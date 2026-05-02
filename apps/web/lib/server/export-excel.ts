@@ -70,3 +70,52 @@ export async function exportToExcel<T extends Record<string, unknown>>({
   const out = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
   return Buffer.isBuffer(out) ? out : Buffer.from(out as ArrayBuffer);
 }
+
+/**
+ * Single source of truth for the per-export row cap across every grid.
+ *
+ * 200,000 picked for the self-hosted Linux server: well below the xlsx
+ * sheet limit (1,048,576), comfortable inside Node's default heap, and
+ * roughly 5–20MB output xlsx for typical column counts. If you bump this,
+ * sanity-check peak memory under the heaviest column count first.
+ *
+ * Beyond this, users are asked to narrow filters and export in slices —
+ * not because Excel can't hold it, but because returning a 50MB+ xlsx
+ * over a sync server action becomes a UX/timeout liability.
+ */
+export const EXPORT_ROW_LIMIT = 200_000;
+
+/**
+ * Guard helper used by every export.ts. Use the (LIMIT + 1) query pattern:
+ *
+ *   const rowsWithSentinel = await db.select()...limit(EXPORT_ROW_LIMIT + 1);
+ *   const guard = enforceExportLimit(rowsWithSentinel);
+ *   if (!guard.ok) return { ok: false, error: guard.error };
+ *   const exportRows = guard.rows.map(serialize);
+ *
+ * Treats the query result of (LIMIT + 1) as the overflow sentinel: if the
+ * caller got back N+1 rows, there are at least N+1 matches and we refuse.
+ * The accepted result is sliced to LIMIT defensively.
+ *
+ * Returns a localized Korean error string (Jarvis is a Korean internal tool;
+ * server actions don't currently set up next-intl context, and this message
+ * propagates to client toasts via { error: string } shape used by every
+ * grid's onExport handler).
+ */
+export function enforceExportLimit<T>(
+  rowsWithSentinel: T[],
+): { ok: true; rows: T[] } | { ok: false; error: string } {
+  if (rowsWithSentinel.length > EXPORT_ROW_LIMIT) {
+    return { ok: false, error: exportLimitExceededError() };
+  }
+  return { ok: true, rows: rowsWithSentinel.slice(0, EXPORT_ROW_LIMIT) };
+}
+
+/**
+ * Standardized Korean error message for the export row cap. Exported in case
+ * a caller needs to format it before delegating to {@link enforceExportLimit}.
+ */
+export function exportLimitExceededError(): string {
+  const max = EXPORT_ROW_LIMIT.toLocaleString("ko-KR");
+  return `${max}건을 초과합니다. 한 번에 다운로드 가능한 최대 건수입니다. 필터를 좁혀 나눠 다운로드해 주세요.`;
+}

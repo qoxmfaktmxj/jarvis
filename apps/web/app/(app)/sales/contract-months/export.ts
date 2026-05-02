@@ -9,11 +9,13 @@ import { salesContractMonth, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listContractMonthsInput } from "@jarvis/shared/validation/sales-contract";
 import type { z } from "zod";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { SalesContractMonthRow } from "@jarvis/shared/validation/sales-contract";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Session helpers (same pattern as actions.ts)
@@ -66,7 +68,7 @@ export async function exportContractMonthsToExcel(
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
-  const input = listContractMonthsInput.parse({ ...rawFilters, page: 1, limit: MAX_EXPORT_ROWS });
+  const input = listContractMonthsInput.parse({ ...rawFilters, page: 1, limit: 200 });
 
   // Build WHERE conditions (same logic as listContractMonths in actions.ts)
   const conditions = [eq(salesContractMonth.workspaceId, ctx.workspaceId)];
@@ -78,11 +80,11 @@ export async function exportContractMonthsToExcel(
     .select()
     .from(salesContractMonth)
     .where(and(...conditions))
-    .orderBy(salesContractMonth.ym, salesContractMonth.createdAt);
+    .orderBy(salesContractMonth.ym, salesContractMonth.createdAt)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   // Hidden:0 (visible) columns per legacy ibSheet bizContractMonthMgr.jsp.
   // Pass resolved Korean display strings — NOT i18n keys.
@@ -144,7 +146,7 @@ export async function exportContractMonthsToExcel(
     { key: "createdAt", label: "등록일자", type: "text" },
   ];
 
-  const exportRows: SalesContractMonthRow[] = rows.map((r) => ({
+  const exportRows: SalesContractMonthRow[] = guard.rows.map((r) => ({
     id: r.id,
     workspaceId: r.workspaceId,
     contractId: r.contractId,

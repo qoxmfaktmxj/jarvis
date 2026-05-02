@@ -9,12 +9,14 @@ import { db } from "@jarvis/db/client";
 import { auditLog, salesFreelancer } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listFreelancersInput, type SalesFreelancerRow } from "@jarvis/shared/validation/sales-people";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
 import { freelancerVisibleExportColumns } from "./_components/columns";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 type ExportInput = Omit<z.input<typeof listFreelancersInput>, "page" | "limit">;
 
@@ -47,13 +49,12 @@ export async function exportFreelancersToExcel(rawFilters: ExportInput): Promise
     .from(salesFreelancer)
     .where(and(...conditions))
     .orderBy(desc(salesFreelancer.belongYm), salesFreelancer.sabun)
-    .limit(MAX_EXPORT_ROWS);
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
-  const exportRows: SalesFreelancerRow[] = rows.map((r) => ({
+  const exportRows: SalesFreelancerRow[] = guard.rows.map((r) => ({
     id: r.id,
     workspaceId: r.workspaceId,
     legacyEnterCd: r.legacyEnterCd ?? null,

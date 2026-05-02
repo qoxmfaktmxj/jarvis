@@ -167,7 +167,8 @@
         "button": "Download",
         "downloading": "Downloading...",
         "exportFailed": "Export failed",
-        "exportFailedDesc": "{message}"
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "Exceeds {max, number} rows. This is the maximum exportable in a single download — narrow your filter and download in slices."
       },
       "yn": {
         "all": "All",
@@ -517,7 +518,8 @@
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "Download started.",
         "exportFailed": "Export failed",
-        "exportFailedDesc": "{message}"
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "Exceeds {max, number} rows. This is the maximum exportable in a single download — narrow your filter and download in slices."
       },
       "Search": {
         "chargerNm": "Owner",

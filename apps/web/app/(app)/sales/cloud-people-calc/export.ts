@@ -9,12 +9,14 @@ import { db } from "@jarvis/db/client";
 import { auditLog, salesCloudPeopleCalc } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listCloudPeopleCalcInput, type SalesCloudPeopleCalcRow } from "@jarvis/shared/validation/sales-people";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
 import { cloudPeopleCalcVisibleExportColumns } from "./_components/columns";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 type ExportInput = Omit<z.input<typeof listCloudPeopleCalcInput>, "page" | "limit">;
 
@@ -49,13 +51,12 @@ export async function exportCloudPeopleCalcToExcel(rawFilters: ExportInput): Pro
     .from(salesCloudPeopleCalc)
     .where(and(...conditions))
     .orderBy(desc(salesCloudPeopleCalc.ym), salesCloudPeopleCalc.contNo)
-    .limit(MAX_EXPORT_ROWS);
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
-  const exportRows: SalesCloudPeopleCalcRow[] = rows.map((r) => ({
+  const exportRows: SalesCloudPeopleCalcRow[] = guard.rows.map((r) => ({
     id: r.id,
     workspaceId: r.workspaceId,
     legacyEnterCd: r.legacyEnterCd ?? null,

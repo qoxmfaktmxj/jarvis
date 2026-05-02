@@ -9,11 +9,13 @@ import { salesContract, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listContractsInput } from "@jarvis/shared/validation/sales-contract";
 import type { z } from "zod";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { SalesContractRow } from "@jarvis/shared/validation/sales-contract";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Session helpers (same pattern as actions.ts)
@@ -66,7 +68,7 @@ export async function exportContractsToExcel(
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
-  const input = listContractsInput.parse({ ...rawFilters, page: 1, limit: MAX_EXPORT_ROWS });
+  const input = listContractsInput.parse({ ...rawFilters, page: 1, limit: 200 });
 
   // Build WHERE conditions (same logic as listContracts, no offset)
   const conditions = [eq(salesContract.workspaceId, ctx.workspaceId)];
@@ -85,11 +87,11 @@ export async function exportContractsToExcel(
     .select()
     .from(salesContract)
     .where(and(...conditions))
-    .orderBy(salesContract.contYmd, salesContract.createdAt);
+    .orderBy(salesContract.contYmd, salesContract.createdAt)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   // Hidden:0 (visible) columns per legacy ibSheet bizContractMgr.jsp.
   // Pass resolved Korean display strings — NOT i18n keys.
@@ -116,7 +118,7 @@ export async function exportContractsToExcel(
     { key: "createdAt", label: "계약등록일자", type: "text" },
   ];
 
-  const exportRows: SalesContractRow[] = rows.map((r) => ({
+  const exportRows: SalesContractRow[] = guard.rows.map((r) => ({
     id: r.id,
     workspaceId: r.workspaceId,
     legacyEnterCd: r.legacyEnterCd ?? null,

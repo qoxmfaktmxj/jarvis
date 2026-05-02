@@ -665,7 +665,8 @@
         "button": "다운로드",
         "downloading": "다운로드 중...",
         "exportFailed": "엑셀 내보내기 실패",
-        "exportFailedDesc": "{message}"
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "{max, number}건을 초과합니다. 한 번에 다운로드 가능한 최대 건수입니다. 필터를 좁혀 나눠 다운로드해 주세요."
       },
       "yn": {
         "all": "전체",
@@ -1643,7 +1644,8 @@
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "다운로드를 시작했습니다.",
         "exportFailed": "엑셀 내보내기 실패",
-        "exportFailedDesc": "{message}"
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "{max, number}건을 초과합니다. 한 번에 다운로드 가능한 최대 건수입니다. 필터를 좁혀 나눠 다운로드해 주세요."
       },
       "Search": {
         "chargerNm": "담당자명",

@@ -7,11 +7,13 @@ import { db } from "@jarvis/db/client";
 import { salesCustomerContact, salesCustomer, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { exportCustomerContactsInput } from "@jarvis/shared/validation/sales/customer-contact";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { z } from "zod";
 import type { ColumnDef } from "@/components/grid/types";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
@@ -114,13 +116,13 @@ export async function exportCustomerContactsToExcel(
     .from(salesCustomerContact)
     .leftJoin(salesCustomer, eq(salesCustomer.id, salesCustomerContact.customerId))
     .where(where)
-    .orderBy(salesCustomerContact.custMcd);
+    .orderBy(salesCustomerContact.custMcd)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
-  const exportRows: ExportRow[] = rows.map((r) => ({
+  const exportRows: ExportRow[] = guard.rows.map((r) => ({
     custNm: r.custNm ?? null,
     custName: r.custName ?? null,
     jikweeNm: r.jikweeNm ?? null,

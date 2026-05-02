@@ -23,11 +23,13 @@ import {
 } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { exportProductCostMappingInput } from "@jarvis/shared/validation/sales/product-type-cost";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Row type for Excel export
@@ -132,13 +134,13 @@ export async function exportProductCostMappingToExcel(
     .leftJoin(salesProductType, eq(salesProductType.id, salesProductTypeCost.productTypeId))
     .leftJoin(salesCostMaster, eq(salesCostMaster.id, salesProductTypeCost.costId))
     .where(where)
-    .orderBy(desc(salesProductTypeCost.sdate));
+    .orderBy(desc(salesProductTypeCost.sdate))
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
-  const exportRows: ExportRow[] = rows.map((r) => ({
+  const exportRows: ExportRow[] = guard.rows.map((r) => ({
     productTypeNm: r.productTypeNm ?? null,
     costNm: r.costNm ?? null,
     sdate: r.sdate ?? "",
