@@ -1657,6 +1657,37 @@
       "Dashboard": {
         "title": "영업본부 대시보드",
         "description": "매출 트렌드 · 영업단계 분포 · 영업이익 PLAN/ACTUAL/FORECAST · BA 통합 보드."
+      },
+      "PlanPerfUpload": {
+        "title": "계획/실적전망 업로드",
+        "description": "차트(관리자 실적·계획대비 실적·추이·대시보드)가 사용하는 sales_plan_perf raw 데이터를 입력합니다. 인라인 편집 또는 Excel 업로드.",
+        "templateBtn": "템플릿 다운로드",
+        "uploadBtn": "Excel 업로드",
+        "uploading": "업로드 중…",
+        "uploadHelp": "템플릿을 다운로드하여 채우거나 동일 컬럼 구조의 xlsx 를 업로드하세요. 동일 키(년월·조직·구분·값구분)는 upsert 됩니다.",
+        "filters": {
+          "q": "검색어",
+          "qPlaceholder": "조직코드/조직명/비고",
+          "ym": "년월",
+          "orgCd": "조직코드",
+          "gubunCd": "구분",
+          "trendGbCd": "값구분",
+          "all": "전체"
+        },
+        "columns": {
+          "ym": "년월",
+          "orgCd": "조직코드",
+          "orgNm": "조직명",
+          "gubunCd": "구분",
+          "trendGbCd": "값구분",
+          "amt": "금액",
+          "note": "비고",
+          "updatedBy": "수정자",
+          "updatedAt": "수정일시"
+        },
+        "errors": {
+          "duplicate": "중복된 키가 있습니다 (년월·조직·구분·값구분): {keys}"
+        }
       }
     },
     "Common": {

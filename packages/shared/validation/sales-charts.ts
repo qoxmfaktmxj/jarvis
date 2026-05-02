@@ -61,3 +61,44 @@ export const DashboardOpIncomeInput = z.object({ year: Year });
 export type DashboardOpIncomeInput = z.infer<typeof DashboardOpIncomeInput>;
 export const DashboardBAInput = z.object({ ym: Ym });
 export type DashboardBAInput = z.infer<typeof DashboardBAInput>;
+
+// chartUpload — sales_plan_perf raw 데이터 입력/Excel 업로드 (Group 6 follow-up)
+export const SalesPlanPerfRow = z.object({
+  id: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  ym: Ym,
+  orgCd: z.string().min(1).max(20),
+  orgNm: z.string().min(1).max(100),
+  gubunCd: GubunEnum,
+  trendGbCd: TrendGbEnum,
+  amt: z.number().int(),
+  note: z.string().nullable(),
+  createdAt: z.string().datetime().nullable(),
+  updatedAt: z.string().datetime().nullable(),
+  createdBy: z.string().uuid().nullable(),
+  updatedBy: z.string().uuid().nullable(),
+});
+export type SalesPlanPerfRow = z.infer<typeof SalesPlanPerfRow>;
+
+export const ListPlanPerfUploadInput = z.object({
+  q: z.string().optional(),
+  ym: Ym.optional(),
+  orgCd: z.string().optional(),
+  gubunCd: GubunEnum.optional(),
+  trendGbCd: TrendGbEnum.optional(),
+  page: z.number().int().min(1).default(1),
+  limit: z.number().int().min(1).max(500).default(50),
+});
+export type ListPlanPerfUploadInput = z.infer<typeof ListPlanPerfUploadInput>;
+
+export const SavePlanPerfUploadInput = z.object({
+  creates: z.array(SalesPlanPerfRow.omit({ id: true, workspaceId: true, createdAt: true, updatedAt: true, createdBy: true, updatedBy: true }).extend({
+    id: z.string(),
+  })).default([]),
+  updates: z.array(z.object({
+    id: z.string().uuid(),
+    patch: SalesPlanPerfRow.partial().omit({ id: true, workspaceId: true, createdAt: true, createdBy: true }),
+  })).default([]),
+  deletes: z.array(z.string().uuid()).default([]),
+});
+export type SavePlanPerfUploadInput = z.infer<typeof SavePlanPerfUploadInput>;
