@@ -58,7 +58,7 @@ describe("project extension schemas", () => {
       "role_cd",
       "role_nm",
       "module",
-      "bigo",
+      "work_hours",
       "memo",
       "job_cd",
       "job_nm",

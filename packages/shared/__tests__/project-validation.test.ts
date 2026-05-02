@@ -66,7 +66,7 @@ describe("project extension validation", () => {
       roleCd: null,
       roleNm: null,
       module: null,
-      bigo: null,
+      workHours: null,
       memo: null,
       etc1: null,
       etc2: null,

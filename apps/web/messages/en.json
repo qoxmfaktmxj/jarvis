@@ -165,7 +165,14 @@
       "search": "Search",
       "excel": {
         "button": "Download",
-        "downloading": "Downloading..."
+        "downloading": "Downloading...",
+        "exportFailed": "Export failed",
+        "exportFailedDesc": "{message}"
+      },
+      "yn": {
+        "all": "All",
+        "y": "Y",
+        "n": "N"
       }
     },
     "Beacons": {
@@ -508,7 +515,9 @@
         "button": "Download",
         "downloading": "Downloading…",
         "filename": "{screen}_{date}.xlsx",
-        "downloadStarted": "Download started."
+        "downloadStarted": "Download started.",
+        "exportFailed": "Export failed",
+        "exportFailedDesc": "{message}"
       },
       "Search": {
         "chargerNm": "Owner",
