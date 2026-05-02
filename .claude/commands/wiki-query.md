@@ -1,6 +1,6 @@
 ---
 description: "LLM Wiki page-first query: compiled wiki page를 탐색·합성해 답변한다 (raw chunk RAG 금지)"
-argument-hint: "{자연어 질문}  (예: \"사내 휴가 정책에서 반차 규정은?\")"
+argument-hint: "{자연어 질문}  (예: \"휴가 정책에서 반차 규정은?\")"
 ---
 
 # /wiki-query — Jarvis LLM Wiki Page-First Query

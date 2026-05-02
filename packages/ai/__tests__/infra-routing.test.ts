@@ -4,8 +4,8 @@ import { detectInfraIntent } from "../page-first/infra-routing.js";
 describe("detectInfraIntent", () => {
   it.each([
     ["WHE 접속 어떻게 해?", true],
-    ["Wartsila HR 운영 DB 비번", true],
-    ["이수 HR 시스템 배포 경로", true],
+    ["legacy HR 운영 DB 비번", true],
+    ["legacy HR 시스템 배포 경로", true],
     ["VPN 연결 방법", true],
     ["웹스피어 재기동 절차", true],
     ["Oracle TNS 설정", true],

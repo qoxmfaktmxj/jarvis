@@ -58,7 +58,7 @@ export class GitRepo {
     // Pin local identity so the first commit doesn't need global git
     // config (CI runners often don't have one).
     await this.git.addConfig("user.name", "jarvis-wiki-bootstrap", false, "local");
-    await this.git.addConfig("user.email", "jarvis-wiki@internal.local", false, "local");
+    await this.git.addConfig("user.email", "jarvis-wiki@wiki.invalid", false, "local");
     // Empty seed commit. --allow-empty keeps the repo log-queryable
     // before any page is written.
     await this.git.commit("[manual] bootstrap — empty initial commit", {

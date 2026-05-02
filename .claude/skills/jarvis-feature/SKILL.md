@@ -1,6 +1,6 @@
 ---
 name: jarvis-feature
-description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키) 기능 개발의 진입점. superpowers 워크플로우(brainstorming → writing-plans → subagent-driven-development → verification-before-completion)에 Jarvis 도메인 컨텍스트(jarvis-architecture, jarvis-db-patterns, jarvis-i18n, jarvis-wiki-feature)를 주입하는 얇은 오케스트레이터. 새 기능 추가, 기존 기능 수정, 버그 수정, 리팩토링, 스키마 변경, 페이지 추가, 번역 추가, 권한 변경, "이거 구현해줘", "기능 추가", "수정해줘", "다시 실행", "재실행", "업데이트", "보완", "이전 결과 기반으로 개선" 등 Jarvis 구현 작업 요청에서 반드시 이 스킬을 사용하라.
+description: Jarvis(엔터프라이즈 업무 시스템 + LLM 컴파일 위키) 기능 개발의 진입점. superpowers 워크플로우(brainstorming → writing-plans → subagent-driven-development → verification-before-completion)에 Jarvis 도메인 컨텍스트(jarvis-architecture, jarvis-db-patterns, jarvis-i18n, jarvis-wiki-feature)를 주입하는 얇은 오케스트레이터. 새 기능 추가, 기존 기능 수정, 버그 수정, 리팩토링, 스키마 변경, 페이지 추가, 번역 추가, 권한 변경, "이거 구현해줘", "기능 추가", "수정해줘", "다시 실행", "재실행", "업데이트", "보완", "이전 결과 기반으로 개선" 등 Jarvis 구현 작업 요청에서 반드시 이 스킬을 사용하라.
 ---
 
 # Jarvis Feature Orchestrator

@@ -111,16 +111,16 @@ describe("prepareProjection", () => {
   test("keeps manual authority when set on a manual-authored page", () => {
     const content = frontmatterDoc(
       [
-        'title: "이수그룹 소개"',
+        'title: "조직 소개"',
         "type: concept",
         "authority: manual",
         "sensitivity: INTERNAL",
         "domain: hr",
       ].join("\n"),
-      "이수그룹 본문",
+      "조직 본문",
     );
     const result = prepareProjection({
-      wikiPath: "wiki/jarvis/manual/guidebook/isu-group.md",
+      wikiPath: "wiki/jarvis/manual/guidebook/org-intro.md",
       content,
       workspaceId: WS_ID,
       workspaceCode: WS_CODE,
@@ -128,7 +128,7 @@ describe("prepareProjection", () => {
     });
     assert.equal(result.skipped, false, result.reason);
     assert.equal(result.row?.authority, "manual");
-    assert.equal(result.row?.routeKey, "manual/guidebook/isu-group");
+    assert.equal(result.row?.routeKey, "manual/guidebook/org-intro");
   });
 
   test("falls back to slug when frontmatter title is missing", () => {
@@ -217,7 +217,7 @@ describe("prepareProjection", () => {
     assert.equal(result.links[1].anchor, null);
   });
 
-  test("auto-fixes TSVD999 unquoted [e-HR] list items so YAML parses", () => {
+  test("auto-fixes legacy case-source unquoted [e-HR] list items so YAML parses", () => {
     const content = [
       "---",
       'title: "test cluster"',

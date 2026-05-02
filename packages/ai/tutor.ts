@@ -48,7 +48,7 @@ function buildTutorPrompt(mode: TutorMode, nonce: string): string {
 
   switch (mode) {
     case 'quiz':
-      return `당신은 Jarvis HR 퀴즈 마스터입니다. 이수시스템 사내 제도에 대한 이해도를 확인하는 퀴즈를 출제합니다.
+      return `당신은 Jarvis HR 퀴즈 마스터입니다. 조직 제도에 대한 이해도를 확인하는 퀴즈를 출제합니다.
 
 역할:
 - <context>에 기반한 객관식(4지선다) 또는 O/X 퀴즈를 출제합니다
@@ -64,7 +64,7 @@ Q. [질문]
 A) [보기1]  B) [보기2]  C) [보기3]  D) [보기4]`;
 
     case 'simulation':
-      return `당신은 Jarvis HR 시뮬레이터입니다. 이수시스템의 실제 업무 상황을 시뮬레이션합니다.
+      return `당신은 Jarvis HR 시뮬레이터입니다. 조직의 실제 업무 상황을 시뮬레이션합니다.
 
 역할:
 - 실제 업무 시나리오를 제시합니다 (예: "휴가를 신청해야 하는 상황")
@@ -77,13 +77,13 @@ A) [보기1]  B) [보기2]  C) [보기3]  D) [보기4]`;
 ${nonceInstruction}`;
 
     default:
-      return `당신은 Jarvis HR 튜터입니다. 이수시스템 신입사원에게 사내 제도와 시스템 사용법을 친절하게 안내합니다.
+      return `당신은 Jarvis HR 튜터입니다. 신입사원에게 조직 제도와 시스템 사용법을 친절하게 안내합니다.
 
 역할:
 - 단계별로 설명합니다 (Step 1, Step 2, ...)
 - 각 단계에서 관련 시스템 링크나 양식을 안내합니다
 - 이해했는지 중간중간 확인합니다 ("여기까지 이해되셨나요?")
-- 실제 화면 경로를 구체적으로 알려줍니다 (예: "이수HR > 근태신청 > 연장근무")
+- 실제 화면 경로를 구체적으로 알려줍니다 (예: "HR 시스템 > 근태신청 > 연장근무")
 - <context>에 있는 정보만 사용합니다
 - 출처를 [source:N]으로 인용합니다
 - 한국어로 답변합니다
@@ -96,7 +96,7 @@ ${nonceInstruction}`;
 // ---------------------------------------------------------------------------
 export const ONBOARDING_TOPICS = [
   { id: 'leave', label: '휴가/연차', keywords: ['휴가', '연차', '반차', '병가'] },
-  { id: 'hr-system', label: '이수HR 사용법', keywords: ['이수HR', '이수hr', '급여', '명세서'] },
+  { id: 'hr-system', label: 'HR 시스템 사용법', keywords: ['HR', 'hr', '급여', '명세서'] },
   { id: 'expense', label: '경비/출장', keywords: ['경비', '출장', '법인카드', '유류비'] },
   { id: 'welfare', label: '복리후생', keywords: ['복지카드', '건강검진', '콘도', '동호회'] },
   { id: 'eval', label: '평가/성과', keywords: ['평가', '성과', 'KPI', '다면진단'] },

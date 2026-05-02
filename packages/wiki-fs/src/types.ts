@@ -9,9 +9,9 @@
  * Page type — used to decide which `auto/` subdirectory holds the page and
  * which ingest prompt path applies.
  *
- * `infra-runbook` is for TSMT001-derived system runbooks under
- * `wiki/<ws>/auto/infra/`. Structure defined in
- * `docs/plan/2026-04-17-tsmt001-infra-pipeline.md` §B-2.
+ * `infra-runbook` is for companies-source-derived system runbooks under
+ * `wiki/<ws>/auto/infra/`. Structure defined in the infra pipeline plan
+ * (see legacy company-master export pipeline doc).
  */
 export type WikiPageType =
   | "source"

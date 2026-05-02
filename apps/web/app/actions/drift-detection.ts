@@ -34,13 +34,13 @@ export interface DriftReport {
 // Known systems that should exist in directory_entry
 // ---------------------------------------------------------------------------
 const KNOWN_SYSTEM_REFERENCES = [
-  { pattern: /이수\s*HR/i, name: 'isu-hr' },
-  { pattern: /그룹웨어/i, name: 'isu-groupware' },
+  { pattern: /legacy\s*HR/i, name: 'legacy-hr' },
+  { pattern: /그룹웨어/i, name: 'groupware' },
   { pattern: /전자전표/i, name: 'e-slip' },
   { pattern: /팀즈|Teams/i, name: 'teams' },
   { pattern: /워크업|WORKUP/i, name: 'workup' },
   { pattern: /스마트\s*오피스/i, name: 'smart-office' },
-  { pattern: /러닝\s*센터/i, name: 'isu-learning' },
+  { pattern: /러닝\s*센터/i, name: 'learning-center' },
   { pattern: /구매\s*시스템/i, name: 'purchase-sys' },
 ];
 

@@ -14,7 +14,7 @@ Jarvis의 검색 진입점 패키지. **두 개의 독립된 검색 레인**을 
 
 ### Lane B — `precedent_case`
 
-- **대상**: CS 티켓/판례/선례 케이스(TSVD999 원천 포함).
+- **대상**: CS 티켓/판례/선례 케이스(legacy case-source export 포함).
 - **임베딩**: TF-IDF + Truncated SVD로 **별도 1536d 공간**에 투영(OpenAI 공간이 아님).
 - **쿼리 경로**: precedent 전용 API. Lane A 쿼리와 **UNION 금지**.
 - **테이블**: `precedent_case` + 관련 cluster 테이블.

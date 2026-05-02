@@ -1,1 +1,0 @@
-ALTER TABLE "wiki_page_index" ADD COLUMN "freshness_sla_days" integer;

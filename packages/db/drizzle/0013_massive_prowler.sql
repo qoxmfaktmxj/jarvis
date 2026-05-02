@@ -1,1 +1,0 @@
-ALTER TABLE "raw_source" ADD COLUMN "sensitivity" varchar(30) DEFAULT 'INTERNAL' NOT NULL;
