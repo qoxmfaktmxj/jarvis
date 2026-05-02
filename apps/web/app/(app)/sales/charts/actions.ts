@@ -10,6 +10,8 @@ import {
   AdminPerfInput,
   MarketingByActivityInput,
   MarketingByProductInput,
+  TrendInput,
+  PlanPerfChartInput,
 } from "@jarvis/shared/validation/sales-charts";
 
 async function resolveSessionId(): Promise<string | null> {
@@ -143,4 +145,75 @@ export async function getAdminPerf(raw: unknown) {
   }
 
   return { ok: true as const, rows: Array.from(acc.values()) };
+}
+
+// ---------------------------------------------------------------------------
+// Task 7: Trend aggregation helper + actions
+// ---------------------------------------------------------------------------
+
+interface TrendRow { ym: string; plan: number; actual: number; forecast: number }
+
+async function aggregateMonthlyByGubun(
+  workspaceId: string,
+  years: number[],
+  metric: "SALES" | "GROSS_PROFIT" | "OP_INCOME",
+  orgCd: string | undefined,
+): Promise<TrendRow[]> {
+  const p = salesPlanPerf;
+  const orgFilter = orgCd ? sql`AND ${p.orgCd} = ${orgCd}` : sql``;
+  const yearList = sql.join(years.map((y) => sql`${String(y)}`), sql`, `);
+
+  const result = await db.execute<{ ym: string; gubun_cd: string; total: string }>(sql`
+    SELECT ${p.ym} AS ym, ${p.gubunCd} AS gubun_cd, COALESCE(SUM(${p.amt}), 0)::text AS total
+    FROM ${p}
+    WHERE ${p.workspaceId} = ${workspaceId}
+      AND SUBSTRING(${p.ym}, 1, 4) IN (${yearList})
+      AND ${p.trendGbCd} = ${metric}
+      ${orgFilter}
+    GROUP BY ${p.ym}, ${p.gubunCd}
+    ORDER BY ${p.ym}
+  `);
+
+  const acc = new Map<string, TrendRow>();
+  // Pre-fill all months in requested years for stable x-axis
+  for (const y of years) {
+    for (let m = 1; m <= 12; m += 1) {
+      const ym = `${y}${String(m).padStart(2, "0")}`;
+      acc.set(ym, { ym, plan: 0, actual: 0, forecast: 0 });
+    }
+  }
+  for (const r of result.rows) {
+    const row = acc.get(r.ym);
+    if (!row) continue;
+    const v = Number(r.total) || 0;
+    if (r.gubun_cd === "PLAN") row.plan = v;
+    else if (r.gubun_cd === "ACTUAL") row.actual = v;
+    else if (r.gubun_cd === "FORECAST") row.forecast = v;
+  }
+  return Array.from(acc.values()).sort((a, b) => a.ym.localeCompare(b.ym));
+}
+
+export async function getSaleTrend(raw: unknown) {
+  const input = TrendInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, input.metric, input.orgCd);
+  return { ok: true as const, rows };
+}
+
+export async function getProfitTrend(raw: unknown) {
+  const input = TrendInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, input.metric, input.orgCd);
+  return { ok: true as const, rows };
+}
+
+export async function getPlanPerfChart(raw: unknown) {
+  const input = PlanPerfChartInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  // Default metric for the planPerf chart is SALES; gubun pivot is the point.
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, [input.year], "SALES", input.orgCd);
+  return { ok: true as const, rows };
 }

@@ -351,3 +351,45 @@ describe("getAdminPerf", () => {
     expect(res.rows.map((r) => r.period)).toEqual(["Q1", "Q2", "Q3", "Q4"]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 7: getSaleTrend / getProfitTrend / getPlanPerfChart
+// ---------------------------------------------------------------------------
+import { getSaleTrend, getProfitTrend, getPlanPerfChart } from "../actions";
+
+describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthorizedSession();
+    dbExecuteMock.mockResolvedValue({ rows: [] });
+  });
+
+  it("getSaleTrend returns 12 ym rows × years[0]", async () => {
+    const res = await getSaleTrend({ years: [2024], metric: "SALES" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(12);
+    for (const r of res.rows) {
+      expect(r.ym).toMatch(/^2024(0[1-9]|1[0-2])$/);
+    }
+  });
+
+  it("getProfitTrend defaults metric=OP_INCOME", async () => {
+    const res = await getProfitTrend({ years: [2024], metric: "OP_INCOME" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBeGreaterThan(0);
+  });
+
+  it("getPlanPerfChart returns 12 rows for the year with plan/actual/forecast", async () => {
+    const res = await getPlanPerfChart({ year: 2024 });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(12);
+    for (const r of res.rows) {
+      expect(typeof r.plan).toBe("number");
+      expect(typeof r.actual).toBe("number");
+      expect(typeof r.forecast).toBe("number");
+    }
+  });
+});
