@@ -531,6 +531,37 @@
       "Dashboard": {
         "title": "Sales HQ Dashboard",
         "description": "Sales trend · opportunity stage distribution · OP income PLAN/ACTUAL/FORECAST · BA integrated board."
+      },
+      "PlanPerfUpload": {
+        "title": "Plan/Actual/Forecast Upload",
+        "description": "Enter raw sales_plan_perf rows used by chart screens (admin perf, plan-vs-perf, trend, dashboard). Inline edit or Excel upload.",
+        "templateBtn": "Download Template",
+        "uploadBtn": "Upload Excel",
+        "uploading": "Uploading…",
+        "uploadHelp": "Download the template, fill it in, or upload an xlsx with identical columns. Rows with the same (ym, orgCd, gubunCd, trendGbCd) key are upserted.",
+        "filters": {
+          "q": "Search",
+          "qPlaceholder": "Org code / org name / note",
+          "ym": "YM",
+          "orgCd": "Org Code",
+          "gubunCd": "Type",
+          "trendGbCd": "Metric",
+          "all": "All"
+        },
+        "columns": {
+          "ym": "YM",
+          "orgCd": "Org Code",
+          "orgNm": "Org Name",
+          "gubunCd": "Type",
+          "trendGbCd": "Metric",
+          "amt": "Amount",
+          "note": "Note",
+          "updatedBy": "Updated By",
+          "updatedAt": "Updated At"
+        },
+        "errors": {
+          "duplicate": "Duplicate key (ym·org·type·metric): {keys}"
+        }
       }
     },
     "Common": {
