@@ -4,15 +4,18 @@ import {
   BookOpen,
   Building,
   Building2,
+  Calculator,
   CalendarDays,
   CalendarX,
   ClipboardList,
+  Cloud,
   Coins,
   FilePlus,
   FileText,
   GitFork,
   HardDrive,
   Hash,
+  History,
   Inbox,
   Library,
   ListChecks,
@@ -20,7 +23,9 @@ import {
   Megaphone,
   MessageSquare,
   Network,
+  Package,
   Plus,
+  RadioTower,
   ScrollText,
   Search,
   Server,
@@ -28,6 +33,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   User,
+  UserCheck,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -40,7 +46,7 @@ import {
  * strings; if a new menu seed introduces a new icon name, add the import +
  * map entry here. Unknown / null names fall back to `ShieldCheck`.
  *
- * Cross-checked against `packages/db/seed/menus.ts` (28 unique icon strings,
+ * Cross-checked against `packages/db/seed/menus.ts` (31 unique icon strings,
  * plus `ShieldCheck` reserved for the fallback).
  */
 export const ICON_MAP: Record<string, LucideIcon> = {
@@ -49,15 +55,18 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   BookOpen,
   Building,
   Building2,
+  Calculator,
   CalendarDays,
   CalendarX,
   ClipboardList,
+  Cloud,
   Coins,
   FilePlus,
   FileText,
   GitFork,
   HardDrive,
   Hash,
+  History,
   Inbox,
   Library,
   ListChecks,
@@ -65,7 +74,9 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Megaphone,
   MessageSquare,
   Network,
+  Package,
   Plus,
+  RadioTower,
   ScrollText,
   Search,
   Server,
@@ -73,6 +84,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   ShieldAlert,
   ShieldCheck,
   User,
+  UserCheck,
   Users,
 };
 
