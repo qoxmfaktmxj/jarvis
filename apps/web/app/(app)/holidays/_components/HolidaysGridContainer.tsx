@@ -4,10 +4,16 @@
  *
  * Holidays admin grid. Wraps DataGrid with year filter.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { HolidayRow } from "@jarvis/shared/validation/holidays";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { listHolidaysAction, saveHolidaysAction } from "../actions";
 
@@ -30,8 +36,47 @@ function makeBlankRow(): HolidayRow {
 export function HolidaysGridContainer({ initial, initialYear }: Props) {
   const t = useTranslations("Holidays");
   const [rows, setRows] = useState<HolidayRow[]>(initial);
-  const [year, setYear] = useState(initialYear);
+  const [year, setYear] = useTabState<number>("holidays.year", initialYear);
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<HolidayRow>[]>(
+    "holidays.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [, startTransition] = useTransition();
+
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/holidays";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initial, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveHolidaysAction({
+        creates: changes.creates.map((c) => ({ date: c.date, name: c.name, note: c.note ?? null })),
+        updates: changes.updates.map((u) => ({ id: u.id, ...u.patch })),
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextYear: number) => {
@@ -43,7 +88,7 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
         }
       });
     },
-    [],
+    [setYear],
   );
 
   const COLUMNS: ColumnDef<HolidayRow>[] = useMemo(
@@ -82,6 +127,9 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
         page={1}
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onPageChange={() => {}}
         onFilterChange={() => {}}
         onSave={async (changes) => {
