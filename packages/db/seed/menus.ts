@@ -78,6 +78,12 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "sales.contracts",                kind: "menu", label: "계약 관리",      icon: "FileText",    routePath: "/sales/contracts",                 sortOrder: 181, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "contract", "sales"] },
   { code: "sales.contract-months",          kind: "menu", label: "계약 월별",      icon: "CalendarDays",routePath: "/sales/contract-months",           sortOrder: 182, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "월별", "contract", "sales"] },
   { code: "sales.contract-services",        kind: "menu", label: "서비스 인력",    icon: "Users",       routePath: "/sales/contract-services",         sortOrder: 183, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["서비스", "인력", "contract", "sales"] },
+  // Phase 6 — 통계/차트 (Task 15)
+  { code: "sales.charts.marketing", kind: "menu", label: "마케팅 차트",      icon: "BarChart3", routePath: "/sales/charts/marketing", sortOrder: 190, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["차트", "마케팅", "통계", "chart", "marketing", "stats"] },
+  { code: "sales.charts.admin",     kind: "menu", label: "통계 (관리자)",    icon: "BarChart3", routePath: "/sales/charts/admin",     sortOrder: 191, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["차트", "관리자", "통계", "chart", "admin", "stats"] },
+  { code: "sales.charts.sales",     kind: "menu", label: "매출/이익 트렌드", icon: "BarChart3", routePath: "/sales/charts/sales",     sortOrder: 192, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["차트", "트렌드", "매출", "이익", "chart", "trend"] },
+  { code: "sales.charts.upload",    kind: "menu", label: "계획/실적 업로드", icon: "BarChart3", routePath: "/sales/charts/upload",    sortOrder: 193, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["업로드", "계획", "실적", "upload", "plan"] },
+  { code: "sales.charts.dashboard", kind: "menu", label: "영업 대시보드",    icon: "BarChart3", routePath: "/sales/charts/dashboard", sortOrder: 194, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["대시보드", "차트", "dashboard", "chart"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },
