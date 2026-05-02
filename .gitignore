@@ -147,7 +147,7 @@ scripts/extract-large-sub-samples.py
 scripts/recluster-top-clusters.py
 scripts/requirements-*.txt
 scripts/tests/test_*.py
-scripts/tests/fixtures/*-sample.sql
+scripts/tests/fixtures/*_sample.sql
 scripts/tests/migrate-*.test.ts
 # Legacy export tool (Java) for case-source chunks
 scripts/Export*Chunk.java

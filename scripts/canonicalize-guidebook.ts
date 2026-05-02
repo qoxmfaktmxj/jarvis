@@ -63,7 +63,7 @@ const CATEGORY_MAP: Record<string, { domain: string; ownerTeam?: string; pageTyp
 // 링크/시스템 패턴 (directory surface 판별)
 // ---------------------------------------------------------------------------
 const TOOL_PATTERNS = [
-  /이수\s*HR/,
+  /legacy\s*HR/i,
   /그룹웨어/,
   /ERP/,
   /슬랙|Slack/,
