@@ -584,7 +584,18 @@ export async function savePlanDivCosts(rawInput: unknown): Promise<SaveResult> {
   return { ok: true, created, updated, deleted };
 }
 
-async function exportRows<T extends { id: string }>(
+/**
+ * Caller contract: `rows` MUST already be guarded by `enforceExportLimit`
+ * (i.e. queried with `.limit(EXPORT_ROW_LIMIT + 1)` and bounce rejected by
+ * the caller). This helper builds the xlsx buffer, writes the audit row,
+ * and returns the download envelope.
+ *
+ * `ctx` is passed in (already authenticated by the caller) so we don't
+ * re-resolve the session for every export — the caller already needed it
+ * to scope the DB query, so reuse it here.
+ */
+async function buildExportResult<T extends { id: string }>(
+  ctx: { workspaceId: string; userId: string },
   filenamePrefix: string,
   sheetName: string,
   columns: ColumnDef<T>[],
@@ -592,13 +603,8 @@ async function exportRows<T extends { id: string }>(
   filters: Record<string, unknown>,
   resourceType: string,
 ) {
-  const ctx = await resolveSalesContext();
-  if (!ctx.ok) return { ok: false as const, error: ctx.error };
-  const guard = enforceExportLimit(rows);
-  if (!guard.ok) return { ok: false as const, error: guard.error };
-
   const buf = await exportToExcel({
-    rows: guard.rows as unknown as Record<string, unknown>[],
+    rows: rows as unknown as Record<string, unknown>[],
     columns: columns as unknown as ColumnDef<Record<string, unknown>>[],
     sheetName,
   });
@@ -612,95 +618,232 @@ async function exportRows<T extends { id: string }>(
   };
 }
 
-// TODO(finance-export): listPurchases (and siblings below) Zod-parse their
-// input via `pagingInput.limit.max(200)`, so passing EXPORT_ROW_LIMIT + 1
-// here is rejected before the export ever runs. Pre-existing bug — also
-// broke at limit=50_000. Fix: refactor finance exports to query the DB
-// directly like projects/sales-contracts patterns, or add a separate
-// listForExport variant that skips the paging cap. Out of scope for the
-// row-limit unification sweep.
+/**
+ * Finance exports query the DB directly instead of going through the
+ * paginated `listFoo()` siblings — that keeps the (LIMIT + 1) sentinel +
+ * `enforceExportLimit()` pattern aligned with every other export.ts in
+ * the codebase, and avoids tripping `pagingInput.limit.max(200)`.
+ *
+ * Filter logic is mirrored from each `listFoo()` body to stay in sync;
+ * if you change a list filter, mirror it here too.
+ */
+
+const PURCHASES_EXPORT_COLUMNS: ColumnDef<SalesPurchaseRow>[] = [
+  { key: "legacyContNo", label: "Contract No", type: "text" },
+  { key: "contNm", label: "Contract", type: "text" },
+  { key: "purNm", label: "Purchase", type: "text" },
+  { key: "purType", label: "Type", type: "text" },
+  { key: "amt", label: "Amount", type: "numeric" },
+  { key: "subAmt", label: "Sub Amount", type: "numeric" },
+  { key: "sdate", label: "Start", type: "text" },
+  { key: "edate", label: "End", type: "text" },
+  { key: "servName", label: "Service Name", type: "text" },
+];
+
 export async function exportPurchasesToExcel(rawFilters: unknown) {
-  const res = await listPurchases({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
-  if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
-  return exportRows(
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  // `limit: 200` is throwaway — required to satisfy the Zod cap, but the
+  // actual DB query below uses EXPORT_ROW_LIMIT + 1.
+  const input = listPurchasesInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
+
+  const conditions = [eq(salesPurchase.workspaceId, ctx.workspaceId)];
+  if (input.q) {
+    const q = `%${input.q}%`;
+    const filter = or(
+      ilike(salesPurchase.purNm, q),
+      ilike(salesPurchase.legacyContNo, q),
+      ilike(salesPurchase.servName, q),
+    );
+    if (filter) conditions.push(filter);
+  }
+  if (input.purType) conditions.push(eq(salesPurchase.purType, input.purType));
+  if (input.baseDate) {
+    conditions.push(lte(salesPurchase.sdate, input.baseDate));
+    conditions.push(gte(salesPurchase.edate, input.baseDate));
+  }
+
+  const rawRows = await db
+    .select({ purchase: salesPurchase, contract: { contNm: salesContract.contNm } })
+    .from(salesPurchase)
+    .leftJoin(
+      salesContract,
+      and(
+        eq(salesContract.workspaceId, salesPurchase.workspaceId),
+        eq(salesContract.legacyEnterCd, salesPurchase.legacyEnterCd),
+        eq(salesContract.legacyContYear, salesPurchase.legacyContYear),
+        eq(salesContract.legacyContNo, salesPurchase.legacyContNo),
+      ),
+    )
+    .where(and(...conditions))
+    .orderBy(desc(salesPurchase.sdate), desc(salesPurchase.createdAt))
+    .limit(EXPORT_ROW_LIMIT + 1);
+
+  const guard = enforceExportLimit(rawRows);
+  if (!guard.ok) return { ok: false as const, error: guard.error };
+
+  const exportData = guard.rows.map((r) => serializePurchase(r.purchase, r.contract ?? undefined));
+
+  return buildExportResult(
+    ctx,
     "purchases",
     "Purchases",
-    [
-      { key: "legacyContNo", label: "Contract No", type: "text" },
-      { key: "contNm", label: "Contract", type: "text" },
-      { key: "purNm", label: "Purchase", type: "text" },
-      { key: "purType", label: "Type", type: "text" },
-      { key: "amt", label: "Amount", type: "numeric" },
-      { key: "subAmt", label: "Sub Amount", type: "numeric" },
-      { key: "sdate", label: "Start", type: "text" },
-      { key: "edate", label: "End", type: "text" },
-      { key: "servName", label: "Service Name", type: "text" },
-    ],
-    res.rows,
+    PURCHASES_EXPORT_COLUMNS,
+    exportData,
     rawFilters as Record<string, unknown>,
     "sales_purchase",
   );
 }
 
+const TAX_BILLS_EXPORT_COLUMNS: ColumnDef<SalesTaxBillRow>[] = [
+  { key: "legacyContNo", label: "Contract No", type: "text" },
+  { key: "companyNm", label: "Company", type: "text" },
+  { key: "ym", label: "YM", type: "text" },
+  { key: "billType", label: "Bill Type", type: "text" },
+  { key: "orderDivCd", label: "Order Div", type: "text" },
+  { key: "amt", label: "Amount", type: "numeric" },
+  { key: "vatAmt", label: "VAT", type: "numeric" },
+  { key: "postDate", label: "Post Date", type: "text" },
+  { key: "slipResultYn", label: "Slip Result", type: "text" },
+];
+
 export async function exportTaxBillsToExcel(rawFilters: unknown) {
-  const res = await listTaxBills({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
-  if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
-  return exportRows(
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const input = listTaxBillsInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
+
+  const conditions = [eq(salesTaxBill.workspaceId, ctx.workspaceId)];
+  if (input.q) {
+    const q = `%${input.q}%`;
+    const filter = or(
+      ilike(salesTaxBill.companyNm, q),
+      ilike(salesTaxBill.legacyContNo, q),
+      ilike(salesTaxBill.pjtNm, q),
+    );
+    if (filter) conditions.push(filter);
+  }
+  if (input.billType) conditions.push(eq(salesTaxBill.billType, input.billType));
+  if (input.ym) conditions.push(eq(salesTaxBill.ym, input.ym));
+  if (input.fromYmd) conditions.push(gte(salesTaxBill.postDate, input.fromYmd));
+  if (input.toYmd) conditions.push(lte(salesTaxBill.postDate, input.toYmd));
+
+  const rawRows = await db
+    .select({ taxBill: salesTaxBill, contract: { contNm: salesContract.contNm } })
+    .from(salesTaxBill)
+    .leftJoin(
+      salesContract,
+      and(
+        eq(salesContract.workspaceId, salesTaxBill.workspaceId),
+        eq(salesContract.legacyEnterCd, salesTaxBill.legacyEnterCd),
+        eq(salesContract.legacyContNo, salesTaxBill.legacyContNo),
+      ),
+    )
+    .where(and(...conditions))
+    .orderBy(desc(salesTaxBill.postDate), desc(salesTaxBill.createdAt))
+    .limit(EXPORT_ROW_LIMIT + 1);
+
+  const guard = enforceExportLimit(rawRows);
+  if (!guard.ok) return { ok: false as const, error: guard.error };
+
+  const exportData = guard.rows.map((r) => serializeTaxBill(r.taxBill, r.contract ?? undefined));
+
+  return buildExportResult(
+    ctx,
     "tax_bills",
     "Tax Bills",
-    [
-      { key: "legacyContNo", label: "Contract No", type: "text" },
-      { key: "companyNm", label: "Company", type: "text" },
-      { key: "ym", label: "YM", type: "text" },
-      { key: "billType", label: "Bill Type", type: "text" },
-      { key: "orderDivCd", label: "Order Div", type: "text" },
-      { key: "amt", label: "Amount", type: "numeric" },
-      { key: "vatAmt", label: "VAT", type: "numeric" },
-      { key: "postDate", label: "Post Date", type: "text" },
-      { key: "slipResultYn", label: "Slip Result", type: "text" },
-    ],
-    res.rows,
+    TAX_BILLS_EXPORT_COLUMNS,
+    exportData,
     rawFilters as Record<string, unknown>,
     "sales_tax_bill",
   );
 }
 
+const MONTH_EXP_SGA_EXPORT_COLUMNS: ColumnDef<SalesMonthExpSgaRow>[] = [
+  { key: "yyyy", label: "Year", type: "text" },
+  { key: "mm", label: "Month", type: "text" },
+  { key: "costCd", label: "Cost", type: "text" },
+  { key: "expAmt", label: "Expense", type: "numeric" },
+  { key: "sgaAmt", label: "SGA", type: "numeric" },
+  { key: "waers", label: "Currency", type: "text" },
+];
+
 export async function exportMonthExpSgaToExcel(rawFilters: unknown) {
-  const res = await listMonthExpSga({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
-  if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
-  return exportRows(
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const input = listMonthExpSgaInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
+
+  const conditions = [eq(salesMonthExpSga.workspaceId, ctx.workspaceId)];
+  if (input.ym && input.ym.length >= 6) {
+    conditions.push(eq(salesMonthExpSga.yyyy, input.ym.slice(0, 4)));
+    conditions.push(eq(salesMonthExpSga.mm, input.ym.slice(4, 6)));
+  }
+  if (input.costCd) conditions.push(ilike(salesMonthExpSga.costCd, `%${input.costCd}%`));
+
+  const rawRows = await db
+    .select()
+    .from(salesMonthExpSga)
+    .where(and(...conditions))
+    .orderBy(desc(salesMonthExpSga.yyyy), desc(salesMonthExpSga.mm), salesMonthExpSga.costCd)
+    .limit(EXPORT_ROW_LIMIT + 1);
+
+  const guard = enforceExportLimit(rawRows);
+  if (!guard.ok) return { ok: false as const, error: guard.error };
+
+  const exportData = guard.rows.map(serializeMonthExpSga);
+
+  return buildExportResult(
+    ctx,
     "month_exp_sga",
     "Month Exp SGA",
-    [
-      { key: "yyyy", label: "Year", type: "text" },
-      { key: "mm", label: "Month", type: "text" },
-      { key: "costCd", label: "Cost", type: "text" },
-      { key: "expAmt", label: "Expense", type: "numeric" },
-      { key: "sgaAmt", label: "SGA", type: "numeric" },
-      { key: "waers", label: "Currency", type: "text" },
-    ],
-    res.rows,
+    MONTH_EXP_SGA_EXPORT_COLUMNS,
+    exportData,
     rawFilters as Record<string, unknown>,
     "sales_month_exp_sga",
   );
 }
 
+const PLAN_DIV_COSTS_EXPORT_COLUMNS: ColumnDef<SalesPlanDivCostRow>[] = [
+  { key: "costCd", label: "Cost", type: "text" },
+  { key: "accountType", label: "Account Type", type: "text" },
+  { key: "ym", label: "YM", type: "text" },
+  { key: "planAmt", label: "Plan", type: "numeric" },
+  { key: "prdtAmt", label: "Product", type: "numeric" },
+  { key: "performAmt", label: "Perform", type: "numeric" },
+  { key: "note", label: "Note", type: "text" },
+];
+
 export async function exportPlanDivCostsToExcel(rawFilters: unknown) {
-  const res = await listPlanDivCosts({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
-  if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
-  return exportRows(
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const input = listPlanDivCostsInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
+
+  const conditions = [eq(salesPlanDivCost.workspaceId, ctx.workspaceId)];
+  if (input.q) conditions.push(ilike(salesPlanDivCost.costCd, `%${input.q}%`));
+  if (input.accountType) conditions.push(eq(salesPlanDivCost.accountType, input.accountType));
+  if (input.year) conditions.push(like(salesPlanDivCost.ym, `${input.year}%`));
+
+  const rawRows = await db
+    .select()
+    .from(salesPlanDivCost)
+    .where(and(...conditions))
+    .orderBy(salesPlanDivCost.costCd, salesPlanDivCost.accountType, salesPlanDivCost.ym)
+    .limit(EXPORT_ROW_LIMIT + 1);
+
+  const guard = enforceExportLimit(rawRows);
+  if (!guard.ok) return { ok: false as const, error: guard.error };
+
+  const exportData = guard.rows.map(serializePlanDivCost);
+
+  return buildExportResult(
+    ctx,
     "plan_div_costs",
     "Plan Div Costs",
-    [
-      { key: "costCd", label: "Cost", type: "text" },
-      { key: "accountType", label: "Account Type", type: "text" },
-      { key: "ym", label: "YM", type: "text" },
-      { key: "planAmt", label: "Plan", type: "numeric" },
-      { key: "prdtAmt", label: "Product", type: "numeric" },
-      { key: "performAmt", label: "Perform", type: "numeric" },
-      { key: "note", label: "Note", type: "text" },
-    ],
-    res.rows,
+    PLAN_DIV_COSTS_EXPORT_COLUMNS,
+    exportData,
     rawFilters as Record<string, unknown>,
     "sales_plan_div_cost",
   );
