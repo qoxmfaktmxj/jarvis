@@ -29,7 +29,7 @@ export const directoryEntry = pgTable(
       .references(() => workspace.id, { onDelete: "cascade" }),
 
     // entry_type: 항목 종류
-    //   'tool'        — 사내 시스템·앱 (이수HR, 그룹웨어, ERP 등)
+    //   'tool'        — 조직 시스템·앱 (HR 시스템, 그룹웨어, ERP 등)
     //   'form'        — 신청서·양식 (근태 신청서, 출장 신청서 등)
     //   'contact'     — 담당자·팀 연락처
     //   'system_link' — 시스템 메뉴 직접 경로

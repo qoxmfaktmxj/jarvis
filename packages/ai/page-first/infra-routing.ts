@@ -57,13 +57,10 @@ const INFRA_KEYWORDS_SUBSTRING: readonly string[] = [
   // 운영 도구
   "weguardia",
   "알ftp",
-  // 이수시스템 맥락
-  "이수",
+  // 일반 HR 시스템 약어
   "ehr",
   "hris",
   "e-hr",
-  "wartsila",
-  "innocean",
 ];
 
 /**
