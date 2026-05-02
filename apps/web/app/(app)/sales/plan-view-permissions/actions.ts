@@ -6,7 +6,7 @@ import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { auditLog, salesPlanAcl, salesPlanViewPerformance } from "@jarvis/db/schema";
+import { auditLog, salesPlanAcl, salesPlanViewPerformance, salesPlanViewPerformanceMonth } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listPlanViewPermissionsInput,
@@ -286,4 +286,77 @@ export async function savePlanAcl(rawInput: unknown): Promise<{
 
   revalidatePath("/sales/plan-view-permissions");
   return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// getPlanViewPerformance — single master + 12 monthly breakdown rows
+// (legacy mmPlanViewPerMgrDetailPop.jsp 의 React 포팅; read-only detail view)
+// ---------------------------------------------------------------------------
+export async function getPlanViewPerformance(input: { id: string }) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const [master] = await db
+    .select()
+    .from(salesPlanViewPerformance)
+    .where(and(
+      eq(salesPlanViewPerformance.id, input.id),
+      eq(salesPlanViewPerformance.workspaceId, ctx.workspaceId),
+    ))
+    .limit(1);
+
+  if (!master) return { ok: false as const, error: "NotFound" as const };
+
+  const months = await db
+    .select()
+    .from(salesPlanViewPerformanceMonth)
+    .where(and(
+      eq(salesPlanViewPerformanceMonth.planId, input.id),
+      eq(salesPlanViewPerformanceMonth.workspaceId, ctx.workspaceId),
+    ))
+    .orderBy(salesPlanViewPerformanceMonth.ym);
+
+  return {
+    ok: true as const,
+    master: {
+      id: master.id,
+      dataType: master.dataType,
+      contYear: master.contYear,
+      pjtCode: master.pjtCode,
+      pjtNm: master.pjtNm ?? null,
+      companyCd: master.companyCd,
+      companyNm: master.companyNm ?? null,
+      custNm: master.custNm ?? null,
+      title: master.title ?? null,
+      contType: master.contType ?? null,
+      productType: master.productType ?? null,
+      contSymd: master.contSymd ?? null,
+      contEymd: master.contEymd ?? null,
+      totOrderAmt: master.totOrderAmt != null ? Number(master.totOrderAmt) : null,
+      serOrderAmt: master.serOrderAmt != null ? Number(master.serOrderAmt) : null,
+      prdOrderAmt: master.prdOrderAmt != null ? Number(master.prdOrderAmt) : null,
+      infOrderAmt: master.infOrderAmt != null ? Number(master.infOrderAmt) : null,
+      servAmt: master.servAmt != null ? Number(master.servAmt) : null,
+      prodAmt: master.prodAmt != null ? Number(master.prodAmt) : null,
+      sgaAmt: master.sgaAmt != null ? Number(master.sgaAmt) : null,
+      expAmt: master.expAmt != null ? Number(master.expAmt) : null,
+    },
+    months: months.map((m) => ({
+      id: m.id,
+      ym: m.ym,
+      serOrderAmt: m.serOrderAmt != null ? Number(m.serOrderAmt) : null,
+      prdOrderAmt: m.prdOrderAmt != null ? Number(m.prdOrderAmt) : null,
+      infOrderAmt: m.infOrderAmt != null ? Number(m.infOrderAmt) : null,
+      servAmt: m.servAmt != null ? Number(m.servAmt) : null,
+      prodAmt: m.prodAmt != null ? Number(m.prodAmt) : null,
+      inManMonth: m.inManMonth != null ? Number(m.inManMonth) : null,
+      outManMonth: m.outManMonth != null ? Number(m.outManMonth) : null,
+      dirInAmt: m.dirInAmt != null ? Number(m.dirInAmt) : null,
+      dirOutAmt: m.dirOutAmt != null ? Number(m.dirOutAmt) : null,
+      indirOrgAmt: m.indirOrgAmt != null ? Number(m.indirOrgAmt) : null,
+      indirAllAmt: m.indirAllAmt != null ? Number(m.indirAllAmt) : null,
+      sgaAmt: m.sgaAmt != null ? Number(m.sgaAmt) : null,
+      expAmt: m.expAmt != null ? Number(m.expAmt) : null,
+    })),
+  };
 }
