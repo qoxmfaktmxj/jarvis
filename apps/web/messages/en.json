@@ -224,6 +224,26 @@
       "cloudPeopleBase": "Cloud People Rate Base",
       "cloudPeopleCalc": "Cloud People Rate Calc"
     },
+    "Dashboard": {
+      "title": "Sales Dashboard",
+      "salesTrend": "Sales Trend (Multi-year)",
+      "noSalesData": "No sales trend data",
+      "noOpIncomeData": "No operating income data",
+      "noBaData": "No BA data"
+    },
+    "Opportunities": {
+      "columns": {
+        "focusMgrYn": "Focus"
+      },
+      "filters": {
+        "focusOnly": "Focus"
+      }
+    },
+    "TaxBills": {
+      "warnings": {
+        "vatMismatch": "VAT differs from 10% of amt — review required ({count} rows)"
+      }
+    },
     "Customers": {
       "title": "Customers",
       "description": "Manage customer master information.",
@@ -351,7 +371,27 @@
         "mailId": "Mail ID",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "filters": {
+        "sabunSearch": "Search Employee No.",
+        "mailSearch": "Search Mail Address"
+      },
+      "errors": {
+        "duplicateKey": "Duplicate key (Employee No. + Mail ID)"
       }
+    },
+    "Companies": {
+      "title": "Sales Companies",
+      "description": "Manage company master used by the sales module."
+    },
+    "PlanViewPermissions": {
+      "title": "Plan View Permissions",
+      "description": "Manage per-user R/W permissions for plan data."
+    },
+    "ContractUploads": {
+      "title": "Contract Uploads",
+      "description": "Upload contract files and manage history.",
+      "downloadTemplate": "Download Template"
     },
     "Contracts": {
       "title": "Contracts",
@@ -406,6 +446,12 @@
         "servSabun": "Employee No.",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "actions": {
+        "recalcManday": "Auto-calc M/M"
+      },
+      "toast": {
+        "recalcMandayDone": "Computed {computed} rows · Total {total} M/M (skipped {skipped} manual / {invalid} invalid)"
       }
     },
     "Freelancers": {
@@ -511,22 +557,96 @@
         "duplicate": "Duplicate cloud people calc key: {keys}"
       }
     },
+    "Purchases": {
+      "columns": {
+        "manage": "Manage"
+      },
+      "subRow": {
+        "title": "Purchase Projects",
+        "description": "Project rows tied to the selected purchase (sub-contract / code / name).",
+        "empty": "No projects registered.",
+        "insert": "Add",
+        "save": "Save ({count})",
+        "close": "Close",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "saveFailed": "Save failed",
+        "columns": {
+          "subContNo": "Sub Contract No",
+          "pjtCode": "Project Code",
+          "pjtNm": "Project Name",
+          "legacyEnterCd": "Company",
+          "legacyContYear": "Cont Year",
+          "legacyContNo": "Cont No"
+        }
+      }
+    },
+    "PlanDivCosts": {
+      "columns": {
+        "manage": "Manage"
+      },
+      "subRow": {
+        "title": "Allocation Detail Rates",
+        "description": "Per sub-cost rate breakdown for the selected plan-div-cost row.",
+        "empty": "No detail rates registered.",
+        "insert": "Add",
+        "save": "Save ({count})",
+        "close": "Close",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "saveFailed": "Save failed",
+        "columns": {
+          "subCostCd": "Sub Cost Code",
+          "planRate": "Plan Rate",
+          "prdtRate": "Product Rate",
+          "performRate": "Perform Rate",
+          "useYn": "Use",
+          "legacyEnterCd": "Company",
+          "costCd": "Cost Code",
+          "accountType": "Account Type",
+          "ym": "YM"
+        }
+      }
+    },
     "Charts": {
       "Marketing": {
         "title": "Sales Marketing Charts",
-        "description": "Aggregates activity counts by type and contract-expected amounts by product for a given month."
+        "description": "Aggregates activity counts by type and contract-expected amounts by product for a given month.",
+        "activityByType": "Activity Count by Type",
+        "productMix": "Product Mix",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
       },
       "AdminPerf": {
         "title": "Admin Performance Charts",
-        "description": "Compare PLAN / ACTUAL / FORECAST per organization, by year (monthly) or quarter."
+        "description": "Compare PLAN / ACTUAL / FORECAST per organization, by year (monthly) or quarter.",
+        "stackedTitle": "Org PLAN / ACTUAL / FORECAST",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
       },
       "PlanPerf": {
         "title": "Plan vs Performance Charts",
-        "description": "Single-year monthly plan, actual, and forecast comparison (combo chart)."
+        "description": "Single-year monthly plan, actual, and forecast comparison (combo chart).",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
       },
       "Trend": {
         "title": "Sales / Profit Trend Charts",
-        "description": "Multi-year monthly trends — switch between sales and operating income via tabs."
+        "description": "Multi-year monthly trends — switch between sales and operating income via tabs.",
+        "tabs": {
+          "SALES": "Sales",
+          "GROSS_PROFIT": "Gross Profit",
+          "OP_INCOME": "Operating Income"
+        }
       },
       "Dashboard": {
         "title": "Sales HQ Dashboard",
@@ -535,6 +655,7 @@
       "PlanPerfUpload": {
         "title": "Plan/Actual/Forecast Upload",
         "description": "Enter raw sales_plan_perf rows used by chart screens (admin perf, plan-vs-perf, trend, dashboard). Inline edit or Excel upload.",
+        "downloadTemplate": "Download Template",
         "templateBtn": "Download Template",
         "uploadBtn": "Upload Excel",
         "uploading": "Uploading…",
@@ -565,6 +686,8 @@
       }
     },
     "Common": {
+      "selectAll": "All",
+      "tabLabel": "Tabs",
       "Excel": {
         "button": "Download",
         "downloading": "Downloading…",

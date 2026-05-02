@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -26,6 +27,7 @@ export default async function SalesPlanViewPermissionsPage({
     redirect("/dashboard?error=forbidden");
   }
 
+  const t = await getTranslations("Sales.PlanViewPermissions");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
   const limit = 50;
@@ -47,8 +49,8 @@ export default async function SalesPlanViewPermissionsPage({
     <div className="space-y-6">
       <PageHeader
         eyebrow="Sales · Plan View Permissions"
-        title="계획/전망/실적 권한 관리"
-        description="계획/전망/실적 행과 사용자별 행 권한을 관리합니다."
+        title={t("title")}
+        description={t("description")}
       />
       <PlanViewPermissionsGridContainer
         rows={result.ok ? result.rows : []}

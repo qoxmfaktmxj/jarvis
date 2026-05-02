@@ -19,6 +19,12 @@
  * Existing useProductCostMappingGridState hook is unchanged.
  * URL filter integration is at the container level (this component).
  */
+// TODO(grid-baseline): This component still renders a raw <table> + cell
+// imports (EditableTextCell etc.) instead of wrapping <DataGrid<T>>. The
+// CLAUDE.md "신규 그리드 PR 체크리스트 11항" expects DataGrid baseline. Migrate
+// in a separate PR — kept inline here because P2-A landed before the baseline
+// was final. See `apps/web/app/(app)/admin/companies/_components/CompaniesGridContainer.tsx`
+// for the reference implementation.
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";

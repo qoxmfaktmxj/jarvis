@@ -22,7 +22,7 @@ export function TrendChart({ months, series }: { months: string[]; series: Serie
             <XAxis dataKey="month" fontSize={11} />
             <YAxis fontSize={11} tickFormatter={fmtKR} />
             <Tooltip formatter={fmtKR} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend wrapperStyle={{ fontSize: 11, whiteSpace: "normal", paddingTop: 8 }} />
             {series.map((s, i) => (
               <Line
                 key={s.year}

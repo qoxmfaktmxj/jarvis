@@ -42,6 +42,7 @@ export default async function SalesDashboardPage() {
   }
 
   const t = await getTranslations("Sales.Charts.Dashboard");
+  const tDash = await getTranslations("Sales.Dashboard");
   const ym = defaultYm();
   const year = new Date().getFullYear();
 
@@ -71,7 +72,7 @@ export default async function SalesDashboardPage() {
           <SalesTrendCard months={trendRes.months} series={trendRes.series} />
         ) : (
           <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            매출 트렌드 데이터 없음
+            {tDash("noSalesData")}
           </div>
         )}
         <SucProbCard data={sucProbRows} />
@@ -84,7 +85,7 @@ export default async function SalesDashboardPage() {
           />
         ) : (
           <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
-            영업이익 데이터 없음
+            {tDash("noOpIncomeData")}
           </div>
         )}
         {baRes.ok ? (
@@ -95,7 +96,7 @@ export default async function SalesDashboardPage() {
             byOrg={baRes.byOrg.map((b) => ({ orgNm: b.orgNm ?? "(미설정)", opportunityCount: b.opportunityCount }))}
           />
         ) : (
-          <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">BA 데이터 없음</div>
+          <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">{tDash("noBaData")}</div>
         )}
       </div>
     </div>

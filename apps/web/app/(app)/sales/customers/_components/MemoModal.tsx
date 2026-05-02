@@ -13,9 +13,17 @@ type Props = {
   customerName?: string;
   onClose: () => void;
   onCountChange?: () => void;
+  /** When true, delete buttons render for ALL memos (admin override). Defaults to false. */
+  isAdmin?: boolean;
 };
 
-export function MemoModal({ customerId, customerName, onClose, onCountChange }: Props) {
+export function MemoModal({
+  customerId,
+  customerName,
+  onClose,
+  onCountChange,
+  isAdmin = false,
+}: Props) {
   const t = useTranslations("Sales.Customers.Memo");
   const [tree, setTree] = useState<MemoTreeNode[]>([]);
   const [, startTransition] = useTransition();
@@ -115,7 +123,7 @@ export function MemoModal({ customerId, customerName, onClose, onCountChange }: 
                   <span className="font-medium">
                     {m.authorName ?? "(?)"} · {m.insdate}
                   </span>
-                  {m.isOwn && (
+                  {(m.isOwn || isAdmin) && (
                     <button
                       onClick={() => remove(m.comtSeq, true)}
                       className="text-xs text-rose-600"
@@ -161,7 +169,7 @@ export function MemoModal({ customerId, customerName, onClose, onCountChange }: 
                           <span className="font-medium">
                             {r.authorName ?? "(?)"} · {r.insdate}
                           </span>
-                          {r.isOwn && (
+                          {(r.isOwn || isAdmin) && (
                             <button
                               onClick={() => remove(r.comtSeq, false)}
                               className="text-xs text-rose-600"

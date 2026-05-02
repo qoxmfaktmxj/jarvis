@@ -39,10 +39,13 @@ export default async function SalesOpportunitiesPage({
     q: sp.q,
     bizStepCode: sp.bizStepCode,
     productTypeCode: sp.productTypeCode,
+    focusOnly: sp.focusOnly,
   };
+  const focusOnlyApi =
+    sp.focusOnly === "Y" ? true : sp.focusOnly === "N" ? false : undefined;
 
   const [listResult, productTypeOptions, bizStepOptions, bizOpSourceOptions] = await Promise.all([
-    listOpportunities({ page, limit, ...filters }),
+    listOpportunities({ page, limit, q: filters.q, bizStepCode: filters.bizStepCode, productTypeCode: filters.productTypeCode, focusOnly: focusOnlyApi }),
     loadCodeOptions(session.workspaceId, "SALES_PRODUCT_TYPE"),
     loadCodeOptions(session.workspaceId, "SALES_BIZ_STEP"),
     loadCodeOptions(session.workspaceId, "SALES_BIZ_OP_SOURCE"),

@@ -4,8 +4,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 type Metric = "SALES" | "GROSS_PROFIT" | "OP_INCOME";
 
+// TODO i18n — labels hardcoded; i18n batch agent will replace with t() keys.
 const TABS: { metric: Metric; label: string }[] = [
   { metric: "SALES", label: "매출 트렌드" },
+  { metric: "GROSS_PROFIT", label: "총이익" },
   { metric: "OP_INCOME", label: "영업이익 트렌드" },
 ];
 

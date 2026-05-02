@@ -1,8 +1,11 @@
 /**
- * e2e/sales-dashboard.spec.ts
+ * e2e/sales-opportunities-dashboard.spec.ts
  *
  * sales/opportunities/dashboard smoke (Phase 2 Task 8).
  * KPI 4 + Recharts BarChart + LineChart.
+ *
+ * NOTE: HQ dashboard (`/sales/dashboard`) is covered separately by
+ * `sales-hq-dashboard.spec.ts`.
  */
 import { test, expect } from "@playwright/test";
 import { loginAsAdmin } from "./helpers/auth";

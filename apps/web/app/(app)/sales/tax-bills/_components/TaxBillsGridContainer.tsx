@@ -1,7 +1,9 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTranslations } from "next-intl";
-import type { ColumnDef } from "@/components/grid/types";
+import type { ColumnDef, GridChanges, GridSaveResult } from "@/components/grid/types";
+import { toast } from "@/hooks/use-toast";
 import { SalesFinanceGridContainer } from "../../_components/SalesFinanceGridContainer";
 import {
   exportTaxBillsToExcel,
@@ -9,6 +11,29 @@ import {
   saveTaxBills,
 } from "../../_lib/finance-actions";
 import type { SalesTaxBillRow } from "@jarvis/shared/validation/sales-finance";
+
+/**
+ * VAT validation helper — Korean VAT standard is 10% of `amt`. We allow
+ * rounding tolerance of ±1 won. Rows where `amt` or `vatAmt` is missing
+ * in the change set are skipped (we can't validate without both).
+ *
+ * Returns the count of mismatched rows so the toast can include the figure.
+ */
+function countVatMismatches(changes: GridChanges<SalesTaxBillRow>): number {
+  let mismatches = 0;
+  const rows: { amt: string | null | undefined; vatAmt: string | null | undefined }[] = [
+    ...changes.creates.map((c) => ({ amt: c.amt, vatAmt: c.vatAmt })),
+    ...changes.updates.map((u) => ({ amt: u.patch.amt, vatAmt: u.patch.vatAmt })),
+  ];
+  for (const r of rows) {
+    if (r.amt == null || r.amt === "" || r.vatAmt == null || r.vatAmt === "") continue;
+    const amt = Number(r.amt);
+    const vat = Number(r.vatAmt);
+    if (!Number.isFinite(amt) || !Number.isFinite(vat)) continue;
+    if (Math.abs(vat - amt * 0.1) > 1) mismatches++;
+  }
+  return mismatches;
+}
 
 type FilterState = { q: string; billType: string; ym: string; fromYmd: string; toYmd: string; page: string };
 
@@ -70,6 +95,27 @@ function makeBlankRow(): SalesTaxBillRow {
 
 export function TaxBillsGridContainer(props: Props) {
   const t = useTranslations("Sales.TaxBills");
+
+  // Wraps `saveTaxBills` so that, after a successful save, we check the
+  // change set for rows whose VAT diverges from 10% of `amt` and surface a
+  // non-blocking toast. Server contract is untouched; the warning is purely
+  // an advisory client-side post-condition.
+  const saveActionWithVatCheck = useCallback(
+    async (input: unknown): Promise<GridSaveResult> => {
+      const res = await saveTaxBills(input);
+      if (res.ok) {
+        const mismatches = countVatMismatches(input as GridChanges<SalesTaxBillRow>);
+        if (mismatches > 0) {
+          toast({
+            title: t("warnings.vatMismatch", { count: mismatches }),
+          });
+        }
+      }
+      return res;
+    },
+    [t],
+  );
+
   const columns: ColumnDef<SalesTaxBillRow>[] = [
     { key: "legacyContNo", label: t("columns.contNo"), type: "text", width: 110, editable: true },
     { key: "contNm", label: t("columns.contNm"), type: "readonly", width: 180 },
@@ -100,7 +146,7 @@ export function TaxBillsGridContainer(props: Props) {
       ]}
       makeBlankRow={makeBlankRow}
       listAction={listTaxBills}
-      saveAction={saveTaxBills}
+      saveAction={saveActionWithVatCheck}
       exportAction={exportTaxBillsToExcel}
     />
   );

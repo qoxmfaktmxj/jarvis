@@ -235,7 +235,7 @@ export function CustomersGridContainer({
     { key: "telNo", label: t("Customers.columns.telNo"), type: "text", width: 130, editable: true },
     {
       key: "counts",
-      label: "탭",
+      label: tCommon("tabLabel"),
       type: "readonly",
       width: 220,
       render: (row) =>
@@ -302,7 +302,7 @@ export function CustomersGridContainer({
             onChange={(e) => setPending("custKindCd", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.custKind.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -314,7 +314,7 @@ export function CustomersGridContainer({
             onChange={(e) => setPending("custDivCd", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.custDiv.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}

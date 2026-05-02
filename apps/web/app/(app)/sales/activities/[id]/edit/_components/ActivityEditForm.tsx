@@ -15,6 +15,7 @@ type ActivityDetail = {
   bizActNm: string;
   opportunityId: string | null;
   customerId: string | null;
+  contactId: string | null;
   customerName: string | null;
   actYmd: string | null;
   actTypeCode: string | null;
@@ -152,7 +153,18 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
   const [tab, setTab] = useState<"info" | "memo">("info");
   const [isPending, startTransition] = useTransition();
 
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<{
+    bizActNm: string;
+    actYmd: string;
+    actTypeCode: string | null;
+    accessRouteCode: string | null;
+    bizStepCode: string | null;
+    productTypeCode: string | null;
+    actContent: string;
+    attendeeUserId: string | null;
+    opportunityId: string | null;
+    contactId: string | null;
+  }>({
     bizActNm: activity.bizActNm ?? "",
     actYmd: activity.actYmd ?? "",
     actTypeCode: activity.actTypeCode,
@@ -162,6 +174,7 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
     actContent: activity.actContent ?? "",
     attendeeUserId: activity.attendeeUserId,
     opportunityId: activity.opportunityId,
+    contactId: activity.contactId,
   });
   const [attendeeName, setAttendeeName] = useState(activity.attendeeUserName ?? "");
 
@@ -185,6 +198,7 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
             actContent: draft.actContent || null,
             attendeeUserId: draft.attendeeUserId,
             opportunityId: draft.opportunityId,
+            contactId: draft.contactId,
           },
         }],
         deletes: [],
@@ -214,12 +228,22 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
             <Field label="고객사"><input type="text" className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" value={activity.customerName ?? ""} readOnly /></Field>
             <Field label="영업기회"><CodeField value={draft.opportunityId} label="기회 선택" options={opportunityOptions} onChange={(v) => patch("opportunityId", v)} /></Field>
             <Field label="참석자(사번)">
-              <EmployeePicker value={attendeeName} onSelect={(hit) => { patch("attendeeUserId", hit.sabun); setAttendeeName(`${hit.name} (${hit.sabun})`); }} search={(q, lim) => searchEmployees({ q, limit: lim })} placeholder="사번/이름 검색" />
+              <EmployeePicker value={attendeeName} onSelect={(hit) => { patch("attendeeUserId", hit.userId); setAttendeeName(`${hit.name} (${hit.sabun})`); }} search={(q, lim) => searchEmployees({ q, limit: lim })} placeholder="사번/이름 검색" />
             </Field>
             <Field label="활동유형"><CodeField value={draft.actTypeCode} label="활동유형" options={codeOptions.actType} onChange={(v) => patch("actTypeCode", v)} /></Field>
             <Field label="접근경로"><CodeField value={draft.accessRouteCode} label="접근경로" options={codeOptions.accessRoute} onChange={(v) => patch("accessRouteCode", v)} /></Field>
             <Field label="영업단계"><CodeField value={draft.bizStepCode} label="영업단계" options={codeOptions.bizStep} onChange={(v) => patch("bizStepCode", v)} /></Field>
             <Field label="제품유형"><CodeField value={draft.productTypeCode} label="제품유형" options={codeOptions.productType} onChange={(v) => patch("productTypeCode", v)} /></Field>
+            {/* TODO: replace with a sales-customer-contact picker once one exists in components/grid/. For now plain UUID input. */}
+            <Field label="고객 담당자(Contact ID)">
+              <input
+                type="text"
+                className="h-9 rounded border border-slate-300 px-3 text-sm font-mono"
+                value={draft.contactId ?? ""}
+                onChange={(e) => patch("contactId", e.target.value || null)}
+                placeholder="UUID"
+              />
+            </Field>
           </div>
           <Field label="활동 내용" full>
             <textarea className="min-h-[120px] rounded border border-slate-300 px-3 py-2 text-sm" value={draft.actContent} onChange={(e) => patch("actContent", e.target.value)} />

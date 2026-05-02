@@ -1293,8 +1293,12 @@
         "orgNm": "담당부서",
         "insName": "영업담당",
         "bizOpSource": "영업기회출처",
+        "focusMgrYn": "집중관리",
         "insdate": "등록일자",
         "memo": "메모"
+      },
+      "filters": {
+        "focusOnly": "집중관리"
       }
     },
     "Activities": {
@@ -1317,6 +1321,10 @@
     "Dashboard": {
       "title": "영업기회현황",
       "description": "단계 분포 + 월별 신규 영업기회.",
+      "salesTrend": "매출 트렌드 (다년 비교)",
+      "noSalesData": "매출 트렌드 데이터 없음",
+      "noOpIncomeData": "영업이익 데이터 없음",
+      "noBaData": "BA 데이터 없음",
       "kpis": {
         "total": "전체 영업기회",
         "inProgressAmt": "진행 중 예상금액",
@@ -1477,7 +1485,27 @@
         "mailId": "메일 ID",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "filters": {
+        "sabunSearch": "사번 검색",
+        "mailSearch": "메일주소 검색"
+      },
+      "errors": {
+        "duplicateKey": "중복된 키(사번+메일ID)가 있습니다"
       }
+    },
+    "Companies": {
+      "title": "영업 회사 관리",
+      "description": "영업 모듈에서 사용하는 회사 마스터를 관리합니다."
+    },
+    "PlanViewPermissions": {
+      "title": "계획 권한 관리",
+      "description": "계획 데이터의 사용자별 R/W 권한을 관리합니다."
+    },
+    "ContractUploads": {
+      "title": "계약 업로드",
+      "description": "계약 관련 파일을 업로드하고 이력을 관리합니다.",
+      "downloadTemplate": "템플릿 다운로드"
     },
     "Contracts": {
       "title": "계약 관리",
@@ -1532,6 +1560,12 @@
         "servSabun": "인력사번",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "actions": {
+        "recalcManday": "M/M 자동계산"
+      },
+      "toast": {
+        "recalcMandayDone": "{computed}건 계산 완료 · 합계 {total} M/M (수동 {skipped}건 / 무효 {invalid}건 제외)"
       }
     },
     "Freelancers": {
@@ -1640,19 +1674,42 @@
     "Charts": {
       "Marketing": {
         "title": "영업 마케팅 차트",
-        "description": "기준월의 영업활동 유형별 건수와 상품 유형별 계약예상금액을 집계합니다."
+        "description": "기준월의 영업활동 유형별 건수와 상품 유형별 계약예상금액을 집계합니다.",
+        "activityByType": "활동 유형별 건수",
+        "productMix": "제품군별 분포",
+        "filters": {
+          "year": "회계연도",
+          "org": "조직",
+          "orgAll": "전체"
+        }
       },
       "AdminPerf": {
         "title": "관리자 실적 차트",
-        "description": "조직별 PLAN/ACTUAL/FORECAST를 연(월별) 또는 분기 단위로 비교합니다."
+        "description": "조직별 PLAN/ACTUAL/FORECAST를 연(월별) 또는 분기 단위로 비교합니다.",
+        "stackedTitle": "조직별 PLAN / ACTUAL / FORECAST",
+        "filters": {
+          "year": "회계연도",
+          "org": "조직",
+          "orgAll": "전체"
+        }
       },
       "PlanPerf": {
         "title": "계획대비 실적 차트",
-        "description": "단년도 월별 계획·실적·전망 비교 (조합형 차트)."
+        "description": "단년도 월별 계획·실적·전망 비교 (조합형 차트).",
+        "filters": {
+          "year": "회계연도",
+          "org": "조직",
+          "orgAll": "전체"
+        }
       },
       "Trend": {
         "title": "매출/이익 추이 차트",
-        "description": "다년도 월별 추이 — 탭으로 매출과 영업이익을 전환합니다."
+        "description": "다년도 월별 추이 — 탭으로 매출과 영업이익을 전환합니다.",
+        "tabs": {
+          "SALES": "매출",
+          "GROSS_PROFIT": "총이익",
+          "OP_INCOME": "영업이익"
+        }
       },
       "Dashboard": {
         "title": "영업본부 대시보드",
@@ -1661,6 +1718,7 @@
       "PlanPerfUpload": {
         "title": "계획/실적전망 업로드",
         "description": "차트(관리자 실적·계획대비 실적·추이·대시보드)가 사용하는 sales_plan_perf raw 데이터를 입력합니다. 인라인 편집 또는 Excel 업로드.",
+        "downloadTemplate": "템플릿 다운로드",
         "templateBtn": "템플릿 다운로드",
         "uploadBtn": "Excel 업로드",
         "uploading": "업로드 중…",
@@ -1691,6 +1749,8 @@
       }
     },
     "Common": {
+      "selectAll": "전체",
+      "tabLabel": "탭",
       "Excel": {
         "button": "다운로드",
         "downloading": "다운로드 중…",
@@ -1735,7 +1795,27 @@
         "servName": "담당자",
         "servTelNo": "연락처",
         "note": "비고",
-        "updatedAt": "수정일시"
+        "updatedAt": "수정일시",
+        "manage": "관리"
+      },
+      "subRow": {
+        "title": "구매 프로젝트",
+        "description": "선택한 매입 행에 속한 프로젝트(서브계약·코드·명) 내역입니다.",
+        "empty": "등록된 프로젝트가 없습니다.",
+        "insert": "입력",
+        "save": "저장 ({count})",
+        "close": "닫기",
+        "saving": "저장 중…",
+        "saved": "저장되었습니다.",
+        "saveFailed": "저장 실패",
+        "columns": {
+          "subContNo": "서브계약번호",
+          "pjtCode": "프로젝트 코드",
+          "pjtNm": "프로젝트명",
+          "legacyEnterCd": "회사",
+          "legacyContYear": "계약년도",
+          "legacyContNo": "계약번호"
+        }
       }
     },
     "TaxBills": {
@@ -1764,6 +1844,9 @@
         "slipResultYn": "전표결과",
         "briefsTxt": "적요",
         "updatedAt": "수정일시"
+      },
+      "warnings": {
+        "vatMismatch": "VAT가 amt의 10%와 다릅니다 — 검토 필요 ({count}건)"
       }
     },
     "MonthExpSga": {
@@ -1800,7 +1883,30 @@
         "prdtAmt": "제품금액",
         "performAmt": "수행금액",
         "note": "비고",
-        "updatedAt": "수정일시"
+        "updatedAt": "수정일시",
+        "manage": "관리"
+      },
+      "subRow": {
+        "title": "배부 상세율",
+        "description": "선택한 계획배부비 행에 속한 서브 코스트별 비율 내역입니다.",
+        "empty": "등록된 상세율이 없습니다.",
+        "insert": "입력",
+        "save": "저장 ({count})",
+        "close": "닫기",
+        "saving": "저장 중…",
+        "saved": "저장되었습니다.",
+        "saveFailed": "저장 실패",
+        "columns": {
+          "subCostCd": "서브 코스트코드",
+          "planRate": "계획비율",
+          "prdtRate": "제품비율",
+          "performRate": "수행비율",
+          "useYn": "사용",
+          "legacyEnterCd": "회사",
+          "costCd": "코스트코드",
+          "accountType": "계정유형",
+          "ym": "기준월"
+        }
       }
     }
   }

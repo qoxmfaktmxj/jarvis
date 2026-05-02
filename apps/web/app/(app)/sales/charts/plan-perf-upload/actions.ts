@@ -10,6 +10,12 @@ import {
   type SalesPlanPerfRow,
 } from "@jarvis/shared/validation/sales-charts";
 import { resolveSalesContext } from "../../_lib/sales-context";
+import {
+  UPLOAD_XLSX_STRICT_MIME,
+  looksLikeXlsxMagicBytes,
+  validateUploadMime,
+  validateUploadSize,
+} from "@/lib/server/validateUpload";
 
 function serialize(r: typeof salesPlanPerf.$inferSelect): SalesPlanPerfRow {
   return {
@@ -167,7 +173,7 @@ export async function savePlanPerfUpload(rawInput: unknown) {
  * Excel 업로드 — base64 인코딩된 xlsx Buffer 를 받아 파싱 후 batch upsert.
  * 컬럼 순서: ym | orgCd | orgNm | gubunCd | trendGbCd | amt | note (planPerfUpload 레거시와 동일).
  */
-export async function uploadPlanPerfExcel(payload: { base64: string }) {
+export async function uploadPlanPerfExcel(payload: { base64: string; mimeType?: string }) {
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
 
@@ -177,6 +183,29 @@ export async function uploadPlanPerfExcel(payload: { base64: string }) {
     buf = Buffer.from(payload.base64, "base64");
   } catch {
     return { ok: false as const, error: "Invalid base64 payload" };
+  }
+
+  // ── Size guard (10 MB default) — reject before parsing to avoid xlsx OOM ────
+  const sizeCheck = validateUploadSize(buf.byteLength);
+  if (!sizeCheck.ok) {
+    return { ok: false as const, error: sizeCheck.error };
+  }
+
+  // ── MIME guard (declared) — strict xlsx/xls only (CSV is rejected). ────────
+  // The legacy planPerfUpload pipeline expected real Excel files; CSV would
+  // bypass the magic-bytes check below, so we narrow the allowlist here.
+  if (payload.mimeType) {
+    const mimeCheck = validateUploadMime(payload.mimeType, UPLOAD_XLSX_STRICT_MIME);
+    if (!mimeCheck.ok) {
+      return { ok: false as const, error: mimeCheck.error };
+    }
+  }
+
+  // ── Magic-bytes guard — xlsx is a zip, must start with PK\x03\x04. ─────────
+  // CSV is rejected upstream (strict MIME), so every passing file must have
+  // xlsx magic bytes. No special-casing needed.
+  if (!looksLikeXlsxMagicBytes(buf)) {
+    return { ok: false as const, error: "Excel 파일 형식이 아닙니다 (magic bytes mismatch)." };
   }
 
   let workbook;

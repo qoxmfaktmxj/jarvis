@@ -28,6 +28,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -92,6 +93,9 @@ export function MailPersonsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const t = useTranslations("Sales.MailPersons");
+  const tCols = useTranslations("Sales.MailPersons.columns");
+  const tFilters = useTranslations("Sales.MailPersons.filters");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
@@ -261,7 +265,7 @@ export function MailPersonsGridContainer({
   const COLUMNS: ColumnDef<MailPersonRow>[] = [
     {
       key: "sabun",
-      label: "사번",
+      label: tCols("sabun"),
       type: "readonly",
       width: 110,
       render: (row) => {
@@ -271,7 +275,7 @@ export function MailPersonsGridContainer({
           return (
             <EmployeePicker
               value=""
-              placeholder="사번 검색..."
+              placeholder={tFilters("sabunSearch")}
               search={(q, lim) => searchEmployees({ q, limit: lim })}
               onSelect={(hit) => handleEmployeePick(row.id, hit)}
             />
@@ -280,14 +284,14 @@ export function MailPersonsGridContainer({
         return <span className="text-[13px] text-slate-900">{row.sabun}</span>;
       },
     },
-    { key: "name", label: "이름", type: "text", width: 140, editable: true, required: true },
-    { key: "mailId", label: "메일 ID", type: "text", width: 220, editable: true, required: true },
-    { key: "salesYn", label: "영업", type: "boolean", width: 70, editable: true },
-    { key: "insaYn", label: "인사", type: "boolean", width: 70, editable: true },
-    { key: "memo", label: "메모", type: "text", editable: true },
+    { key: "name", label: tCols("name"), type: "text", width: 140, editable: true, required: true },
+    { key: "mailId", label: tCols("mailId"), type: "text", width: 220, editable: true, required: true },
+    { key: "salesYn", label: tCols("salesYn"), type: "boolean", width: 70, editable: true },
+    { key: "insaYn", label: tCols("insaYn"), type: "boolean", width: 70, editable: true },
+    { key: "memo", label: tCols("memo"), type: "text", editable: true },
     {
       key: "createdAt",
-      label: "등록일자",
+      label: tCols("insdate"),
       type: "readonly",
       width: 110,
       render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
@@ -313,31 +317,31 @@ export function MailPersonsGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
-        <GridFilterField label="메일주소" className="w-[210px]">
+        <GridFilterField label={tCols("mailId")} className="w-[210px]">
           <Input
             type="text"
             data-filter="searchMail"
             value={pendingFilters.searchMail}
             onChange={(e) => setPending("searchMail", e.target.value)}
-            placeholder="메일주소 검색"
+            placeholder={tFilters("mailSearch")}
             className="h-8"
           />
         </GridFilterField>
-        <GridFilterField label="이름" className="w-[140px]">
+        <GridFilterField label={tCols("name")} className="w-[140px]">
           <Input
             type="text"
             value={pendingFilters.name}
             onChange={(e) => setPending("name", e.target.value)}
-            placeholder="이름"
+            placeholder={tCols("name")}
             className="h-8"
           />
         </GridFilterField>
-        <GridFilterField label="사번" className="w-[140px]">
+        <GridFilterField label={tCols("sabun")} className="w-[140px]">
           <Input
             type="text"
             value={pendingFilters.sabun}
             onChange={(e) => setPending("sabun", e.target.value)}
-            placeholder="사번"
+            placeholder={tCols("sabun")}
             className="h-8"
           />
         </GridFilterField>
@@ -375,7 +379,7 @@ export function MailPersonsGridContainer({
           if (dups.length > 0) {
             return {
               ok: false,
-              errors: [{ message: `중복된 키(사번+메일ID)가 있습니다: ${dups.join(", ")}` }],
+              errors: [{ message: `${t("errors.duplicateKey")}: ${dups.join(", ")}` }],
             };
           }
           const result = await saveMailPersons(changes);

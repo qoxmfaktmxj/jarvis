@@ -22,7 +22,9 @@ export default async function PlanViewPerformanceDetailPage({
   const { id } = await params;
   const result = await getPlanViewPerformance({ id });
   if (!result.ok) {
-    redirect("/sales/plan-view-permissions?error=not-found");
+    // ACL deny → forbidden (Option B); missing row → not-found.
+    const reason = result.error === "Forbidden" ? "forbidden" : "not-found";
+    redirect(`/sales/plan-view-permissions?error=${reason}`);
   }
 
   return (
@@ -32,7 +34,11 @@ export default async function PlanViewPerformanceDetailPage({
         title={result.master.pjtNm ?? result.master.title ?? result.master.pjtCode}
         description="전망/실적 월별 상세 데이터를 조회합니다."
       />
-      <PlanViewPerfDetailView master={result.master} months={result.months} />
+      <PlanViewPerfDetailView
+        master={result.master}
+        months={result.months}
+        canWrite={result.canWrite}
+      />
     </div>
   );
 }

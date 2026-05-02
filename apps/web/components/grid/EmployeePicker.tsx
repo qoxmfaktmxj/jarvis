@@ -2,7 +2,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type EmployeeHit = { sabun: string; name: string; email: string };
+// `userId` is the user table PK (uuid). Sales edit forms need it to populate
+// uuid columns like `insUserId` / `attendeeUserId`. Without it the picker
+// would only expose sabun (varchar) which would fail server-side uuid parsing.
+export type EmployeeHit = { userId: string; sabun: string; name: string; email: string };
 
 type Props = {
   value: string;

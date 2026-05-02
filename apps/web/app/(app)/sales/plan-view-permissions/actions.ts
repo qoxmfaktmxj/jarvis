@@ -2,9 +2,9 @@
 
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, notExists, or } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
+import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
 import { auditLog, salesPlanAcl, salesPlanViewPerformance, salesPlanViewPerformanceMonth } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -15,6 +15,7 @@ import {
   savePlanViewPermissionsInput,
   type SalesPlanViewPerformanceRow,
 } from "@jarvis/shared/validation/sales-contract-extra";
+import { evaluatePlanAcl } from "./acl-helpers";
 
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
@@ -42,7 +43,26 @@ async function resolveSalesContext() {
     ok: true as const,
     userId: session.userId,
     workspaceId: session.workspaceId,
+    // ADMIN_ALL bypasses sales_plan_acl row-level checks. SALES_ALL alone
+    // gates the domain; ACL further narrows per-(plan, user). Option B:
+    // missing ACL row = allow, only explicit `canRead=false` / `canWrite=false`
+    // deny — admins are exempt from both.
+    isAdmin: isAdmin(session),
   };
+}
+
+async function checkPlanAcl(
+  ctx: { workspaceId: string; userId: string; isAdmin: boolean },
+  planId: string,
+  mode: "read" | "write",
+): Promise<boolean> {
+  if (ctx.isAdmin) return true;
+  const [acl] = await db
+    .select({ canRead: salesPlanAcl.canRead, canWrite: salesPlanAcl.canWrite })
+    .from(salesPlanAcl)
+    .where(and(eq(salesPlanAcl.planId, planId), eq(salesPlanAcl.userId, ctx.userId)))
+    .limit(1);
+  return evaluatePlanAcl(acl, ctx.isAdmin, mode);
 }
 
 function serializePlanRow(
@@ -84,6 +104,29 @@ export async function listPlanViewPermissions(rawInput: unknown): Promise<{
   }
   if (input.contYear) conditions.push(eq(salesPlanViewPerformance.contYear, input.contYear));
   if (input.companyCd) conditions.push(eq(salesPlanViewPerformance.companyCd, input.companyCd));
+
+  // Row-level ACL enforcement at the query layer (Option B semantics).
+  // SALES_ALL gates the domain; salesPlanAcl narrows visibility per (plan, user).
+  // Semantics: "explicit deny" (canRead = false) hides the row. Missing ACL row
+  // or canRead = true/null = allow (fall back to permission). Without this
+  // filter the LEFT JOIN below would still surface deny rows in the grid.
+  // Admins bypass — they see every row regardless of ACL.
+  if (!ctx.isAdmin) {
+    conditions.push(
+      notExists(
+        db
+          .select({ one: salesPlanAcl.planId })
+          .from(salesPlanAcl)
+          .where(
+            and(
+              eq(salesPlanAcl.planId, salesPlanViewPerformance.id),
+              eq(salesPlanAcl.userId, ctx.userId),
+              eq(salesPlanAcl.canRead, false),
+            ),
+          ),
+      ),
+    );
+  }
 
   const where = and(...conditions);
   const [rows, countRows] = await Promise.all([
@@ -307,6 +350,15 @@ export async function getPlanViewPerformance(input: { id: string }) {
 
   if (!master) return { ok: false as const, error: "NotFound" as const };
 
+  // Option B ACL: deny detail read when ACL row has `canRead = false`.
+  // Returning Forbidden (not NotFound) so the UI can distinguish missing
+  // resource from permission denial. `canWrite` is also surfaced so the
+  // detail page can disable the save button without round-tripping for a
+  // 403 — the server still enforces the write check independently.
+  const canRead = await checkPlanAcl(ctx, input.id, "read");
+  if (!canRead) return { ok: false as const, error: "Forbidden" as const };
+  const canWrite = await checkPlanAcl(ctx, input.id, "write");
+
   const months = await db
     .select()
     .from(salesPlanViewPerformanceMonth)
@@ -318,6 +370,7 @@ export async function getPlanViewPerformance(input: { id: string }) {
 
   return {
     ok: true as const,
+    canWrite,
     master: {
       id: master.id,
       dataType: master.dataType,
@@ -367,22 +420,27 @@ export async function getPlanViewPerformance(input: { id: string }) {
 // ---------------------------------------------------------------------------
 import { z as _z } from "zod";
 
+// `.finite()` rejects NaN / +Infinity / -Infinity at the boundary so we never
+// stringify them into PostgreSQL numeric(15,10). JS doubles can represent up
+// to ~15-17 significant decimal digits which covers 5 digits before + 10
+// after the decimal point that the column expects.
+const finiteNullable = () => _z.number().finite().nullable().optional();
 const monthRowPatch = _z.object({
   id: _z.string().uuid(),
   ym: _z.string().regex(/^\d{6}$/),
-  serOrderAmt: _z.number().nullable().optional(),
-  prdOrderAmt: _z.number().nullable().optional(),
-  infOrderAmt: _z.number().nullable().optional(),
-  servAmt: _z.number().nullable().optional(),
-  prodAmt: _z.number().nullable().optional(),
-  inManMonth: _z.number().nullable().optional(),
-  outManMonth: _z.number().nullable().optional(),
-  dirInAmt: _z.number().nullable().optional(),
-  dirOutAmt: _z.number().nullable().optional(),
-  indirOrgAmt: _z.number().nullable().optional(),
-  indirAllAmt: _z.number().nullable().optional(),
-  sgaAmt: _z.number().nullable().optional(),
-  expAmt: _z.number().nullable().optional(),
+  serOrderAmt: finiteNullable(),
+  prdOrderAmt: finiteNullable(),
+  infOrderAmt: finiteNullable(),
+  servAmt: finiteNullable(),
+  prodAmt: finiteNullable(),
+  inManMonth: finiteNullable(),
+  outManMonth: finiteNullable(),
+  dirInAmt: finiteNullable(),
+  dirOutAmt: finiteNullable(),
+  indirOrgAmt: finiteNullable(),
+  indirAllAmt: finiteNullable(),
+  sgaAmt: finiteNullable(),
+  expAmt: finiteNullable(),
 });
 
 const savePlanViewPerformanceMonthsInput = _z.object({
@@ -405,8 +463,20 @@ export async function savePlanViewPerformanceMonths(rawInput: unknown) {
     .limit(1);
   if (!master) return { ok: false as const, error: "NotFound" };
 
+  // Option B ACL: deny month-level write when ACL has `canWrite = false`.
+  // Read access (canRead) is implicit — without it the user couldn't have
+  // navigated to the detail page in the first place. This guard is the
+  // dedicated write check.
+  const canWrite = await checkPlanAcl(ctx, input.planId, "write");
+  if (!canWrite) return { ok: false as const, error: "Forbidden" as const };
+
   const now = new Date();
   let updated = 0;
+  // Per-row audit detail — captures which months changed and which numeric
+  // fields were touched so audit_log queries can answer "who changed what
+  // cell" not just "N rows changed at time T". Legacy mmPlanViewPerMgrDetailPop
+  // wrote per-cell tx logs; this preserves equivalent forensic resolution.
+  const auditChanges: Array<{ ym: string; rowId: string; fields: string[] }> = [];
   await db.transaction(async (tx) => {
     for (const r of input.rows) {
       const patch: Record<string, unknown> = {
@@ -421,9 +491,21 @@ export async function savePlanViewPerformanceMonths(rawInput: unknown) {
         "indirOrgAmt", "indirAllAmt",
         "sgaAmt", "expAmt",
       ] as const;
+      const touchedFields: string[] = [];
       for (const k of numericKeys) {
         const v = r[k];
-        if (v !== undefined) patch[k] = v == null ? null : String(v);
+        if (v === undefined) continue;
+        if (v === null) {
+          patch[k] = null;
+          touchedFields.push(k);
+        } else if (Number.isFinite(v)) {
+          // String() yields a canonical decimal that PostgreSQL's numeric(15,10)
+          // parser handles without loss within JS double precision. The Zod
+          // `.finite()` guard above already rejected NaN/Infinity at the API
+          // boundary; this check is defense-in-depth.
+          patch[k] = String(v);
+          touchedFields.push(k);
+        }
       }
       const res = await tx.update(salesPlanViewPerformanceMonth)
         .set(patch)
@@ -433,7 +515,12 @@ export async function savePlanViewPerformanceMonths(rawInput: unknown) {
           eq(salesPlanViewPerformanceMonth.planId, input.planId),
         ))
         .returning({ id: salesPlanViewPerformanceMonth.id });
-      if (res.length > 0) updated += 1;
+      if (res.length > 0) {
+        updated += 1;
+        if (touchedFields.length > 0) {
+          auditChanges.push({ ym: r.ym, rowId: r.id, fields: touchedFields });
+        }
+      }
     }
     if (updated > 0) {
       await tx.insert(auditLog).values({
@@ -442,7 +529,7 @@ export async function savePlanViewPerformanceMonths(rawInput: unknown) {
         action: "sales.plan_view_performance_month.update",
         resourceType: "sales_plan_view_performance_month",
         resourceId: input.planId,
-        details: { count: updated },
+        details: { count: updated, changes: auditChanges },
         success: true,
       });
     }

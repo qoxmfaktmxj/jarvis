@@ -65,6 +65,48 @@ export const savePurchasesInput = z.object({
   deletes: z.array(z.string().uuid()).default([]),
 });
 
+// --- sales_purchase_project (TBIZ041) — child rows of sales_purchase ----------
+
+export const salesPurchaseProjectRowSchema = z.object({
+  ...auditRow,
+  purchaseId: z.string().uuid().nullable(),
+  legacyEnterCd: z.string().nullable(),
+  legacyContYear: z.string().nullable(),
+  legacyContNo: z.string().nullable(),
+  legacySeq: z.number().int().nullable(),
+  legacyPurSeq: z.number().int().nullable(),
+  subContNo: z.string().nullable(),
+  pjtCode: z.string().nullable(),
+  pjtNm: z.string().nullable(),
+});
+
+export type SalesPurchaseProjectRow = z.infer<typeof salesPurchaseProjectRowSchema>;
+
+export const listPurchaseProjectsInput = z.object({
+  purchaseId: z.string().uuid(),
+});
+
+const purchaseProjectWritableSchema = salesPurchaseProjectRowSchema.omit({
+  id: true,
+  workspaceId: true,
+  purchaseId: true,
+  createdAt: true,
+  updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
+}).partial();
+
+export const salesPurchaseProjectCreateSchema = purchaseProjectWritableSchema;
+export const salesPurchaseProjectUpdateSchema = purchaseProjectWritableSchema.extend({
+  id: z.string().uuid(),
+});
+export const savePurchaseProjectsInput = z.object({
+  purchaseId: z.string().uuid(),
+  creates: z.array(salesPurchaseProjectCreateSchema).default([]),
+  updates: z.array(salesPurchaseProjectUpdateSchema).default([]),
+  deletes: z.array(z.string().uuid()).default([]),
+});
+
 export const salesTaxBillRowSchema = z.object({
   ...auditRow,
   legacyEnterCd: z.string().nullable(),
@@ -210,5 +252,48 @@ export const salesPlanDivCostUpdateSchema = planDivCostWritableSchema.extend({ i
 export const savePlanDivCostsInput = z.object({
   creates: z.array(salesPlanDivCostCreateSchema).default([]),
   updates: z.array(salesPlanDivCostUpdateSchema).default([]),
+  deletes: z.array(z.string().uuid()).default([]),
+});
+
+// --- sales_plan_div_cost_detail (TBIZ028) — rate breakdown sub-rows ----------
+
+export const salesPlanDivCostDetailRowSchema = z.object({
+  ...auditRow,
+  planDivCostId: z.string().uuid().nullable(),
+  legacyEnterCd: z.string().nullable(),
+  costCd: z.string().nullable(),
+  accountType: z.string().nullable(),
+  ym: z.string().nullable(),
+  subCostCd: z.string().nullable(),
+  planRate: z.string().nullable(),
+  prdtRate: z.string().nullable(),
+  performRate: z.string().nullable(),
+  useYn: z.string().nullable(),
+});
+
+export type SalesPlanDivCostDetailRow = z.infer<typeof salesPlanDivCostDetailRowSchema>;
+
+export const listPlanDivCostDetailsInput = z.object({
+  planDivCostId: z.string().uuid(),
+});
+
+const planDivCostDetailWritableSchema = salesPlanDivCostDetailRowSchema.omit({
+  id: true,
+  workspaceId: true,
+  planDivCostId: true,
+  createdAt: true,
+  updatedAt: true,
+  createdBy: true,
+  updatedBy: true,
+}).partial();
+
+export const salesPlanDivCostDetailCreateSchema = planDivCostDetailWritableSchema;
+export const salesPlanDivCostDetailUpdateSchema = planDivCostDetailWritableSchema.extend({
+  id: z.string().uuid(),
+});
+export const savePlanDivCostDetailsInput = z.object({
+  planDivCostId: z.string().uuid(),
+  creates: z.array(salesPlanDivCostDetailCreateSchema).default([]),
+  updates: z.array(salesPlanDivCostDetailUpdateSchema).default([]),
   deletes: z.array(z.string().uuid()).default([]),
 });

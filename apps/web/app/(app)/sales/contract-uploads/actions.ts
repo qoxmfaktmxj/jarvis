@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { format } from "date-fns";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -20,6 +21,8 @@ import {
   type SalesContractUploadRow,
   type UnifiedContractUploadRow,
 } from "@jarvis/shared/validation/sales-contract-extra";
+import { exportToExcel } from "@/lib/server/export-excel";
+import type { ColumnDef } from "@/components/grid/types";
 
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
@@ -293,5 +296,48 @@ export async function saveContractUploads(rawInput: unknown): Promise<{
     updated,
     deleted,
     ...(errors.length > 0 ? { errors } : {}),
+  };
+}
+
+/**
+ * 빈 템플릿 다운로드 (헤더만 있는 xlsx).
+ *
+ * 레거시 `planViewPerfUploadMgr.jsp`의 DownTemplate 액션 패리티. 사용자가
+ * 다운로드한 템플릿을 채워서 다시 업로드하면 `salesContractUpload`에 적재된다.
+ * 컬럼 헤더는 `_components/ContractUploadsGridContainer.tsx`의 `uploadColumns`와
+ * 일치시켜 인라인 편집과 Excel 업로드의 입력 형식을 동일하게 유지한다.
+ */
+export async function downloadContractUploadTemplate(): Promise<
+  | { ok: true; filename: string; bytes: Uint8Array }
+  | { ok: false; error: string }
+> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const TEMPLATE_COLUMNS: ColumnDef<Record<string, unknown>>[] = [
+    { key: "ym", label: "년월(YYYYMM)", type: "text" },
+    { key: "companyCd", label: "회사코드", type: "text" },
+    { key: "companyNm", label: "회사명", type: "text" },
+    { key: "costCd", label: "코스트코드", type: "text" },
+    { key: "pjtCode", label: "프로젝트코드", type: "text" },
+    { key: "pjtNm", label: "프로젝트명", type: "text" },
+    { key: "productType", label: "제품군", type: "text" },
+    { key: "contType", label: "계약유형", type: "text" },
+    { key: "planServSaleAmt", label: "계획 서비스매출", type: "numeric" },
+    { key: "viewServSaleAmt", label: "전망 서비스매출", type: "numeric" },
+    { key: "perfServSaleAmt", label: "실적 서비스매출", type: "numeric" },
+    { key: "note", label: "비고", type: "text" },
+  ];
+
+  const buf = await exportToExcel({
+    rows: [],
+    columns: TEMPLATE_COLUMNS,
+    sheetName: "계약 업로드 (template)",
+  });
+
+  return {
+    ok: true as const,
+    filename: `contract_upload_template_${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+    bytes: new Uint8Array(buf),
   };
 }

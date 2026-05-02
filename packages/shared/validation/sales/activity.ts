@@ -5,6 +5,7 @@ export const activityRow = z.object({
   bizActNm: z.string().min(1).max(500),
   opportunityId: z.string().uuid().nullable(),
   customerId: z.string().uuid().nullable(),
+  contactId: z.string().uuid().nullable().optional(),
   customerName: z.string().nullable(),
   actYmd: z.string().nullable(),
   actTypeCode: z.string().nullable(),
