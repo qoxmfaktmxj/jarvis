@@ -25,8 +25,8 @@ export type WikiPageMeta = {
   pageType?: string;
   /**
    * Structured infra metadata — populated when `pageType === "infra-runbook"`.
-   * Mirrors the TSMT001 EXPORT_TABLE columns documented in
-   * `docs/plan/2026-04-17-tsmt001-infra-pipeline.md` §B-2.
+   * Mirrors the legacy company-master export columns documented in the
+   * infra pipeline plan.
    */
   infra?: InfraRunbookMeta;
 };

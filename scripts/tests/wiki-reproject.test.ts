@@ -217,7 +217,7 @@ describe("prepareProjection", () => {
     assert.equal(result.links[1].anchor, null);
   });
 
-  test("auto-fixes TSVD999 unquoted [e-HR] list items so YAML parses", () => {
+  test("auto-fixes legacy case-source unquoted [e-HR] list items so YAML parses", () => {
     const content = [
       "---",
       'title: "test cluster"',

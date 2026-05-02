@@ -119,7 +119,7 @@ function parseFrontmatter(raw: string): { frontmatter: Record<string, unknown>; 
 // 도구 패턴 (USES_TOOL edge 생성용)
 // ---------------------------------------------------------------------------
 const TOOL_PATTERNS: Array<{ pattern: RegExp; toolId: string; toolLabel: string }> = [
-  { pattern: /이수\s*HR/i, toolId: 'tool-isu-hr', toolLabel: '이수HR' },
+  { pattern: /legacy\s*HR/i, toolId: 'tool-legacy-hr', toolLabel: 'Legacy HR' },
   { pattern: /그룹웨어/i, toolId: 'tool-groupware', toolLabel: '그룹웨어' },
   { pattern: /ERP/i, toolId: 'tool-erp', toolLabel: 'ERP' },
   { pattern: /슬랙|Slack/i, toolId: 'tool-slack', toolLabel: 'Slack' },

@@ -1,5 +1,5 @@
 // packages/db/schema/case.ts
-// Cases Layer: TSVD999 유사 문의/사례 데이터를 정규화해 저장하는 스키마
+// Cases Layer: 레거시 case-table export(문의/사례 원본) 데이터를 정규화해 저장하는 스키마
 
 import {
   boolean,
@@ -23,7 +23,7 @@ import { knowledgePage } from "./knowledge.js";
 // migration 0037 참조.
 
 // ---------------------------------------------------------------------------
-// precedent_case: 개별 문의/사례 row (TSVD999 레코드 1건 = 1 row)
+// precedent_case: 개별 문의/사례 row (레거시 case-source 레코드 1건 = 1 row)
 // ---------------------------------------------------------------------------
 export const precedentCase = pgTable(
   "precedent_case",
@@ -33,7 +33,7 @@ export const precedentCase = pgTable(
       .notNull()
       .references(() => workspace.id, { onDelete: "cascade" }),
 
-    // --- TSVD999 원본 필드 매핑 ---
+    // --- 레거시 case-source 원본 필드 매핑 ---
     sourceKey: varchar("source_key", { length: 300 }),
     originalSeq: integer("original_seq"), // SEQ
     higherCategory: varchar("higher_category", { length: 100 }), // HIGHER_NM

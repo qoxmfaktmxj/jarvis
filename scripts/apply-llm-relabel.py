@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Apply LLM-proposed sub-patterns back to the full dataset.
 
-Phase K-2 of docs/plan/2026-04-17-tsvd999-wiki-pipeline.md: for each of the 15
+Phase K-2 of the legacy case-source wiki pipeline plan: for each of the 15
 oversized sub-clusters, subagents proposed 4~6 sub-patterns with anchor cases.
 This script re-assigns every row within each target cluster to its nearest
 sub-pattern by TF-IDF cosine similarity to the pattern's anchor centroid, then

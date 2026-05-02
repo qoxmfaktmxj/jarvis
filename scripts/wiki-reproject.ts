@@ -8,11 +8,11 @@
  * `wiki_page_link`. Deterministic (no LLM call). Safe to re-run.
  *
  * Why this exists:
- * The TSMT001/TSVD999/guidebook pipelines wrote Markdown directly into
- * `wiki/jarvis/auto/**` + `wiki/jarvis/manual/**` without going through the
- * worker's two-step ingest pipeline, so those pages are not projected into
- * the DB. That means every read path (search, Ask AI, /infra dashboard) sees
- * zero rows. This one-shot script backfills the projection.
+ * The companies-source / case-source / guidebook pipelines wrote Markdown
+ * directly into `wiki/jarvis/auto/**` + `wiki/jarvis/manual/**` without going
+ * through the worker's two-step ingest pipeline, so those pages are not
+ * projected into the DB. That means every read path (search, Ask AI, /infra
+ * dashboard) sees zero rows. This one-shot script backfills the projection.
  *
  * Usage:
  *   DATABASE_URL=... node --experimental-strip-types scripts/wiki-reproject.ts \
@@ -99,7 +99,7 @@ const DEFAULT_PERMISSION = "knowledge:read";
 const DEFAULT_SENSITIVITY = "INTERNAL";
 
 /**
- * TSVD999 pipeline emitted frontmatter list items like
+ * The legacy case-source pipeline emitted frontmatter list items like
  *   - [e-HR] 오스템임플란트
  * without quoting, which YAML 1.2 parses as a broken flow sequence
  * (`[e-HR]` opens a flow, then Korean text appears outside it → "Unexpected

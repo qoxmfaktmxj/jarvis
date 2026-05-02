@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
  * Infra Import — status + workflow guide.
  *
  * Intentionally NOT a file-upload form: the actual SQL ingestion runs as an
- * admin CLI step (parse-tsmt001.py → build-infra-prompts.py → executor
+ * admin CLI step (parse-companies-source.py → build-infra-prompts.py → executor
  * subagents) so 담당자 can see the audit log and re-run at will. This page
  * surfaces the CURRENT state of the pipeline (record count, last parsed
  * timestamp, generated page count) and documents the exact commands to
@@ -111,7 +111,7 @@ export default async function InfraImportPage() {
       <div className="flex items-start justify-between gap-4">
         <PageHeader
           title="인프라 SQL 가져오기"
-          description="TSMT001 → records.jsonl → wiki/infra/**.md 파이프라인 상태"
+          description="companies-source SQL → records.jsonl → wiki/infra/**.md 파이프라인 상태"
         />
         <Link
           href="/infra"
@@ -145,7 +145,7 @@ export default async function InfraImportPage() {
         <section className="rounded-lg border border-surface-200 bg-surface-50 p-6 space-y-4">
           <h2 className="text-lg font-semibold">재생성 절차 (담당자)</h2>
           <p className="text-sm text-surface-700">
-            새 SQL 덤프가 있으면 <code className="bg-surface-200 px-1 rounded">TSMT001.sql</code>{' '}
+            새 SQL 덤프가 있으면 <code className="bg-surface-200 px-1 rounded">companies-source.sql</code>{' '}
             을 repo 루트에 두고 아래 3 단계를 순서대로 실행하세요. 결과는 자동으로{' '}
             <code className="bg-surface-200 px-1 rounded">wiki/jarvis/auto/infra/</code> 아래에
             저장됩니다.
@@ -155,7 +155,7 @@ export default async function InfraImportPage() {
             <li>
               <div className="font-medium text-surface-900">1. 파싱 (Python)</div>
               <pre className="mt-1 rounded bg-surface-900 text-surface-100 p-3 overflow-x-auto font-mono text-xs">
-                py scripts/parse-tsmt001.py --input TSMT001.sql --output
+                py scripts/parse-companies-source.py --input companies-source.sql --output
                 data/infra/records.jsonl
               </pre>
             </li>
