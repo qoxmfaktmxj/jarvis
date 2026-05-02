@@ -5,15 +5,20 @@
  * sales/opportunities DataGrid container — ibSheet 9 visible columns
  * (TBIZ110 ground truth). schema는 35 컬럼이지만 grid에는 9개만 노출.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { type OpportunityRow } from "@jarvis/shared/validation/sales/opportunity";
 import { listOpportunities, saveOpportunities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { MemoModal } from "./MemoModal";
 
@@ -60,25 +65,68 @@ export function OpportunitiesGridContainer({
   codeOptions,
 }: Props) {
   const router = useRouter();
+  const initialFilterMap = useMemo(() => {
+    const v: Record<string, string> = {};
+    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
+    return v;
+  }, [initialFilters]);
+
   const [rows, setRows] = useState<Opportunity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {};
-    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
-    return v;
-  });
+  const [page, setPage] = useTabState<number>("sales.opportunities.page", initialPage);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "sales.opportunities.filters",
+    initialFilterMap,
+  );
+  const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
+    "sales.opportunities.pendingFilters",
+    initialFilterMap,
+  );
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<Opportunity>[]>(
+    "sales.opportunities.gridRows",
+    [],
+  );
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {};
-    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
-    return v;
-  });
+  useTabDirty(dirtyCount > 0);
+
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/opportunities";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initial, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveOpportunities({
+        creates: changes.creates,
+        updates: changes.updates,
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -214,6 +262,9 @@ export function OpportunitiesGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/opportunities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}

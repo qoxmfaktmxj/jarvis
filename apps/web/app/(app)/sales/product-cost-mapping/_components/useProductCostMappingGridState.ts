@@ -7,7 +7,10 @@
  *
  * Phase-Sales P1.5 Task 6 (2026-05-01).
  */
-import { useGridState } from "@/components/grid/useGridState";
+import {
+  useGridState,
+  type UseGridStateOptions,
+} from "@/components/grid/useGridState";
 import type { ProductCostMappingRow } from "@jarvis/shared/validation/sales/product-type-cost";
 
 export function makeBlankProductCostMapping(): ProductCostMappingRow {
@@ -27,6 +30,9 @@ export function makeBlankProductCostMapping(): ProductCostMappingRow {
   } satisfies ProductCostMappingRow;
 }
 
-export function useProductCostMappingGridState(initial: ProductCostMappingRow[]) {
-  return useGridState<ProductCostMappingRow>(initial);
+export function useProductCostMappingGridState(
+  initial: ProductCostMappingRow[],
+  options?: UseGridStateOptions<ProductCostMappingRow>,
+) {
+  return useGridState<ProductCostMappingRow>(initial, options);
 }
