@@ -388,7 +388,7 @@ MindVault가 실패한 조건이 Jarvis에 그대로 있다. 각 체크포인트
 
 ## 13. 참고 자료 (reference_only/)
 
-> **경로 주의:** `reference_only/`는 로컬 개발 머신 `C:\Users\kms\Desktop\dev\reference_only\`에 위치하며 **저장소에 포함되지 않습니다**. 분석·포팅 원본으로만 사용하고 git submodule로 편입하지 않습니다. 타 개발자 온보딩 시 별도 클론 가이드 제공 예정.
+> **경로 주의:** `reference_only/`는 로컬 개발 머신의 임의 경로(예: `<your-dev-root>/reference_only/`)에 위치하며 **저장소에 포함되지 않습니다**. 분석·포팅 원본으로만 사용하고 git submodule로 편입하지 않습니다. 타 개발자 온보딩 시 별도 클론 가이드 제공 예정.
 
 - `karpathy/llm-wiki.md` gist — 북극성 (철학만, URL: `https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f`)
 - `reference_only/llm_wiki/` *(로컬 전용)* — Tauri 구현체 (프롬프트·파일 포맷 포팅 대상)
