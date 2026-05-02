@@ -1,8 +1,12 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -97,6 +101,7 @@ export function CustomersGridContainer({
   initialFilters = {},
   codeOptions,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales");
   const tCommon = useTranslations("Sales.Common");
 
@@ -124,7 +129,19 @@ export function CustomersGridContainer({
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+
+  // pendingFilters — staged inputs; committed to URL + reload on [조회]
+  const [pendingFilters, setPendingFilters] = useState({
+    custNm: initialFilters.custNm ?? "",
+    custKindCd: initialFilters.custKindCd ?? "",
+    custDivCd: initialFilters.custDivCd ?? "",
+    chargerNm: initialFilters.chargerNm ?? "",
+    searchYmdFrom: initialFilters.searchYmdFrom ?? "",
+    searchYmdTo: initialFilters.searchYmdTo ?? "",
+  });
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   // Derive current filter values from URL state
   const currentPage = Math.max(1, Number(values.page) || 1);
@@ -183,129 +200,99 @@ export function CustomersGridContainer({
     },
   ];
 
-  // Search form section — rendered inside DataGridToolbar children
-  const searchForm = (
-    <div className="flex flex-wrap items-center gap-2">
-      {/* custNm */}
-      <input
-        type="text"
-        className="rounded border border-slate-300 px-2 py-1 text-sm"
-        placeholder={t("Customers.columns.custNm")}
-        value={values.custNm}
-        onChange={(e) => setValue("custNm", e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            setValue("page", "1");
-            reload(1, { ...values, custNm: values.custNm });
-          }
-        }}
-      />
-      {/* custKindCd */}
-      <select
-        className="rounded border border-slate-300 px-2 py-1 text-sm"
-        value={values.custKindCd}
-        onChange={(e) => {
-          const v = e.target.value;
-          setValue("custKindCd", v);
-          setValue("page", "1");
-          reload(1, { ...values, custKindCd: v });
-        }}
-      >
-        <option value="">{t("Customers.columns.custKindCd")}</option>
-        {codeOptions.custKind.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      {/* custDivCd */}
-      <select
-        className="rounded border border-slate-300 px-2 py-1 text-sm"
-        value={values.custDivCd}
-        onChange={(e) => {
-          const v = e.target.value;
-          setValue("custDivCd", v);
-          setValue("page", "1");
-          reload(1, { ...values, custDivCd: v });
-        }}
-      >
-        <option value="">{t("Customers.columns.custDivCd")}</option>
-        {codeOptions.custDiv.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-      {/* chargerNm */}
-      <input
-        type="text"
-        className="rounded border border-slate-300 px-2 py-1 text-sm"
-        placeholder={tCommon("Search.chargerNm")}
-        value={values.chargerNm}
-        onChange={(e) => setValue("chargerNm", e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            setValue("page", "1");
-            reload(1, { ...values, chargerNm: values.chargerNm });
-          }
-        }}
-      />
-      {/* searchYmdFrom ~ searchYmdTo */}
-      <div className="flex items-center gap-1">
-        <span className="text-xs text-slate-500">{tCommon("Search.searchYmd")}</span>
-        <input
-          type="date"
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          placeholder={tCommon("Search.searchYmdFrom")}
-          value={values.searchYmdFrom}
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue("searchYmdFrom", v);
-            setValue("page", "1");
-            reload(1, { ...values, searchYmdFrom: v });
-          }}
-        />
-        <span className="text-xs text-slate-400">~</span>
-        <input
-          type="date"
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          placeholder={tCommon("Search.searchYmdTo")}
-          value={values.searchYmdTo}
-          onChange={(e) => {
-            const v = e.target.value;
-            setValue("searchYmdTo", v);
-            setValue("page", "1");
-            reload(1, { ...values, searchYmdTo: v });
-          }}
-        />
-      </div>
-    </div>
-  );
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      const r = await exportCustomersToExcel({
+        custNm: values.custNm || undefined,
+        custKindCd: values.custKindCd || undefined,
+        custDivCd: values.custDivCd || undefined,
+        chargerNm: values.chargerNm || undefined,
+        searchYmdFrom: values.searchYmdFrom || undefined,
+        searchYmdTo: values.searchYmdTo || undefined,
+      });
+      if (r.ok) {
+        triggerDownload(r.bytes, r.filename);
+      } else {
+        alert(r.error);
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  }, [values]);
+
+  const handleSearch = useCallback(() => {
+    setValue("custNm", pendingFilters.custNm);
+    setValue("custKindCd", pendingFilters.custKindCd);
+    setValue("custDivCd", pendingFilters.custDivCd);
+    setValue("chargerNm", pendingFilters.chargerNm);
+    setValue("searchYmdFrom", pendingFilters.searchYmdFrom);
+    setValue("searchYmdTo", pendingFilters.searchYmdTo);
+    setValue("page", "1");
+    reload(1, pendingFilters);
+  }, [pendingFilters, setValue, reload]);
 
   return (
-    <div className="space-y-0">
-      <DataGridToolbar
-        exportLabel={tCommon("Excel.button")}
-        isExporting={isExporting}
-        onExport={async () => {
-          setIsExporting(true);
-          try {
-            const r = await exportCustomersToExcel({
-              custNm: values.custNm || undefined,
-              custKindCd: values.custKindCd || undefined,
-              custDivCd: values.custDivCd || undefined,
-              chargerNm: values.chargerNm || undefined,
-              searchYmdFrom: values.searchYmdFrom || undefined,
-              searchYmdTo: values.searchYmdTo || undefined,
-            });
-            if (r.ok) {
-              triggerDownload(r.bytes, r.filename);
-            } else {
-              alert(r.error);
-            }
-          } finally {
-            setIsExporting(false);
-          }
-        }}
-      >
-        {searchForm}
-      </DataGridToolbar>
+    <div className="space-y-3">
+      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+        <GridFilterField label={t("Customers.columns.custKindCd")} className="w-[140px]">
+          <select
+            value={pendingFilters.custKindCd}
+            onChange={(e) => setPending("custKindCd", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {codeOptions.custKind.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label={t("Customers.columns.custDivCd")} className="w-[140px]">
+          <select
+            value={pendingFilters.custDivCd}
+            onChange={(e) => setPending("custDivCd", e.target.value)}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {codeOptions.custDiv.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label={t("Customers.columns.custNm")} className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.custNm}
+            onChange={(e) => setPending("custNm", e.target.value)}
+            placeholder={t("Customers.columns.custNm")}
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label={tCommon("Search.chargerNm")} className="w-[140px]">
+          <Input
+            type="text"
+            value={pendingFilters.chargerNm}
+            onChange={(e) => setPending("chargerNm", e.target.value)}
+            placeholder={tCommon("Search.chargerNm")}
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label={tCommon("Search.searchYmdFrom")} className="w-[160px]">
+          <DatePicker
+            value={pendingFilters.searchYmdFrom || null}
+            onChange={(v) => setPending("searchYmdFrom", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdFrom")}
+          />
+        </GridFilterField>
+        <GridFilterField label={tCommon("Search.searchYmdTo")} className="w-[160px]">
+          <DatePicker
+            value={pendingFilters.searchYmdTo || null}
+            onChange={(v) => setPending("searchYmdTo", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdTo")}
+          />
+        </GridFilterField>
+      </GridSearchForm>
+
       <DataGrid<CustomerRow>
         rows={rows}
         total={total}
@@ -315,12 +302,15 @@ export function CustomersGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        onRowDoubleClick={(row) => router.push("/sales/customers/" + row.id + "/edit")}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => {
           setValue("page", String(p));
           reload(p, values);
         }}
         onFilterChange={() => {
-          // Filters are handled by the toolbar search form above
+          // Filters are handled by GridSearchForm above
         }}
         onSave={async (changes) => {
           // Composite-key duplicate check: custCd is the UI dedup key

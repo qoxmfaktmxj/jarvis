@@ -29,7 +29,11 @@ import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
 import { EditableDateCell } from "@/components/grid/cells/EditableDateCell";
 import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
 import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
@@ -74,7 +78,7 @@ export function ProductCostMappingGrid({
   const [page, setPage] = useState(initialPage);
   const [saving, startSave] = useTransition();
   const [exporting, startExport] = useTransition();
-  const [, startReload] = useTransition();
+  const [isSearching, startReload] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
@@ -89,6 +93,17 @@ export function ProductCostMappingGrid({
       page: String(initialPage),
     },
   });
+
+  // pendingFilters — staged inputs; committed to URL + reload on [조회]
+  const [pendingFilters, setPendingFilters] = useState({
+    searchCostNm: initialSearchCostNm,
+    searchYmd: initialSearchYmd,
+    productTypeId: "",
+    costId: "",
+    q: "",
+  });
+  const setPending = (key: string, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
     (
@@ -187,10 +202,10 @@ export function ProductCostMappingGrid({
 
   return (
     <div className="space-y-3">
-      {/* DataGridToolbar: Excel export button */}
+      {/* DataGridToolbar: insert/save buttons + Excel export */}
       <DataGridToolbar
         onExport={handleExport}
-        exportLabel={t("Common.Excel.button")}
+        exportLabel={exporting ? t("Common.Excel.downloading") : t("Common.Excel.button")}
         isExporting={exporting}
       >
         <GridToolbar
@@ -200,6 +215,73 @@ export function ProductCostMappingGrid({
           onSave={validateAndSave}
         />
       </DataGridToolbar>
+
+      {/* GridSearchForm: filter panel with [조회] button */}
+      <GridSearchForm
+        onSearch={() => {
+          setFilterValue("q", pendingFilters.q);
+          setFilterValue("productTypeId", pendingFilters.productTypeId);
+          setFilterValue("costId", pendingFilters.costId);
+          setFilterValue("searchCostNm", pendingFilters.searchCostNm);
+          setFilterValue("searchYmd", pendingFilters.searchYmd);
+          setFilterValue("page", "1");
+          guarded(() => reload(1, { ...filterValues, ...pendingFilters, page: "1" }));
+        }}
+        isSearching={isSearching}
+      >
+        <GridFilterField label="제품군" className="w-[140px]">
+          <select
+            value={pendingFilters.productTypeId}
+            onChange={(e) => setPending("productTypeId", e.target.value)}
+            aria-label="제품군 필터"
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {productTypeOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label="코스트" className="w-[140px]">
+          <select
+            value={pendingFilters.costId}
+            onChange={(e) => setPending("costId", e.target.value)}
+            aria-label="코스트 필터"
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">전체</option>
+            {costOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </GridFilterField>
+        <GridFilterField label={t("Common.Search.searchCostNm")} className="w-[140px]">
+          <Input
+            type="text"
+            aria-label={t("Common.Search.searchCostNm")}
+            value={pendingFilters.searchCostNm}
+            onChange={(e) => setPending("searchCostNm", e.target.value)}
+            placeholder={t("Common.Search.searchCostNm")}
+            className="h-8"
+          />
+        </GridFilterField>
+        <GridFilterField label={t("Common.Search.searchYmd")} className="w-[160px]">
+          <DatePicker
+            value={pendingFilters.searchYmd || null}
+            onChange={(v) => setPending("searchYmd", v ?? "")}
+            ariaLabel={t("Common.Search.searchYmd")}
+          />
+        </GridFilterField>
+        <GridFilterField label="제품/코스트/비고" className="w-[210px]">
+          <Input
+            type="text"
+            value={pendingFilters.q}
+            onChange={(e) => setPending("q", e.target.value)}
+            placeholder="제품/코스트/비고"
+            className="h-8"
+          />
+        </GridFilterField>
+      </GridSearchForm>
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (
@@ -212,82 +294,6 @@ export function ProductCostMappingGrid({
 
       <div className="flex items-center justify-between">
         <span className="text-sm text-slate-600">전체 {total.toLocaleString()}건</span>
-      </div>
-
-      {/* Filter row — existing filters + new searchYmd + searchCostNm */}
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <input
-          type="text"
-          placeholder="제품/코스트/비고"
-          value={filterValues.q}
-          onChange={(e) => setFilterValue("q", e.target.value)}
-          onBlur={() => guarded(() => reload(1, filterValues))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") guarded(() => reload(1, filterValues));
-          }}
-          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {/* searchCostNm — new in P2-A */}
-        <input
-          type="text"
-          aria-label={t("Common.Search.searchCostNm")}
-          placeholder={t("Common.Search.searchCostNm")}
-          value={filterValues.searchCostNm}
-          onChange={(e) => setFilterValue("searchCostNm", e.target.value)}
-          onBlur={() => guarded(() => reload(1, filterValues))}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") guarded(() => reload(1, filterValues));
-          }}
-          className="h-8 w-40 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        {/* searchYmd — new in P2-A */}
-        <label className="flex items-center gap-1 text-[13px] text-slate-600">
-          <span>{t("Common.Search.searchYmd")}</span>
-          <input
-            type="date"
-            aria-label={t("Common.Search.searchYmd")}
-            value={filterValues.searchYmd}
-            onChange={(e) => {
-              setFilterValue("searchYmd", e.target.value);
-              guarded(() => reload(1, { ...filterValues, searchYmd: e.target.value }));
-            }}
-            className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </label>
-        <select
-          value={filterValues.productTypeId}
-          onChange={(e) => {
-            const next = { ...filterValues, productTypeId: e.target.value };
-            setFilterValue("productTypeId", e.target.value);
-            guarded(() => reload(1, next));
-          }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="제품군 필터"
-        >
-          <option value="">제품군 (전체)</option>
-          {productTypeOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterValues.costId}
-          onChange={(e) => {
-            const next = { ...filterValues, costId: e.target.value };
-            setFilterValue("costId", e.target.value);
-            guarded(() => reload(1, next));
-          }}
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-          aria-label="코스트 필터"
-        >
-          <option value="">코스트 (전체)</option>
-          {costOptions.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       <div className="overflow-auto rounded border border-slate-200">

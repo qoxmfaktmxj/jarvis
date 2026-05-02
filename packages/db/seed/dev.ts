@@ -45,6 +45,8 @@ async function seed() {
     await seedCodeGroups(wsId);
     const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
     await seedCompaniesFromTsmt001(wsId);
+    const { seedUsersFromTsys305 } = await import('./users-tsys305.js');
+    await seedUsersFromTsys305(wsId);
     const { seedSalesCodes } = await import('./sales-codes.js');
     await seedSalesCodes(wsId);
     // Re-seed menus + permissions so menu_item changes (badge / keywords /
@@ -209,6 +211,10 @@ async function seed() {
   // ---- Companies (TSMT001) ----
   const { seedCompaniesFromTsmt001 } = await import('./companies-tsmt001.js');
   await seedCompaniesFromTsmt001(wsId);
+
+  // ---- Users (TSYS305) ----
+  const { seedUsersFromTsys305 } = await import('./users-tsys305.js');
+  await seedUsersFromTsys305(wsId);
 
   // ---- Sales Code Groups (영업관리모듈 Phase 1) ----
   const { seedSalesCodes } = await import('./sales-codes.js');

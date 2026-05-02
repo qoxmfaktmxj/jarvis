@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull, or } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex, type WikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
 import {
@@ -79,15 +79,21 @@ export async function loadWikiPageForView(
     return null;
   }
 
+  // requiredPermission DB filter — admins (ADMIN_ALL) and trusted internal
+  // callers (viewer === null) bypass it; everyone else must either match the
+  // page's requiredPermission or get only rows where it's NULL/empty.
+  const isAdmin = viewer !== null && viewer.permissions.includes(PERMISSIONS.ADMIN_ALL);
+  const applyRequiredPermissionFilter = viewer !== null && !isAdmin;
+  const viewerPermissions = viewer?.permissions ?? [];
+
   /**
    * Build the WHERE conditions common to both routeKey and slug lookups.
    * Includes:
    *   - workspaceId
    *   - publishedStatus = 'published'
-   *   - sensitivity IN (...) — only when viewer is provided and not admin
-   *   - requiredPermission IS NULL OR session has that permission
-   *     (handled post-query because Drizzle doesn't support dynamic OR-subqueries
-   *     on nullable columns cleanly; the sensitivity IN() is the primary guard)
+   *   - sensitivity IN (...) — only when viewer is provided
+   *   - requiredPermission IS NULL OR '' OR IN (viewer.permissions)
+   *     — only for non-admin authenticated viewers (admin and internal-null skip)
    */
   function buildConditions(keyColumn: typeof wikiPageIndex.routeKey | typeof wikiPageIndex.slug) {
     const base = [
@@ -98,6 +104,22 @@ export async function loadWikiPageForView(
 
     if (allowedSensitivities !== null) {
       base.push(inArray(wikiPageIndex.sensitivity, allowedSensitivities));
+    }
+
+    if (applyRequiredPermissionFilter) {
+      // Drizzle's `inArray(col, [])` compiles to a falsey predicate, so we
+      // OR with isNull/empty-string to keep no-permission-required pages
+      // visible even when the viewer has zero permissions.
+      const permissionConds = [
+        isNull(wikiPageIndex.requiredPermission),
+        eq(wikiPageIndex.requiredPermission, ""),
+      ] as ReturnType<typeof eq>[];
+      if (viewerPermissions.length > 0) {
+        permissionConds.push(
+          inArray(wikiPageIndex.requiredPermission, viewerPermissions as string[]),
+        );
+      }
+      base.push(or(...permissionConds) as ReturnType<typeof eq>);
     }
 
     return and(...base);
@@ -125,15 +147,16 @@ export async function loadWikiPageForView(
     return null;
   }
 
-  // requiredPermission post-filter (secondary gate; sensitivity is the primary DB filter).
-  // If viewer is provided and lacks the required permission, deny without disk I/O.
+  // requiredPermission is now part of the DB WHERE clause above; this
+  // belt-and-suspenders re-check stays here so that a future query change
+  // can't silently leak permission-gated pages.
   if (
     viewer !== null &&
     meta.requiredPermission &&
     !viewer.permissions.includes(PERMISSIONS.ADMIN_ALL) &&
     !viewer.permissions.includes(meta.requiredPermission)
   ) {
-    console.warn('[wiki-page-loader] requiredPermission denied', { workspaceId, routeKeyOrSlug });
+    console.warn('[wiki-page-loader] requiredPermission denied (post-DB recheck)', { workspaceId, routeKeyOrSlug });
     return null;
   }
 

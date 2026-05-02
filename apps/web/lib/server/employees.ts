@@ -5,6 +5,8 @@ import { headers, cookies } from "next/headers";
 import { db } from "@jarvis/db/client";
 import { user } from "@jarvis/db/schema/user";
 import { getSession } from "@jarvis/auth/session";
+import { hasPermission } from "@jarvis/auth";
+import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 const searchEmployeesInput = z.object({
   q: z.string().transform((s) => s.trim()).pipe(z.string().min(2).max(50)),
@@ -33,6 +35,9 @@ export async function searchEmployees(
   if (!sid) throw new Error("Unauthorized");
   const session = await getSession(sid);
   if (!session) throw new Error("Unauthorized");
+  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
+    throw new Error("Forbidden");
+  }
 
   const { q, limit } = searchEmployeesInput.parse(rawInput);
 

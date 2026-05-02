@@ -4,59 +4,43 @@
  *
  * 공통코드 — 그룹코드(master) 그리드.
  *
- * 컬럼: No / 삭제 / 상태 / *그룹코드 / *코드명 / 코드설명(textarea) /
- *       업무구분 / 구분 / 세부 코드수
- * (legacy grpCdMgr.jsp 기준, screenshot 컬럼 순서 유지)
+ * 컬럼: No / 삭제 / *그룹코드 / *코드명 / 코드설명 / 업무구분 / 구분 / 세부코드수 / 상태
  *
- * **하이브리드 채택 — `<DataGrid>` 풀 도입 X. 이유:**
+ * DataGrid 베이스라인 미사용 이유:
+ *   - 부모 CodesPageClient가 master/detail 상태를 동시에 보유해야 함
+ *     (detail dirty 게이트 + detail 저장 후 master reload).
+ *   - code 컬럼은 신규 행에서만 편집 가능 (legacy KeyField:1).
+ *   - DataGrid는 row-click 콜백·외부 grid state를 노출하지 않음.
  *
- *   1) `<DataGrid>` 는 `useGridState`를 내부에서 소유한다. 본 화면은 부모
- *      `CodesPageClient`가 master/detail 두 grid의 상태를 동시에 보유하면서
- *      a) detail dirty 상태로 master 행 선택을 게이트하고
- *      b) detail 저장 후 master를 reload(subCnt 갱신)하며
- *      c) master row 선택을 detail의 그룹 필터로 전달
- *      해야 하므로 grid 상태가 외부에 있어야 한다.
- *   2) 그룹코드(`code`) 컬럼은 `r.state === "new"` 일 때만 편집 가능하다
- *      (legacy KeyField:1 의미). `ColumnDef<T>` 의 `editable: boolean`은
- *      행 단위 조건부를 지원하지 않는다 → `lockOnExisting` flag로 확장.
- *   3) `<DataGrid>` 는 `onExport` 슬롯, 행 선택 콜백(`onRowClick`),
- *      커스텀 필터 폼(검색 버튼 기반) 슬롯이 없다.
- *
- * **그래도 선언형(`ColumnDef[]`)으로 옮긴 부분:**
- *
- *   - 컬럼 메타(label/key/type/width)를 `COLUMNS` 배열로 단일 정의.
- *   - 본문 `<td>`는 `COLUMNS.map(...)` 으로 렌더 — 각 컬럼별 cell 컴포넌트
- *     스위치는 한 군데로 모음.
- *   - Excel export 헤더는 `COLUMNS`에서 `(key, label)` 쌍을 그대로 추출.
- *
- * 향후 `<DataGrid>`가 (a) 외부 grid prop, (b) 행 단위 readOnly,
- * (c) `onExport`/`onRowClick` 슬롯을 노출하면 본 파일을 5~10줄로 줄일 수 있다.
+ * 필터: GridSearchForm + GridFilterField (baseline 표준 컴포넌트).
+ * 툴바: GridToolbar(입력/복사/저장) + DataGridToolbar(다운로드).
  */
-import { useCallback, useMemo } from "react";
+import { type MouseEvent, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
 import { EditableTextAreaCell } from "@/components/grid/cells/EditableTextAreaCell";
 import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
-import { Button } from "@/components/ui/button";
+import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
 import type { ColumnDef } from "@/components/grid/types";
 import type { CodeGroupRow } from "@jarvis/shared/validation/admin/code";
 import type { useGridState } from "@/components/grid/useGridState";
 
 type GridApi = ReturnType<typeof useGridState<CodeGroupRow>>;
 
-/**
- * `ColumnDef`를 확장한 master grid 전용 메타.
- * `lockOnExisting` 은 `<DataGrid>` 표준에 없으므로 본 그리드 안에서만 해석한다.
- */
+/** master grid 전용 — lockOnExisting: 기존 행의 code 컬럼을 읽기 전용으로 표시. */
 type CodeGroupColumnDef = ColumnDef<CodeGroupRow> & {
-  /** 기존 행에서 readOnly로 표시할지 (legacy KeyField:1, UpdateEdit:0). */
   lockOnExisting?: boolean;
 };
 
-// Kind option *values* are stable enums; *labels* are i18n'd in the component.
 const KIND_OPTION_VALUES = ["C", "N"] as const;
+
+/** input / select 공통 className (baseline 표준) */
+const INPUT_CLS =
+  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
 
 type FilterValues = {
   q: string;
@@ -81,7 +65,6 @@ type Props = {
   onCopy: () => void;
   onSave: () => void;
   onExport: () => void;
-  /** BIZ_DIVISION 코드 그룹의 활성 항목 (RSC에서 주입). */
   businessDivOptions: BusinessDivOption[];
 };
 
@@ -122,7 +105,6 @@ export function CodeGroupGrid({
     [businessDivOptions],
   );
 
-  // Declarative column spec. 본문 렌더와 Excel export가 모두 이 배열을 사용한다.
   const COLUMNS: CodeGroupColumnDef[] = useMemo(
     () => [
       {
@@ -171,99 +153,90 @@ export function CodeGroupGrid({
         label: t("columns.subCnt"),
         type: "numeric",
         width: 100,
-        editable: false, // readonly count
+        editable: false,
       },
     ],
     [t, BIZ_DIV_OPTIONS, KIND_OPTIONS],
   );
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <DataGridToolbar
+        onExport={onExport}
+        exportLabel={t("toolbar.export")}
+        isExporting={saving}
+      >
         <span className="text-sm text-slate-600">
           {t("title")} — {total.toLocaleString()}
         </span>
-        <div className="flex items-center gap-2">
-          <GridToolbar
-            dirtyCount={grid.dirtyCount}
-            saving={saving}
-            onInsert={onInsert}
-            onCopy={onCopy}
-            onSave={onSave}
-          />
-          <Button size="sm" variant="outline" onClick={onExport} disabled={saving}>
-            {t("toolbar.export")}
-          </Button>
-        </div>
-      </div>
+        <GridToolbar
+          dirtyCount={grid.dirtyCount}
+          saving={saving}
+          onInsert={onInsert}
+          onCopy={onCopy}
+          onSave={onSave}
+        />
+      </DataGridToolbar>
 
-      {/* Filter row */}
-      <form
-        className="flex flex-wrap items-center gap-2 rounded border border-slate-200 bg-slate-50/50 px-2 py-2 text-sm"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onApplyFilters();
-        }}
+      {/* Search form */}
+      <GridSearchForm
+        onSearch={onApplyFilters}
+        isSearching={saving}
+        searchLabel={t("filter.search")}
       >
-        <input
-          type="text"
-          placeholder={t("filter.code")}
-          value={draftFilters.q}
-          onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
-          className="h-8 w-40 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder={t("filter.name")}
-          value={draftFilters.qName}
-          onChange={(e) =>
-            onDraftFilterChange({ ...draftFilters, qName: e.target.value })
-          }
-          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <input
-          type="text"
-          placeholder={t("filter.includesDetailCodeNmPlaceholder")}
-          value={draftFilters.includesDetailCodeNm}
-          onChange={(e) =>
-            onDraftFilterChange({
-              ...draftFilters,
-              includesDetailCodeNm: e.target.value,
-            })
-          }
-          className="h-8 w-48 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          value={draftFilters.kind}
-          onChange={(e) =>
-            onDraftFilterChange({ ...draftFilters, kind: e.target.value })
-          }
-          className="h-8 rounded border border-slate-300 px-2 text-[13px] outline-none focus:ring-2 focus:ring-blue-500"
+        <GridFilterField label={t("filter.code")} className="w-[140px]">
+          <input
+            type="text"
+            value={draftFilters.q}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
+            className={INPUT_CLS}
+          />
+        </GridFilterField>
+        <GridFilterField label={t("filter.name")} className="w-[140px]">
+          <input
+            type="text"
+            value={draftFilters.qName}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, qName: e.target.value })}
+            className={INPUT_CLS}
+          />
+        </GridFilterField>
+        <GridFilterField
+          label={t("filter.includesDetailCodeNmPlaceholder")}
+          className="w-[140px]"
         >
-          <option value="">
-            {t("filter.kind")} ({t("filter.kindAll")})
-          </option>
-          {KIND_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" size="sm">
-          {t("filter.search")}
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
-          {t("filter.reset")}
-        </Button>
-      </form>
+          <input
+            type="text"
+            value={draftFilters.includesDetailCodeNm}
+            onChange={(e) =>
+              onDraftFilterChange({ ...draftFilters, includesDetailCodeNm: e.target.value })
+            }
+            className={INPUT_CLS}
+          />
+        </GridFilterField>
+        <GridFilterField label={t("filter.kind")} className="w-[140px]">
+          <select
+            value={draftFilters.kind}
+            onChange={(e) => onDraftFilterChange({ ...draftFilters, kind: e.target.value })}
+            className={INPUT_CLS}
+          >
+            <option value="">{t("filter.kindAll")}</option>
+            {KIND_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </GridFilterField>
+      </GridSearchForm>
 
+      {/* Grid */}
       <div className="overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
-              <th className="w-10 px-2 py-2">{t("columns.delete")}</th>
-              <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
+              <th className="w-10 px-2 py-2 text-left">No</th>
+              <th className="w-10 px-2 py-2">삭제</th>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
@@ -276,6 +249,7 @@ export function CodeGroupGrid({
                   {col.label}
                 </th>
               ))}
+              <th className="w-16 px-2 py-2 text-left">상태</th>
             </tr>
           </thead>
           <tbody>
@@ -305,7 +279,9 @@ export function CodeGroupGrid({
                       r.state === "new" ? "bg-blue-50/40" : "",
                       r.state === "dirty" ? "bg-amber-50/40" : "",
                       isSelected ? "ring-2 ring-blue-400 ring-inset" : "",
-                    ].join(" ")}
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
                   >
                     <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
                       {i + 1}
@@ -325,43 +301,32 @@ export function CodeGroupGrid({
                         className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                       />
                     </td>
-                    <td className="h-8 w-16 px-2 align-middle">
-                      <RowStatusBadge state={r.state} />
-                    </td>
                     {COLUMNS.map((col) => {
                       const val = row[col.key];
-                      const lockedExisting = col.lockOnExisting && !isNew;
-                      const editable = col.editable !== false && !lockedExisting;
-                      const cellClass = "h-8 p-0 align-middle";
-                      const stop = (e: React.MouseEvent) => e.stopPropagation();
+                      const isLocked = col.lockOnExisting && !isNew;
+                      const editable = col.editable !== false && !isLocked;
+                      const stop = (e: MouseEvent) => e.stopPropagation();
 
-                      // Read-only display (lockOnExisting on existing row OR editable=false)
                       if (!editable) {
                         if (col.type === "numeric") {
-                          const n =
-                            typeof val === "number"
-                              ? val
-                              : val === null || val === undefined
-                                ? null
-                                : Number(val);
+                          const n = typeof val === "number" ? val : val == null ? null : Number(val);
                           return (
                             <td
                               key={col.key}
-                              className="h-8 px-2 align-middle text-right text-[13px] tabular-nums text-slate-700"
                               data-col={col.key}
-                              data-cell-value={n === null ? "" : String(n)}
+                              data-cell-value={n == null ? "" : String(n)}
+                              className="h-8 px-2 align-middle text-right text-[13px] tabular-nums text-slate-700"
                             >
-                              {n === null ? "" : n.toLocaleString()}
+                              {n == null ? "" : n.toLocaleString()}
                             </td>
                           );
                         }
-                        // lockOnExisting text (e.g. 그룹코드 on existing rows)
                         return (
                           <td
                             key={col.key}
-                            className={cellClass}
                             data-col={col.key}
                             data-cell-value={String(val ?? "")}
+                            className="h-8 p-0 align-middle"
                             onClick={stop}
                           >
                             <div className="px-2 py-1 text-[13px] font-mono text-slate-900">
@@ -371,13 +336,12 @@ export function CodeGroupGrid({
                         );
                       }
 
-                      // Editable cells — branch by type
                       return (
                         <td
                           key={col.key}
-                          className={cellClass}
                           data-col={col.key}
                           data-cell-value={String(val ?? "")}
+                          className="h-8 p-0 align-middle"
                           onClick={stop}
                         >
                           {col.type === "text" && (
@@ -421,6 +385,9 @@ export function CodeGroupGrid({
                         </td>
                       );
                     })}
+                    <td className="h-8 w-16 px-2 align-middle">
+                      <RowStatusBadge state={r.state} />
+                    </td>
                   </tr>
                 );
               })
@@ -434,9 +401,7 @@ export function CodeGroupGrid({
 
 /**
  * Excel export용 컬럼 메타 추출 헬퍼.
- *
- * `CodesPageClient`가 `exportToExcel({ columns, ... })`를 호출할 때 사용한다.
- * 여기서 `code`/`name`의 라벨에 붙는 `*` 마커는 표 헤더에서만 의미가 있어 제거.
+ * CodesPageClient가 exportToExcel({ columns, ... })를 호출할 때 사용한다.
  */
 export function getCodeGroupExportColumns(t: (k: string) => string) {
   return [

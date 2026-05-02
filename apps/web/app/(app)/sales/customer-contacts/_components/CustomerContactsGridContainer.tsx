@@ -1,12 +1,16 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
+import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
-import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import type { ColumnDef } from "@/components/grid/types";
 import { listCustomerContacts, saveCustomerContacts } from "../actions";
 import { exportCustomerContactsToExcel } from "../export";
 import type { CustomerContactRow } from "@jarvis/shared/validation/sales/customer-contact";
@@ -77,19 +81,13 @@ function makeBlankRow(): CustomerContactRow {
   };
 }
 
-// Only custName passed to DataGrid's built-in ColumnFilterRow;
-// hpNo/email/date-range are in the DataGridToolbar search form.
-// The "담당자명" toolbar input also writes to custName (chargerNm alias removed — Approach A).
-const FILTERS: FilterDef<CustomerContactRow>[] = [
-  { key: "custName", type: "text", placeholder: "담당자명" },
-];
-
 export function CustomerContactsGridContainer({
   rows: initialRows,
   total: initialTotal,
   limit,
   initialFilters,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales.Common");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
@@ -102,7 +100,18 @@ export function CustomerContactsGridContainer({
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+
+  const [pendingFilters, setPendingFilters] = useState<FilterState>({
+    custName: initialFilters.custName,
+    hpNo: initialFilters.hpNo,
+    email: initialFilters.email,
+    searchYmdFrom: initialFilters.searchYmdFrom,
+    searchYmdTo: initialFilters.searchYmdTo,
+    page: initialFilters.page,
+  });
+  const setPending = (key: keyof FilterState, value: string) =>
+    setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
     (nextPage: number, nextFilters: FilterState) => {
@@ -185,111 +194,80 @@ export function CustomerContactsGridContainer({
     }
   };
 
+  const handleSearch = useCallback(() => {
+    setUrlFilter("custName", pendingFilters.custName);
+    setUrlFilter("hpNo", pendingFilters.hpNo);
+    setUrlFilter("email", pendingFilters.email);
+    setUrlFilter("searchYmdFrom", pendingFilters.searchYmdFrom);
+    setUrlFilter("searchYmdTo", pendingFilters.searchYmdTo);
+    setUrlFilter("page", "1");
+    reload(1, { ...pendingFilters, page: "1" });
+  }, [pendingFilters, setUrlFilter, reload]);
+
   return (
-    <div className="space-y-2">
-      <DataGridToolbar
-        onExport={handleExport}
-        exportLabel={t("Excel.button")}
-        isExporting={isExporting}
-      >
-        {/* Search form — new filter fields added per Task 6 / P2-A */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* "담당자명" input — writes to custName URL key (chargerNm alias removed, Approach A). */}
-          <input
+    <div className="space-y-3">
+      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+        <GridFilterField label={t("Search.chargerNm")} className="w-[210px]">
+          <Input
             type="text"
+            value={pendingFilters.custName}
+            onChange={(e) => setPending("custName", e.target.value)}
             placeholder={t("Search.chargerNm")}
-            value={urlFilters.custName}
-            onChange={(e) => {
-              setUrlFilter("custName", e.target.value);
-              if (!e.target.value) reload(1, { ...urlFilters, custName: "", page: "1" });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, page: "1" });
-              }
-            }}
-            className="h-8 w-36 rounded border border-slate-300 px-2 text-sm"
+            className="h-8"
           />
-          <input
+        </GridFilterField>
+        <GridFilterField label={t("Search.hpNo")} className="w-[140px]">
+          <Input
             type="text"
+            value={pendingFilters.hpNo}
+            onChange={(e) => setPending("hpNo", e.target.value)}
             placeholder={t("Search.hpNo")}
-            value={urlFilters.hpNo}
-            onChange={(e) => {
-              setUrlFilter("hpNo", e.target.value);
-              if (!e.target.value) reload(1, { ...urlFilters, hpNo: "", page: "1" });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, page: "1" });
-              }
-            }}
-            className="h-8 w-36 rounded border border-slate-300 px-2 text-sm"
+            className="h-8"
           />
-          <input
+        </GridFilterField>
+        <GridFilterField label={t("Search.email")} className="w-[140px]">
+          <Input
             type="text"
+            value={pendingFilters.email}
+            onChange={(e) => setPending("email", e.target.value)}
             placeholder={t("Search.email")}
-            value={urlFilters.email}
-            onChange={(e) => {
-              setUrlFilter("email", e.target.value);
-              if (!e.target.value) reload(1, { ...urlFilters, email: "", page: "1" });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, page: "1" });
-              }
-            }}
-            className="h-8 w-44 rounded border border-slate-300 px-2 text-sm"
+            className="h-8"
           />
-          <label className="flex items-center gap-1 text-sm text-slate-600">
-            {t("Search.searchYmdFrom")}
-            <input
-              type="date"
-              value={urlFilters.searchYmdFrom}
-              onChange={(e) => {
-                setUrlFilter("searchYmdFrom", e.target.value);
-                setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, searchYmdFrom: e.target.value, page: "1" });
-              }}
-              className="h-8 rounded border border-slate-300 px-2 text-sm"
-            />
-          </label>
-          <label className="flex items-center gap-1 text-sm text-slate-600">
-            {t("Search.searchYmdTo")}
-            <input
-              type="date"
-              value={urlFilters.searchYmdTo}
-              onChange={(e) => {
-                setUrlFilter("searchYmdTo", e.target.value);
-                setUrlFilter("page", "1");
-                reload(1, { ...urlFilters, searchYmdTo: e.target.value, page: "1" });
-              }}
-              className="h-8 rounded border border-slate-300 px-2 text-sm"
-            />
-          </label>
-        </div>
-      </DataGridToolbar>
+        </GridFilterField>
+        <GridFilterField label={t("Search.searchYmdFrom")} className="w-[160px]">
+          <DatePicker
+            value={pendingFilters.searchYmdFrom || null}
+            onChange={(v) => setPending("searchYmdFrom", v ?? "")}
+            ariaLabel={t("Search.searchYmdFrom")}
+          />
+        </GridFilterField>
+        <GridFilterField label={t("Search.searchYmdTo")} className="w-[160px]">
+          <DatePicker
+            value={pendingFilters.searchYmdTo || null}
+            onChange={(v) => setPending("searchYmdTo", v ?? "")}
+            ariaLabel={t("Search.searchYmdTo")}
+          />
+        </GridFilterField>
+      </GridSearchForm>
 
       <DataGrid<CustomerContactRow>
         rows={rows}
         total={total}
         columns={COLUMNS}
-        filters={FILTERS}
+        filters={[]}
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
-        filterValues={{ custName: urlFilters.custName }}
+        filterValues={{}}
+        onRowDoubleClick={(row) => router.push("/sales/customer-contacts/" + row.id + "/edit")}
+        onExport={handleExport}
+        isExporting={isExporting}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });
         }}
-        onFilterChange={(f) => {
-          const next = { ...urlFilters, custName: f.custName ?? "", page: "1" };
-          setUrlFilter("custName", f.custName ?? "");
-          setUrlFilter("page", "1");
-          reload(1, next);
+        onFilterChange={() => {
+          // Filters managed by GridSearchForm above
         }}
         onSave={async (changes) => {
           // Composite-key validation: (workspaceId + custMcd) is UNIQUE in DB.

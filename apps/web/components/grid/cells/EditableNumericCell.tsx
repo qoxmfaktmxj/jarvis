@@ -55,7 +55,7 @@ export function EditableNumericCell({
         onBlur={commit}
         onKeyDown={handleKey}
         className={cn(
-          "w-full px-2 py-1 text-[13px] outline-none ring-2 ring-blue-500 ring-inset",
+          "w-full px-2 py-1 text-[13px] outline-none ring-2 ring-(--border-focus) ring-inset",
           className,
         )}
       />

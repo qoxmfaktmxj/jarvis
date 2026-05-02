@@ -131,6 +131,33 @@
         "next": "Next",
         "pageInfo": "{page} / {total}"
       }
+    },
+    "Users": {
+      "title": "User Management",
+      "description": "Manage internal users and permissions.",
+      "Grid": {
+        "columns": {
+          "employeeId": "Employee ID",
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "org": "Org",
+          "position": "Position",
+          "jobTitle": "Job Title",
+          "status": "Status",
+          "isOutsourced": "Outsourced",
+          "updatedBy": "Last Modified By",
+          "updatedAt": "Last Modified At"
+        },
+        "status": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "locked": "Locked"
+        },
+        "filters": {
+          "search": "Search by ID/name/email"
+        }
+      }
     }
   },
   "Sales": {
@@ -141,11 +168,20 @@
       "customerContacts": "Contacts",
       "productTypes": "Product Types",
       "productCostMapping": "Product-Cost Mapping",
-      "mailPersons": "Mail Recipients"
+      "mailPersons": "Mail Recipients",
+      "contracts": "Contracts",
+      "contractMonths": "Contract Months",
+      "contractServices": "Service Staff"
     },
     "Customers": {
       "title": "Customers",
       "description": "Manage customer master information.",
+      "Tabs": {
+        "customers": "Contacts ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custCd": "Customer Code",
         "custNm": "Customer Name",
@@ -163,11 +199,33 @@
       },
       "errors": {
         "duplicateCustCd": "Duplicate customer codes: {codes}"
+      },
+      "Edit": {
+        "fields": {
+          "custCd": "Customer Code",
+          "custNm": "Customer Name",
+          "ceoNm": "CEO",
+          "telNo": "Phone",
+          "businessNo": "Business No.",
+          "homepage": "Homepage",
+          "addr1": "Address",
+          "addr2": "Address (Detail)"
+        },
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete?"
       }
     },
     "CustomerContacts": {
       "title": "Contacts",
       "description": "Manage contact information per customer.",
+      "Tabs": {
+        "customer": "Company ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custMcd": "Master Code",
         "custName": "Name",
@@ -180,6 +238,23 @@
         "sabun": "Employee No.",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "Edit": {
+        "fields": {
+          "custName": "Contact Name",
+          "custNm": "Company",
+          "orgNm": "Department",
+          "jikweeNm": "Title",
+          "hpNo": "Mobile",
+          "telNo": "Phone",
+          "email": "Email",
+          "statusYn": "Employed",
+          "switComp": "Moved To"
+        },
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete?"
       }
     },
     "ProductTypes": {
@@ -227,9 +302,53 @@
         "insdate": "Created"
       }
     },
+    "Contracts": {
+      "title": "Contracts",
+      "description": "Manage sales contract master information.",
+      "columns": {
+        "contNm": "Contract Name",
+        "custNm": "Customer",
+        "contGbCd": "Contract Type",
+        "contYmd": "Contract Date",
+        "contSymd": "Start Date",
+        "contEymd": "End Date",
+        "mainContType": "Contract Form",
+        "startAmt": "Contract Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "ContractMonths": {
+      "title": "Contract Months",
+      "description": "Manage planned, expected, and actual data per contract month.",
+      "columns": {
+        "contractId": "Contract ID",
+        "ym": "Year-Month",
+        "planAmt": "Plan Amount",
+        "expectAmt": "Expected Amount",
+        "actualAmt": "Actual Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
+    "ContractServices": {
+      "title": "Service Staff",
+      "description": "Manage service staff allocated per contract.",
+      "columns": {
+        "contractId": "Contract ID",
+        "pjtCd": "Project Code",
+        "servName": "Service Name",
+        "job": "Title",
+        "attendCd": "Attendance Type",
+        "servSabun": "Employee No.",
+        "memo": "Memo",
+        "insdate": "Created"
+      }
+    },
     "Common": {
       "Excel": {
-        "button": "Download Excel",
+        "button": "Download",
+        "downloading": "Downloading…",
         "filename": "{screen}_{date}.xlsx",
         "downloadStarted": "Download started."
       },

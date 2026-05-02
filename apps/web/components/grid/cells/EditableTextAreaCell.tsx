@@ -53,15 +53,15 @@ export function EditableTextAreaCell({
         type="button"
         onClick={() => setEditing(true)}
         className={cn(
-          "flex h-full w-full items-start px-2 py-1 text-left text-[13px] text-slate-900",
-          "hover:bg-slate-100/60",
+          "flex h-full w-full items-start px-2 py-1 text-left text-[13px] text-(--fg-primary)",
+          "hover:bg-(--bg-surface)/60",
           invalid && "ring-1 ring-rose-500 ring-inset",
         )}
       >
         {value ? (
           <span className="line-clamp-3 whitespace-pre-wrap break-words">{value}</span>
         ) : (
-          <span className="text-slate-400">{placeholder ?? ""}</span>
+          <span className="text-(--fg-muted)">{placeholder ?? ""}</span>
         )}
         {required && !value && <span className="ml-1 shrink-0 text-rose-500">*</span>}
       </button>
@@ -75,7 +75,7 @@ export function EditableTextAreaCell({
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={handleKey}
-      className="h-full w-full resize-none bg-white px-2 py-1 text-[13px] text-slate-900 outline-none ring-2 ring-blue-500 ring-inset transition-shadow duration-150"
+      className="h-full w-full resize-none bg-(--bg-page) px-2 py-1 text-[13px] text-(--fg-primary) outline-none ring-2 ring-(--border-focus) ring-inset transition-shadow duration-150"
     />
   );
 }

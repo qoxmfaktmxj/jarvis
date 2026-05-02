@@ -12,7 +12,7 @@ export function EditableBooleanCell({ value, onCommit }: Props) {
         type="checkbox"
         checked={value}
         onChange={(e) => onCommit(e.target.checked)}
-        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+        className="h-4 w-4 rounded border-(--border-default) text-(--brand-primary) focus:ring-2 focus:ring-(--border-focus) focus:ring-offset-0"
       />
     </div>
   );
