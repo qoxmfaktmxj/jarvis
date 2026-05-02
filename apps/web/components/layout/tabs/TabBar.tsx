@@ -23,7 +23,11 @@ export function TabBar() {
 
   return (
     <>
-      <div className="flex items-stretch h-full overflow-hidden" role="tablist">
+      <div
+        className="flex h-full w-full min-w-0 items-stretch overflow-x-auto overflow-y-hidden [scrollbar-width:thin]"
+        data-testid="tabbar-scroll"
+        role="tablist"
+      >
         {tabs.map((tab) => (
           <TabItem
             key={tab.key}
