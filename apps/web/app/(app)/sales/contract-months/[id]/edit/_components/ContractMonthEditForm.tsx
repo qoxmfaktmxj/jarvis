@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { saveContractMonths } from "@/app/(app)/sales/contract-months/actions";
+import { toast } from "@/hooks/use-toast";
 import type { SalesContractMonthRow } from "@jarvis/shared/validation/sales-contract";
 
 // ---------------------------------------------------------------------------
@@ -344,7 +345,11 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
         router.push("/sales/contract-months");
       } else {
         const msg = result.errors?.[0]?.message ?? "저장 실패";
-        alert(msg);
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description: msg,
+        });
       }
     });
   }

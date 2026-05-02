@@ -28,6 +28,7 @@ import {
   type CodeGroupItem,
 } from "@/components/grid/CodeGroupPopupLauncher";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
@@ -315,7 +316,11 @@ function InfraLicensesGridInner({
       if (result.ok) {
         triggerDownload(result.bytes, result.filename);
       } else {
-        alert("엑셀 내보내기 실패: " + result.error);
+        toast({
+          variant: "destructive",
+          title: "엑셀 내보내기 실패",
+          description: result.error,
+        });
       }
     });
   }, [filterValues]);

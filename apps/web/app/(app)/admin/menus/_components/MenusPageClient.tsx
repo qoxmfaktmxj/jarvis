@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { useTranslations } from "next-intl";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import type {
@@ -211,7 +212,11 @@ export function MenusPageClient({
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(t("duplicates", { codes: dups.join(", ") }));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: t("duplicates", { codes: dups.join(", ") }),
+      });
       return;
     }
     startMasterSave(async () => {
@@ -230,7 +235,12 @@ export function MenusPageClient({
           setDetailFullSet([]);
         }
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -268,7 +278,12 @@ export function MenusPageClient({
         // master permCnt 갱신을 위해 master도 reload
         reloadMaster(masterUrlFilters);
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -288,7 +303,11 @@ export function MenusPageClient({
 
   const handleMasterCopy = useCallback(() => {
     if (!selectedMenuId) {
-      alert(tDetail("emptyMaster"));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: tDetail("emptyMaster"),
+      });
       return;
     }
     masterGrid.duplicate(selectedMenuId, (clone) => ({
@@ -305,7 +324,10 @@ export function MenusPageClient({
       .filter((r) => r.state !== "deleted")
       .map((r) => r.data);
     if (rows.length === 0) {
-      alert(t("noDataToExport"));
+      toast({
+        title: "안내",
+        description: t("noDataToExport"),
+      });
       return;
     }
     const columns = getMenuExportColumns(tMaster);
@@ -340,7 +362,10 @@ export function MenusPageClient({
     if (!selectedMenuId) return;
     const rows = detailGrid.rows.map((r) => r.data);
     if (rows.length === 0) {
-      alert(t("noDataToExport"));
+      toast({
+        title: "안내",
+        description: t("noDataToExport"),
+      });
       return;
     }
     const columns = getMenuPermissionExportColumns(tDetail);
