@@ -19,7 +19,8 @@
  * Existing useProductCostMappingGridState hook is unchanged.
  * URL filter integration is at the container level (this component).
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { GridToolbar } from "@/components/grid/GridToolbar";
 import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
@@ -38,6 +39,15 @@ import { toast } from "@/hooks/use-toast";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import {
+  type GridRow,
+  overlayGridRows,
+  rowsToBatch,
+} from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ProductCostMappingRow } from "@jarvis/shared/validation/sales/product-type-cost";
 import { listProductCostMapping, saveProductCostMapping } from "../actions";
 import { exportProductCostMappingToExcel } from "../export";
@@ -74,7 +84,29 @@ export function ProductCostMappingGrid({
   costOptions,
 }: Props) {
   const t = useTranslations("Sales");
-  const grid = useProductCostMappingGridState(initialRows);
+
+  // Tab-aware: cache grid rows so unsaved edits survive tab switches.
+  // URL preserves committed filters/page, so only gridRows + pendingFilters need useTabState.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<ProductCostMappingRow>[]>(
+    "sales.productCostMapping.gridRows",
+    [],
+  );
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/product-cost-mapping";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialOverlay = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const grid = useProductCostMappingGridState(initialRows, {
+    initialRows: initialOverlay,
+    onRowsChange: setGridRowsCache,
+  });
+  useTabDirty(grid.dirtyCount > 0);
+
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
   const [saving, startSave] = useTransition();
@@ -96,7 +128,13 @@ export function ProductCostMappingGrid({
   });
 
   // pendingFilters — staged inputs; committed to URL + reload on [조회]
-  const [pendingFilters, setPendingFilters] = useState({
+  const [pendingFilters, setPendingFilters] = useTabState<{
+    searchCostNm: string;
+    searchYmd: string;
+    productTypeId: string;
+    costId: string;
+    q: string;
+  }>("sales.productCostMapping.pendingFilters", {
     searchCostNm: initialSearchCostNm,
     searchYmd: initialSearchYmd,
     productTypeId: "",
@@ -105,6 +143,36 @@ export function ProductCostMappingGrid({
   });
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  // Save handler for the tab close dialog. Mirrors validateAndSave's dedup guard.
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const liveRows = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, COMPOSITE_KEYS);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveProductCostMapping({
+        creates: changes.creates,
+        updates: changes.updates,
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (

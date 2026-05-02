@@ -26,12 +26,18 @@
  * Composite key dedup: sabun + mailId
  * (enterCd is implicit via workspaceId; name is a display field.)
  */
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { toast } from "@/hooks/use-toast";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
@@ -92,13 +98,59 @@ export function MailPersonsGridContainer({
   const [reloadKey, setReloadKey] = useState(0);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<Omit<FilterValues, "page">>({
-    searchMail: initialFilters?.searchMail ?? "",
-    name: initialFilters?.name ?? "",
-    sabun: initialFilters?.sabun ?? "",
-  });
+  const [pendingFilters, setPendingFilters] = useTabState<Omit<FilterValues, "page">>(
+    "sales.mailPersons.pendingFilters",
+    {
+      searchMail: initialFilters?.searchMail ?? "",
+      name: initialFilters?.name ?? "",
+      sabun: initialFilters?.sabun ?? "",
+    },
+  );
   const setPending = (key: keyof Omit<FilterValues, "page">, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<MailPersonRow>[]>(
+    "sales.mailPersons.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/mail-persons";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const existingMerged = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted" && r.state !== "new")
+        .map((r) => r.data);
+      const allRows = [...changes.creates, ...existingMerged];
+      const dups = findDuplicateKeys(allRows, ["sabun", "mailId"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveMailPersons(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters<FilterValues>({
     defaults: {
@@ -301,6 +353,9 @@ export function MailPersonsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={handlePageChange}
