@@ -4,7 +4,7 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesActivity, salesOpportunity, salesPlanPerf } from "@jarvis/db/schema";
+import { salesActivity, salesOpportunity } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   MarketingByActivityInput,
@@ -33,8 +33,6 @@ async function resolveSalesContext() {
   return { ok: true as const, workspaceId: session.workspaceId };
 }
 
-function ymToYyyymm(ym: string): string { return ym; } // kept for clarity / future formatting
-
 export async function getMarketingByActivity(raw: unknown) {
   const input = MarketingByActivityInput.parse(raw);
   const ctx = await resolveSalesContext();
@@ -51,7 +49,7 @@ export async function getMarketingByActivity(raw: unknown) {
     .where(
       and(
         eq(a.workspaceId, ctx.workspaceId),
-        sql`SUBSTRING(${a.actYmd}, 1, 6) = ${ymToYyyymm(input.ym)}`,
+        sql`SUBSTRING(${a.actYmd}, 1, 6) = ${input.ym}`,
       ),
     )
     .groupBy(a.actTypeCode)
@@ -82,7 +80,7 @@ export async function getMarketingByProduct(raw: unknown) {
     .where(
       and(
         eq(o.workspaceId, ctx.workspaceId),
-        sql`SUBSTRING(${o.contExpecYmd}, 1, 6) = ${ymToYyyymm(input.ym)}`,
+        sql`SUBSTRING(${o.contExpecYmd}, 1, 6) = ${input.ym}`,
       ),
     )
     .groupBy(o.productTypeCode)
@@ -97,7 +95,3 @@ export async function getMarketingByProduct(raw: unknown) {
     })),
   };
 }
-
-// Placeholder — subsequent tasks (6-11) will add remaining aggregation actions here.
-// salesPlanPerf is imported now to avoid drift in the module graph as tasks proceed.
-void salesPlanPerf;
