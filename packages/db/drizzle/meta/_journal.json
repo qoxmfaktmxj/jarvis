@@ -463,6 +463,13 @@
       "when": 1777685561820,
       "tag": "0065_spotty_energizer",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1777686761889,
+      "tag": "0066_burly_living_lightning",
+      "breakpoints": true
     }
   ]
 }

@@ -51,6 +51,8 @@ async function seed() {
     await seedSalesCodes(wsId);
     const { seedSalesStatsCodes } = await import('./sales-stats-codes.js');
     await seedSalesStatsCodes(wsId);
+    const { seedSalesPlanPerf } = await import('./sales-plan-perf.js');
+    await seedSalesPlanPerf(wsId);
     // Re-seed menus + permissions so menu_item changes (badge / keywords /
     // route / sortOrder / label) flow through `pnpm db:seed` idempotently
     // against existing workspaces. seedPermissions is itself idempotent
@@ -225,6 +227,10 @@ async function seed() {
   // ---- Sales Stats Code Groups (Group 6 Statistics — B30010/B30030/B10026/B10027) ----
   const { seedSalesStatsCodes } = await import('./sales-stats-codes.js');
   await seedSalesStatsCodes(wsId);
+
+  // ---- Sales Plan Perf sample data (Group 6 Statistics — 24m × 5 depts × 3 gubun × 3 metric) ----
+  const { seedSalesPlanPerf } = await import('./sales-plan-perf.js');
+  await seedSalesPlanPerf(wsId);
 
   console.log('[seed] Dev seed complete!');
 }

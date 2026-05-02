@@ -13,7 +13,7 @@ export const salesPlanPerf = pgTable(
     orgCd: varchar("org_cd", { length: 20 }).notNull(),
     orgNm: varchar("org_nm", { length: 100 }).notNull(),
     gubunCd: varchar("gubun_cd", { length: 10 }).notNull(),
-    trendGbCd: varchar("trend_gb_cd", { length: 10 }).notNull(),
+    trendGbCd: varchar("trend_gb_cd", { length: 20 }).notNull(),
     amt: bigint("amt", { mode: "number" }).notNull(),
     note: text("note"),
     createdBy: uuid("created_by").references(() => user.id),

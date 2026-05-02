@@ -1,0 +1,1 @@
+ALTER TABLE "sales_plan_perf" ALTER COLUMN "trend_gb_cd" SET DATA TYPE varchar(20);
