@@ -155,3 +155,7 @@ scripts/Export*Chunk.java
 # Internal Excel-data archive migrator (depends on /추가개발/ data dir, also private)
 scripts/_archive/migrate-add-dev-from-xls.ts
 scripts/_archive/migrate-add-dev-from-xls.test.ts
+
+# Sales ETL placeholder runbook (references internal legacy source tables;
+# delivered via private zip channel for internal use)
+scripts/etl/sales/README.md
