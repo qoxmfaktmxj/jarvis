@@ -160,6 +160,46 @@
       }
     }
   },
+  "Projects": {
+    "Common": {
+      "search": "Search",
+      "excel": {
+        "button": "Download",
+        "downloading": "Downloading..."
+      }
+    },
+    "Beacons": {
+      "title": "Beacon Management",
+      "description": "Manage project beacon checkout records and owners.",
+      "searchPlaceholder": "Search beacon no. or project",
+      "filters": {
+        "projectCode": "Project Code",
+        "employee": "Employee No.",
+        "outYn": "Checked Out"
+      }
+    },
+    "History": {
+      "title": "Project Work History",
+      "description": "Manage project staff history, periods, roles, and work notes.",
+      "searchPlaceholder": "Search employee, project, or customer",
+      "filters": {
+        "periodFrom": "Work From",
+        "periodTo": "Work To",
+        "employee": "Employee No.",
+        "projectCode": "Project Code"
+      }
+    },
+    "Modules": {
+      "title": "Project Module Management",
+      "description": "Manage project module assignments.",
+      "searchPlaceholder": "Search employee, project, or module",
+      "filters": {
+        "employee": "Employee No.",
+        "projectCode": "Project Code",
+        "moduleCode": "Module Code"
+      }
+    }
+  },
   "Sales": {
     "nav": {
       "title": "Sales",
