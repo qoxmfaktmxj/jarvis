@@ -89,7 +89,7 @@ export async function seedSalesStatsCodes(workspaceId: string): Promise<void> {
       })))
       .onConflictDoUpdate({
         target: [codeItem.groupId, codeItem.code],
-        set: { name: sql`excluded.name` },
+        set: { name: sql`excluded.name`, sortOrder: sql`excluded.sort_order` },
       });
   }
   console.log(`✓ seeded ${SEEDS.length} sales stats code groups`);
