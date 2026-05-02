@@ -1,6 +1,6 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -10,6 +10,11 @@ import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { listContracts, saveContracts } from "../actions";
 import { exportContractsToExcel } from "../export";
@@ -129,14 +134,63 @@ export function ContractsGridContainer({
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<FilterState>({
-    q: initialFilters.q,
-    customerNo: initialFilters.customerNo,
-    contGbCd: initialFilters.contGbCd,
-    page: initialFilters.page,
-  });
+  const [pendingFilters, setPendingFilters] = useTabState<FilterState>(
+    "sales.contracts.pendingFilters",
+    {
+      q: initialFilters.q,
+      customerNo: initialFilters.customerNo,
+      contGbCd: initialFilters.contGbCd,
+      page: initialFilters.page,
+    },
+  );
   const setPending = (key: keyof FilterState, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<SalesContractRow>[]>(
+    "sales.contracts.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/contracts";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const liveRows = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, [
+        "legacyEnterCd",
+        "legacyContYear",
+        "legacyContNo",
+      ]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveContracts(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: FilterState) => {
@@ -231,6 +285,9 @@ export function ContractsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/contracts/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
