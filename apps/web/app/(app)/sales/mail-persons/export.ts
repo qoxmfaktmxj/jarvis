@@ -8,7 +8,10 @@
  * Filename convention: mail-persons_YYYY-MM-DD.xlsx
  * Sheet name: 메일담당자
  */
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import { exportMailPersonsRows } from "./actions";
 import type {
@@ -16,8 +19,6 @@ import type {
   exportMailPersonsInput,
 } from "@jarvis/shared/validation/sales/mail-person";
 import type { z } from "zod";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 /** Visible columns for export — matches Hidden:0 ibsheet columns (sabun included per legacy JSP). */
 const EXPORT_COLUMNS: ColumnDef<MailPersonRow>[] = [
@@ -36,15 +37,14 @@ export async function exportMailPersonsToExcel(
   const result = await exportMailPersonsRows(rawInput);
   if (!result.ok) return { ok: false, error: "error" in result ? String(result.error) : "export failed" };
 
-  if (result.rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(result.rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   const date = new Date().toISOString().slice(0, 10);
   const filename = `mail-persons_${date}.xlsx`;
 
   const buf = await exportToExcel({
-    rows: result.rows as MailPersonRow[],
+    rows: guard.rows as MailPersonRow[],
     columns: EXPORT_COLUMNS,
     sheetName: "메일담당자",
   });

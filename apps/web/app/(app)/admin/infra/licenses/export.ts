@@ -19,11 +19,13 @@ import {
   exportInfraLicensesInput,
   type InfraLicenseRow,
 } from "@jarvis/shared/validation/infra/license";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { z } from "zod";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Session helpers (mirrors actions.ts)
@@ -113,14 +115,14 @@ export async function exportInfraLicenses(
     .select()
     .from(infraLicense)
     .where(where)
-    .orderBy(infraLicense.symd);
+    .orderBy(infraLicense.symd)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   // Serialize to InfraLicenseRow shape (same as serialize() in actions.ts)
-  const serialized: InfraLicenseRow[] = rows.map((r) => ({
+  const serialized: InfraLicenseRow[] = guard.rows.map((r) => ({
     id: r.id,
     companyId: r.companyId,
     legacyCompanyCd: r.legacyCompanyCd ?? null,

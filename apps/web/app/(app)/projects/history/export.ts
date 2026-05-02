@@ -10,12 +10,14 @@ import {
   type ProjectHistoryRow,
 } from "@jarvis/shared/validation/project";
 import type { z } from "zod";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import { resolveProjectContext } from "../_lib/project-extension-action-utils";
 import { historyVisibleColumns } from "./_components/columns";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 type ExportInput = Omit<z.input<typeof listProjectHistoryInput>, "page" | "limit">;
 
@@ -71,7 +73,7 @@ export async function exportProjectHistoryToExcel(
   const input = listProjectHistoryInput.parse({
     ...rawFilters,
     page: 1,
-    limit: Math.min(MAX_EXPORT_ROWS, 200),
+    limit: 200,
   });
   const conditions = [eq(projectHistory.workspaceId, ctx.workspaceId)];
   if (input.pjtCd) conditions.push(eq(projectHistory.pjtCd, input.pjtCd));
@@ -98,13 +100,12 @@ export async function exportProjectHistoryToExcel(
     .from(projectHistory)
     .where(and(...conditions))
     .orderBy(desc(projectHistory.sdate), desc(projectHistory.edate))
-    .limit(MAX_EXPORT_ROWS);
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
-  const exportRows = rows.map(serialize);
+  const exportRows = guard.rows.map(serialize);
   const buf = await exportToExcel({
     rows: exportRows as unknown as Record<string, unknown>[],
     columns: historyVisibleColumns as unknown as ColumnDef<Record<string, unknown>>[],

@@ -9,11 +9,13 @@ import { salesContractService, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listContractServicesInput } from "@jarvis/shared/validation/sales-contract";
 import type { z } from "zod";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { SalesContractServiceRow } from "@jarvis/shared/validation/sales-contract";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Session helpers (same pattern as actions.ts)
@@ -66,7 +68,7 @@ export async function exportContractServicesToExcel(
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false, error: ctx.error };
 
-  const input = listContractServicesInput.parse({ ...rawFilters, page: 1, limit: MAX_EXPORT_ROWS });
+  const input = listContractServicesInput.parse({ ...rawFilters, page: 1, limit: 200 });
 
   // Build WHERE conditions (same logic as listContractServices, no offset)
   const conditions = [eq(salesContractService.workspaceId, ctx.workspaceId)];
@@ -85,11 +87,11 @@ export async function exportContractServicesToExcel(
     .select()
     .from(salesContractService)
     .where(and(...conditions))
-    .orderBy(salesContractService.symd, salesContractService.createdAt);
+    .orderBy(salesContractService.symd, salesContractService.createdAt)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   // Hidden:0 (visible) columns per legacy ibSheet contractServMgr.jsp
   const EXPORT_COLUMNS: ColumnDef<SalesContractServiceRow>[] = [
@@ -108,7 +110,7 @@ export async function exportContractServicesToExcel(
     { key: "etc1", label: "비고", type: "text" },
   ];
 
-  const exportRows: SalesContractServiceRow[] = rows.map((r) => ({
+  const exportRows: SalesContractServiceRow[] = guard.rows.map((r) => ({
     id: r.id,
     workspaceId: r.workspaceId,
     legacyEnterCd: r.legacyEnterCd ?? null,

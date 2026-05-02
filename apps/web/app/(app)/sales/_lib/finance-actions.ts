@@ -30,10 +30,12 @@ import {
   type SalesPurchaseRow,
   type SalesTaxBillRow,
 } from "@jarvis/shared/validation/sales-finance";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
@@ -592,12 +594,11 @@ async function exportRows<T extends { id: string }>(
 ) {
   const ctx = await resolveSalesContext();
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false as const, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false as const, error: guard.error };
 
   const buf = await exportToExcel({
-    rows: rows as unknown as Record<string, unknown>[],
+    rows: guard.rows as unknown as Record<string, unknown>[],
     columns: columns as unknown as ColumnDef<Record<string, unknown>>[],
     sheetName,
   });
@@ -611,8 +612,15 @@ async function exportRows<T extends { id: string }>(
   };
 }
 
+// TODO(finance-export): listPurchases (and siblings below) Zod-parse their
+// input via `pagingInput.limit.max(200)`, so passing EXPORT_ROW_LIMIT + 1
+// here is rejected before the export ever runs. Pre-existing bug — also
+// broke at limit=50_000. Fix: refactor finance exports to query the DB
+// directly like projects/sales-contracts patterns, or add a separate
+// listForExport variant that skips the paging cap. Out of scope for the
+// row-limit unification sweep.
 export async function exportPurchasesToExcel(rawFilters: unknown) {
-  const res = await listPurchases({ ...(rawFilters as Record<string, unknown>), page: 1, limit: MAX_EXPORT_ROWS });
+  const res = await listPurchases({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
   if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
   return exportRows(
     "purchases",
@@ -635,7 +643,7 @@ export async function exportPurchasesToExcel(rawFilters: unknown) {
 }
 
 export async function exportTaxBillsToExcel(rawFilters: unknown) {
-  const res = await listTaxBills({ ...(rawFilters as Record<string, unknown>), page: 1, limit: MAX_EXPORT_ROWS });
+  const res = await listTaxBills({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
   if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
   return exportRows(
     "tax_bills",
@@ -658,7 +666,7 @@ export async function exportTaxBillsToExcel(rawFilters: unknown) {
 }
 
 export async function exportMonthExpSgaToExcel(rawFilters: unknown) {
-  const res = await listMonthExpSga({ ...(rawFilters as Record<string, unknown>), page: 1, limit: MAX_EXPORT_ROWS });
+  const res = await listMonthExpSga({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
   if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
   return exportRows(
     "month_exp_sga",
@@ -678,7 +686,7 @@ export async function exportMonthExpSgaToExcel(rawFilters: unknown) {
 }
 
 export async function exportPlanDivCostsToExcel(rawFilters: unknown) {
-  const res = await listPlanDivCosts({ ...(rawFilters as Record<string, unknown>), page: 1, limit: MAX_EXPORT_ROWS });
+  const res = await listPlanDivCosts({ ...(rawFilters as Record<string, unknown>), page: 1, limit: EXPORT_ROW_LIMIT + 1 });
   if (!res.ok) return { ok: false as const, error: res.error ?? "export failed" };
   return exportRows(
     "plan_div_costs",
