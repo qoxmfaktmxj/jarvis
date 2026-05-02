@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { and, count, desc, eq, gte, ilike, inArray, lte, or, like } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
+import type { z } from "zod";
 import { db } from "@jarvis/db/client";
 import {
   auditLog,
@@ -228,12 +229,17 @@ function serializePlanDivCost(r: typeof salesPlanDivCost.$inferSelect): SalesPla
   };
 }
 
-export async function listPurchases(rawInput: unknown): Promise<ListResult<SalesPurchaseRow>> {
-  const ctx = await resolveSalesContext();
-  if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 50, error: ctx.error };
-
-  const input = listPurchasesInput.parse(rawInput);
-  const conditions = [eq(salesPurchase.workspaceId, ctx.workspaceId)];
+/**
+ * Shared WHERE-clause builders. Each `build*Conditions` mirrors the filter
+ * logic that `listFoo` previously inlined. Both `listFoo` and the export
+ * sibling now consume the same builder so they cannot drift on filters.
+ *
+ * Inputs are post-Zod-parse for type safety. The workspace scope condition
+ * is included so callers can use the result directly with `and(...rest)`.
+ */
+type PurchasesFilterInput = z.infer<typeof listPurchasesInput>;
+function buildPurchasesConditions(workspaceId: string, input: PurchasesFilterInput) {
+  const conditions = [eq(salesPurchase.workspaceId, workspaceId)];
   if (input.q) {
     const q = `%${input.q}%`;
     const filter = or(
@@ -248,6 +254,54 @@ export async function listPurchases(rawInput: unknown): Promise<ListResult<Sales
     conditions.push(lte(salesPurchase.sdate, input.baseDate));
     conditions.push(gte(salesPurchase.edate, input.baseDate));
   }
+  return conditions;
+}
+
+type TaxBillsFilterInput = z.infer<typeof listTaxBillsInput>;
+function buildTaxBillsConditions(workspaceId: string, input: TaxBillsFilterInput) {
+  const conditions = [eq(salesTaxBill.workspaceId, workspaceId)];
+  if (input.q) {
+    const q = `%${input.q}%`;
+    const filter = or(
+      ilike(salesTaxBill.companyNm, q),
+      ilike(salesTaxBill.legacyContNo, q),
+      ilike(salesTaxBill.pjtNm, q),
+    );
+    if (filter) conditions.push(filter);
+  }
+  if (input.billType) conditions.push(eq(salesTaxBill.billType, input.billType));
+  if (input.ym) conditions.push(eq(salesTaxBill.ym, input.ym));
+  if (input.fromYmd) conditions.push(gte(salesTaxBill.postDate, input.fromYmd));
+  if (input.toYmd) conditions.push(lte(salesTaxBill.postDate, input.toYmd));
+  return conditions;
+}
+
+type MonthExpSgaFilterInput = z.infer<typeof listMonthExpSgaInput>;
+function buildMonthExpSgaConditions(workspaceId: string, input: MonthExpSgaFilterInput) {
+  const conditions = [eq(salesMonthExpSga.workspaceId, workspaceId)];
+  if (input.ym && input.ym.length >= 6) {
+    conditions.push(eq(salesMonthExpSga.yyyy, input.ym.slice(0, 4)));
+    conditions.push(eq(salesMonthExpSga.mm, input.ym.slice(4, 6)));
+  }
+  if (input.costCd) conditions.push(ilike(salesMonthExpSga.costCd, `%${input.costCd}%`));
+  return conditions;
+}
+
+type PlanDivCostsFilterInput = z.infer<typeof listPlanDivCostsInput>;
+function buildPlanDivCostsConditions(workspaceId: string, input: PlanDivCostsFilterInput) {
+  const conditions = [eq(salesPlanDivCost.workspaceId, workspaceId)];
+  if (input.q) conditions.push(ilike(salesPlanDivCost.costCd, `%${input.q}%`));
+  if (input.accountType) conditions.push(eq(salesPlanDivCost.accountType, input.accountType));
+  if (input.year) conditions.push(like(salesPlanDivCost.ym, `${input.year}%`));
+  return conditions;
+}
+
+export async function listPurchases(rawInput: unknown): Promise<ListResult<SalesPurchaseRow>> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 50, error: ctx.error };
+
+  const input = listPurchasesInput.parse(rawInput);
+  const conditions = buildPurchasesConditions(ctx.workspaceId, input);
 
   const where = and(...conditions);
   const offset = (input.page - 1) * input.limit;
@@ -335,20 +389,7 @@ export async function listTaxBills(rawInput: unknown): Promise<ListResult<SalesT
   if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 50, error: ctx.error };
 
   const input = listTaxBillsInput.parse(rawInput);
-  const conditions = [eq(salesTaxBill.workspaceId, ctx.workspaceId)];
-  if (input.q) {
-    const q = `%${input.q}%`;
-    const filter = or(
-      ilike(salesTaxBill.companyNm, q),
-      ilike(salesTaxBill.legacyContNo, q),
-      ilike(salesTaxBill.pjtNm, q),
-    );
-    if (filter) conditions.push(filter);
-  }
-  if (input.billType) conditions.push(eq(salesTaxBill.billType, input.billType));
-  if (input.ym) conditions.push(eq(salesTaxBill.ym, input.ym));
-  if (input.fromYmd) conditions.push(gte(salesTaxBill.postDate, input.fromYmd));
-  if (input.toYmd) conditions.push(lte(salesTaxBill.postDate, input.toYmd));
+  const conditions = buildTaxBillsConditions(ctx.workspaceId, input);
 
   const where = and(...conditions);
   const offset = (input.page - 1) * input.limit;
@@ -435,12 +476,7 @@ export async function listMonthExpSga(rawInput: unknown): Promise<ListResult<Sal
   if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 50, error: ctx.error };
 
   const input = listMonthExpSgaInput.parse(rawInput);
-  const conditions = [eq(salesMonthExpSga.workspaceId, ctx.workspaceId)];
-  if (input.ym && input.ym.length >= 6) {
-    conditions.push(eq(salesMonthExpSga.yyyy, input.ym.slice(0, 4)));
-    conditions.push(eq(salesMonthExpSga.mm, input.ym.slice(4, 6)));
-  }
-  if (input.costCd) conditions.push(ilike(salesMonthExpSga.costCd, `%${input.costCd}%`));
+  const conditions = buildMonthExpSgaConditions(ctx.workspaceId, input);
 
   const where = and(...conditions);
   const offset = (input.page - 1) * input.limit;
@@ -513,10 +549,7 @@ export async function listPlanDivCosts(rawInput: unknown): Promise<ListResult<Sa
   if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 50, error: ctx.error };
 
   const input = listPlanDivCostsInput.parse(rawInput);
-  const conditions = [eq(salesPlanDivCost.workspaceId, ctx.workspaceId)];
-  if (input.q) conditions.push(ilike(salesPlanDivCost.costCd, `%${input.q}%`));
-  if (input.accountType) conditions.push(eq(salesPlanDivCost.accountType, input.accountType));
-  if (input.year) conditions.push(like(salesPlanDivCost.ym, `${input.year}%`));
+  const conditions = buildPlanDivCostsConditions(ctx.workspaceId, input);
 
   const where = and(...conditions);
   const offset = (input.page - 1) * input.limit;
@@ -647,22 +680,7 @@ export async function exportPurchasesToExcel(rawFilters: unknown) {
   // `limit: 200` is throwaway — required to satisfy the Zod cap, but the
   // actual DB query below uses EXPORT_ROW_LIMIT + 1.
   const input = listPurchasesInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
-
-  const conditions = [eq(salesPurchase.workspaceId, ctx.workspaceId)];
-  if (input.q) {
-    const q = `%${input.q}%`;
-    const filter = or(
-      ilike(salesPurchase.purNm, q),
-      ilike(salesPurchase.legacyContNo, q),
-      ilike(salesPurchase.servName, q),
-    );
-    if (filter) conditions.push(filter);
-  }
-  if (input.purType) conditions.push(eq(salesPurchase.purType, input.purType));
-  if (input.baseDate) {
-    conditions.push(lte(salesPurchase.sdate, input.baseDate));
-    conditions.push(gte(salesPurchase.edate, input.baseDate));
-  }
+  const conditions = buildPurchasesConditions(ctx.workspaceId, input);
 
   const rawRows = await db
     .select({ purchase: salesPurchase, contract: { contNm: salesContract.contNm } })
@@ -713,21 +731,7 @@ export async function exportTaxBillsToExcel(rawFilters: unknown) {
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
 
   const input = listTaxBillsInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
-
-  const conditions = [eq(salesTaxBill.workspaceId, ctx.workspaceId)];
-  if (input.q) {
-    const q = `%${input.q}%`;
-    const filter = or(
-      ilike(salesTaxBill.companyNm, q),
-      ilike(salesTaxBill.legacyContNo, q),
-      ilike(salesTaxBill.pjtNm, q),
-    );
-    if (filter) conditions.push(filter);
-  }
-  if (input.billType) conditions.push(eq(salesTaxBill.billType, input.billType));
-  if (input.ym) conditions.push(eq(salesTaxBill.ym, input.ym));
-  if (input.fromYmd) conditions.push(gte(salesTaxBill.postDate, input.fromYmd));
-  if (input.toYmd) conditions.push(lte(salesTaxBill.postDate, input.toYmd));
+  const conditions = buildTaxBillsConditions(ctx.workspaceId, input);
 
   const rawRows = await db
     .select({ taxBill: salesTaxBill, contract: { contNm: salesContract.contNm } })
@@ -774,13 +778,7 @@ export async function exportMonthExpSgaToExcel(rawFilters: unknown) {
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
 
   const input = listMonthExpSgaInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
-
-  const conditions = [eq(salesMonthExpSga.workspaceId, ctx.workspaceId)];
-  if (input.ym && input.ym.length >= 6) {
-    conditions.push(eq(salesMonthExpSga.yyyy, input.ym.slice(0, 4)));
-    conditions.push(eq(salesMonthExpSga.mm, input.ym.slice(4, 6)));
-  }
-  if (input.costCd) conditions.push(ilike(salesMonthExpSga.costCd, `%${input.costCd}%`));
+  const conditions = buildMonthExpSgaConditions(ctx.workspaceId, input);
 
   const rawRows = await db
     .select()
@@ -820,11 +818,7 @@ export async function exportPlanDivCostsToExcel(rawFilters: unknown) {
   if (!ctx.ok) return { ok: false as const, error: ctx.error };
 
   const input = listPlanDivCostsInput.parse({ ...(rawFilters as Record<string, unknown>), page: 1, limit: 200 });
-
-  const conditions = [eq(salesPlanDivCost.workspaceId, ctx.workspaceId)];
-  if (input.q) conditions.push(ilike(salesPlanDivCost.costCd, `%${input.q}%`));
-  if (input.accountType) conditions.push(eq(salesPlanDivCost.accountType, input.accountType));
-  if (input.year) conditions.push(like(salesPlanDivCost.ym, `${input.year}%`));
+  const conditions = buildPlanDivCostsConditions(ctx.workspaceId, input);
 
   const rawRows = await db
     .select()
