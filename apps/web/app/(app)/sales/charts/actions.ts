@@ -12,6 +12,10 @@ import {
   MarketingByProductInput,
   TrendInput,
   PlanPerfChartInput,
+  DashboardSalesTrendInput,
+  DashboardSucProbInput,
+  DashboardOpIncomeInput,
+  DashboardBAInput,
 } from "@jarvis/shared/validation/sales-charts";
 
 async function resolveSessionId(): Promise<string | null> {
@@ -216,4 +220,143 @@ export async function getPlanPerfChart(raw: unknown) {
   // Default metric for the planPerf chart is SALES; gubun pivot is the point.
   const rows = await aggregateMonthlyByGubun(ctx.workspaceId, [input.year], "SALES", input.orgCd);
   return { ok: true as const, rows };
+}
+
+// ---------------------------------------------------------------------------
+// Task 8: Dashboard aggregation actions (5 functions)
+// ---------------------------------------------------------------------------
+
+export async function getDashboardSalesTrend(raw: unknown) {
+  const input = DashboardSalesTrendInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+  const rows = await aggregateMonthlyByGubun(ctx.workspaceId, input.years, "SALES", undefined);
+  return { ok: true as const, rows };
+}
+
+export async function getDashboardOpIncome(raw: unknown) {
+  const input = DashboardOpIncomeInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const p = salesPlanPerf;
+  const yearStr = String(input.year);
+  const result = await db.execute<{ ym: string; total: string }>(sql`
+    SELECT ${p.ym} AS ym, COALESCE(SUM(${p.amt}), 0)::text AS total
+    FROM ${p}
+    WHERE ${p.workspaceId} = ${ctx.workspaceId}
+      AND SUBSTRING(${p.ym}, 1, 4) = ${yearStr}
+      AND ${p.trendGbCd} = 'OP_INCOME'
+      AND ${p.gubunCd} = 'ACTUAL'
+    GROUP BY ${p.ym}
+    ORDER BY ${p.ym}
+  `);
+
+  const acc = new Map<string, { ym: string; opIncome: number }>();
+  for (let m = 1; m <= 12; m += 1) {
+    const ym = `${input.year}${String(m).padStart(2, "0")}`;
+    acc.set(ym, { ym, opIncome: 0 });
+  }
+  for (const r of result.rows) {
+    const row = acc.get(r.ym);
+    if (row) row.opIncome = Number(r.total) || 0;
+  }
+  return { ok: true as const, rows: Array.from(acc.values()) };
+}
+
+export async function getDashboardBA(raw: unknown) {
+  const input = DashboardBAInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const p = salesPlanPerf;
+  const result = await db.execute<{ org_nm: string; gubun_cd: string; total: string }>(sql`
+    SELECT ${p.orgNm} AS org_nm, ${p.gubunCd} AS gubun_cd, COALESCE(SUM(${p.amt}), 0)::text AS total
+    FROM ${p}
+    WHERE ${p.workspaceId} = ${ctx.workspaceId}
+      AND ${p.ym} = ${input.ym}
+      AND ${p.trendGbCd} = 'SALES'
+      AND ${p.gubunCd} IN ('PLAN', 'ACTUAL')
+    GROUP BY ${p.orgNm}, ${p.gubunCd}
+    ORDER BY ${p.orgNm}
+  `);
+
+  const acc = new Map<string, { orgNm: string; plan: number; actual: number }>();
+  for (const r of result.rows) {
+    const row = acc.get(r.org_nm) ?? { orgNm: r.org_nm, plan: 0, actual: 0 };
+    const v = Number(r.total) || 0;
+    if (r.gubun_cd === "PLAN") row.plan = v;
+    else if (r.gubun_cd === "ACTUAL") row.actual = v;
+    acc.set(r.org_nm, row);
+  }
+  return { ok: true as const, rows: Array.from(acc.values()) };
+}
+
+// SucProb buckets opportunity contImplPer (numeric 0-100) into B10026 grades.
+export async function getDashboardSucProb(raw: unknown) {
+  const input = DashboardSucProbInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const o = salesOpportunity;
+  const result = await db.execute<{ grade_code: string | null; cnt: string; total_amt: string }>(sql`
+    SELECT
+      CASE
+        WHEN ${o.contImplPer} >= 90 THEN 'A'
+        WHEN ${o.contImplPer} >= 70 THEN 'B'
+        WHEN ${o.contImplPer} >= 50 THEN 'C'
+        WHEN ${o.contImplPer} IS NOT NULL THEN 'D'
+        ELSE NULL
+      END AS grade_code,
+      COUNT(*)::text AS cnt,
+      COALESCE(SUM(${o.contExpecAmt}), 0)::text AS total_amt
+    FROM ${o}
+    WHERE ${o.workspaceId} = ${ctx.workspaceId}
+      AND SUBSTRING(${o.contExpecYmd}, 1, 6) = ${input.ym}
+    GROUP BY grade_code
+    ORDER BY grade_code NULLS LAST
+  `);
+
+  return {
+    ok: true as const,
+    rows: result.rows.map((r) => ({
+      gradeCode: r.grade_code,
+      count: Number(r.cnt) || 0,
+      totalAmt: Number(r.total_amt) || 0,
+    })),
+  };
+}
+
+// SucProbHap collapses A/B → HIGH, C → MED, D → LOW (B10027).
+export async function getDashboardSucProbHap(raw: unknown) {
+  const input = DashboardSucProbInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const o = salesOpportunity;
+  const result = await db.execute<{ grade_code: string | null; cnt: string; total_amt: string }>(sql`
+    SELECT
+      CASE
+        WHEN ${o.contImplPer} >= 70 THEN 'HIGH'
+        WHEN ${o.contImplPer} >= 50 THEN 'MED'
+        WHEN ${o.contImplPer} IS NOT NULL THEN 'LOW'
+        ELSE NULL
+      END AS grade_code,
+      COUNT(*)::text AS cnt,
+      COALESCE(SUM(${o.contExpecAmt}), 0)::text AS total_amt
+    FROM ${o}
+    WHERE ${o.workspaceId} = ${ctx.workspaceId}
+      AND SUBSTRING(${o.contExpecYmd}, 1, 6) = ${input.ym}
+    GROUP BY grade_code
+    ORDER BY grade_code NULLS LAST
+  `);
+
+  return {
+    ok: true as const,
+    rows: result.rows.map((r) => ({
+      gradeCode: r.grade_code,
+      count: Number(r.cnt) || 0,
+      totalAmt: Number(r.total_amt) || 0,
+    })),
+  };
 }

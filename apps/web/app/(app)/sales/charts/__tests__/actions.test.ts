@@ -76,11 +76,14 @@ vi.mock("@jarvis/db/schema", () => ({
     contExpecYmd: "so.contExpecYmd",
     contExpecAmt: "so.contExpecAmt",
     productTypeCode: "so.productTypeCode",
+    contImplPer: "so.contImplPer",
+    orgNm: "so.orgNm",
   },
   salesPlanPerf: {
     workspaceId: "spp.workspaceId",
     ym: "spp.ym",
     orgCd: "spp.orgCd",
+    orgNm: "spp.orgNm",
     gubunCd: "spp.gubunCd",
     trendGbCd: "spp.trendGbCd",
     amt: "spp.amt",
@@ -390,6 +393,66 @@ describe("getSaleTrend / getProfitTrend / getPlanPerfChart", () => {
       expect(typeof r.plan).toBe("number");
       expect(typeof r.actual).toBe("number");
       expect(typeof r.forecast).toBe("number");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 8: Dashboard actions (5 functions)
+// ---------------------------------------------------------------------------
+import {
+  getDashboardSalesTrend, getDashboardSucProb, getDashboardSucProbHap,
+  getDashboardOpIncome, getDashboardBA,
+} from "../actions";
+
+describe("dashboard actions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthorizedSession();
+    dbExecuteMock.mockResolvedValue({ rows: [] });
+  });
+
+  it("getDashboardSalesTrend returns rows with ym + plan/actual/forecast", async () => {
+    const res = await getDashboardSalesTrend({ years: [2024] });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(12);
+  });
+
+  it("getDashboardOpIncome returns 12 monthly rows for the year", async () => {
+    const res = await getDashboardOpIncome({ year: 2024 });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(12);
+    for (const r of res.rows) expect(typeof r.opIncome).toBe("number");
+  });
+
+  it("getDashboardBA returns one row per organization with plan + actual", async () => {
+    const res = await getDashboardBA({ ym: "202406" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    for (const r of res.rows) {
+      expect(typeof r.orgNm).toBe("string");
+      expect(typeof r.plan).toBe("number");
+      expect(typeof r.actual).toBe("number");
+    }
+  });
+
+  it("getDashboardSucProb returns rows grouped by probability bucket", async () => {
+    const res = await getDashboardSucProb({ ym: "202406" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    for (const r of res.rows) {
+      expect(["A", "B", "C", "D", null]).toContain(r.gradeCode);
+    }
+  });
+
+  it("getDashboardSucProbHap returns rows grouped by HIGH/MED/LOW", async () => {
+    const res = await getDashboardSucProbHap({ ym: "202406" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    for (const r of res.rows) {
+      expect(["HIGH", "MED", "LOW", null]).toContain(r.gradeCode);
     }
   });
 });
