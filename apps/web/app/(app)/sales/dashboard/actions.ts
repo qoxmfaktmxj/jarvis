@@ -179,7 +179,7 @@ export async function getDashboardBA(
       ),
     );
 
-  const orgRows = await db
+  const orgOppRows = await db
     .select({
       orgNm: salesOpportunity.orgNm,
       c: count(),
@@ -193,14 +193,33 @@ export async function getDashboardBA(
     )
     .groupBy(salesOpportunity.orgNm);
 
+  // Activity counts per org via opportunityId → opportunity.orgNm join.
+  const orgActRows = await db
+    .select({
+      orgNm: salesOpportunity.orgNm,
+      c: count(),
+    })
+    .from(salesActivity)
+    .innerJoin(salesOpportunity, eq(salesActivity.opportunityId, salesOpportunity.id))
+    .where(
+      and(
+        eq(salesActivity.workspaceId, ctx.workspaceId),
+        sql`SUBSTRING(${salesActivity.actYmd}, 1, 6) = ${input.ym}`,
+      ),
+    )
+    .groupBy(salesOpportunity.orgNm);
+
+  const actByOrg = new Map<string | null, number>();
+  for (const r of orgActRows) actByOrg.set(r.orgNm ?? null, Number(r.c) || 0);
+
   return {
     ok: true,
     activityCount: Number(actTotal?.c ?? 0),
     opportunityCount: Number(oppTotal?.c ?? 0),
     opportunityAmt: Number(oppTotal?.amt ?? 0),
-    byOrg: orgRows.map((r) => ({
+    byOrg: orgOppRows.map((r) => ({
       orgNm: r.orgNm ?? null,
-      activityCount: 0,
+      activityCount: actByOrg.get(r.orgNm ?? null) ?? 0,
       opportunityCount: Number(r.c) || 0,
     })),
   };

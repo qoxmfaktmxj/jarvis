@@ -8,6 +8,8 @@ vi.mock("@jarvis/db/client", () => {
     const ret = () => chain;
     chain.select = vi.fn(ret);
     chain.from = vi.fn(ret);
+    chain.innerJoin = vi.fn(ret);
+    chain.leftJoin = vi.fn(ret);
     chain.where = vi.fn(ret);
     chain.groupBy = vi.fn(ret);
     chain.orderBy = vi.fn(ret);
