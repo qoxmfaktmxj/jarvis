@@ -5,8 +5,14 @@ import { afterEach, beforeEach, describe, it, expect, vi } from "vitest";
 afterEach(() => cleanup());
 import { EmployeePicker } from "../EmployeePicker";
 
+const HIT = {
+  userId: "11111111-1111-1111-1111-111111111111",
+  sabun: "S001",
+  name: "홍길동",
+  email: "hong@x.com",
+};
 const mockSearch = vi.fn(async (q: string) => {
-  if (q === "ho") return [{ sabun: "S001", name: "홍길동", email: "hong@x.com" }];
+  if (q === "ho") return [HIT];
   return [];
 });
 
@@ -40,7 +46,7 @@ describe("EmployeePicker", () => {
     await screen.findByText("홍길동");
     fireEvent.keyDown(screen.getByRole("combobox"), { key: "ArrowDown" });
     fireEvent.keyDown(screen.getByRole("combobox"), { key: "Enter" });
-    expect(onSelect).toHaveBeenCalledWith({ sabun: "S001", name: "홍길동", email: "hong@x.com" });
+    expect(onSelect).toHaveBeenCalledWith(HIT);
   });
 
   it("closes the listbox on Escape without selecting", async () => {

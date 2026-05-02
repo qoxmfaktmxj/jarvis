@@ -1,13 +1,21 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
 import { exportCustomersToExcel } from "../export";
@@ -99,6 +107,7 @@ export function CustomersGridContainer({
   initialFilters = {},
   codeOptions,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales");
   const tCommon = useTranslations("Sales.Common");
 
@@ -129,7 +138,14 @@ export function CustomersGridContainer({
   const [isSearching, startTransition] = useTransition();
 
   // pendingFilters — staged inputs; committed to URL + reload on [조회]
-  const [pendingFilters, setPendingFilters] = useState({
+  const [pendingFilters, setPendingFilters] = useTabState<{
+    custNm: string;
+    custKindCd: string;
+    custDivCd: string;
+    chargerNm: string;
+    searchYmdFrom: string;
+    searchYmdTo: string;
+  }>("sales.customers.pendingFilters", {
     custNm: initialFilters.custNm ?? "",
     custKindCd: initialFilters.custKindCd ?? "",
     custDivCd: initialFilters.custDivCd ?? "",
@@ -139,6 +155,50 @@ export function CustomersGridContainer({
   });
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  // Cached grid row state — survives tab switches. URL persists committed filters/page.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<CustomerRow>[]>(
+    "sales.customers.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/customers";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      // custCd dedup guard mirrored from the inline DataGrid onSave below.
+      const liveRows = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, ["custCd"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveCustomers(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   // Derive current filter values from URL state
   const currentPage = Math.max(1, Number(values.page) || 1);
@@ -175,7 +235,7 @@ export function CustomersGridContainer({
     { key: "telNo", label: t("Customers.columns.telNo"), type: "text", width: 130, editable: true },
     {
       key: "counts",
-      label: "탭",
+      label: tCommon("tabLabel"),
       type: "readonly",
       width: 220,
       render: (row) =>
@@ -211,12 +271,16 @@ export function CustomersGridContainer({
       if (r.ok) {
         triggerDownload(r.bytes, r.filename);
       } else {
-        alert(r.error);
+        toast({
+          variant: "destructive",
+          title: tCommon("Excel.exportFailed"),
+          description: tCommon("Excel.exportFailedDesc", { message: r.error ?? "" }),
+        });
       }
     } finally {
       setIsExporting(false);
     }
-  }, [values]);
+  }, [values, tCommon]);
 
   const handleSearch = useCallback(() => {
     setValue("custNm", pendingFilters.custNm);
@@ -238,7 +302,7 @@ export function CustomersGridContainer({
             onChange={(e) => setPending("custKindCd", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.custKind.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -250,7 +314,7 @@ export function CustomersGridContainer({
             onChange={(e) => setPending("custDivCd", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.custDiv.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -275,19 +339,17 @@ export function CustomersGridContainer({
           />
         </GridFilterField>
         <GridFilterField label={tCommon("Search.searchYmdFrom")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdFrom}
-            onChange={(e) => setPending("searchYmdFrom", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdFrom || null}
+            onChange={(v) => setPending("searchYmdFrom", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdFrom")}
           />
         </GridFilterField>
         <GridFilterField label={tCommon("Search.searchYmdTo")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdTo}
-            onChange={(e) => setPending("searchYmdTo", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdTo || null}
+            onChange={(v) => setPending("searchYmdTo", v ?? "")}
+            ariaLabel={tCommon("Search.searchYmdTo")}
           />
         </GridFilterField>
       </GridSearchForm>
@@ -301,6 +363,10 @@ export function CustomersGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
+        onRowDoubleClick={(row) => router.push("/sales/customers/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => {

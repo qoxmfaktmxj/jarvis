@@ -18,7 +18,8 @@
  *   - 협업/보안/IDP(6): idp/abhr/work/sec/doc/dis
  *   - 메타(1): createdAt
  */
-import { Suspense, useCallback, useMemo, useState, useTransition } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -28,9 +29,15 @@ import {
   type CodeGroupItem,
 } from "@/components/grid/CodeGroupPopupLauncher";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, GroupHeader, GridChanges, GridSaveResult } from "@/components/grid/types";
 import type { InfraLicenseRow } from "@jarvis/shared/validation/infra/license";
 import { listInfraLicenses, saveInfraLicenses } from "../actions";
@@ -122,14 +129,19 @@ function InfraLicensesGridInner({
   const [exporting, startExport] = useTransition();
   const [dupError, setDupError] = useState<string | null>(null);
   const [isSearching, startReload] = useTransition();
-  const [pendingFilters, setPendingFilters] = useState({
+  const [pendingFilters, setPendingFilters] = useTabState<{
+    q: string;
+    searchDevGbCd: string;
+  }>("infra.licenses.pendingFilters", {
     q: initialQ,
     searchDevGbCd: initialSearchDevGbCd,
   });
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
-  // URL-persistent filter state (useSearchParams requires Suspense boundary)
+  // URL-persistent filter state (useSearchParams requires Suspense boundary).
+  // Filters/page are URL-scoped; the URL itself is preserved by TabContext as
+  // tab.url, so committed filter state survives tab switches without useTabState.
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters({
     defaults: {
       q: initialQ,
@@ -137,6 +149,56 @@ function InfraLicensesGridInner({
       page: String(initialPage),
     },
   });
+
+  // Cached grid row state (dirty/new/deleted) — survives tab switches.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<InfraLicenseRow>[]>(
+    "infra.licenses.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/admin/infra/licenses";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      // Composite-key dedup guard mirrored from handleSave below.
+      if (changes.creates.length > 0) {
+        const dups = findDuplicateKeys(
+          changes.creates as unknown as Record<string, unknown>[],
+          ["companyId", "devGbCode", "symd"],
+        );
+        if (dups.length > 0) {
+          return { ok: false };
+        }
+      }
+      const result = await saveInfraLicenses({
+        creates: changes.creates,
+        updates: changes.updates,
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const devGbCodeItems = useMemo(() => toCodeGroupItems(devGbOptions), [devGbOptions]);
 
@@ -315,7 +377,11 @@ function InfraLicensesGridInner({
       if (result.ok) {
         triggerDownload(result.bytes, result.filename);
       } else {
-        alert("엑셀 내보내기 실패: " + result.error);
+        toast({
+          variant: "destructive",
+          title: "엑셀 내보내기 실패",
+          description: result.error,
+        });
       }
     });
   }, [filterValues]);
@@ -391,6 +457,9 @@ function InfraLicensesGridInner({
         page={page}
         limit={limit}
         makeBlankRow={makeBlankInfraLicense}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={exporting}
         onPageChange={(nextPage) => {

@@ -21,10 +21,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
 import { Capy } from "./Capy";
 import { setSidebar, useSidebar } from "./uiPrefs";
 import { resolveIcon } from "./icon-map";
+import { useTabContext } from "./tabs/TabContext";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
@@ -103,9 +105,30 @@ function NavButton({
   expanded: boolean;
 }) {
   const { Icon, href, label, badge } = item;
+  const router = useRouter();
+  const { openTab } = useTabContext();
+
+  const handleClick = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Allow modifier-clicks (cmd/ctrl/shift/middle-click) to behave normally —
+    // user wants browser default (new tab/window). Don't intercept those.
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+
+    e.preventDefault();
+    const ok = await openTab(href, label);
+    if (ok) {
+      router.push(href);
+    } else if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[Sidebar] openTab refused for ${href} — likely all 5 tabs are pinned.`,
+      );
+    }
+  };
+
   return (
     <Link
       href={href}
+      onClick={handleClick}
       aria-current={active ? "page" : undefined}
       title={!expanded ? label : undefined}
       className="group relative flex items-center rounded-lg transition-colors"
@@ -119,6 +142,7 @@ function NavButton({
         fontSize: 13.5,
       }}
     >
+      {/* keep all existing children unchanged: indicator, icon, label, badge */}
       {active && !expanded ? (
         <span
           aria-hidden

@@ -6,6 +6,7 @@ import type { LeaveSummaryRow } from "@/lib/queries/contractors";
 import { LeaveMasterTable } from "./LeaveMasterTable";
 import { LeaveDetailTable, type DetailRow } from "./LeaveDetailTable";
 import { saveLeaveBatch } from "@/app/(app)/contractors/leaves/actions";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 type Query = { referenceDate: string; name: string };
 
@@ -110,13 +111,11 @@ export function LeaveManagementPanel({
         <label className="text-xs text-surface-600">
           {t("search.referenceDate")}
         </label>
-        <input
-          type="date"
-          value={query.referenceDate}
-          onChange={(e) =>
-            setQuery((q) => ({ ...q, referenceDate: e.target.value }))
+        <DatePicker
+          value={query.referenceDate || null}
+          onChange={(v) =>
+            setQuery((q) => ({ ...q, referenceDate: v ?? "" }))
           }
-          className="rounded border border-surface-300 px-2 py-1 text-xs"
         />
         <label className="ml-2 text-xs text-surface-600">
           {t("search.name")}

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface DeleteNoticeButtonProps {
   noticeId: string;
@@ -23,9 +24,11 @@ export function DeleteNoticeButton({ noticeId }: DeleteNoticeButtonProps) {
       const res = await fetch(`/api/notices/${noticeId}`, { method: 'DELETE' });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        if (typeof window !== 'undefined') {
-          window.alert(body?.error ?? 'Failed to delete');
-        }
+        toast({
+          variant: 'destructive',
+          title: '삭제 실패',
+          description: body?.error ?? 'Failed to delete',
+        });
         return;
       }
       router.push('/notices');

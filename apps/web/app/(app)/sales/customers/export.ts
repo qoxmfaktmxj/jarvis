@@ -9,11 +9,13 @@ import { salesCustomer, salesCustomerCharger, auditLog } from "@jarvis/db/schema
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { exportCustomersInput } from "@jarvis/shared/validation/sales/customer";
 import type { z } from "zod";
-import { exportToExcel } from "@/lib/server/export-excel";
+import {
+  EXPORT_ROW_LIMIT,
+  enforceExportLimit,
+  exportToExcel,
+} from "@/lib/server/export-excel";
 import type { ColumnDef } from "@/components/grid/types";
 import type { CustomerRow } from "@jarvis/shared/validation/sales/customer";
-
-const MAX_EXPORT_ROWS = 50_000;
 
 // ---------------------------------------------------------------------------
 // Session helpers (same pattern as actions.ts)
@@ -98,11 +100,11 @@ export async function exportCustomersToExcel(
     .select()
     .from(salesCustomer)
     .where(and(...conditions))
-    .orderBy(salesCustomer.custCd);
+    .orderBy(salesCustomer.custCd)
+    .limit(EXPORT_ROW_LIMIT + 1);
 
-  if (rows.length >= MAX_EXPORT_ROWS) {
-    return { ok: false, error: `Export exceeds ${MAX_EXPORT_ROWS} rows. Refine your filter.` };
-  }
+  const guard = enforceExportLimit(rows);
+  if (!guard.ok) return { ok: false, error: guard.error };
 
   // Hidden:0 (visible) columns per legacy ibSheet bizActCustCompanyMgr.jsp.
   // Pass resolved Korean display strings — NOT i18n keys.
@@ -115,7 +117,7 @@ export async function exportCustomersToExcel(
     { key: "createdAt", label: "등록일자", type: "text" },
   ];
 
-  const exportRows: CustomerRow[] = rows.map((r) => ({
+  const exportRows: CustomerRow[] = guard.rows.map((r) => ({
     id: r.id,
     custCd: r.custCd,
     custNm: r.custNm,

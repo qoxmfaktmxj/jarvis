@@ -5,6 +5,7 @@ export const activityRow = z.object({
   bizActNm: z.string().min(1).max(500),
   opportunityId: z.string().uuid().nullable(),
   customerId: z.string().uuid().nullable(),
+  contactId: z.string().uuid().nullable().optional(),
   customerName: z.string().nullable(),
   actYmd: z.string().nullable(),
   actTypeCode: z.string().nullable(),
@@ -24,6 +25,8 @@ export const listActivitiesInput = z.object({
   opportunityId: z.string().uuid().optional(),
   actTypeCode: z.string().optional(),
   bizStepCode: z.string().optional(),
+  customerId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(200).default(50),
 });

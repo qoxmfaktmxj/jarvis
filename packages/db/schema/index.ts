@@ -39,8 +39,17 @@ export * from "./quiz-season.js";
 export * from "./sales-customer.js";
 export * from "./sales-product-type.js";
 export * from "./sales-mail-person.js";
+export * from "./sales-freelancer.js";
+export * from "./sales-cloud-headcount.js";
 // Phase-Sales P1.5 Task 5: 인프라 운영 라이선스 (TBIZ500) — admin/infra/licenses
 export * from "./infra-license.js";
 // Phase-Sales P2: 영업기회 (TBIZ110/112) + 영업활동 (TBIZ115/116)
 export * from "./sales-opportunity.js";
 export * from "./sales-activity.js";
+// Phase-Sales PR-1A: 계약 (TBIZ030/031/032/010)
+export * from "./sales-contract.js";
+export * from "./sales-contract-extra.js";
+// Phase-Sales Group 2: contract finance settlement (TBIZ027/028/038/040/041/046)
+export * from "./sales-finance.js";
+// Phase-Sales Group 6: 통계 차트 raw data (TBIZ_PLAN_PERF, B30010/B30030)
+export * from "./sales-plan-perf.js";

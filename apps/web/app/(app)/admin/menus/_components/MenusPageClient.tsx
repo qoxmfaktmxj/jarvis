@@ -14,12 +14,23 @@
  *
  * 패턴 출처: apps/web/app/(app)/admin/codes/_components/CodesPageClient.tsx.
  */
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { UnsavedChangesDialog } from "@/components/grid/UnsavedChangesDialog";
+import {
+  type GridRow,
+  overlayGridRows,
+  rowsToBatch,
+} from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type {
   MenuRow,
   MenuPermissionRow,
@@ -84,7 +95,29 @@ export function MenusPageClient({
   const tMaster = useTranslations("Admin.Menus.masterSection");
   const tDetail = useTranslations("Admin.Menus.detailSection");
 
-  const masterGrid = useMenuGridState(initialMenus);
+  // Master grid rows cache — survives tab switches via sessionStorage. Detail
+  // grid is per-selected-menu and re-fetched on selection, so it is not cached.
+  const [masterRowsCache, setMasterRowsCache] = useTabState<GridRow<MenuRow>[]>(
+    "admin.menus.masterGridRows",
+    [],
+  );
+  const masterTabKeyRef = useRef<string | null>(null);
+  const masterPathname = usePathname() ?? "/admin/menus";
+  const masterTabKey = pathnameToTabKey(masterPathname);
+  const initialMasterRows = useMemo(() => {
+    if (masterTabKeyRef.current === masterTabKey) return undefined;
+    masterTabKeyRef.current = masterTabKey;
+    return overlayGridRows(
+      initialMenus,
+      masterRowsCache.length > 0 ? masterRowsCache : undefined,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masterTabKey]);
+
+  const masterGrid = useMenuGridState(initialMenus, {
+    initialRows: initialMasterRows,
+    onRowsChange: setMasterRowsCache,
+  });
   const detailGrid = useMenuPermissionGridState([]);
 
   const [masterTotal, setMasterTotal] = useState(initialMenuTotal);
@@ -114,6 +147,45 @@ export function MenusPageClient({
   const [, startDetailReload] = useTransition();
 
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
+
+  // Tab dirty marker reflects EITHER master or detail dirty so the user sees
+  // the unsaved-changes indicator regardless of which grid they edited.
+  useTabDirty(masterGrid.dirtyCount > 0 || detailGrid.dirtyCount > 0);
+
+  // Register a save handler for the tab close dialog. We save master only —
+  // detail save requires a selectedMenuId + diff logic that is harder to
+  // serialize from a stale ref; users with detail edits will still be prompted
+  // by the existing UnsavedChangesDialog when switching master rows.
+  const ctx = useTabContext();
+  const masterRowsCacheRef = useRef(masterRowsCache);
+  masterRowsCacheRef.current = masterRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(masterTabKey, async () => {
+      const changes = rowsToBatch(masterRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      // Mirror handleMasterSave's dedup guard so the close-dialog save matches
+      // the explicit save button's validation.
+      const liveRows = masterRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, ["code"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveMenus({
+        creates: changes.creates,
+        updates: changes.updates,
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, masterTabKey]);
 
   // ---- Master reload ----
   const reloadMaster = useCallback(
@@ -211,7 +283,11 @@ export function MenusPageClient({
       .map((r) => r.data);
     const dups = findDuplicateKeys(liveRows, ["code"]);
     if (dups.length > 0) {
-      alert(t("duplicates", { codes: dups.join(", ") }));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: t("duplicates", { codes: dups.join(", ") }),
+      });
       return;
     }
     startMasterSave(async () => {
@@ -230,7 +306,12 @@ export function MenusPageClient({
           setDetailFullSet([]);
         }
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -268,7 +349,12 @@ export function MenusPageClient({
         // master permCnt 갱신을 위해 master도 reload
         reloadMaster(masterUrlFilters);
       } else {
-        alert(result.errors?.map((e) => e.message).join("\n") ?? t("saveError"));
+        toast({
+          variant: "destructive",
+          title: "저장 실패",
+          description:
+            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+        });
       }
     });
   }, [
@@ -288,7 +374,11 @@ export function MenusPageClient({
 
   const handleMasterCopy = useCallback(() => {
     if (!selectedMenuId) {
-      alert(tDetail("emptyMaster"));
+      toast({
+        variant: "destructive",
+        title: "입력 확인",
+        description: tDetail("emptyMaster"),
+      });
       return;
     }
     masterGrid.duplicate(selectedMenuId, (clone) => ({
@@ -305,7 +395,10 @@ export function MenusPageClient({
       .filter((r) => r.state !== "deleted")
       .map((r) => r.data);
     if (rows.length === 0) {
-      alert(t("noDataToExport"));
+      toast({
+        title: "안내",
+        description: t("noDataToExport"),
+      });
       return;
     }
     const columns = getMenuExportColumns(tMaster);
@@ -340,7 +433,10 @@ export function MenusPageClient({
     if (!selectedMenuId) return;
     const rows = detailGrid.rows.map((r) => r.data);
     if (rows.length === 0) {
-      alert(t("noDataToExport"));
+      toast({
+        title: "안내",
+        description: t("noDataToExport"),
+      });
       return;
     }
     const columns = getMenuPermissionExportColumns(tDetail);

@@ -6,7 +6,8 @@
  * admin/users/page.tsx에서 import해 사용.
  * Follows the same shape as admin/companies/_components/CompaniesGridContainer.tsx.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type UserRow } from "@jarvis/shared/validation/admin/user";
 import { listUsers, saveUsers } from "../actions";
@@ -14,7 +15,12 @@ import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 
 type User = UserRow;
@@ -74,21 +80,77 @@ export function UsersGridContainer({
 
   const [rows, setRows] = useState<User[]>(initialRows);
   const [totalCount, setTotalCount] = useState(initialTotal);
-  const [page, setPage] = useState(1);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({
-    q: initialFilters.q,
-    status: initialFilters.status,
-    orgId: initialFilters.orgId,
-  });
-  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({
-    q: initialFilters.q,
-    status: initialFilters.status,
-    orgId: initialFilters.orgId,
-  });
+  const [page, setPage] = useTabState<number>("admin.users.page", 1);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "admin.users.filters",
+    {
+      q: initialFilters.q,
+      status: initialFilters.status,
+      orgId: initialFilters.orgId,
+    },
+  );
+  const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
+    "admin.users.pendingFilters",
+    {
+      q: initialFilters.q,
+      status: initialFilters.status,
+      orgId: initialFilters.orgId,
+    },
+  );
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<User>[]>(
+    "admin.users.gridRows",
+    [],
+  );
   const [isExporting, setIsExporting] = useState(false);
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/admin/users";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveUsers({
+        creates: changes.creates.map((c) => ({
+          id: c.id,
+          employeeId: c.employeeId,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          orgId: c.orgId,
+          position: c.position,
+          jobTitle: c.jobTitle,
+          status: c.status,
+          isOutsourced: c.isOutsourced,
+        })),
+        updates: changes.updates.map((u) => ({ id: u.id, ...u.patch })),
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -306,6 +368,9 @@ export function UsersGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={() => makeBlankRow(workspaceId)}
         filterValues={filterValues}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

@@ -89,4 +89,97 @@ describe("DataGrid — numeric column", () => {
     fireEvent.keyDown(input, { key: "Enter" });
     expect(screen.getByText("5,000")).toBeInTheDocument();
   });
+
+  // Drizzle `numeric()` columns are returned as STRING by default. Settlement
+  // grids (purchases/tax-bills/month-exp-sga/plan-div-costs) store strings in
+  // row state to match the Zod string-string contract. The grid must:
+  //   1. coerce `string` → number for display so toLocaleString produces commas
+  //   2. coerce `number` → string on commit so saveAction Zod parse stays valid
+  // Without (2) the row state ends up with mixed string/number fields and
+  // savePurchases({ updates }) fails Zod parse silently.
+  it("string-typed numeric row (Drizzle numeric()) round-trips as string", async () => {
+    type StringRow = { id: string; amt: string | null };
+    const captured: { id: string; key: keyof StringRow; value: unknown }[] = [];
+    const rows: StringRow[] = [{ id: "1", amt: "1234567" }];
+    const cols: ColumnDef<StringRow>[] = [
+      { key: "amt", label: "금액", type: "numeric", editable: true },
+    ];
+    let savedChanges: unknown = null;
+    render(
+      <DataGrid<StringRow>
+        rows={rows}
+        total={rows.length}
+        columns={cols}
+        filters={[]}
+        page={1}
+        limit={50}
+        makeBlankRow={() => ({ id: "blank", amt: null })}
+        onPageChange={vi.fn()}
+        onFilterChange={vi.fn()}
+        onGridRowsChange={(gr) => {
+          captured.length = 0;
+          for (const r of gr) captured.push({ id: r.data.id, key: "amt", value: r.data.amt });
+        }}
+        onSave={async (changes) => {
+          savedChanges = changes;
+          return { ok: true };
+        }}
+      />,
+    );
+    // Display formatted with commas (string → Number → toLocaleString)
+    expect(screen.getByText("1,234,567")).toBeInTheDocument();
+
+    // Edit and commit — row state must remain string for Zod compatibility.
+    fireEvent.click(screen.getByText("1,234,567"));
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "9000" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+
+    // After commit, the captured row state should store a STRING, not a Number.
+    const last = captured.find((c) => c.id === "1");
+    expect(last).toBeDefined();
+    expect(typeof last!.value).toBe("string");
+    expect(last!.value).toBe("9000");
+
+    // Save propagates the string through batch (no number leakage)
+    fireEvent.click(screen.getByRole("button", { name: /저장/ }));
+    await new Promise((r) => setTimeout(r, 0));
+    const updates = (savedChanges as { updates?: { patch: { amt?: unknown } }[] })?.updates ?? [];
+    const first = updates[0];
+    if (first) {
+      expect(typeof first.patch.amt).toBe("string");
+    }
+  });
+
+  it("clearing a numeric cell commits null (not empty string)", () => {
+    type StringRow = { id: string; amt: string | null };
+    const captured: unknown[] = [];
+    const rows: StringRow[] = [{ id: "1", amt: "5000" }];
+    const cols: ColumnDef<StringRow>[] = [
+      { key: "amt", label: "금액", type: "numeric", editable: true },
+    ];
+    render(
+      <DataGrid<StringRow>
+        rows={rows}
+        total={rows.length}
+        columns={cols}
+        filters={[]}
+        page={1}
+        limit={50}
+        makeBlankRow={() => ({ id: "blank", amt: null })}
+        onPageChange={vi.fn()}
+        onFilterChange={vi.fn()}
+        onGridRowsChange={(gr) => {
+          captured.length = 0;
+          for (const r of gr) captured.push(r.data.amt);
+        }}
+        onSave={noopSave}
+      />,
+    );
+    fireEvent.click(screen.getByText("5,000"));
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(captured[0]).toBeNull();
+  });
 });

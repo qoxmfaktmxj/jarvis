@@ -13,9 +13,13 @@ const searchEmployeesInput = z.object({
   limit: z.number().int().min(1).max(50).default(10),
 });
 
-// Returning '' for callers that interpolate; null contract would be cleaner
-// but requires Task 1 (EmployeePicker) refactor — deferred.
-export type EmployeeHit = { sabun: string; name: string; email: string };
+// `userId` is the user table PK (uuid). Sales edit forms (opportunities,
+// activities, …) need this to populate uuid columns like `insUserId` /
+// `attendeeUserId` — without it the picker only exposes sabun (a varchar
+// employee number) which would fail uuid validation server-side.
+// `email` returns '' for callers that interpolate; null contract is cleaner
+// but requires a separate EmployeePicker refactor — deferred.
+export type EmployeeHit = { userId: string; sabun: string; name: string; email: string };
 
 async function resolveSessionId(): Promise<string | null> {
   const headerStore = await headers();
@@ -43,6 +47,7 @@ export async function searchEmployees(
 
   const rows = await db
     .select({
+      id: user.id,
       employeeId: user.employeeId,
       name: user.name,
       email: user.email,
@@ -58,6 +63,7 @@ export async function searchEmployees(
     .limit(limit);
 
   return rows.map((r) => ({
+    userId: r.id,
     sabun: r.employeeId,
     name: r.name,
     email: r.email ?? "",

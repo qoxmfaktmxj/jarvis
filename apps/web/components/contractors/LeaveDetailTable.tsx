@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 export interface DetailRow {
   id: string;               // existing row id or `_tmp_<n>`
@@ -116,14 +117,12 @@ export function LeaveDetailTable({
                   <td className="px-2 py-1">{r.requestStatus}</td>
                   <td className="px-2 py-1 tabular-nums">
                     {isNew ? (
-                      <input
-                        type="date"
-                        value={r.startDate}
+                      <DatePicker
+                        value={r.startDate || null}
                         disabled={disabled}
-                        onChange={(e) =>
-                          onRowChange(r.id, { startDate: e.target.value })
+                        onChange={(v) =>
+                          onRowChange(r.id, { startDate: v ?? "" })
                         }
-                        className="rounded border px-1"
                       />
                     ) : (
                       r.startDate
@@ -131,14 +130,12 @@ export function LeaveDetailTable({
                   </td>
                   <td className="px-2 py-1 tabular-nums">
                     {isNew ? (
-                      <input
-                        type="date"
-                        value={r.endDate}
+                      <DatePicker
+                        value={r.endDate || null}
                         disabled={disabled}
-                        onChange={(e) =>
-                          onRowChange(r.id, { endDate: e.target.value })
+                        onChange={(v) =>
+                          onRowChange(r.id, { endDate: v ?? "" })
                         }
-                        className="rounded border px-1"
                       />
                     ) : (
                       r.endDate

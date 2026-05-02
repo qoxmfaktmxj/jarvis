@@ -1,9 +1,15 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { listProductTypes, saveProductTypes } from "../actions";
 import type { ProductTypeRow } from "@jarvis/shared/validation/sales/product-type";
@@ -32,20 +38,61 @@ const FILTERS: FilterDef<ProductTypeRow>[] = [];
 export function ProductTypesGridContainer({ rows: initialRows, total: initialTotal, page: initialPage, limit }: Props) {
   const [rows, setRows] = useState<ProductTypeRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
-  const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>({});
+  const [page, setPage] = useTabState<number>("sales.productTypes.page", initialPage);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "sales.productTypes.filters",
+    {},
+  );
+  const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
+    "sales.productTypes.pendingFilters",
+    {},
+  );
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<ProductTypeRow>[]>(
+    "sales.productTypes.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
+
+  useTabDirty(dirtyCount > 0);
 
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/product-types";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveProductTypes(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback((nextPage: number, nextFilters: Record<string, string>) => {
     startTransition(async () => {
       const res = await listProductTypes({ productCd: nextFilters.productCd || undefined, productNm: nextFilters.productNm || undefined, page: nextPage, limit });
       if (!("error" in res)) { setRows(res.rows as ProductTypeRow[]); setTotal(res.total); setPage(nextPage); setFilterValues(nextFilters); }
     });
-  }, [limit]);
+  }, [limit, setPage, setFilterValues]);
 
   return (
     <div className="space-y-3">
@@ -76,6 +123,9 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
       <DataGrid<ProductTypeRow>
         rows={rows} total={total} columns={COLUMNS} filters={FILTERS}
         page={page} limit={limit} makeBlankRow={makeBlankRow} filterValues={filterValues}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => { const result = await saveProductTypes(changes); if (result.ok) await reload(page, filterValues); return result; }}

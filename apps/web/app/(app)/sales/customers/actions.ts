@@ -13,6 +13,10 @@ import {
   saveCustomersOutput,
 } from "@jarvis/shared/validation/sales/customer";
 import {
+  getCustomerInput,
+  getCustomerOutput,
+} from "@jarvis/shared/validation/sales/customer-detail";
+import {
   customerMemoListInput, customerMemoListOutput,
   customerMemoCreateInput, customerMemoCreateOutput,
   customerMemoDeleteInput, customerMemoDeleteOutput,
@@ -394,4 +398,58 @@ export async function deleteCustomerMemo(rawInput: z.input<typeof customerMemoDe
   });
 
   return customerMemoDeleteOutput.parse({ ok: true });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// getCustomer — single-record fetch for master-detail edit (Task 13)
+// ────────────────────────────────────────────────────────────────────────────
+
+export async function getCustomer(rawInput: z.input<typeof getCustomerInput>) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error, customer: null };
+
+  const { id } = getCustomerInput.parse(rawInput);
+
+  const rows = await db
+    .select({
+      id: salesCustomer.id,
+      custCd: salesCustomer.custCd,
+      custNm: salesCustomer.custNm,
+      custKindCd: salesCustomer.custKindCd,
+      custDivCd: salesCustomer.custDivCd,
+      ceoNm: salesCustomer.ceoNm,
+      telNo: salesCustomer.telNo,
+      businessNo: salesCustomer.businessNo,
+      homepage: salesCustomer.homepage,
+      addrNo: salesCustomer.addrNo,
+      addr1: salesCustomer.addr1,
+      addr2: salesCustomer.addr2,
+    })
+    .from(salesCustomer)
+    .where(and(eq(salesCustomer.id, id), eq(salesCustomer.workspaceId, ctx.workspaceId)))
+    .limit(1);
+
+  const row = rows[0] ?? null;
+
+  return {
+    ok: true as const,
+    ...getCustomerOutput.parse({
+      customer: row
+        ? {
+            id: row.id,
+            custCd: row.custCd,
+            custNm: row.custNm,
+            custKindCd: row.custKindCd ?? null,
+            custDivCd: row.custDivCd ?? null,
+            ceoNm: row.ceoNm ?? null,
+            telNo: row.telNo ?? null,
+            businessNo: row.businessNo ?? null,
+            homepage: row.homepage ?? null,
+            addrNo: row.addrNo ?? null,
+            addr1: row.addr1 ?? null,
+            addr2: row.addr2 ?? null,
+          }
+        : null,
+    }),
+  };
 }

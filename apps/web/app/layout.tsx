@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { AxeInit } from "@/lib/a11y/axe-init";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 
 /**
@@ -56,6 +57,7 @@ export default async function RootLayout({
           <TooltipProvider delayDuration={200}>
             <AxeInit />
             {children}
+            <Toaster />
           </TooltipProvider>
         </NextIntlClientProvider>
       </body>

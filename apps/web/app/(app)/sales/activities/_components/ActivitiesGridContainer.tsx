@@ -5,14 +5,20 @@
  * sales/activities DataGrid container — ibSheet 10 visible columns
  * (TBIZ115 ground truth, plan estimate). schema는 더 많지만 grid에는 10개만 노출.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { type ActivityRow } from "@jarvis/shared/validation/sales/activity";
 import { listActivities, saveActivities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { MemoModal } from "./MemoModal";
 
@@ -62,25 +68,69 @@ export function ActivitiesGridContainer({
   codeOptions,
   opportunityOptions,
 }: Props) {
+  const router = useRouter();
+  const initialFilterMap = useMemo(() => {
+    const v: Record<string, string> = {};
+    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
+    return v;
+  }, [initialFilters]);
+
   const [rows, setRows] = useState<Activity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useState(initialPage);
-  const [filterValues, setFilterValues] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {};
-    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
-    return v;
-  });
+  const [page, setPage] = useTabState<number>("sales.activities.page", initialPage);
+  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
+    "sales.activities.filters",
+    initialFilterMap,
+  );
+  const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
+    "sales.activities.pendingFilters",
+    initialFilterMap,
+  );
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<Activity>[]>(
+    "sales.activities.gridRows",
+    [],
+  );
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<Record<string, string>>(() => {
-    const v: Record<string, string> = {};
-    for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
-    return v;
-  });
+  useTabDirty(dirtyCount > 0);
+
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/activities";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initial, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveActivities({
+        creates: changes.creates,
+        updates: changes.updates,
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -248,6 +298,10 @@ export function ActivitiesGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
+        onRowDoubleClick={(row) => router.push("/sales/activities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

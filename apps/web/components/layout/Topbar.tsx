@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * Topbar — 52px. 좌측 라우트 라벨, 중앙 커맨드 팔레트 트리거, 우측 테마/알림/유저.
+ * Topbar — 52px. 좌측 탭 스트립(TabBar), 우측 테마/알림/유저 + 커맨드 팔레트 트리거.
  *
  * 브랜드 Capy는 Sidebar 헤더로 이동했으므로 여기서는 제거.
- * 라우트 라벨은 usePathname 기반 정적 lookup (i18n 불필요).
+ * 좌측 라우트 라벨은 탭 기능 도입(2026-05) 시 TabBar로 대체됨.
  */
 
 import { useCallback } from "react";
 import { Bell, Moon, Search, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
-import { setTheme, useTheme } from "./uiPrefs";
 import { TabBar } from "./tabs/TabBar";
+import { setTheme, useTheme } from "./uiPrefs";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 export function Topbar({
@@ -50,16 +50,17 @@ export function Topbar({
           transition: "left .2s ease",
         }}
       >
-        <div className="flex items-stretch h-full" style={{ flex: 1, minWidth: 0 }}>
+        <div
+          className="flex items-stretch h-full"
+          style={{ flex: 1, minWidth: 0 }}
+        >
           <TabBar />
         </div>
-
-        <div className="flex-1" />
 
         <button
           type="button"
           onClick={openPalette}
-          className="flex items-center rounded-lg border text-[13px] transition-colors"
+          className="hidden items-center rounded-lg border text-[13px] transition-colors xl:flex"
           style={{
             gap: 10,
             padding: "6px 10px",

@@ -624,3 +624,40 @@ export async function save{Domain}(input: Save{Domain}Input):
 - **P2-A 세션** (별도 worktree): 5 sales 화면(customers, customer-contacts, product-cost-mapping, mail-persons, admin/infra/licenses)에 baseline 적용
 - **P2 본진 세션** (별도 worktree): 사이드바 4탭 + master-detail edit pages에서 `useUrlFilters` 활용
 - **P2 plan 신규 라우트** (sales-opportunities/activities/dashboard): baseline 활용 권장 (P2 worktree main rebase 후 import 가능)
+
+## 표준 입력 컴포넌트
+
+이 섹션은 모든 폼/그리드 입력에서 **반드시 사용해야 하는** 표준 컴포넌트를 모아둔다. 새 도메인을 만들거나 기존 화면을 수정할 때 이 섹션의 컴포넌트만 사용하라. 새 표준이 도입되면 같은 섹션에 누적한다.
+
+### 날짜 입력
+
+**금지:** `<input type="date">`
+
+이유:
+- 한국 IME 환경에서 자릿수 자동 분할이 작동하지 않아 연도 칸에 6글자(예: `202605`)가 그대로 들어가는 버그가 발생.
+- 토/일·공휴일 시각 표시 / 툴팁 / 키보드 네비게이션이 모두 불가능.
+
+**표준:** `@/components/ui/DatePicker`
+
+```tsx
+import { DatePicker } from "@/components/ui/DatePicker";
+
+<DatePicker
+  value={value}              // ISO yyyy-mm-dd 또는 null
+  onChange={setValue}
+  min={min}                  // optional
+  max={max}                  // optional
+  placeholder="yyyy-mm-dd"   // optional
+  ariaLabel="설립일"          // optional, 권장
+/>
+```
+
+특징:
+- yyyy-mm-dd masked input + 자릿수 자동 분할 + paste 인식 (yyyy-mm-dd / yyyymmdd 모두)
+- 캘린더 popup: 월간 그리드, 토 파랑 / 일 빨강 / 공휴일 빨강 + 우상단 점 + hover 툴팁(공휴일 이름)
+- 키보드: ←→↑↓, PageUp/Down(월 이동), Home/End(주 시작/끝), Enter 선택, Esc 닫기
+- 공휴일 데이터: `useWorkspaceHolidays`가 popup 열릴 때 lazy fetch + month range cache (workspace 단위)
+
+그리드 셀: `EditableDateCell`이 내부적으로 `DatePicker`를 사용한다. `ColumnDef.type === "date"`만 지정하면 자동 적용.
+
+**검증:** `apps/web/components/`, `apps/web/app/**` 어디에도 `<input type="date">`는 존재하지 않아야 한다(2026-05-02 sweep 완료). 새 추가 시 PR 리뷰에서 차단.

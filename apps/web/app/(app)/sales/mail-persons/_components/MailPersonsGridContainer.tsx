@@ -26,13 +26,21 @@
  * Composite key dedup: sabun + mailId
  * (enterCd is implicit via workspaceId; name is a display field.)
  */
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
+import { toast } from "@/hooks/use-toast";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -85,19 +93,68 @@ export function MailPersonsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const t = useTranslations("Sales.MailPersons");
+  const tCols = useTranslations("Sales.MailPersons.columns");
+  const tFilters = useTranslations("Sales.MailPersons.filters");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<Omit<FilterValues, "page">>({
-    searchMail: initialFilters?.searchMail ?? "",
-    name: initialFilters?.name ?? "",
-    sabun: initialFilters?.sabun ?? "",
-  });
+  const [pendingFilters, setPendingFilters] = useTabState<Omit<FilterValues, "page">>(
+    "sales.mailPersons.pendingFilters",
+    {
+      searchMail: initialFilters?.searchMail ?? "",
+      name: initialFilters?.name ?? "",
+      sabun: initialFilters?.sabun ?? "",
+    },
+  );
   const setPending = (key: keyof Omit<FilterValues, "page">, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<MailPersonRow>[]>(
+    "sales.mailPersons.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/mail-persons";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const existingMerged = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted" && r.state !== "new")
+        .map((r) => r.data);
+      const allRows = [...changes.creates, ...existingMerged];
+      const dups = findDuplicateKeys(allRows, ["sabun", "mailId"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveMailPersons(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const { values: filterValues, setValue: setFilterValue } = useUrlFilters<FilterValues>({
     defaults: {
@@ -168,7 +225,11 @@ export function MailPersonsGridContainer({
             "errors" in result
               ? result.errors?.map((e: { message: string }) => e.message).join("\n")
               : undefined;
-          alert(msg ?? "저장 실패");
+          toast({
+            variant: "destructive",
+            title: "저장 실패",
+            description: msg ?? "저장 실패",
+          });
         }
       });
     },
@@ -204,7 +265,7 @@ export function MailPersonsGridContainer({
   const COLUMNS: ColumnDef<MailPersonRow>[] = [
     {
       key: "sabun",
-      label: "사번",
+      label: tCols("sabun"),
       type: "readonly",
       width: 110,
       render: (row) => {
@@ -214,7 +275,7 @@ export function MailPersonsGridContainer({
           return (
             <EmployeePicker
               value=""
-              placeholder="사번 검색..."
+              placeholder={tFilters("sabunSearch")}
               search={(q, lim) => searchEmployees({ q, limit: lim })}
               onSelect={(hit) => handleEmployeePick(row.id, hit)}
             />
@@ -223,14 +284,14 @@ export function MailPersonsGridContainer({
         return <span className="text-[13px] text-slate-900">{row.sabun}</span>;
       },
     },
-    { key: "name", label: "이름", type: "text", width: 140, editable: true, required: true },
-    { key: "mailId", label: "메일 ID", type: "text", width: 220, editable: true, required: true },
-    { key: "salesYn", label: "영업", type: "boolean", width: 70, editable: true },
-    { key: "insaYn", label: "인사", type: "boolean", width: 70, editable: true },
-    { key: "memo", label: "메모", type: "text", editable: true },
+    { key: "name", label: tCols("name"), type: "text", width: 140, editable: true, required: true },
+    { key: "mailId", label: tCols("mailId"), type: "text", width: 220, editable: true, required: true },
+    { key: "salesYn", label: tCols("salesYn"), type: "boolean", width: 70, editable: true },
+    { key: "insaYn", label: tCols("insaYn"), type: "boolean", width: 70, editable: true },
+    { key: "memo", label: tCols("memo"), type: "text", editable: true },
     {
       key: "createdAt",
-      label: "등록일자",
+      label: tCols("insdate"),
       type: "readonly",
       width: 110,
       render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
@@ -256,31 +317,31 @@ export function MailPersonsGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
-        <GridFilterField label="메일주소" className="w-[210px]">
+        <GridFilterField label={tCols("mailId")} className="w-[210px]">
           <Input
             type="text"
             data-filter="searchMail"
             value={pendingFilters.searchMail}
             onChange={(e) => setPending("searchMail", e.target.value)}
-            placeholder="메일주소 검색"
+            placeholder={tFilters("mailSearch")}
             className="h-8"
           />
         </GridFilterField>
-        <GridFilterField label="이름" className="w-[140px]">
+        <GridFilterField label={tCols("name")} className="w-[140px]">
           <Input
             type="text"
             value={pendingFilters.name}
             onChange={(e) => setPending("name", e.target.value)}
-            placeholder="이름"
+            placeholder={tCols("name")}
             className="h-8"
           />
         </GridFilterField>
-        <GridFilterField label="사번" className="w-[140px]">
+        <GridFilterField label={tCols("sabun")} className="w-[140px]">
           <Input
             type="text"
             value={pendingFilters.sabun}
             onChange={(e) => setPending("sabun", e.target.value)}
-            placeholder="사번"
+            placeholder={tCols("sabun")}
             className="h-8"
           />
         </GridFilterField>
@@ -296,6 +357,9 @@ export function MailPersonsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={handlePageChange}
@@ -315,7 +379,7 @@ export function MailPersonsGridContainer({
           if (dups.length > 0) {
             return {
               ok: false,
-              errors: [{ message: `중복된 키(사번+메일ID)가 있습니다: ${dups.join(", ")}` }],
+              errors: [{ message: `${t("errors.duplicateKey")}: ${dups.join(", ")}` }],
             };
           }
           const result = await saveMailPersons(changes);

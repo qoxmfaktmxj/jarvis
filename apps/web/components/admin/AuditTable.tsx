@@ -9,6 +9,7 @@ import {
 import { Input }  from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge }  from '@/components/ui/badge';
+import { DatePicker } from '@/components/ui/DatePicker';
 import type { AuditLogEntry } from '@/lib/queries/admin';
 
 type Meta = { page: number; limit: number; total: number; totalPages: number };
@@ -73,20 +74,18 @@ export function AuditTable({ initialData, meta }: Props) {
         </div>
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">{t('filters.from')}</p>
-          <Input
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => setFilters((f) => ({ ...f, dateFrom: e.target.value }))}
-            className="h-8 w-36 text-xs"
+          <DatePicker
+            value={filters.dateFrom || null}
+            onChange={(v) => setFilters((f) => ({ ...f, dateFrom: v ?? '' }))}
+            className="w-36"
           />
         </div>
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">{t('filters.to')}</p>
-          <Input
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => setFilters((f) => ({ ...f, dateTo: e.target.value }))}
-            className="h-8 w-36 text-xs"
+          <DatePicker
+            value={filters.dateTo || null}
+            onChange={(v) => setFilters((f) => ({ ...f, dateTo: v ?? '' }))}
+            className="w-36"
           />
         </div>
         <Button size="sm" onClick={applyFilters} className="mb-0.5">{t('filters.apply')}</Button>

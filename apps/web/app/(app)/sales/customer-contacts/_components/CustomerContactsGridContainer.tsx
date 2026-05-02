@@ -1,13 +1,21 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { listCustomerContacts, saveCustomerContacts } from "../actions";
 import { exportCustomerContactsToExcel } from "../export";
@@ -85,7 +93,9 @@ export function CustomerContactsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const router = useRouter();
   const t = useTranslations("Sales.Common");
+  const tCols = useTranslations("Sales.CustomerContacts.columns");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
@@ -99,16 +109,62 @@ export function CustomerContactsGridContainer({
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [isSearching, startTransition] = useTransition();
 
-  const [pendingFilters, setPendingFilters] = useState<FilterState>({
-    custName: initialFilters.custName,
-    hpNo: initialFilters.hpNo,
-    email: initialFilters.email,
-    searchYmdFrom: initialFilters.searchYmdFrom,
-    searchYmdTo: initialFilters.searchYmdTo,
-    page: initialFilters.page,
-  });
+  const [pendingFilters, setPendingFilters] = useTabState<FilterState>(
+    "sales.customerContacts.pendingFilters",
+    {
+      custName: initialFilters.custName,
+      hpNo: initialFilters.hpNo,
+      email: initialFilters.email,
+      searchYmdFrom: initialFilters.searchYmdFrom,
+      searchYmdTo: initialFilters.searchYmdTo,
+      page: initialFilters.page,
+    },
+  );
   const setPending = (key: keyof FilterState, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  // Cached grid row state — survives tab switches. URL persists committed filters/page.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<CustomerContactRow>[]>(
+    "sales.customerContacts.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/customer-contacts";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const liveRows = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, ["custMcd"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveCustomerContacts(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: FilterState) => {
@@ -136,20 +192,20 @@ export function CustomerContactsGridContainer({
   const COLUMNS: ColumnDef<CustomerContactRow>[] = [
     {
       key: "custNm",
-      label: "고객사명",
+      label: tCols("custMcd"),
       type: "readonly",
       width: 180,
       render: (row) => row.custNm ?? "—",
     },
-    { key: "custName", label: "담당자명", type: "text", width: 130, editable: true },
-    { key: "jikweeNm", label: "직위", type: "text", width: 120, editable: true },
-    { key: "orgNm", label: "소속", type: "text", width: 150, editable: true },
-    { key: "telNo", label: "전화", type: "text", width: 130, editable: true },
-    { key: "hpNo", label: "휴대폰", type: "text", width: 130, editable: true },
-    { key: "email", label: "이메일", type: "text", width: 200, editable: true },
+    { key: "custName", label: tCols("custName"), type: "text", width: 130, editable: true },
+    { key: "jikweeNm", label: tCols("jikweeNm"), type: "text", width: 120, editable: true },
+    { key: "orgNm", label: tCols("orgNm"), type: "text", width: 150, editable: true },
+    { key: "telNo", label: tCols("telNo"), type: "text", width: 130, editable: true },
+    { key: "hpNo", label: tCols("hpNo"), type: "text", width: 130, editable: true },
+    { key: "email", label: tCols("email"), type: "text", width: 200, editable: true },
     {
       key: "counts",
-      label: "탭",
+      label: t("tabLabel"),
       type: "readonly",
       width: 220,
       render: (row) =>
@@ -164,7 +220,7 @@ export function CustomerContactsGridContainer({
     },
     {
       key: "createdAt",
-      label: "등록일자",
+      label: tCols("insdate"),
       type: "readonly",
       width: 110,
       render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
@@ -184,7 +240,11 @@ export function CustomerContactsGridContainer({
       if (result.ok) {
         triggerDownload(result.bytes, result.filename);
       } else {
-        alert(result.error);
+        toast({
+          variant: "destructive",
+          title: t("Excel.exportFailed"),
+          description: t("Excel.exportFailedDesc", { message: result.error ?? "" }),
+        });
       }
     } finally {
       setIsExporting(false);
@@ -232,19 +292,17 @@ export function CustomerContactsGridContainer({
           />
         </GridFilterField>
         <GridFilterField label={t("Search.searchYmdFrom")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdFrom}
-            onChange={(e) => setPending("searchYmdFrom", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdFrom || null}
+            onChange={(v) => setPending("searchYmdFrom", v ?? "")}
+            ariaLabel={t("Search.searchYmdFrom")}
           />
         </GridFilterField>
         <GridFilterField label={t("Search.searchYmdTo")} className="w-[160px]">
-          <input
-            type="date"
-            value={pendingFilters.searchYmdTo}
-            onChange={(e) => setPending("searchYmdTo", e.target.value)}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          <DatePicker
+            value={pendingFilters.searchYmdTo || null}
+            onChange={(v) => setPending("searchYmdTo", v ?? "")}
+            ariaLabel={t("Search.searchYmdTo")}
           />
         </GridFilterField>
       </GridSearchForm>
@@ -258,6 +316,10 @@ export function CustomerContactsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
+        onRowDoubleClick={(row) => router.push("/sales/customer-contacts/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => {

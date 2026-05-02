@@ -160,6 +160,54 @@
       }
     }
   },
+  "Projects": {
+    "Common": {
+      "search": "Search",
+      "excel": {
+        "button": "Download",
+        "downloading": "Downloading...",
+        "exportFailed": "Export failed",
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "Exceeds {max, number} rows. This is the maximum exportable in a single download — narrow your filter and download in slices."
+      },
+      "yn": {
+        "all": "All",
+        "y": "Y",
+        "n": "N"
+      }
+    },
+    "Beacons": {
+      "title": "Beacon Management",
+      "description": "Manage project beacon checkout records and owners.",
+      "searchPlaceholder": "Search beacon no. or project",
+      "filters": {
+        "projectCode": "Project Code",
+        "employee": "Employee No.",
+        "outYn": "Checked Out"
+      }
+    },
+    "History": {
+      "title": "Project Work History",
+      "description": "Manage project staff history, periods, roles, and work notes.",
+      "searchPlaceholder": "Search employee, project, or customer",
+      "filters": {
+        "periodFrom": "Work From",
+        "periodTo": "Work To",
+        "employee": "Employee No.",
+        "projectCode": "Project Code"
+      }
+    },
+    "Modules": {
+      "title": "Project Module Management",
+      "description": "Manage project module assignments.",
+      "searchPlaceholder": "Search employee, project, or module",
+      "filters": {
+        "employee": "Employee No.",
+        "projectCode": "Project Code",
+        "moduleCode": "Module Code"
+      }
+    }
+  },
   "Sales": {
     "nav": {
       "title": "Sales",
@@ -168,11 +216,43 @@
       "customerContacts": "Contacts",
       "productTypes": "Product Types",
       "productCostMapping": "Product-Cost Mapping",
-      "mailPersons": "Mail Recipients"
+      "mailPersons": "Mail Recipients",
+      "contracts": "Contracts",
+      "contractMonths": "Contract Months",
+      "contractServices": "Service Staff",
+      "freelancers": "Freelancer Assignments",
+      "cloudPeopleBase": "Cloud People Rate Base",
+      "cloudPeopleCalc": "Cloud People Rate Calc"
+    },
+    "Dashboard": {
+      "title": "Sales Dashboard",
+      "salesTrend": "Sales Trend (Multi-year)",
+      "noSalesData": "No sales trend data",
+      "noOpIncomeData": "No operating income data",
+      "noBaData": "No BA data"
+    },
+    "Opportunities": {
+      "columns": {
+        "focusMgrYn": "Focus"
+      },
+      "filters": {
+        "focusOnly": "Focus"
+      }
+    },
+    "TaxBills": {
+      "warnings": {
+        "vatMismatch": "VAT differs from 10% of amt — review required ({count} rows)"
+      }
     },
     "Customers": {
       "title": "Customers",
       "description": "Manage customer master information.",
+      "Tabs": {
+        "customers": "Contacts ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custCd": "Customer Code",
         "custNm": "Customer Name",
@@ -190,11 +270,33 @@
       },
       "errors": {
         "duplicateCustCd": "Duplicate customer codes: {codes}"
+      },
+      "Edit": {
+        "fields": {
+          "custCd": "Customer Code",
+          "custNm": "Customer Name",
+          "ceoNm": "CEO",
+          "telNo": "Phone",
+          "businessNo": "Business No.",
+          "homepage": "Homepage",
+          "addr1": "Address",
+          "addr2": "Address (Detail)"
+        },
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete?"
       }
     },
     "CustomerContacts": {
       "title": "Contacts",
       "description": "Manage contact information per customer.",
+      "Tabs": {
+        "customer": "Company ({count})",
+        "opportunities": "Opportunities ({count})",
+        "activities": "Activities ({count})",
+        "memos": "Memos ({count})"
+      },
       "columns": {
         "custMcd": "Master Code",
         "custName": "Name",
@@ -207,6 +309,23 @@
         "sabun": "Employee No.",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "Edit": {
+        "fields": {
+          "custName": "Contact Name",
+          "custNm": "Company",
+          "orgNm": "Department",
+          "jikweeNm": "Title",
+          "hpNo": "Mobile",
+          "telNo": "Phone",
+          "email": "Email",
+          "statusYn": "Employed",
+          "switComp": "Moved To"
+        },
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete?"
       }
     },
     "ProductTypes": {
@@ -252,14 +371,331 @@
         "mailId": "Mail ID",
         "memo": "Memo",
         "insdate": "Created"
+      },
+      "filters": {
+        "sabunSearch": "Search Employee No.",
+        "mailSearch": "Search Mail Address"
+      },
+      "errors": {
+        "duplicateKey": "Duplicate key (Employee No. + Mail ID)"
+      }
+    },
+    "Companies": {
+      "title": "Sales Companies",
+      "description": "Manage company master used by the sales module."
+    },
+    "PlanViewPermissions": {
+      "title": "Plan View Permissions",
+      "description": "Manage per-user R/W permissions for plan data."
+    },
+    "ContractUploads": {
+      "title": "Contract Uploads",
+      "description": "Upload contract files and manage history.",
+      "downloadTemplate": "Download Template"
+    },
+    "Contracts": {
+      "title": "Contracts",
+      "description": "Manage sales contract master information.",
+      "columns": {
+        "contNm": "Contract Name",
+        "custNm": "Customer",
+        "contGbCd": "Contract Type",
+        "contYmd": "Contract Date",
+        "contSymd": "Start Date",
+        "contEymd": "End Date",
+        "mainContType": "Contract Form",
+        "startAmt": "Contract Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      },
+      "Edit": {
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete this contract?"
+      }
+    },
+    "ContractMonths": {
+      "title": "Contract Months",
+      "description": "Manage planned, expected, and actual data per contract month.",
+      "columns": {
+        "contractId": "Contract ID",
+        "ym": "Year-Month",
+        "planAmt": "Plan Amount",
+        "expectAmt": "Expected Amount",
+        "actualAmt": "Actual Amount",
+        "memo": "Memo",
+        "insdate": "Created"
+      },
+      "Edit": {
+        "save": "Save",
+        "delete": "Delete",
+        "back": "Back",
+        "confirmDelete": "Are you sure you want to delete this month record?"
+      }
+    },
+    "ContractServices": {
+      "title": "Service Staff",
+      "description": "Manage service staff allocated per contract.",
+      "columns": {
+        "contractId": "Contract ID",
+        "pjtCd": "Project Code",
+        "servName": "Service Name",
+        "job": "Title",
+        "attendCd": "Attendance Type",
+        "servSabun": "Employee No.",
+        "memo": "Memo",
+        "insdate": "Created"
+      },
+      "actions": {
+        "recalcManday": "Auto-calc M/M"
+      },
+      "toast": {
+        "recalcMandayDone": "Computed {computed} rows · Total {total} M/M (skipped {skipped} manual / {invalid} invalid)"
+      }
+    },
+    "Freelancers": {
+      "title": "Freelancer Assignments",
+      "description": "Manage freelancer assignment periods, attribution months, industries, and payments.",
+      "filters": {
+        "q": "Employee/Name",
+        "qPlaceholder": "Employee no., name, or project",
+        "belongYm": "Attribution Month",
+        "businessCd": "Industry Code"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "sabun": "Employee No.",
+        "name": "Name",
+        "pjtCd": "Project Code",
+        "pjtNm": "Project",
+        "sdate": "Contract Start",
+        "edate": "Contract End",
+        "resNo": "Resident No.",
+        "addr": "Address",
+        "tel": "Phone",
+        "mailId": "Email",
+        "belongYm": "Attribution Month",
+        "businessCd": "Industry Code",
+        "totMon": "Total Payment",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate freelancer key: {keys}"
+      }
+    },
+    "CloudPeopleBase": {
+      "title": "Cloud People Rate Base",
+      "description": "Manage monthly rate bases by contract, person type, and calculation type.",
+      "filters": {
+        "q": "Search",
+        "qPlaceholder": "Contract, project, or customer code",
+        "contYear": "Contract Year",
+        "pjtCode": "Project Code",
+        "personType": "Person Type",
+        "calcType": "Calc Type"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "contYear": "Contract Year",
+        "contNo": "Contract Code",
+        "contNm": "Contract Name",
+        "pjtCode": "Project Code",
+        "pjtNm": "Project Name",
+        "companyCd": "Customer Code",
+        "companyNm": "Customer Name",
+        "personType": "Person Type",
+        "calcType": "Calc Type",
+        "sdate": "Contract Start",
+        "edate": "Contract End",
+        "monthAmt": "Monthly Rate",
+        "note": "Note",
+        "seq": "SEQ",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate cloud people base key: {keys}"
+      }
+    },
+    "CloudPeopleCalc": {
+      "title": "Cloud People Rate Calc",
+      "description": "Manage monthly headcount and calculated people-rate amounts per contract.",
+      "filters": {
+        "q": "Search",
+        "qPlaceholder": "Contract code or note",
+        "contYear": "Contract Year",
+        "ym": "Base Month",
+        "personType": "Person Type",
+        "calcType": "Calc Type"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "contYear": "Contract Year",
+        "contNo": "Contract Code",
+        "contNm": "Contract Name",
+        "pjtCode": "Project Code",
+        "pjtNm": "Project Name",
+        "companyCd": "Customer Code",
+        "companyNm": "Customer Name",
+        "ym": "Year-Month",
+        "reflYn": "Voucher Reflected",
+        "personType": "Person Type",
+        "calcType": "Calc Type",
+        "monthAmt": "Monthly Rate",
+        "personCnt": "Headcount",
+        "totalAmt": "Total Amount",
+        "note": "Note",
+        "seq": "SEQ",
+        "reflId": "Reflection User",
+        "reflDate": "Reflection Date",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate cloud people calc key: {keys}"
+      }
+    },
+    "Purchases": {
+      "columns": {
+        "manage": "Manage"
+      },
+      "subRow": {
+        "title": "Purchase Projects",
+        "description": "Project rows tied to the selected purchase (sub-contract / code / name).",
+        "empty": "No projects registered.",
+        "insert": "Add",
+        "save": "Save ({count})",
+        "close": "Close",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "saveFailed": "Save failed",
+        "columns": {
+          "subContNo": "Sub Contract No",
+          "pjtCode": "Project Code",
+          "pjtNm": "Project Name",
+          "legacyEnterCd": "Company",
+          "legacyContYear": "Cont Year",
+          "legacyContNo": "Cont No"
+        }
+      }
+    },
+    "PlanDivCosts": {
+      "columns": {
+        "manage": "Manage"
+      },
+      "subRow": {
+        "title": "Allocation Detail Rates",
+        "description": "Per sub-cost rate breakdown for the selected plan-div-cost row.",
+        "empty": "No detail rates registered.",
+        "insert": "Add",
+        "save": "Save ({count})",
+        "close": "Close",
+        "saving": "Saving…",
+        "saved": "Saved.",
+        "saveFailed": "Save failed",
+        "columns": {
+          "subCostCd": "Sub Cost Code",
+          "planRate": "Plan Rate",
+          "prdtRate": "Product Rate",
+          "performRate": "Perform Rate",
+          "useYn": "Use",
+          "legacyEnterCd": "Company",
+          "costCd": "Cost Code",
+          "accountType": "Account Type",
+          "ym": "YM"
+        }
+      }
+    },
+    "Charts": {
+      "Marketing": {
+        "title": "Sales Marketing Charts",
+        "description": "Aggregates activity counts by type and contract-expected amounts by product for a given month.",
+        "activityByType": "Activity Count by Type",
+        "productMix": "Product Mix",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
+      },
+      "AdminPerf": {
+        "title": "Admin Performance Charts",
+        "description": "Compare PLAN / ACTUAL / FORECAST per organization, by year (monthly) or quarter.",
+        "stackedTitle": "Org PLAN / ACTUAL / FORECAST",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
+      },
+      "PlanPerf": {
+        "title": "Plan vs Performance Charts",
+        "description": "Single-year monthly plan, actual, and forecast comparison (combo chart).",
+        "filters": {
+          "year": "Fiscal Year",
+          "org": "Organization",
+          "orgAll": "All"
+        }
+      },
+      "Trend": {
+        "title": "Sales / Profit Trend Charts",
+        "description": "Multi-year monthly trends — switch between sales and operating income via tabs.",
+        "tabs": {
+          "SALES": "Sales",
+          "GROSS_PROFIT": "Gross Profit",
+          "OP_INCOME": "Operating Income"
+        }
+      },
+      "Dashboard": {
+        "title": "Sales HQ Dashboard",
+        "description": "Sales trend · opportunity stage distribution · OP income PLAN/ACTUAL/FORECAST · BA integrated board."
+      },
+      "PlanPerfUpload": {
+        "title": "Plan/Actual/Forecast Upload",
+        "description": "Enter raw sales_plan_perf rows used by chart screens (admin perf, plan-vs-perf, trend, dashboard). Inline edit or Excel upload.",
+        "downloadTemplate": "Download Template",
+        "templateBtn": "Download Template",
+        "uploadBtn": "Upload Excel",
+        "uploading": "Uploading…",
+        "uploadHelp": "Download the template, fill it in, or upload an xlsx with identical columns. Rows with the same (ym, orgCd, gubunCd, trendGbCd) key are upserted.",
+        "filters": {
+          "q": "Search",
+          "qPlaceholder": "Org code / org name / note",
+          "ym": "YM",
+          "orgCd": "Org Code",
+          "gubunCd": "Type",
+          "trendGbCd": "Metric",
+          "all": "All"
+        },
+        "columns": {
+          "ym": "YM",
+          "orgCd": "Org Code",
+          "orgNm": "Org Name",
+          "gubunCd": "Type",
+          "trendGbCd": "Metric",
+          "amt": "Amount",
+          "note": "Note",
+          "updatedBy": "Updated By",
+          "updatedAt": "Updated At"
+        },
+        "errors": {
+          "duplicate": "Duplicate key (ym·org·type·metric): {keys}"
+        }
       }
     },
     "Common": {
+      "selectAll": "All",
+      "tabLabel": "Tabs",
       "Excel": {
         "button": "Download",
         "downloading": "Downloading…",
         "filename": "{screen}_{date}.xlsx",
-        "downloadStarted": "Download started."
+        "downloadStarted": "Download started.",
+        "exportFailed": "Export failed",
+        "exportFailedDesc": "{message}",
+        "exportLimitExceeded": "Exceeds {max, number} rows. This is the maximum exportable in a single download — narrow your filter and download in slices."
       },
       "Search": {
         "chargerNm": "Owner",
