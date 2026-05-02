@@ -51,3 +51,5 @@ export * from "./sales-contract.js";
 export * from "./sales-contract-extra.js";
 // Phase-Sales Group 2: contract finance settlement (TBIZ027/028/038/040/041/046)
 export * from "./sales-finance.js";
+// Phase-Sales Group 6: 통계 차트 raw data (TBIZ_PLAN_PERF, B30010/B30030)
+export * from "./sales-plan-perf.js";

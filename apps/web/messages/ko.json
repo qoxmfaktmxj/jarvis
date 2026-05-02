@@ -1637,6 +1637,28 @@
         "duplicate": "중복된 인원단가 현황 키가 있습니다: {keys}"
       }
     },
+    "Charts": {
+      "Marketing": {
+        "title": "영업 마케팅 차트",
+        "description": "기준월의 영업활동 유형별 건수와 상품 유형별 계약예상금액을 집계합니다."
+      },
+      "AdminPerf": {
+        "title": "관리자 실적 차트",
+        "description": "조직별 PLAN/ACTUAL/FORECAST를 연(월별) 또는 분기 단위로 비교합니다."
+      },
+      "PlanPerf": {
+        "title": "계획대비 실적 차트",
+        "description": "단년도 월별 계획·실적·전망 비교 (조합형 차트)."
+      },
+      "Trend": {
+        "title": "매출/이익 추이 차트",
+        "description": "다년도 월별 추이 — 탭으로 매출과 영업이익을 전환합니다."
+      },
+      "Dashboard": {
+        "title": "영업본부 대시보드",
+        "description": "매출 트렌드 · 영업단계 분포 · 영업이익 PLAN/ACTUAL/FORECAST · BA 통합 보드."
+      }
+    },
     "Common": {
       "Excel": {
         "button": "다운로드",
