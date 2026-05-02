@@ -89,7 +89,7 @@ confidence: 1.0            # Step 3에서 교정
 2. `packages/wiki-fs`의 `validateFrontmatter`, `validateWikilinks`, `validateSensitivity`로 검사. 실패 시 전체 abort + `wiki_review_queue(kind='graph_validation_fail')`.
 3. single-writer 큐 통과 후 main에 fast-forward merge.
 4. commit message: `[graph] {workspaceId} — {N}개 derived/code 페이지 생성, {M}개 갱신`.
-5. commit author: `jarvis-wiki-bot <bot@jarvis.local>` 고정.
+5. commit author: `jarvis-wiki-bot <bot@wiki.invalid>` 고정.
 6. `log.md`에 `## [YYYY-MM-DD] graph | {요약}` append.
 7. **DB projection sync:**
    - `wiki_page_index` — derived/code 페이지 upsert.

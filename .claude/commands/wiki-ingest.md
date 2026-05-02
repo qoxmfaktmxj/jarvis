@@ -79,7 +79,7 @@ argument-hint: "{raw_source_id}  (예: 01HXXXXXXXXXXXXXXXXXXXXXX — DB raw_sour
 
 1. main branch에 **fast-forward merge만 허용** (no merge commit).
 2. commit message: `[ingest] {sourceTitle} — {N}개 페이지 갱신`.
-3. git author는 **서버 고정 author** (`jarvis-wiki-bot <bot@jarvis.local>`). 사용자 author 위조 불가.
+3. git author는 **서버 고정 author** (`jarvis-wiki-bot <bot@wiki.invalid>`). 사용자 author 위조 불가.
 4. `log.md`에 `## [YYYY-MM-DD] ingest | {sourceTitle}` 한 줄 append.
 5. merge 실패 (concurrent writer) → pg-boss 재시도. single-writer 큐 덕에 거의 발생 안 함.
 

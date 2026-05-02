@@ -1,6 +1,6 @@
 ---
 name: jarvis-db-patterns
-description: Jarvis(사내 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(34 권한, 5 역할)·sensitivity·Zod validation·트랜잭션 패턴 레퍼런스 + 경계면 교차 비교 체크리스트(shape/권한/sensitivity/nullable/마이그레이션/i18n). Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한/민감도 필터 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. superpowers:writing-plans가 계획을 작성하거나 superpowers:subagent-driven-development의 spec-reviewer가 경계면 검증을 수행할 때도 이 스킬의 섹션을 컨텍스트로 주입한다. "스키마 추가", "컬럼", "권한", "민감도", "마이그레이션", "Zod", "server action" 표현에서도 트리거된다.
+description: Jarvis(엔터프라이즈 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(34 권한, 5 역할)·sensitivity·Zod validation·트랜잭션 패턴 레퍼런스 + 경계면 교차 비교 체크리스트(shape/권한/sensitivity/nullable/마이그레이션/i18n). Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한/민감도 필터 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. superpowers:writing-plans가 계획을 작성하거나 superpowers:subagent-driven-development의 spec-reviewer가 경계면 검증을 수행할 때도 이 스킬의 섹션을 컨텍스트로 주입한다. "스키마 추가", "컬럼", "권한", "민감도", "마이그레이션", "Zod", "server action" 표현에서도 트리거된다.
 ---
 
 # Jarvis DB · RBAC · Validation Patterns
