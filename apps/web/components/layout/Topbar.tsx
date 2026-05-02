@@ -60,7 +60,7 @@ export function Topbar({
         <button
           type="button"
           onClick={openPalette}
-          className="flex items-center rounded-lg border text-[13px] transition-colors"
+          className="hidden items-center rounded-lg border text-[13px] transition-colors xl:flex"
           style={{
             gap: 10,
             padding: "6px 10px",

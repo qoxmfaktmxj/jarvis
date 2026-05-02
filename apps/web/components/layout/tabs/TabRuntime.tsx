@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTabHotkeys } from "./useTabHotkeys";
 import { PendingCloseDialog } from "./PendingCloseDialog";
 
@@ -9,6 +10,18 @@ import { PendingCloseDialog } from "./PendingCloseDialog";
  * appear over any route content.
  */
 export function TabRuntime() {
+  const [ready, setReady] = useState(false);
+
   useTabHotkeys();
-  return <PendingCloseDialog />;
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
+
+  return (
+    <>
+      {ready ? <span data-testid="tab-runtime-ready" hidden /> : null}
+      <PendingCloseDialog />
+    </>
+  );
 }
