@@ -6,6 +6,7 @@
  * (TBIZ110 ground truth). schema는 35 컬럼이지만 grid에는 9개만 노출.
  */
 import { useCallback, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { type OpportunityRow } from "@jarvis/shared/validation/sales/opportunity";
 import { listOpportunities, saveOpportunities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
@@ -58,6 +59,7 @@ export function OpportunitiesGridContainer({
   initialFilters,
   codeOptions,
 }: Props) {
+  const router = useRouter();
   const [rows, setRows] = useState<Opportunity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useState(initialPage);
@@ -212,6 +214,7 @@ export function OpportunitiesGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onRowDoubleClick={(row) => router.push("/sales/opportunities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

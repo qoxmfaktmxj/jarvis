@@ -1,10 +1,10 @@
 "use server";
 import { cookies, headers } from "next/headers";
-import { and, count, desc, eq, ilike, inArray, max } from "drizzle-orm";
+import { aliasedTable, and, count, desc, eq, ilike, inArray, max } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesOpportunity, salesOpportunityMemo, user, auditLog } from "@jarvis/db/schema";
+import { salesCustomer, salesOpportunity, salesOpportunityMemo, user, auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listOpportunitiesInput,
@@ -357,4 +357,54 @@ export async function deleteOpportunityMemo(rawInput: z.input<typeof opportunity
   });
 
   return opportunityMemoDeleteOutput.parse({ ok: true });
+}
+
+// ---------------------------------------------------------------------------
+// getOpportunity — single opportunity fetch for /[id]/edit page
+// ---------------------------------------------------------------------------
+export async function getOpportunity(input: { id: string }) {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const insUser = aliasedTable(user, "ins_user");
+  const [row] = await db
+    .select({
+      id: salesOpportunity.id,
+      bizOpNm: salesOpportunity.bizOpNm,
+      customerId: salesOpportunity.customerId,
+      customerName: salesCustomer.custNm,
+      productTypeCode: salesOpportunity.productTypeCode,
+      bizStepCode: salesOpportunity.bizStepCode,
+      bizStepYmd: salesOpportunity.bizStepYmd,
+      saleTypeCode: salesOpportunity.saleTypeCode,
+      bizTypeCode: salesOpportunity.bizTypeCode,
+      industryCode: salesOpportunity.industryCode,
+      bizAreaCode: salesOpportunity.bizAreaCode,
+      bizOpSourceCode: salesOpportunity.bizOpSourceCode,
+      contExpecAmt: salesOpportunity.contExpecAmt,
+      contExpecYmd: salesOpportunity.contExpecYmd,
+      contExpecSymd: salesOpportunity.contExpecSymd,
+      contExpecEymd: salesOpportunity.contExpecEymd,
+      orgNm: salesOpportunity.orgNm,
+      focusMgrYn: salesOpportunity.focusMgrYn,
+      memo: salesOpportunity.memo,
+      insUserId: salesOpportunity.insUserId,
+      insUserName: insUser.name,
+      insDate: salesOpportunity.insDate,
+    })
+    .from(salesOpportunity)
+    .leftJoin(salesCustomer, eq(salesOpportunity.customerId, salesCustomer.id))
+    .leftJoin(insUser, eq(salesOpportunity.insUserId, insUser.id))
+    .where(and(eq(salesOpportunity.id, input.id), eq(salesOpportunity.workspaceId, ctx.workspaceId)))
+    .limit(1);
+
+  if (!row) return { ok: false as const, error: "NotFound" as const };
+  return {
+    ok: true as const,
+    opportunity: {
+      ...row,
+      contExpecAmt: row.contExpecAmt != null ? Number(row.contExpecAmt) : null,
+      insDate: row.insDate ? row.insDate.toISOString() : null,
+    },
+  };
 }
