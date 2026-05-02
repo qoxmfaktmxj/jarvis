@@ -456,6 +456,13 @@
       "when": 1777675390298,
       "tag": "0064_bright_shooting_star",
       "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1777682934763,
+      "tag": "0065_good_overlord",
+      "breakpoints": true
     }
   ]
 }

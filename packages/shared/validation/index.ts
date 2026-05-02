@@ -8,4 +8,5 @@ export * from "./wiki.js";
 export * from "./additional-dev.js";
 export * from "./uuid.js";
 export * from "./sales-contract.js";
+export * from "./sales-contract-extra.js";
 export * from "./sales-people.js";

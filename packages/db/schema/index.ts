@@ -48,3 +48,4 @@ export * from "./sales-opportunity.js";
 export * from "./sales-activity.js";
 // Phase-Sales PR-1A: 계약 (TBIZ030/031/032/010)
 export * from "./sales-contract.js";
+export * from "./sales-contract-extra.js";
