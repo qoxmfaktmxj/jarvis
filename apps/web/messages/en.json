@@ -511,6 +511,28 @@
         "duplicate": "Duplicate cloud people calc key: {keys}"
       }
     },
+    "Charts": {
+      "Marketing": {
+        "title": "Sales Marketing Charts",
+        "description": "Aggregates activity counts by type and contract-expected amounts by product for a given month."
+      },
+      "AdminPerf": {
+        "title": "Admin Performance Charts",
+        "description": "Compare PLAN / ACTUAL / FORECAST per organization, by year (monthly) or quarter."
+      },
+      "PlanPerf": {
+        "title": "Plan vs Performance Charts",
+        "description": "Single-year monthly plan, actual, and forecast comparison (combo chart)."
+      },
+      "Trend": {
+        "title": "Sales / Profit Trend Charts",
+        "description": "Multi-year monthly trends — switch between sales and operating income via tabs."
+      },
+      "Dashboard": {
+        "title": "Sales HQ Dashboard",
+        "description": "Sales trend · opportunity stage distribution · OP income PLAN/ACTUAL/FORECAST · BA integrated board."
+      }
+    },
     "Common": {
       "Excel": {
         "button": "Download",

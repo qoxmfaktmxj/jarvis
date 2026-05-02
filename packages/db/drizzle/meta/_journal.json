@@ -477,6 +477,13 @@
       "when": 1778200000000,
       "tag": "0067_rename_project_history_bigo_to_work_hours",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1777691193590,
+      "tag": "0068_cuddly_hannibal_king",
+      "breakpoints": true
     }
   ]
 }
