@@ -22,8 +22,6 @@ coverage/
 
 # Drizzle
 drizzle/
-!packages/db/drizzle/
-!packages/db/drizzle/**
 
 # OS
 .DS_Store
@@ -46,7 +44,6 @@ secrets/
 
 # Generated data — contains internal company data, regenerated from scripts
 data/cases/*
-!data/cases/README.md
 data/canonical/*
 !data/canonical/.gitkeep
 data/directory/*
@@ -126,3 +123,28 @@ docs/handoff/
 # Graphify pipeline output (regenerated)
 graphify-out/
 .graphify_uncached.txt
+
+# DB seed scripts (delivered separately via private zip channel for internal use)
+packages/db/seed/
+
+# Legacy Oracle ETL scripts (delivered separately via private zip channel)
+scripts/migrate/
+scripts/migrate-legacy.ts
+scripts/ExportTsvd999Chunk.java
+scripts/extract-all-chunks.ps1
+scripts/normalize-tsvd999.py
+scripts/parse-tsmt001.py
+scripts/migrate-tsmt001-to-project.ts
+scripts/import-cases-to-jarvis.ts
+scripts/cases-stats.mjs
+scripts/generate-cluster-digests.ts
+scripts/build-infra-prompts.py
+scripts/build-retry-prompts.py
+scripts/extract-large-sub-samples.py
+scripts/recluster-top-clusters.py
+scripts/requirements-tsvd999.txt
+scripts/tests/test_parse_tsmt001.py
+scripts/tests/test_recluster_top_clusters.py
+scripts/tests/fixtures/tsmt001_sample.sql
+scripts/tests/migrate-tsmt001-to-project.test.ts
+scripts/tests/import-cases-to-jarvis.test.ts

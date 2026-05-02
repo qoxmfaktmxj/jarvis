@@ -1,2 +1,0 @@
-CREATE UNIQUE INDEX "permission_resource_action_unique" ON "permission" USING btree ("resource","action");--> statement-breakpoint
-CREATE UNIQUE INDEX "role_ws_code_unique" ON "role" USING btree ("workspace_id","code");
