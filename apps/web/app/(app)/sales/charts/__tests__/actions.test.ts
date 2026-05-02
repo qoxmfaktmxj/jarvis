@@ -19,6 +19,7 @@ const {
   headersMock,
   hasPermissionMock,
   dbSelectMock,
+  dbExecuteMock,
 } = vi.hoisted(() => {
   return {
     cookiesMock: vi.fn(),
@@ -26,6 +27,7 @@ const {
     headersMock: vi.fn(),
     hasPermissionMock: vi.fn(),
     dbSelectMock: vi.fn(),
+    dbExecuteMock: vi.fn(),
   };
 });
 
@@ -75,7 +77,14 @@ vi.mock("@jarvis/db/schema", () => ({
     contExpecAmt: "so.contExpecAmt",
     productTypeCode: "so.productTypeCode",
   },
-  salesPlanPerf: {}, // imported by actions.ts even if not used in Task 5 actions
+  salesPlanPerf: {
+    workspaceId: "spp.workspaceId",
+    ym: "spp.ym",
+    orgCd: "spp.orgCd",
+    gubunCd: "spp.gubunCd",
+    trendGbCd: "spp.trendGbCd",
+    amt: "spp.amt",
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -97,6 +106,9 @@ vi.mock("@jarvis/db/client", () => ({
   db: {
     get select() {
       return dbSelectMock;
+    },
+    get execute() {
+      return dbExecuteMock;
     },
   },
 }));
@@ -302,5 +314,40 @@ describe("getMarketingByProduct", () => {
     expect(res.ok).toBe(false);
     if (res.ok) return;
     expect(res.error).toBe("Forbidden");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task 6: getAdminPerf
+// ---------------------------------------------------------------------------
+import { getAdminPerf } from "../actions";
+
+describe("getAdminPerf", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthorizedSession();
+    // Default: db.execute returns empty rows (pivot fills 0s)
+    dbExecuteMock.mockResolvedValue({ rows: [] });
+  });
+
+  it("returns 12 monthly rows for view=year with plan/actual/forecast columns", async () => {
+    const res = await getAdminPerf({ year: 2024, view: "year", metric: "SALES" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(12);
+    for (const r of res.rows) {
+      expect(typeof r.period).toBe("string");
+      expect(typeof r.plan).toBe("number");
+      expect(typeof r.actual).toBe("number");
+      expect(typeof r.forecast).toBe("number");
+    }
+  });
+
+  it("returns 4 quarter rows for view=quarter", async () => {
+    const res = await getAdminPerf({ year: 2024, view: "quarter", metric: "SALES" });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.rows.length).toBe(4);
+    expect(res.rows.map((r) => r.period)).toEqual(["Q1", "Q2", "Q3", "Q4"]);
   });
 });

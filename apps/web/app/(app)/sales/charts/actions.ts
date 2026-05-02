@@ -4,9 +4,10 @@ import { and, count, eq, sql } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
-import { salesActivity, salesOpportunity } from "@jarvis/db/schema";
+import { salesActivity, salesOpportunity, salesPlanPerf } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
+  AdminPerfInput,
   MarketingByActivityInput,
   MarketingByProductInput,
 } from "@jarvis/shared/validation/sales-charts";
@@ -94,4 +95,52 @@ export async function getMarketingByProduct(raw: unknown) {
       totalAmt: Number(r.totalAmt) || 0,
     })),
   };
+}
+
+export async function getAdminPerf(raw: unknown) {
+  const input = AdminPerfInput.parse(raw);
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false as const, error: ctx.error };
+
+  const p = salesPlanPerf;
+  const yearStr = String(input.year);
+  const orgFilter = input.orgCd ? sql`AND ${p.orgCd} = ${input.orgCd}` : sql``;
+
+  const rawRows = await db.execute<{
+    period: string; gubun_cd: string; total: string;
+  }>(sql`
+    SELECT
+      ${input.view === "year"
+        ? sql`SUBSTRING(${p.ym}, 5, 2)`
+        : sql`'Q' || ((CAST(SUBSTRING(${p.ym}, 5, 2) AS INT) - 1) / 3 + 1)`} AS period,
+      ${p.gubunCd} AS gubun_cd,
+      COALESCE(SUM(${p.amt}), 0)::text AS total
+    FROM ${p}
+    WHERE ${p.workspaceId} = ${ctx.workspaceId}
+      AND SUBSTRING(${p.ym}, 1, 4) = ${yearStr}
+      AND ${p.trendGbCd} = ${input.metric}
+      ${orgFilter}
+    GROUP BY period, ${p.gubunCd}
+    ORDER BY period
+  `);
+
+  // Pivot gubun → columns. Period order: Jan-Dec or Q1-Q4.
+  const periods = input.view === "year"
+    ? Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"))
+    : ["Q1", "Q2", "Q3", "Q4"];
+
+  const acc = new Map<string, { period: string; plan: number; actual: number; forecast: number }>();
+  for (const p2 of periods) {
+    acc.set(p2, { period: p2, plan: 0, actual: 0, forecast: 0 });
+  }
+  for (const r of rawRows.rows) {
+    const row = acc.get(r.period);
+    if (!row) continue;
+    const v = Number(r.total) || 0;
+    if (r.gubun_cd === "PLAN") row.plan = v;
+    else if (r.gubun_cd === "ACTUAL") row.actual = v;
+    else if (r.gubun_cd === "FORECAST") row.forecast = v;
+  }
+
+  return { ok: true as const, rows: Array.from(acc.values()) };
 }
