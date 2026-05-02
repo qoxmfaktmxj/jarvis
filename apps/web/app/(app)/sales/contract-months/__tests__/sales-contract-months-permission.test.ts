@@ -3,15 +3,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ---------------------------------------------------------------------------
 // Hoisted spies — available in vi.mock factory closures (hoisting boundary).
 // ---------------------------------------------------------------------------
-const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, insertSpy, updateSpy, deleteSpy, transactionSpy } = vi.hoisted(() => {
+const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, limitSingleMock, insertSpy, updateSpy, deleteSpy, transactionSpy } = vi.hoisted(() => {
   // Count query chain: .select({count}).from().where() → [{count: N}]
   const countWhereSpy = vi.fn().mockResolvedValue([{ count: 2 }]);
 
-  // Select rows chain: .select().from().where().orderBy().limit().offset()
+  // Single-row chain: .select().from().where().limit(1) → []
+  // Used by getContractMonth which does NOT call .orderBy().
+  const limitSingleMock = vi.fn().mockResolvedValue([]);
+
+  // List rows chain: .select().from().where().orderBy().limit().offset()
   const offsetMock = vi.fn().mockResolvedValue([]);
   const limitSelectMock = vi.fn().mockReturnValue({ offset: offsetMock });
   const orderByMock = vi.fn().mockReturnValue({ limit: limitSelectMock });
-  const whereSpy = vi.fn().mockReturnValue({ orderBy: orderByMock });
+  // whereSpy must expose both .orderBy (list) and .limit (single-row fetch)
+  const whereSpy = vi.fn().mockReturnValue({ orderBy: orderByMock, limit: limitSingleMock });
 
   // insert / update / delete returning chains
   const returningInsertMock = vi.fn().mockResolvedValue([{ id: "new-id-1" }]);
@@ -38,6 +43,7 @@ const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, insertSpy, updateS
     countWhereSpy,
     offsetMock,
     limitSelectMock,
+    limitSingleMock,
     insertSpy,
     updateSpy,
     deleteSpy,
@@ -111,11 +117,14 @@ describe("getContractMonth", () => {
       expiresAt: Date.now() + 3_600_000,
     } as never);
     vi.mocked(hasPermission).mockReturnValue(true);
+    // Re-wire whereSpy return after clearAllMocks
+    whereSpy.mockReturnValue({ orderBy: vi.fn().mockReturnValue({ limit: vi.fn().mockReturnValue({ offset: vi.fn().mockResolvedValue([]) }) }), limit: limitSingleMock });
+    limitSingleMock.mockResolvedValue([]);
     offsetMock.mockResolvedValue([]);
   });
 
   it("returns null when row is missing", async () => {
-    offsetMock.mockResolvedValueOnce([]);
+    limitSingleMock.mockResolvedValueOnce([]);
 
     const result = await getContractMonth({ id: "00000000-0000-0000-0000-000000000001" });
 
@@ -126,10 +135,12 @@ describe("getContractMonth", () => {
   });
 
   it("returns contractMonth scoped to workspace", async () => {
+    const MONTH_UUID = "a0000000-0000-0000-0000-000000000001";
+    const CONTRACT_UUID = "b0000000-0000-0000-0000-000000000001";
     const fakeRow = {
-      id: "month-id-1",
+      id: MONTH_UUID,
       workspaceId: "ws-test-1",
-      contractId: "contract-id-1",
+      contractId: CONTRACT_UUID,
       legacyContYear: null,
       legacyContNo: null,
       legacySeq: null,
@@ -160,13 +171,13 @@ describe("getContractMonth", () => {
       updatedBy: null,
     };
 
-    offsetMock.mockResolvedValueOnce([fakeRow]);
+    limitSingleMock.mockResolvedValueOnce([fakeRow]);
 
-    const result = await getContractMonth({ id: "month-id-1" });
+    const result = await getContractMonth({ id: MONTH_UUID });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.contractMonth?.id).toBe("month-id-1");
+      expect(result.contractMonth?.id).toBe(MONTH_UUID);
       expect(result.contractMonth?.ym).toBe("202401");
     }
   });
@@ -214,6 +225,9 @@ describe("listContractMonths", () => {
     countWhereSpy.mockResolvedValue([{ count: 2 }]);
     offsetMock.mockResolvedValue([]);
     limitSelectMock.mockReturnValue({ offset: offsetMock });
+    // Re-wire whereSpy and limitSingleMock after clearAllMocks
+    limitSingleMock.mockResolvedValue([]);
+    whereSpy.mockReturnValue({ orderBy: vi.fn().mockReturnValue({ limit: limitSelectMock }), limit: limitSingleMock });
   });
 
   it("rejects with Forbidden when SALES_ALL permission is missing", async () => {

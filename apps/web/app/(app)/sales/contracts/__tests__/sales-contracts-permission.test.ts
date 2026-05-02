@@ -3,15 +3,20 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ---------------------------------------------------------------------------
 // Hoisted spies — available in vi.mock factory closures (hoisting boundary).
 // ---------------------------------------------------------------------------
-const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, insertSpy, updateSpy, deleteSpy, transactionSpy } = vi.hoisted(() => {
+const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, limitSingleMock, insertSpy, updateSpy, deleteSpy, transactionSpy } = vi.hoisted(() => {
   // Count query chain: .select({count}).from().where() → [{count: N}]
   const countWhereSpy = vi.fn().mockResolvedValue([{ count: 2 }]);
 
-  // Select rows chain: .select().from().where().orderBy().limit().offset()
+  // Single-row chain: .select().from().where().limit(1) → []
+  // Used by getContract which does NOT call .orderBy().
+  const limitSingleMock = vi.fn().mockResolvedValue([]);
+
+  // List rows chain: .select().from().where().orderBy().limit().offset()
   const offsetMock = vi.fn().mockResolvedValue([]);
   const limitSelectMock = vi.fn().mockReturnValue({ offset: offsetMock });
   const orderByMock = vi.fn().mockReturnValue({ limit: limitSelectMock });
-  const whereSpy = vi.fn().mockReturnValue({ orderBy: orderByMock });
+  // whereSpy must expose both .orderBy (list) and .limit (single-row fetch)
+  const whereSpy = vi.fn().mockReturnValue({ orderBy: orderByMock, limit: limitSingleMock });
 
   // insert / update / delete returning chains
   const returningInsertMock = vi.fn().mockResolvedValue([{ id: "new-id-1" }]);
@@ -38,6 +43,7 @@ const { whereSpy, countWhereSpy, offsetMock, limitSelectMock, insertSpy, updateS
     countWhereSpy,
     offsetMock,
     limitSelectMock,
+    limitSingleMock,
     insertSpy,
     updateSpy,
     deleteSpy,
@@ -111,11 +117,13 @@ describe("getContract", () => {
       expiresAt: Date.now() + 3_600_000,
     } as never);
     vi.mocked(hasPermission).mockReturnValue(true);
-    offsetMock.mockResolvedValue([]);
+    // Re-wire whereSpy return after clearAllMocks (clearAllMocks resets mockReturnValue too)
+    whereSpy.mockReturnValue({ orderBy: vi.fn().mockReturnValue({ limit: vi.fn().mockReturnValue({ offset: vi.fn().mockResolvedValue([]) }) }), limit: limitSingleMock });
+    limitSingleMock.mockResolvedValue([]);
   });
 
   it("returns null when row is missing", async () => {
-    offsetMock.mockResolvedValueOnce([]);
+    limitSingleMock.mockResolvedValueOnce([]);
 
     const result = await getContract({ id: "00000000-0000-0000-0000-000000000001" });
 
@@ -126,8 +134,9 @@ describe("getContract", () => {
   });
 
   it("returns contract scoped to workspace", async () => {
+    const CONTRACT_UUID = "c0000000-0000-0000-0000-000000000001";
     const fakeRow = {
-      id: "contract-id-1",
+      id: CONTRACT_UUID,
       workspaceId: "ws-test-1",
       contNm: "테스트 계약",
       companyNm: "테스트 회사",
@@ -155,13 +164,13 @@ describe("getContract", () => {
       docNo: null, companyAddr: null, companyOner: null, sucProb: null, memo: null,
     };
 
-    offsetMock.mockResolvedValueOnce([fakeRow]);
+    limitSingleMock.mockResolvedValueOnce([fakeRow]);
 
-    const result = await getContract({ id: "contract-id-1" });
+    const result = await getContract({ id: CONTRACT_UUID });
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.contract?.id).toBe("contract-id-1");
+      expect(result.contract?.id).toBe(CONTRACT_UUID);
       expect(result.contract?.contNm).toBe("테스트 계약");
     }
   });
@@ -209,6 +218,9 @@ describe("listContracts", () => {
     countWhereSpy.mockResolvedValue([{ count: 2 }]);
     offsetMock.mockResolvedValue([]);
     limitSelectMock.mockReturnValue({ offset: offsetMock });
+    // Re-wire whereSpy and limitSingleMock after clearAllMocks
+    limitSingleMock.mockResolvedValue([]);
+    whereSpy.mockReturnValue({ orderBy: vi.fn().mockReturnValue({ limit: limitSelectMock }), limit: limitSingleMock });
   });
 
   it("rejects with Forbidden when SALES_ALL permission is missing", async () => {
