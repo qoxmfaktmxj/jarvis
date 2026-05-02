@@ -288,6 +288,20 @@ export const saveContractAddinfosInput = z.object({
 
 export type SaveContractAddinfosInput = z.infer<typeof saveContractAddinfosInput>;
 
+// getContract (single-row fetch for [id]/edit RSC)
+export const getContractInput = z.object({ id: z.string().uuid() });
+export const getContractOutput = z.object({ contract: salesContractRowSchema.nullable() });
+
+export type GetContractInput = z.infer<typeof getContractInput>;
+export type GetContractOutput = z.infer<typeof getContractOutput>;
+
+// getContractMonth (single-row fetch for [contractId]/[ym]/edit RSC)
+export const getContractMonthInput = z.object({ id: z.string().uuid() });
+export const getContractMonthOutput = z.object({ contractMonth: salesContractMonthRowSchema.nullable() });
+
+export type GetContractMonthInput = z.infer<typeof getContractMonthInput>;
+export type GetContractMonthOutput = z.infer<typeof getContractMonthOutput>;
+
 /* ============================================================
  * sales_contract_service (TBIZ010)
  * ============================================================ */

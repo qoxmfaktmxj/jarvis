@@ -1440,6 +1440,12 @@
         "startAmt": "계약금액",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "Edit": {
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "이 계약을 삭제하시겠습니까?"
       }
     },
     "ContractMonths": {
@@ -1453,6 +1459,12 @@
         "actualAmt": "실적금액",
         "memo": "메모",
         "insdate": "등록일자"
+      },
+      "Edit": {
+        "save": "저장",
+        "delete": "삭제",
+        "back": "뒤로가기",
+        "confirmDelete": "이 월별 항목을 삭제하시겠습니까?"
       }
     },
     "ContractServices": {
