@@ -48,3 +48,5 @@ export * from "./sales-opportunity.js";
 export * from "./sales-activity.js";
 // Phase-Sales PR-1A: 계약 (TBIZ030/031/032/010)
 export * from "./sales-contract.js";
+// Phase-Sales Group 6: 통계 차트 (계획/실적/전망)
+export * from "./sales-plan-perf.js";
