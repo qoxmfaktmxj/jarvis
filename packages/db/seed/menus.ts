@@ -78,6 +78,9 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "sales.contracts",                kind: "menu", label: "계약 관리",      icon: "FileText",    routePath: "/sales/contracts",                 sortOrder: 181, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "contract", "sales"] },
   { code: "sales.contract-months",          kind: "menu", label: "계약 월별",      icon: "CalendarDays",routePath: "/sales/contract-months",           sortOrder: 182, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "월별", "contract", "sales"] },
   { code: "sales.contract-services",        kind: "menu", label: "서비스 인력",    icon: "Users",       routePath: "/sales/contract-services",         sortOrder: 183, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["서비스", "인력", "contract", "sales"] },
+  { code: "sales.companies",                 kind: "menu", label: "영업 회사",      icon: "Building2",   routePath: "/sales/companies",                 sortOrder: 230, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company", "sales"] },
+  { code: "sales.contract-uploads",          kind: "menu", label: "계약 업로드",    icon: "Upload",      routePath: "/sales/contract-uploads",          sortOrder: 231, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "업로드", "upload", "sales"] },
+  { code: "sales.plan-view-permissions",     kind: "menu", label: "계획 권한",      icon: "ShieldCheck", routePath: "/sales/plan-view-permissions",     sortOrder: 232, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계획", "전망", "실적", "권한", "sales"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },
