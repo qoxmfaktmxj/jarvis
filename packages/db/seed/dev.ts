@@ -49,6 +49,8 @@ async function seed() {
     await seedUsersFromTsys305(wsId);
     const { seedSalesCodes } = await import('./sales-codes.js');
     await seedSalesCodes(wsId);
+    const { seedSalesStatsCodes } = await import('./sales-stats-codes.js');
+    await seedSalesStatsCodes(wsId);
     // Re-seed menus + permissions so menu_item changes (badge / keywords /
     // route / sortOrder / label) flow through `pnpm db:seed` idempotently
     // against existing workspaces. seedPermissions is itself idempotent
@@ -219,6 +221,10 @@ async function seed() {
   // ---- Sales Code Groups (영업관리모듈 Phase 1) ----
   const { seedSalesCodes } = await import('./sales-codes.js');
   await seedSalesCodes(wsId);
+
+  // ---- Sales Stats Code Groups (Group 6 Statistics — B30010/B30030/B10026/B10027) ----
+  const { seedSalesStatsCodes } = await import('./sales-stats-codes.js');
+  await seedSalesStatsCodes(wsId);
 
   console.log('[seed] Dev seed complete!');
 }
