@@ -1,6 +1,6 @@
 "use client";
-import { useCallback, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -11,6 +11,11 @@ import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
+import { useTabState } from "@/components/layout/tabs/useTabState";
+import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
 import { listCustomers, saveCustomers } from "../actions";
 import { exportCustomersToExcel } from "../export";
@@ -133,7 +138,14 @@ export function CustomersGridContainer({
   const [isSearching, startTransition] = useTransition();
 
   // pendingFilters — staged inputs; committed to URL + reload on [조회]
-  const [pendingFilters, setPendingFilters] = useState({
+  const [pendingFilters, setPendingFilters] = useTabState<{
+    custNm: string;
+    custKindCd: string;
+    custDivCd: string;
+    chargerNm: string;
+    searchYmdFrom: string;
+    searchYmdTo: string;
+  }>("sales.customers.pendingFilters", {
     custNm: initialFilters.custNm ?? "",
     custKindCd: initialFilters.custKindCd ?? "",
     custDivCd: initialFilters.custDivCd ?? "",
@@ -143,6 +155,50 @@ export function CustomersGridContainer({
   });
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  // Cached grid row state — survives tab switches. URL persists committed filters/page.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<CustomerRow>[]>(
+    "sales.customers.gridRows",
+    [],
+  );
+  const [dirtyCount, setDirtyCount] = useState(0);
+  useTabDirty(dirtyCount > 0);
+
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/sales/customers";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initialRows, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      // custCd dedup guard mirrored from the inline DataGrid onSave below.
+      const liveRows = gridRowsCacheRef.current
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, ["custCd"]);
+      if (dups.length > 0) {
+        return { ok: false };
+      }
+      const result = await saveCustomers(changes);
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   // Derive current filter values from URL state
   const currentPage = Math.max(1, Number(values.page) || 1);
@@ -307,6 +363,9 @@ export function CustomersGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
+        onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/customers/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
