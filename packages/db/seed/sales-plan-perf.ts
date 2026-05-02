@@ -5,7 +5,6 @@
  * Deterministic per (ym, orgCd, gubun, metric) using a simple hash so re-seeds are stable.
  * Idempotent on the unique index (workspaceId, ym, orgCd, gubunCd, trendGbCd).
  */
-import { sql } from "drizzle-orm";
 import { db } from "../client.js";
 import { salesPlanPerf } from "../schema/sales-plan-perf.js";
 
