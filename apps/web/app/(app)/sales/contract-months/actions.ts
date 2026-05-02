@@ -10,6 +10,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listContractMonthsInput,
   saveContractMonthsInput,
+  getContractMonthInput,
   type SalesContractMonthRow,
 } from "@jarvis/shared/validation/sales-contract";
 import { revalidatePath } from "next/cache";
@@ -129,6 +130,34 @@ function serializeContractMonth(r: typeof salesContractMonth.$inferSelect): Sale
     createdBy: r.createdBy ?? null,
     updatedBy: r.updatedBy ?? null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// getContractMonth (single-row fetch)
+// ---------------------------------------------------------------------------
+
+export async function getContractMonth(
+  rawInput: unknown,
+): Promise<{ ok: true; contractMonth: SalesContractMonthRow | null } | { ok: false; error: string }> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return ctx;
+
+  const input = getContractMonthInput.parse(rawInput);
+
+  const [row] = await db
+    .select()
+    .from(salesContractMonth)
+    .where(
+      and(
+        eq(salesContractMonth.id, input.id),
+        eq(salesContractMonth.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return { ok: true as const, contractMonth: null };
+
+  return { ok: true as const, contractMonth: serializeContractMonth(row) };
 }
 
 // ---------------------------------------------------------------------------

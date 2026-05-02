@@ -10,6 +10,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listContractsInput,
   saveContractsInput,
+  getContractInput,
   type SalesContractRow,
 } from "@jarvis/shared/validation/sales-contract";
 import { revalidatePath } from "next/cache";
@@ -134,6 +135,34 @@ function serializeContract(r: typeof salesContract.$inferSelect): SalesContractR
     createdBy: r.createdBy ?? null,
     updatedBy: r.updatedBy ?? null,
   };
+}
+
+// ---------------------------------------------------------------------------
+// getContract (single-row fetch)
+// ---------------------------------------------------------------------------
+
+export async function getContract(
+  rawInput: unknown,
+): Promise<{ ok: true; contract: SalesContractRow | null } | { ok: false; error: string }> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return ctx;
+
+  const input = getContractInput.parse(rawInput);
+
+  const [row] = await db
+    .select()
+    .from(salesContract)
+    .where(
+      and(
+        eq(salesContract.id, input.id),
+        eq(salesContract.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .limit(1);
+
+  if (!row) return { ok: true as const, contract: null };
+
+  return { ok: true as const, contract: serializeContract(row) };
 }
 
 // ---------------------------------------------------------------------------

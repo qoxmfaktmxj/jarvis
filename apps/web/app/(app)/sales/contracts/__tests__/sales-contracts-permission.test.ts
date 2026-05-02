@@ -89,10 +89,105 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-import { listContracts, saveContracts } from "../actions";
+import { getContract, listContracts, saveContracts } from "../actions";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { revalidatePath } from "next/cache";
+
+// ---------------------------------------------------------------------------
+// getContract
+// ---------------------------------------------------------------------------
+
+describe("getContract", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getSession).mockResolvedValue({
+      userId: "u-test-1",
+      workspaceId: "ws-test-1",
+      employeeId: "E001",
+      permissions: ["sales:all"],
+      roles: [],
+      id: "sess-1",
+      expiresAt: Date.now() + 3_600_000,
+    } as never);
+    vi.mocked(hasPermission).mockReturnValue(true);
+    offsetMock.mockResolvedValue([]);
+  });
+
+  it("returns null when row is missing", async () => {
+    offsetMock.mockResolvedValueOnce([]);
+
+    const result = await getContract({ id: "00000000-0000-0000-0000-000000000001" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.contract).toBeNull();
+    }
+  });
+
+  it("returns contract scoped to workspace", async () => {
+    const fakeRow = {
+      id: "contract-id-1",
+      workspaceId: "ws-test-1",
+      contNm: "테스트 계약",
+      companyNm: "테스트 회사",
+      legacyContNo: "2024-001",
+      createdAt: new Date("2024-01-01T00:00:00Z"),
+      updatedAt: null,
+      createdBy: null,
+      updatedBy: null,
+      legacyEnterCd: null, legacyContYear: null, companyType: null, companyCd: null,
+      companyGrpNm: null, companyNo: null, customerNo: null, customerEmail: null,
+      custNm: null, contGbCd: null, contYmd: null, contSymd: null, contEymd: null,
+      mainContType: null, newYn: null, inOutType: null, startAmt: null,
+      startAmtRate: null, interimAmt1: null, interimAmt2: null, interimAmt3: null,
+      interimAmt4: null, interimAmt5: null, interimAmtRate1: null, interimAmtRate2: null,
+      interimAmtRate3: null, interimAmtRate4: null, interimAmtRate5: null,
+      remainAmt: null, remainAmtRate: null, contImplYn: null, contPublYn: null,
+      contGrtRate: null, advanImplYn: null, advanPublYn: null, advanGrtRate: null,
+      defectImplYn: null, defectPublYn: null, defectGrtRate: null, defectEymd: null,
+      inspecConfYmd: null, startAmtPlanYmd: null, startAmtPublYn: null,
+      interimAmtPlanYmd1: null, interimAmtPublYn1: null, interimAmtPlanYmd2: null,
+      interimAmtPublYn2: null, interimAmtPlanYmd3: null, interimAmtPublYn3: null,
+      interimAmtPlanYmd4: null, interimAmtPublYn4: null, interimAmtPlanYmd5: null,
+      interimAmtPublYn5: null, remainAmtPlanYmd: null, remainAmtPublYn: null,
+      befContNo: null, contCancelYn: null, contInitYn: null, fileSeq: null,
+      docNo: null, companyAddr: null, companyOner: null, sucProb: null, memo: null,
+    };
+
+    offsetMock.mockResolvedValueOnce([fakeRow]);
+
+    const result = await getContract({ id: "contract-id-1" });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.contract?.id).toBe("contract-id-1");
+      expect(result.contract?.contNm).toBe("테스트 계약");
+    }
+  });
+
+  it("rejects without SALES_ALL permission", async () => {
+    vi.mocked(hasPermission).mockReturnValueOnce(false);
+
+    const result = await getContract({ id: "00000000-0000-0000-0000-000000000001" });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Forbidden");
+    }
+  });
+
+  it("rejects when session is missing", async () => {
+    vi.mocked(getSession).mockResolvedValueOnce(null);
+
+    const result = await getContract({ id: "00000000-0000-0000-0000-000000000001" });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe("Unauthorized");
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // listContracts
