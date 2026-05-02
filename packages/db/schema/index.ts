@@ -49,3 +49,5 @@ export * from "./sales-activity.js";
 // Phase-Sales PR-1A: 계약 (TBIZ030/031/032/010)
 export * from "./sales-contract.js";
 export * from "./sales-contract-extra.js";
+// Phase-Sales Group 2: contract finance settlement (TBIZ027/028/038/040/041/046)
+export * from "./sales-finance.js";

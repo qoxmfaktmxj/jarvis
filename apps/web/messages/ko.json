@@ -1267,7 +1267,11 @@
       "contractServices": "서비스 인력",
       "freelancers": "프리랜서투입현황",
       "cloudPeopleBase": "인원단가 기준관리",
-      "cloudPeopleCalc": "인원단가현황"
+      "cloudPeopleCalc": "인원단가현황",
+      "purchases": "매입관리",
+      "taxBills": "세금계산서",
+      "monthExpSga": "월별 경비/판관비",
+      "planDivCosts": "계획배부비"
     },
     "Opportunities": {
       "title": "영업기회",
@@ -1642,6 +1646,97 @@
         "searchMail": "메일주소",
         "searchCostNm": "코스트명",
         "searchDevGbCd": "구분"
+      }
+    },
+    "Purchases": {
+      "title": "매입관리",
+      "description": "계약별 매입 내역과 프로젝트 배부 금액을 관리합니다.",
+      "filters": {
+        "q": "검색어",
+        "qPlaceholder": "계약번호/계약명/매입처",
+        "purType": "매입유형",
+        "baseDate": "기준일"
+      },
+      "columns": {
+        "contNo": "계약번호",
+        "contNm": "계약명",
+        "seq": "순번",
+        "purSeq": "매입순번",
+        "purNm": "매입처",
+        "purType": "매입유형",
+        "amt": "금액",
+        "subAmt": "배부금액",
+        "sdate": "시작일",
+        "edate": "종료일",
+        "servName": "담당자",
+        "servTelNo": "연락처",
+        "note": "비고",
+        "updatedAt": "수정일시"
+      }
+    },
+    "TaxBills": {
+      "title": "세금계산서",
+      "description": "계약 매출 세금계산서와 전표 대상 및 결과를 관리합니다.",
+      "filters": {
+        "q": "검색어",
+        "qPlaceholder": "계약번호/계약명/거래처",
+        "billType": "계산서유형",
+        "ym": "기준월",
+        "fromYmd": "작성일 시작",
+        "toYmd": "작성일 종료"
+      },
+      "columns": {
+        "contNo": "계약번호",
+        "contNm": "계약명",
+        "companyNm": "거래처",
+        "ym": "기준월",
+        "orderDivCd": "구분",
+        "billType": "계산서유형",
+        "debitCreditCd": "차대구분",
+        "slipTargetYn": "전표대상",
+        "amt": "공급가액",
+        "vatAmt": "부가세",
+        "postDate": "작성일",
+        "slipResultYn": "전표결과",
+        "briefsTxt": "적요",
+        "updatedAt": "수정일시"
+      }
+    },
+    "MonthExpSga": {
+      "title": "월별 경비/판관비",
+      "description": "월별 코스트코드 기준 경비와 판관비를 관리합니다.",
+      "filters": {
+        "ym": "기준월",
+        "costCd": "코스트코드"
+      },
+      "columns": {
+        "yyyy": "연도",
+        "mm": "월",
+        "costCd": "코스트코드",
+        "expAmt": "경비",
+        "sgaAmt": "판관비",
+        "waers": "통화",
+        "updatedAt": "수정일시"
+      }
+    },
+    "PlanDivCosts": {
+      "title": "계획배부비",
+      "description": "코스트코드별 계획/실적/수행 배부 금액을 관리합니다.",
+      "filters": {
+        "q": "코스트코드",
+        "qPlaceholder": "코스트코드 검색",
+        "accountType": "계정유형",
+        "year": "연도"
+      },
+      "columns": {
+        "costCd": "코스트코드",
+        "accountType": "계정유형",
+        "ym": "기준월",
+        "planAmt": "계획금액",
+        "prdtAmt": "제품금액",
+        "performAmt": "수행금액",
+        "note": "비고",
+        "updatedAt": "수정일시"
       }
     }
   }
