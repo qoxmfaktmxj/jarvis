@@ -1,6 +1,5 @@
 "use client";
 import { useCallback, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -85,7 +84,6 @@ export function ContractServicesGridContainer({
   limit,
   initialFilters,
 }: Props) {
-  const router = useRouter();
   const common = useTranslations("Sales.Common");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
@@ -200,7 +198,6 @@ export function ContractServicesGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
-        onRowDoubleClick={(row) => router.push("/sales/contract-services/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => {
