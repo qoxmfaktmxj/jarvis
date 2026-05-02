@@ -6,16 +6,20 @@
  * 기존 CompaniesGrid를 DataGrid<Company> 기반으로 교체.
  * admin/companies/page.tsx에서 import해 사용.
  */
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { usePathname } from "next/navigation";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { listCompanies, saveCompanies } from "../actions";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
+import { useTabContext } from "@/components/layout/tabs/TabContext";
+import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 
 type Company = CompanyRow;
@@ -73,12 +77,55 @@ export function CompaniesGridContainer({
     "companies.pendingFilters",
     {},
   );
+  // Cached grid row state (dirty/new/deleted) — persists across tab switches.
+  const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<Company>[]>(
+    "companies.gridRows",
+    [],
+  );
   const [isExporting, setIsExporting] = useState(false);
   const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
 
   // Tab dirty marker — based on grid's reported dirty count.
   useTabDirty(dirtyCount > 0);
+
+  // Compute the initial grid state once, overlaying any cached dirty/deleted/
+  // new rows on top of the server-fresh `initial`. Re-runs only when tabKey
+  // (= pathname) changes, so within a tab the cache is the source of truth
+  // and DataGrid manages its own state from then on.
+  const tabKeyRef = useRef<string | null>(null);
+  const pathname = usePathname() ?? "/admin/companies";
+  const tabKey = pathnameToTabKey(pathname);
+  const initialGridRows = useMemo(() => {
+    if (tabKeyRef.current === tabKey) return undefined;
+    tabKeyRef.current = tabKey;
+    return overlayGridRows(initial, gridRowsCache.length > 0 ? gridRowsCache : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabKey]);
+
+  // Save handler registration — wires "저장 후 닫기" in the tab close dialog
+  // to actually run the grid's batch save against the server.
+  const ctx = useTabContext();
+  const gridRowsCacheRef = useRef(gridRowsCache);
+  gridRowsCacheRef.current = gridRowsCache;
+  useEffect(() => {
+    return ctx.registerSaveHandler(tabKey, async () => {
+      const changes = rowsToBatch(gridRowsCacheRef.current);
+      if (
+        changes.creates.length === 0 &&
+        changes.updates.length === 0 &&
+        changes.deletes.length === 0
+      ) {
+        return { ok: true };
+      }
+      const result = await saveCompanies({
+        creates: changes.creates,
+        updates: changes.updates.map((u) => ({ id: u.id, ...u.patch })),
+        deletes: changes.deletes,
+      });
+      return { ok: result.ok };
+    });
+  }, [ctx, tabKey]);
 
   const reload = useCallback(
     (nextPage: number, nextFilters: Record<string, string>) => {
@@ -226,6 +273,8 @@ export function CompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        initialGridRows={initialGridRows}
+        onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
