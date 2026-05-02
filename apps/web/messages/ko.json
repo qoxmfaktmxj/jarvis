@@ -1264,7 +1264,10 @@
       "dashboard": "영업기회현황",
       "contracts": "계약 관리",
       "contractMonths": "계약 월별",
-      "contractServices": "서비스 인력"
+      "contractServices": "서비스 인력",
+      "freelancers": "프리랜서투입현황",
+      "cloudPeopleBase": "인원단가 기준관리",
+      "cloudPeopleCalc": "인원단가현황"
     },
     "Opportunities": {
       "title": "영업기회",
@@ -1517,6 +1520,109 @@
         "servSabun": "인력사번",
         "memo": "메모",
         "insdate": "등록일자"
+      }
+    },
+    "Freelancers": {
+      "title": "프리랜서투입현황",
+      "description": "프리랜서 투입 기간, 귀속년월, 업종별 지급총액을 관리합니다.",
+      "filters": {
+        "q": "사번/성명",
+        "qPlaceholder": "사번·성명·프로젝트",
+        "belongYm": "귀속년월",
+        "businessCd": "업종코드"
+      },
+      "columns": {
+        "legacyEnterCd": "회사코드",
+        "sabun": "사번",
+        "name": "성명",
+        "pjtCd": "프로젝트코드",
+        "pjtNm": "프로젝트",
+        "sdate": "계약기간 시작일",
+        "edate": "계약기간 종료일",
+        "resNo": "주민번호",
+        "addr": "주소",
+        "tel": "연락처",
+        "mailId": "메일주소",
+        "belongYm": "귀속년월",
+        "businessCd": "업종코드",
+        "totMon": "지급총액",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일시"
+      },
+      "errors": {
+        "duplicate": "중복된 프리랜서 키가 있습니다: {keys}"
+      }
+    },
+    "CloudPeopleBase": {
+      "title": "인원단가 기준관리",
+      "description": "계약별 인원구분과 계산구분의 월단가 기준을 관리합니다.",
+      "filters": {
+        "q": "검색어",
+        "qPlaceholder": "계약·프로젝트·고객코드",
+        "contYear": "귀속년도",
+        "pjtCode": "프로젝트코드",
+        "personType": "인원구분",
+        "calcType": "계산구분"
+      },
+      "columns": {
+        "legacyEnterCd": "회사코드",
+        "contYear": "귀속년도",
+        "contNo": "계약코드",
+        "contNm": "계약명",
+        "pjtCode": "프로젝트코드",
+        "pjtNm": "프로젝트명",
+        "companyCd": "고객코드",
+        "companyNm": "고객사명",
+        "personType": "인원구분",
+        "calcType": "계산구분",
+        "sdate": "계약시작일",
+        "edate": "계약종료일",
+        "monthAmt": "월단가",
+        "note": "비고",
+        "seq": "SEQ",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일시"
+      },
+      "errors": {
+        "duplicate": "중복된 인원단가 기준 키가 있습니다: {keys}"
+      }
+    },
+    "CloudPeopleCalc": {
+      "title": "인원단가현황",
+      "description": "계약별 월 인원수와 인원단가 산출 금액을 관리합니다.",
+      "filters": {
+        "q": "검색어",
+        "qPlaceholder": "계약코드·비고",
+        "contYear": "귀속년도",
+        "ym": "기준년월",
+        "personType": "인원구분",
+        "calcType": "계산구분"
+      },
+      "columns": {
+        "legacyEnterCd": "회사코드",
+        "contYear": "귀속년도",
+        "contNo": "계약코드",
+        "contNm": "계약명",
+        "pjtCode": "프로젝트코드",
+        "pjtNm": "프로젝트명",
+        "companyCd": "고객코드",
+        "companyNm": "고객사명",
+        "ym": "년월",
+        "reflYn": "전표 처리여부",
+        "personType": "인원구분",
+        "calcType": "계산구분",
+        "monthAmt": "월단가",
+        "personCnt": "인원수",
+        "totalAmt": "총금액",
+        "note": "비고",
+        "seq": "SEQ",
+        "reflId": "전표 반영자",
+        "reflDate": "전표 반영일시",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일시"
+      },
+      "errors": {
+        "duplicate": "중복된 인원단가 현황 키가 있습니다: {keys}"
       }
     },
     "Common": {
