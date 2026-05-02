@@ -11,9 +11,9 @@
  * - 인라인 편집: 클릭 시 파란 ring, blur에서 커밋
  * - 상태 배지: new/dirty/deleted 색상 pill
  */
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { useGridState } from "./useGridState";
+import { useGridState, type GridRow } from "./useGridState";
 import { GridToolbar } from "./GridToolbar";
 import { ColumnFilterRow } from "./ColumnFilterRow";
 import { RowStatusBadge } from "./RowStatusBadge";
@@ -60,6 +60,21 @@ export type DataGridProps<T extends WithId> = {
   /** 빈 상태 메시지 */
   emptyMessage?: string;
   /**
+   * 그리드의 dirty 행 수가 바뀔 때마다 호출. 탭 dirty 마커 + 저장 핸들러
+   * 등록에 사용. (옵션 — 미지정이면 호출 안 함.)
+   */
+  onDirtyChange?: (dirtyCount: number) => void;
+  /**
+   * 외부 캐시(예: useTabState)에서 복구한 그리드 행 상태. 미지정 시 `rows`
+   * (server fresh)에서 초기화한다. 지정 시 server rows와 overlay 처리해
+   * cached dirty/deleted/new 행을 보존한다.
+   */
+  initialGridRows?: GridRow<T>[];
+  /**
+   * useGridState 내부 rows 상태가 변할 때마다 호출. 캐시 mirror에 사용.
+   */
+  onGridRowsChange?: (rows: GridRow<T>[]) => void;
+  /**
    * 컬럼 헤더 위에 한 줄 더 렌더링할 그룹 헤더 행.
    * span 합계는 columns.length와 같아야 한다 (불일치 시 dev에서 console.warn).
    */
@@ -90,6 +105,9 @@ export function DataGrid<T extends WithId>({
   filterValues: externalFilterValues,
   emptyMessage = "데이터가 없습니다.",
   groupHeaders,
+  onDirtyChange,
+  initialGridRows,
+  onGridRowsChange,
   onRowDoubleClick,
   onExport,
   isExporting,
@@ -105,13 +123,21 @@ export function DataGrid<T extends WithId>({
     }
   }
 
-  const grid = useGridState<T>(initialRows);
+  const grid = useGridState<T>(initialRows, {
+    initialRows: initialGridRows,
+    onRowsChange: onGridRowsChange,
+  });
   const [selected, setSelected] = useState<string | null>(null);
   const [saving, setSaving] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
   const [localFilterValues, setLocalFilterValues] = useState<Record<string, string>>({});
 
   const filterValues = externalFilterValues ?? localFilterValues;
+
+  // Notify parent when dirty count changes (e.g. for tab dirty marker).
+  useEffect(() => {
+    onDirtyChange?.(grid.dirtyCount);
+  }, [grid.dirtyCount, onDirtyChange]);
 
   const guarded = useCallback(
     (action: () => void) => {

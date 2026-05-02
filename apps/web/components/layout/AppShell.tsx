@@ -3,6 +3,8 @@ import { AppShellMain } from "./AppShellMain";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { UI_PREFS_BOOTSTRAP } from "./uiPrefs";
+import { TabProvider } from "./tabs/TabContext";
+import { TabRuntime } from "./tabs/TabRuntime";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 /**
@@ -19,11 +21,13 @@ import type { MenuTreeNode } from "@/lib/server/menu-tree";
 export async function AppShell({
   children,
   userName,
+  workspaceId,
   menus,
   actions,
 }: {
   children: React.ReactNode;
   userName: string;
+  workspaceId: string;
   menus: MenuTreeNode[];
   actions: MenuTreeNode[];
 }) {
@@ -40,9 +44,12 @@ export async function AppShell({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: UI_PREFS_BOOTSTRAP }}
       />
-      <Sidebar menus={menus} />
-      <Topbar userName={userName} menus={menus} actions={actions} />
-      <AppShellMain>{children}</AppShellMain>
+      <TabProvider workspaceId={workspaceId}>
+        <Sidebar menus={menus} />
+        <Topbar userName={userName} menus={menus} actions={actions} />
+        <AppShellMain>{children}</AppShellMain>
+        <TabRuntime />
+      </TabProvider>
     </div>
   );
 }
