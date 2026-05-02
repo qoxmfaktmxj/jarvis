@@ -78,6 +78,10 @@ const MENU_SEEDS: MenuSeed[] = [
   { code: "sales.contracts",                kind: "menu", label: "계약 관리",      icon: "FileText",    routePath: "/sales/contracts",                 sortOrder: 181, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "contract", "sales"] },
   { code: "sales.contract-months",          kind: "menu", label: "계약 월별",      icon: "CalendarDays",routePath: "/sales/contract-months",           sortOrder: 182, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["계약", "월별", "contract", "sales"] },
   { code: "sales.contract-services",        kind: "menu", label: "서비스 인력",    icon: "Users",       routePath: "/sales/contract-services",         sortOrder: 183, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["서비스", "인력", "contract", "sales"] },
+  // Group 5 — people UI (sortOrder 210-219 reserved for this workstream)
+  { code: "sales.freelancers",              kind: "menu", label: "프리랜서투입현황", icon: "UserCheck",  routePath: "/sales/freelancers",              sortOrder: 210, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["프리랜서", "투입", "freelancer", "people", "sales"] },
+  { code: "sales.cloud-people-base",        kind: "menu", label: "인원단가 기준관리", icon: "Cloud",      routePath: "/sales/cloud-people-base",        sortOrder: 211, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["인원", "단가", "기준", "cloud", "people", "sales"] },
+  { code: "sales.cloud-people-calc",        kind: "menu", label: "인원단가현황",     icon: "Calculator", routePath: "/sales/cloud-people-calc",        sortOrder: 212, permissions: [PERMISSIONS.SALES_ALL, PERMISSIONS.ADMIN_ALL], keywords: ["인원", "단가", "현황", "계산", "cloud", "people", "sales"] },
 
   // ADMIN (200 ≤ sortOrder < 400)
   { code: "admin.companies",          kind: "menu", label: "회사",         icon: "Building2",   routePath: "/admin/companies",                sortOrder: 200, permissions: [PERMISSIONS.ADMIN_ALL], keywords: ["회사", "기업", "company"] },

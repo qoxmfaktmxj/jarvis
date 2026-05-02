@@ -171,7 +171,10 @@
       "mailPersons": "Mail Recipients",
       "contracts": "Contracts",
       "contractMonths": "Contract Months",
-      "contractServices": "Service Staff"
+      "contractServices": "Service Staff",
+      "freelancers": "Freelancer Assignments",
+      "cloudPeopleBase": "Cloud People Rate Base",
+      "cloudPeopleCalc": "Cloud People Rate Calc"
     },
     "Customers": {
       "title": "Customers",
@@ -343,6 +346,109 @@
         "servSabun": "Employee No.",
         "memo": "Memo",
         "insdate": "Created"
+      }
+    },
+    "Freelancers": {
+      "title": "Freelancer Assignments",
+      "description": "Manage freelancer assignment periods, attribution months, industries, and payments.",
+      "filters": {
+        "q": "Employee/Name",
+        "qPlaceholder": "Employee no., name, or project",
+        "belongYm": "Attribution Month",
+        "businessCd": "Industry Code"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "sabun": "Employee No.",
+        "name": "Name",
+        "pjtCd": "Project Code",
+        "pjtNm": "Project",
+        "sdate": "Contract Start",
+        "edate": "Contract End",
+        "resNo": "Resident No.",
+        "addr": "Address",
+        "tel": "Phone",
+        "mailId": "Email",
+        "belongYm": "Attribution Month",
+        "businessCd": "Industry Code",
+        "totMon": "Total Payment",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate freelancer key: {keys}"
+      }
+    },
+    "CloudPeopleBase": {
+      "title": "Cloud People Rate Base",
+      "description": "Manage monthly rate bases by contract, person type, and calculation type.",
+      "filters": {
+        "q": "Search",
+        "qPlaceholder": "Contract, project, or customer code",
+        "contYear": "Contract Year",
+        "pjtCode": "Project Code",
+        "personType": "Person Type",
+        "calcType": "Calc Type"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "contYear": "Contract Year",
+        "contNo": "Contract Code",
+        "contNm": "Contract Name",
+        "pjtCode": "Project Code",
+        "pjtNm": "Project Name",
+        "companyCd": "Customer Code",
+        "companyNm": "Customer Name",
+        "personType": "Person Type",
+        "calcType": "Calc Type",
+        "sdate": "Contract Start",
+        "edate": "Contract End",
+        "monthAmt": "Monthly Rate",
+        "note": "Note",
+        "seq": "SEQ",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate cloud people base key: {keys}"
+      }
+    },
+    "CloudPeopleCalc": {
+      "title": "Cloud People Rate Calc",
+      "description": "Manage monthly headcount and calculated people-rate amounts per contract.",
+      "filters": {
+        "q": "Search",
+        "qPlaceholder": "Contract code or note",
+        "contYear": "Contract Year",
+        "ym": "Base Month",
+        "personType": "Person Type",
+        "calcType": "Calc Type"
+      },
+      "columns": {
+        "legacyEnterCd": "Company Code",
+        "contYear": "Contract Year",
+        "contNo": "Contract Code",
+        "contNm": "Contract Name",
+        "pjtCode": "Project Code",
+        "pjtNm": "Project Name",
+        "companyCd": "Customer Code",
+        "companyNm": "Customer Name",
+        "ym": "Year-Month",
+        "reflYn": "Voucher Reflected",
+        "personType": "Person Type",
+        "calcType": "Calc Type",
+        "monthAmt": "Monthly Rate",
+        "personCnt": "Headcount",
+        "totalAmt": "Total Amount",
+        "note": "Note",
+        "seq": "SEQ",
+        "reflId": "Reflection User",
+        "reflDate": "Reflection Date",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "errors": {
+        "duplicate": "Duplicate cloud people calc key: {keys}"
       }
     },
     "Common": {
