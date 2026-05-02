@@ -6,8 +6,10 @@ import { saveOpportunities, listOpportunityMemos, createOpportunityMemo, deleteO
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { CodeGroupPopupLauncher, type CodeGroupItem } from "@/components/grid/CodeGroupPopupLauncher";
-import { EmployeePicker } from "@/components/grid/EmployeePicker";
-import { searchEmployees } from "@/lib/server/employees";
+// EmployeePicker removed — `insUserId` is server-immutable; the field shows
+// `insUserName` as a read-only display.
+import { DatePicker } from "@/components/ui/DatePicker";
+// searchEmployees removed — see EmployeePicker comment above.
 import type { MemoTreeNode } from "@jarvis/shared/validation/sales/opportunity-memo";
 
 type OpportunityDetail = {
@@ -164,8 +166,11 @@ export function OpportunityEditForm({ opportunity, codeOptions }: Props) {
     insUserId: opportunity.insUserId,
     contExpecAmt: opportunity.contExpecAmt != null ? String(opportunity.contExpecAmt) : "",
     contExpecYmd: opportunity.contExpecYmd ?? "",
+    contExpecSymd: opportunity.contExpecSymd ?? "",
+    contExpecEymd: opportunity.contExpecEymd ?? "",
   });
-  const [insUserName, setInsUserName] = useState(opportunity.insUserName ?? "");
+  // Display-only — see the read-only "등록자" Field below for the rationale.
+  const insUserName = opportunity.insUserName ?? "";
 
   function patch<K extends keyof typeof draft>(key: K, value: typeof draft[K]) {
     setDraft((p) => ({ ...p, [key]: value }));
@@ -185,6 +190,10 @@ export function OpportunityEditForm({ opportunity, codeOptions }: Props) {
             bizOpSourceCode: draft.bizOpSourceCode,
             orgNm: draft.orgNm || null,
             focusMgrYn: draft.focusMgrYn,
+            // insUserId is immutable — server strips it via _omitInsUserId.
+            // See actions.ts:178 and the readonly UI block below.
+            contExpecSymd: draft.contExpecSymd || null,
+            contExpecEymd: draft.contExpecEymd || null,
           },
         }],
         deletes: [],
@@ -212,20 +221,34 @@ export function OpportunityEditForm({ opportunity, codeOptions }: Props) {
             <Field label="영업기회명" full><input type="text" className="h-9 rounded border border-slate-300 px-3 text-sm" value={draft.bizOpNm} onChange={(e) => patch("bizOpNm", e.target.value)} /></Field>
             <Field label="조직"><input type="text" className="h-9 rounded border border-slate-300 px-3 text-sm" value={draft.orgNm} onChange={(e) => patch("orgNm", e.target.value)} /></Field>
             <Field label="고객사"><input type="text" className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" value={opportunity.customerName ?? ""} readOnly /></Field>
-            <Field label="등록자(사번)">
-              <EmployeePicker
-                value={insUserName}
-                onSelect={(hit) => { patch("insUserId", hit.sabun); setInsUserName(`${hit.name} (${hit.sabun})`); }}
-                search={(q, lim) => searchEmployees({ q, limit: lim })}
-                placeholder="사번/이름 검색"
+            {/*
+             * 등록자(insUserId)는 서버에서 immutable로 강제됨 (actions.ts:178
+             * `_omitInsUserId`). 생성 시점에 ctx.userId로 자동 기록되며 수정 폼은
+             * 표시만 한다. EmployeePicker로 보이게 하면 사용자가 변경 가능한 것으로
+             * 오인하므로 readonly 입력으로 대체한다.
+             */}
+            <Field label="등록자">
+              <input
+                type="text"
+                className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700"
+                value={insUserName || "-"}
+                readOnly
               />
             </Field>
             <Field label="제품유형"><CodeField value={draft.productTypeCode} label="제품유형" options={codeOptions.productType} onChange={(v) => patch("productTypeCode", v)} /></Field>
             <Field label="영업단계"><CodeField value={draft.bizStepCode} label="영업단계" options={codeOptions.bizStep} onChange={(v) => patch("bizStepCode", v)} /></Field>
-            <Field label="단계 일자(YYYY-MM-DD)"><input type="text" className="h-9 rounded border border-slate-300 px-3 text-sm" value={draft.bizStepYmd} onChange={(e) => patch("bizStepYmd", e.target.value)} placeholder="2026-05-02" /></Field>
+            <Field label="단계 일자">
+              <DatePicker value={draft.bizStepYmd || null} onChange={(v) => patch("bizStepYmd", v ?? "")} ariaLabel="단계 일자" />
+            </Field>
             <Field label="기회 출처"><CodeField value={draft.bizOpSourceCode} label="기회 출처" options={codeOptions.bizOpSource} onChange={(v) => patch("bizOpSourceCode", v)} /></Field>
             <Field label="계약예상금액"><input type="text" className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" value={draft.contExpecAmt} readOnly /></Field>
             <Field label="계약예상년월"><input type="text" className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" value={draft.contExpecYmd} readOnly /></Field>
+            <Field label="계약예상시작일">
+              <DatePicker value={draft.contExpecSymd || null} onChange={(v) => patch("contExpecSymd", v ?? "")} ariaLabel="계약예상시작일" />
+            </Field>
+            <Field label="계약예상종료일">
+              <DatePicker value={draft.contExpecEymd || null} onChange={(v) => patch("contExpecEymd", v ?? "")} ariaLabel="계약예상종료일" />
+            </Field>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={draft.focusMgrYn} onChange={(e) => patch("focusMgrYn", e.target.checked)} />

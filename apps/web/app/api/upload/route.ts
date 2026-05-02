@@ -7,6 +7,11 @@ import { db } from '@jarvis/db/client';
 import { rawSource, attachment } from '@jarvis/db/schema/file';
 import { auditLog } from '@jarvis/db/schema/audit';
 import { verifyMagicBytes } from '@/lib/upload/magic-bytes';
+import {
+  UPLOAD_XLSX_MIME,
+  validateUploadMime,
+  validateUploadSize,
+} from '@/lib/server/validateUpload';
 import PgBoss from 'pg-boss';
 
 const uploadSchema = z.object({
@@ -94,6 +99,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const allowedPrefix = `${session.workspaceId}/${session.userId}/`;
   if (!objectKey.startsWith(allowedPrefix)) {
     return NextResponse.json({ error: 'forbidden_object_key' }, { status: 400 });
+  }
+
+  // ── Resource-specific size + MIME guard ───────────────────────────────────
+  // Sales contract uploads have a stricter 10 MB cap and an xlsx/csv allowlist
+  // (DoS + malformed-file-parse defense). Other resource types fall through
+  // to the broader 50 MB allowlist enforced at presign time.
+  if (resourceType === 'sales_contract_upload') {
+    const sizeCheck = validateUploadSize(sizeBytes);
+    if (!sizeCheck.ok) {
+      return NextResponse.json({ error: sizeCheck.error }, { status: 400 });
+    }
+    const mimeCheck = validateUploadMime(mimeType, UPLOAD_XLSX_MIME);
+    if (!mimeCheck.ok) {
+      return NextResponse.json({ error: mimeCheck.error }, { status: 400 });
+    }
   }
 
   // ── Magic-byte verification (server-side, second line of defense) ─────────

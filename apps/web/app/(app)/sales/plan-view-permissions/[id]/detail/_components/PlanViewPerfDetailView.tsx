@@ -76,7 +76,15 @@ function parseNumeric(s: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function PlanViewPerfDetailView({ master, months }: { master: Master; months: Month[] }) {
+// `canWrite` is forwarded from the server `getPlanViewPerformance` response.
+// When the ACL row says `canWrite = false` (Option B), the save / cell edits
+// are hidden in the UI. The server still enforces the same check on
+// `savePlanViewPerformanceMonths` — this is a UX hint, not a security gate.
+export function PlanViewPerfDetailView({
+  master,
+  months,
+  canWrite = true,
+}: { master: Master; months: Month[]; canWrite?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const initial = useMemo(() => new Map(months.map((m) => [m.id, m])), [months]);
@@ -162,9 +170,17 @@ export function PlanViewPerfDetailView({ master, months }: { master: Master; mon
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-700">월별 상세 ({months.length}개월)</h3>
           <div className="flex items-center gap-2">
+            {!canWrite && (
+              <span
+                className="rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600"
+                data-testid="pvp-month-readonly-badge"
+              >
+                읽기 전용
+              </span>
+            )}
             <span className="text-xs text-slate-500" data-testid="pvp-month-dirty-count">{dirtyIds.length}건 변경</span>
-            <Button type="button" variant="outline" size="sm" onClick={handleReset} disabled={isPending || dirtyIds.length === 0}>되돌리기</Button>
-            <Button type="button" size="sm" onClick={handleSave} disabled={isPending || dirtyIds.length === 0} data-testid="pvp-month-save">
+            <Button type="button" variant="outline" size="sm" onClick={handleReset} disabled={isPending || dirtyIds.length === 0 || !canWrite}>되돌리기</Button>
+            <Button type="button" size="sm" onClick={handleSave} disabled={isPending || dirtyIds.length === 0 || !canWrite} data-testid="pvp-month-save">
               {isPending ? "저장 중…" : `저장 (${dirtyIds.length})`}
             </Button>
           </div>

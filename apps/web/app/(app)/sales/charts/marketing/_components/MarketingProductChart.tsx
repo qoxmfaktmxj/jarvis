@@ -27,7 +27,7 @@ export function MarketingProductChart({ data }: { data: Item[] }) {
               ))}
             </Pie>
             <Tooltip formatter={fmtKR} />
-            <Legend />
+            <Legend wrapperStyle={{ whiteSpace: "normal", paddingTop: 8 }} />
           </PieChart>
         </ResponsiveContainer>
       </div>

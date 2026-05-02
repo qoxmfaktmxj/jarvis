@@ -79,7 +79,21 @@ export const salesContractRowSchema = z.object({
   docNo: z.string().nullable(),
   companyAddr: z.string().nullable(),
   companyOner: z.string().nullable(),
-  sucProb: z.string().nullable(),
+  // sucProb: 수주확률 (%). Stored as numeric() in DB so the wire shape stays
+  // string|null (matches *Rate fields), but we constrain it to integer 0..100
+  // because the legacy JSP grid bounded the column at 0~100.
+  sucProb: z
+    .string()
+    .nullable()
+    .refine(
+      (v) => {
+        if (v === null || v === "") return true;
+        if (!/^\d{1,3}$/.test(v)) return false;
+        const n = Number(v);
+        return Number.isInteger(n) && n >= 0 && n <= 100;
+      },
+      { message: "수주확률은 0~100 정수여야 합니다." },
+    ),
   memo: z.string().nullable(),
   // audit
   createdAt: z.string().datetime(),

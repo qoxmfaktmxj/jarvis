@@ -1,14 +1,20 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import type { ColumnDef } from "@/components/grid/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
+import { triggerDownload } from "@/lib/utils/triggerDownload";
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 import {
+  downloadContractUploadTemplate,
   listContractUploads,
   listUnifiedContractUploads,
   saveContractUploads,
@@ -123,6 +129,7 @@ export function ContractUploadsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const t = useTranslations("Sales.ContractUploads");
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
   });
@@ -133,6 +140,7 @@ export function ContractUploadsGridContainer({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isSearching, startTransition] = useTransition();
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
 
@@ -173,6 +181,20 @@ export function ContractUploadsGridContainer({
     setUrlFilter("page", "1");
     reload(1, { ...pendingFilters, page: "1" });
   }, [pendingFilters, reload, setUrlFilter]);
+
+  const handleDownloadTemplate = useCallback(async () => {
+    setIsDownloadingTemplate(true);
+    try {
+      const result = await downloadContractUploadTemplate();
+      if (result.ok) {
+        triggerDownload(result.bytes, result.filename);
+      } else {
+        toast({ title: t("downloadTemplate"), description: result.error });
+      }
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  }, [t]);
 
   const handleUpload = async () => {
     if (!selectedFile) return;
@@ -227,12 +249,33 @@ export function ContractUploadsGridContainer({
           <Input
             type="file"
             accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              if (file && file.size > MAX_UPLOAD_BYTES) {
+                toast({
+                  title: "파일이 너무 큽니다",
+                  description: `${(file.size / 1024 / 1024).toFixed(1)}MB (최대 10MB)`,
+                });
+                event.target.value = "";
+                setSelectedFile(null);
+                return;
+              }
+              setSelectedFile(file);
+            }}
             className="h-8"
           />
         </GridFilterField>
         <Button type="button" size="sm" onClick={handleUpload} disabled={!selectedFile || isUploading}>
           {isUploading ? "업로드 중" : "업로드"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleDownloadTemplate}
+          disabled={isDownloadingTemplate}
+        >
+          {t("downloadTemplate")}
         </Button>
         {uploadMessage ? <p className="text-sm text-(--fg-muted)">{uploadMessage}</p> : null}
       </div>

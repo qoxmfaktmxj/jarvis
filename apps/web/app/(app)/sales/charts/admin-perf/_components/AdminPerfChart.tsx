@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { fmtKR } from "../../../_lib/format";
 
@@ -14,6 +15,7 @@ const COLORS: Record<Series, string> = {
 const LABELS: Record<Series, string> = { PLAN: "계획", ACTUAL: "실적", FORECAST: "전망" };
 
 export function AdminPerfChart({ buckets, rows }: { buckets: string[]; rows: Row[] }) {
+  const t = useTranslations("Sales.Charts.AdminPerf");
   // Pivot to bucket-major rows for Recharts: [{ bucket, [orgCd|series]: value, ... }]
   const data = buckets.map((bucket, i) => {
     const obj: Record<string, string | number> = { bucket };
@@ -32,7 +34,7 @@ export function AdminPerfChart({ buckets, rows }: { buckets: string[]; rows: Row
 
   return (
     <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="admin-perf-chart">
-      <h3 className="text-sm font-semibold text-slate-700">조직별 PLAN / ACTUAL / FORECAST</h3>
+      <h3 className="text-sm font-semibold text-slate-700">{t("stackedTitle")}</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={360}>
           <BarChart data={data}>
@@ -40,7 +42,7 @@ export function AdminPerfChart({ buckets, rows }: { buckets: string[]; rows: Row
             <XAxis dataKey="bucket" fontSize={11} />
             <YAxis fontSize={11} tickFormatter={fmtKR} />
             <Tooltip formatter={fmtKR} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend wrapperStyle={{ fontSize: 11, whiteSpace: "normal", paddingTop: 8 }} />
             {barKeys.map((b) => (
               <Bar key={b.key} dataKey={b.key} fill={b.color} />
             ))}

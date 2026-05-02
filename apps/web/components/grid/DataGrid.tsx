@@ -364,7 +364,9 @@ export function DataGrid<T extends WithId>({
                                 ? null
                                 : Number(val)
                             }
-                            onChange={(next) => commit(next)}
+                            onChange={(next) =>
+                              commit(next === null ? null : String(next))
+                            }
                           />
                         )}
                       </td>

@@ -13,21 +13,29 @@ import {
   salesContract,
   salesMonthExpSga,
   salesPlanDivCost,
+  salesPlanDivCostDetail,
   salesPurchase,
+  salesPurchaseProject,
   salesTaxBill,
 } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listMonthExpSgaInput,
+  listPlanDivCostDetailsInput,
   listPlanDivCostsInput,
+  listPurchaseProjectsInput,
   listPurchasesInput,
   listTaxBillsInput,
   saveMonthExpSgaInput,
+  savePlanDivCostDetailsInput,
   savePlanDivCostsInput,
+  savePurchaseProjectsInput,
   savePurchasesInput,
   saveTaxBillsInput,
   type SalesMonthExpSgaRow,
+  type SalesPlanDivCostDetailRow,
   type SalesPlanDivCostRow,
+  type SalesPurchaseProjectRow,
   type SalesPurchaseRow,
   type SalesTaxBillRow,
 } from "@jarvis/shared/validation/sales-finance";
@@ -841,4 +849,375 @@ export async function exportPlanDivCostsToExcel(rawFilters: unknown) {
     rawFilters as Record<string, unknown>,
     "sales_plan_div_cost",
   );
+}
+
+// ============================================================================
+// Sub-row actions: sales_purchase_project (children of sales_purchase)
+// ============================================================================
+
+function serializePurchaseProject(
+  r: typeof salesPurchaseProject.$inferSelect,
+): SalesPurchaseProjectRow {
+  return {
+    id: r.id,
+    workspaceId: r.workspaceId,
+    purchaseId: r.purchaseId ?? null,
+    legacyEnterCd: r.legacyEnterCd ?? null,
+    legacyContYear: r.legacyContYear ?? null,
+    legacyContNo: r.legacyContNo ?? null,
+    legacySeq: r.legacySeq ?? null,
+    legacyPurSeq: r.legacyPurSeq ?? null,
+    subContNo: r.subContNo ?? null,
+    pjtCode: r.pjtCode ?? null,
+    pjtNm: r.pjtNm ?? null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: iso(r.updatedAt),
+    createdBy: r.createdBy ?? null,
+    updatedBy: r.updatedBy ?? null,
+  };
+}
+
+export async function listPurchaseProjects(
+  rawInput: unknown,
+): Promise<ListResult<SalesPurchaseProjectRow>> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 200, error: ctx.error };
+
+  const input = listPurchaseProjectsInput.parse(rawInput);
+
+  // Parent ownership check — purchaseId must belong to this workspace.
+  const [parent] = await db
+    .select({ id: salesPurchase.id })
+    .from(salesPurchase)
+    .where(and(eq(salesPurchase.id, input.purchaseId), eq(salesPurchase.workspaceId, ctx.workspaceId)))
+    .limit(1);
+  if (!parent) {
+    return { ok: false, rows: [], total: 0, page: 1, limit: 200, error: "Forbidden" };
+  }
+
+  const where = and(
+    eq(salesPurchaseProject.workspaceId, ctx.workspaceId),
+    eq(salesPurchaseProject.purchaseId, input.purchaseId),
+  );
+  const [rows, countRows] = await Promise.all([
+    db
+      .select()
+      .from(salesPurchaseProject)
+      .where(where)
+      .orderBy(salesPurchaseProject.subContNo, salesPurchaseProject.pjtCode, salesPurchaseProject.createdAt),
+    db.select({ count: count() }).from(salesPurchaseProject).where(where),
+  ]);
+
+  return {
+    ok: true,
+    rows: rows.map(serializePurchaseProject),
+    total: Number(countRows[0]?.count ?? 0),
+    page: 1,
+    limit: rows.length,
+  };
+}
+
+export async function savePurchaseProjects(rawInput: unknown): Promise<SaveResult> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false, created: [], updated: [], deleted: [], errors: [{ message: ctx.error }] };
+
+  const input = savePurchaseProjectsInput.parse(rawInput);
+
+  // Parent ownership check — purchaseId must belong to this workspace.
+  const [parent] = await db
+    .select({
+      id: salesPurchase.id,
+      legacyEnterCd: salesPurchase.legacyEnterCd,
+      legacyContYear: salesPurchase.legacyContYear,
+      legacyContNo: salesPurchase.legacyContNo,
+      legacySeq: salesPurchase.legacySeq,
+      legacyPurSeq: salesPurchase.legacyPurSeq,
+    })
+    .from(salesPurchase)
+    .where(and(eq(salesPurchase.id, input.purchaseId), eq(salesPurchase.workspaceId, ctx.workspaceId)))
+    .limit(1);
+  if (!parent) {
+    return { ok: false, created: [], updated: [], deleted: [], errors: [{ message: "Forbidden" }] };
+  }
+
+  const created: string[] = [];
+  const updated: string[] = [];
+  const deleted: string[] = [];
+
+  try {
+    await db.transaction(async (tx) => {
+      if (input.creates.length > 0) {
+        const rows = await tx
+          .insert(salesPurchaseProject)
+          .values(
+            input.creates.map((c) => ({
+              ...c,
+              workspaceId: ctx.workspaceId,
+              purchaseId: input.purchaseId,
+              // Pre-fill composite legacy keys from parent unless explicitly set.
+              legacyEnterCd: c.legacyEnterCd ?? parent.legacyEnterCd ?? undefined,
+              legacyContYear: c.legacyContYear ?? parent.legacyContYear ?? undefined,
+              legacyContNo: c.legacyContNo ?? parent.legacyContNo ?? undefined,
+              legacySeq: c.legacySeq ?? parent.legacySeq ?? undefined,
+              legacyPurSeq: c.legacyPurSeq ?? parent.legacyPurSeq ?? undefined,
+              createdBy: ctx.userId ?? undefined,
+              updatedBy: ctx.userId ?? undefined,
+            })),
+          )
+          .returning({ id: salesPurchaseProject.id });
+        created.push(...rows.map((r) => r.id));
+        await tx.insert(auditLog).values(
+          rows.map((r) =>
+            auditValues(ctx, "sales.purchase_project.create", "sales_purchase_project", r.id, {
+              purchaseId: input.purchaseId,
+            }),
+          ),
+        );
+      }
+      for (const u of input.updates) {
+        const { id, ...patch } = u;
+        const [row] = await tx
+          .update(salesPurchaseProject)
+          .set({ ...patch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined })
+          .where(
+            and(
+              eq(salesPurchaseProject.id, id),
+              eq(salesPurchaseProject.workspaceId, ctx.workspaceId),
+              eq(salesPurchaseProject.purchaseId, input.purchaseId),
+            ),
+          )
+          .returning({ id: salesPurchaseProject.id });
+        if (row) {
+          updated.push(row.id);
+          await tx.insert(auditLog).values(
+            auditValues(ctx, "sales.purchase_project.update", "sales_purchase_project", row.id, {
+              purchaseId: input.purchaseId,
+              ...patch,
+            }),
+          );
+        }
+      }
+      if (input.deletes.length > 0) {
+        const rows = await tx
+          .delete(salesPurchaseProject)
+          .where(
+            and(
+              eq(salesPurchaseProject.workspaceId, ctx.workspaceId),
+              eq(salesPurchaseProject.purchaseId, input.purchaseId),
+              inArray(salesPurchaseProject.id, input.deletes),
+            ),
+          )
+          .returning({ id: salesPurchaseProject.id });
+        deleted.push(...rows.map((r) => r.id));
+        await tx.insert(auditLog).values(
+          rows.map((r) =>
+            auditValues(ctx, "sales.purchase_project.delete", "sales_purchase_project", r.id, {
+              purchaseId: input.purchaseId,
+            }),
+          ),
+        );
+      }
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      created,
+      updated,
+      deleted,
+      errors: [{ message: error instanceof Error ? error.message : "save failed" }],
+    };
+  }
+
+  revalidatePath("/sales/purchases");
+  return { ok: true, created, updated, deleted };
+}
+
+// ============================================================================
+// Sub-row actions: sales_plan_div_cost_detail (children of sales_plan_div_cost)
+// ============================================================================
+
+function serializePlanDivCostDetail(
+  r: typeof salesPlanDivCostDetail.$inferSelect,
+): SalesPlanDivCostDetailRow {
+  return {
+    id: r.id,
+    workspaceId: r.workspaceId,
+    planDivCostId: r.planDivCostId ?? null,
+    legacyEnterCd: r.legacyEnterCd ?? null,
+    costCd: r.costCd ?? null,
+    accountType: r.accountType ?? null,
+    ym: r.ym ?? null,
+    subCostCd: r.subCostCd ?? null,
+    planRate: r.planRate ?? null,
+    prdtRate: r.prdtRate ?? null,
+    performRate: r.performRate ?? null,
+    useYn: r.useYn ?? null,
+    createdAt: r.createdAt.toISOString(),
+    updatedAt: iso(r.updatedAt),
+    createdBy: r.createdBy ?? null,
+    updatedBy: r.updatedBy ?? null,
+  };
+}
+
+export async function listPlanDivCostDetails(
+  rawInput: unknown,
+): Promise<ListResult<SalesPlanDivCostDetailRow>> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false, rows: [], total: 0, page: 1, limit: 200, error: ctx.error };
+
+  const input = listPlanDivCostDetailsInput.parse(rawInput);
+
+  const [parent] = await db
+    .select({ id: salesPlanDivCost.id })
+    .from(salesPlanDivCost)
+    .where(
+      and(
+        eq(salesPlanDivCost.id, input.planDivCostId),
+        eq(salesPlanDivCost.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .limit(1);
+  if (!parent) {
+    return { ok: false, rows: [], total: 0, page: 1, limit: 200, error: "Forbidden" };
+  }
+
+  const where = and(
+    eq(salesPlanDivCostDetail.workspaceId, ctx.workspaceId),
+    eq(salesPlanDivCostDetail.planDivCostId, input.planDivCostId),
+  );
+  const [rows, countRows] = await Promise.all([
+    db
+      .select()
+      .from(salesPlanDivCostDetail)
+      .where(where)
+      .orderBy(salesPlanDivCostDetail.subCostCd, salesPlanDivCostDetail.createdAt),
+    db.select({ count: count() }).from(salesPlanDivCostDetail).where(where),
+  ]);
+
+  return {
+    ok: true,
+    rows: rows.map(serializePlanDivCostDetail),
+    total: Number(countRows[0]?.count ?? 0),
+    page: 1,
+    limit: rows.length,
+  };
+}
+
+export async function savePlanDivCostDetails(rawInput: unknown): Promise<SaveResult> {
+  const ctx = await resolveSalesContext();
+  if (!ctx.ok) return { ok: false, created: [], updated: [], deleted: [], errors: [{ message: ctx.error }] };
+
+  const input = savePlanDivCostDetailsInput.parse(rawInput);
+
+  const [parent] = await db
+    .select({
+      id: salesPlanDivCost.id,
+      legacyEnterCd: salesPlanDivCost.legacyEnterCd,
+      costCd: salesPlanDivCost.costCd,
+      accountType: salesPlanDivCost.accountType,
+      ym: salesPlanDivCost.ym,
+    })
+    .from(salesPlanDivCost)
+    .where(
+      and(
+        eq(salesPlanDivCost.id, input.planDivCostId),
+        eq(salesPlanDivCost.workspaceId, ctx.workspaceId),
+      ),
+    )
+    .limit(1);
+  if (!parent) {
+    return { ok: false, created: [], updated: [], deleted: [], errors: [{ message: "Forbidden" }] };
+  }
+
+  const created: string[] = [];
+  const updated: string[] = [];
+  const deleted: string[] = [];
+
+  try {
+    await db.transaction(async (tx) => {
+      if (input.creates.length > 0) {
+        const rows = await tx
+          .insert(salesPlanDivCostDetail)
+          .values(
+            input.creates.map((c) => ({
+              ...c,
+              workspaceId: ctx.workspaceId,
+              planDivCostId: input.planDivCostId,
+              // Pre-fill composite legacy keys from parent unless explicitly set.
+              legacyEnterCd: c.legacyEnterCd ?? parent.legacyEnterCd ?? undefined,
+              costCd: c.costCd ?? parent.costCd ?? undefined,
+              accountType: c.accountType ?? parent.accountType ?? undefined,
+              ym: c.ym ?? parent.ym ?? undefined,
+              // Legacy default — useYn = 'Y' when client omits.
+              useYn: c.useYn ?? "Y",
+              createdBy: ctx.userId ?? undefined,
+              updatedBy: ctx.userId ?? undefined,
+            })),
+          )
+          .returning({ id: salesPlanDivCostDetail.id });
+        created.push(...rows.map((r) => r.id));
+        await tx.insert(auditLog).values(
+          rows.map((r) =>
+            auditValues(ctx, "sales.plan_div_cost_detail.create", "sales_plan_div_cost_detail", r.id, {
+              planDivCostId: input.planDivCostId,
+            }),
+          ),
+        );
+      }
+      for (const u of input.updates) {
+        const { id, ...patch } = u;
+        const [row] = await tx
+          .update(salesPlanDivCostDetail)
+          .set({ ...patch, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined })
+          .where(
+            and(
+              eq(salesPlanDivCostDetail.id, id),
+              eq(salesPlanDivCostDetail.workspaceId, ctx.workspaceId),
+              eq(salesPlanDivCostDetail.planDivCostId, input.planDivCostId),
+            ),
+          )
+          .returning({ id: salesPlanDivCostDetail.id });
+        if (row) {
+          updated.push(row.id);
+          await tx.insert(auditLog).values(
+            auditValues(ctx, "sales.plan_div_cost_detail.update", "sales_plan_div_cost_detail", row.id, {
+              planDivCostId: input.planDivCostId,
+              ...patch,
+            }),
+          );
+        }
+      }
+      if (input.deletes.length > 0) {
+        const rows = await tx
+          .delete(salesPlanDivCostDetail)
+          .where(
+            and(
+              eq(salesPlanDivCostDetail.workspaceId, ctx.workspaceId),
+              eq(salesPlanDivCostDetail.planDivCostId, input.planDivCostId),
+              inArray(salesPlanDivCostDetail.id, input.deletes),
+            ),
+          )
+          .returning({ id: salesPlanDivCostDetail.id });
+        deleted.push(...rows.map((r) => r.id));
+        await tx.insert(auditLog).values(
+          rows.map((r) =>
+            auditValues(ctx, "sales.plan_div_cost_detail.delete", "sales_plan_div_cost_detail", r.id, {
+              planDivCostId: input.planDivCostId,
+            }),
+          ),
+        );
+      }
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      created,
+      updated,
+      deleted,
+      errors: [{ message: error instanceof Error ? error.message : "save failed" }],
+    };
+  }
+
+  revalidatePath("/sales/plan-div-costs");
+  return { ok: true, created, updated, deleted };
 }

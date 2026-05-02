@@ -5,7 +5,127 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { saveContracts } from "@/app/(app)/sales/contracts/actions";
 import { toast } from "@/hooks/use-toast";
+import { CodeGroupPopupLauncher, type CodeGroupItem } from "@/components/grid/CodeGroupPopupLauncher";
+import { Button } from "@/components/ui/button";
 import type { SalesContractRow } from "@jarvis/shared/validation/sales-contract";
+
+// ---------------------------------------------------------------------------
+// Numeric formatting helpers — display thousand separators when not focused.
+// ---------------------------------------------------------------------------
+
+function fmtNum(s: string | null): string {
+  if (s == null || s === "") return "";
+  const n = Number(s);
+  if (!Number.isFinite(n)) return s;
+  return n.toLocaleString("ko-KR");
+}
+
+interface NumericFieldProps {
+  label: string;
+  value: string;
+  required?: boolean;
+  onChange: (v: string) => void;
+}
+
+/**
+ * Numeric input that shows comma-grouped value when blurred and the raw
+ * value when focused (so the user can edit digits without commas getting in
+ * the way). Mirrors the visual styling of `<Field type="numeric">`.
+ */
+function NumericField({ label, value, required, onChange }: NumericFieldProps) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-gray-700">
+        {label}
+        {required && <span className="ml-1 text-red-500">*</span>}
+      </label>
+      <input
+        className="rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        value={editing ? value : fmtNum(value)}
+        inputMode="numeric"
+        required={required}
+        onFocus={() => setEditing(true)}
+        onBlur={() => setEditing(false)}
+        onChange={(e) => onChange(e.target.value.replace(/,/g, ""))}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Code group popup item lists
+// TODO: these literals should come from the workspace's biz_code_master table
+// (loaded by the parent RSC and passed via props). Convention: legacy code
+// groups in the JSP system used names like "BIZ_CONT_GB" / "BIZ_MAIN_CONT_TYPE"
+// / "BIZ_IN_OUT_TYPE". Until the loader is wired (PR-G), we ship a minimal
+// inline fallback so the popup is at least clickable instead of a free-text
+// input where users guess raw codes.
+// ---------------------------------------------------------------------------
+
+const CONT_GB_ITEMS: readonly CodeGroupItem[] = [
+  // BIZ_CONT_GB
+  { code: "01", label: "신규" },
+  { code: "02", label: "유지보수" },
+  { code: "03", label: "라이선스" },
+  { code: "99", label: "기타" },
+];
+
+const MAIN_CONT_TYPE_ITEMS: readonly CodeGroupItem[] = [
+  // BIZ_MAIN_CONT_TYPE
+  { code: "M", label: "주계약" },
+  { code: "S", label: "부속계약" },
+];
+
+const IN_OUT_TYPE_ITEMS: readonly CodeGroupItem[] = [
+  // BIZ_IN_OUT_TYPE
+  { code: "I", label: "내부" },
+  { code: "O", label: "외부" },
+];
+
+// ---------------------------------------------------------------------------
+// CodeField — readonly text input + popup launcher (mirrors the pattern in
+// OpportunityEditForm.tsx).
+// ---------------------------------------------------------------------------
+function CodeField({
+  value,
+  label,
+  items,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  items: readonly CodeGroupItem[];
+  onChange: (code: string) => void;
+}) {
+  const matched = items.find((it) => it.code === value);
+  const display = matched ? `${matched.label} (${matched.code})` : value;
+  return (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div className="flex items-stretch gap-2">
+        <input
+          type="text"
+          readOnly
+          value={display}
+          className="flex-1 cursor-not-allowed rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+        />
+        <CodeGroupPopupLauncher
+          triggerLabel={label}
+          items={items}
+          searchable
+          searchPlaceholder="코드/명칭 검색"
+          onSelect={(it) => onChange(it.code)}
+        />
+        {value ? (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onChange("")}>
+            지우기
+          </Button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Field helpers
@@ -123,7 +243,6 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
     // Section 1: 계약 기본 (9 fields)
     contNm: contract.contNm ?? "",
     contGbCd: contract.contGbCd ?? "",
-    // TODO: contGbCd — future enhancement: load code-group options (코드그룹 팝업)
     mainContType: contract.mainContType ?? "",
     contYmd: contract.contYmd ?? "",
     contSymd: contract.contSymd ?? "",
@@ -273,16 +392,16 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             required
             onChange={(v) => patch("contNm", v)}
           />
-          <Field
+          <CodeField
             label="계약구분코드"
             value={draft.contGbCd}
-            placeholder="코드 입력 (추후 팝업 지원 예정)"
+            items={CONT_GB_ITEMS}
             onChange={(v) => patch("contGbCd", v)}
           />
-          <Field
+          <CodeField
             label="주계약유형"
             value={draft.mainContType}
-            placeholder="코드 입력 (추후 팝업 지원 예정)"
+            items={MAIN_CONT_TYPE_ITEMS}
             onChange={(v) => patch("mainContType", v)}
           />
           <Field
@@ -303,10 +422,10 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             type="date"
             onChange={(v) => patch("contEymd", v)}
           />
-          <Field
+          <CodeField
             label="내외부구분"
             value={draft.inOutType}
-            placeholder="코드 입력 (추후 팝업 지원 예정)"
+            items={IN_OUT_TYPE_ITEMS}
             onChange={(v) => patch("inOutType", v)}
           />
           <div className="flex flex-col gap-3 pt-1">
@@ -373,6 +492,11 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
       </section>
 
       {/* ── Section 3: 담당자·기타 ──────────────────────────────────────── */}
+      {/* TODO (PR-G): replace the companyCd (readonly, Section 2) + customerNo
+          pair with a single `<CustomerContactPicker>` that searches
+          sales_customer × sales_customer_contact by company name / contact
+          name and writes both fields atomically. Today users must hand-enter
+          the legacy customerNo and rely on the upstream RSC to set companyCd. */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-gray-900">담당자·기타</h2>
         <div className="grid grid-cols-2 gap-4">
@@ -401,10 +525,9 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
         <h2 className="text-lg font-semibold text-gray-900">계약 금액</h2>
         <div className="grid grid-cols-2 gap-4">
           {/*착수금 */}
-          <Field
+          <NumericField
             label="착수금"
             value={draft.startAmt}
-            type="numeric"
             onChange={(v) => patch("startAmt", v)}
           />
           <Field
@@ -414,10 +537,9 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             onChange={(v) => patch("startAmtRate", v)}
           />
           {/* 중도금 1 */}
-          <Field
+          <NumericField
             label="중도금1"
             value={draft.interimAmt1}
-            type="numeric"
             onChange={(v) => patch("interimAmt1", v)}
           />
           <Field
@@ -466,10 +588,9 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             onChange={(v) => patch("interimAmtRate4", v)}
           />
           {/* 중도금 5 */}
-          <Field
+          <NumericField
             label="중도금5"
             value={draft.interimAmt5}
-            type="numeric"
             onChange={(v) => patch("interimAmt5", v)}
           />
           <Field
@@ -479,10 +600,9 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             onChange={(v) => patch("interimAmtRate5", v)}
           />
           {/* 잔금 */}
-          <Field
+          <NumericField
             label="잔금"
             value={draft.remainAmt}
-            type="numeric"
             onChange={(v) => patch("remainAmt", v)}
           />
           <Field

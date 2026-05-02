@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
@@ -29,6 +30,8 @@ export default async function SalesCompaniesPage() {
     redirect("/dashboard?error=forbidden");
   }
 
+  const t = await getTranslations("Sales.Companies");
+
   const [initialResult, objectDivOptions, groupOptions, industryOptions] =
     await Promise.all([
       listSalesCompanies({ page: 1, limit: 50 }),
@@ -46,8 +49,8 @@ export default async function SalesCompaniesPage() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Sales · Companies"
-        title="영업 회사 관리"
-        description="계약 화면에서 사용하는 회사 기준 정보를 관리합니다."
+        title={t("title")}
+        description={t("description")}
       />
       <SalesCompaniesGridContainer
         initial={initialRows}

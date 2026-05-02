@@ -13,6 +13,9 @@ export const opportunityRow = z.object({
   insUserName: z.string().nullable(),
   bizOpSourceCode: z.string().nullable(),
   focusMgrYn: z.boolean().default(false),
+  // 계약예상기간 (계약예상시작일 / 계약예상종료일) — text("YYYY-MM-DD") in DB.
+  contExpecSymd: z.string().nullable().optional(),
+  contExpecEymd: z.string().nullable().optional(),
   // 등록일자 (read-only display; server sets defaultNow on insert).
   insDate: z.string().nullable().optional(),
 });

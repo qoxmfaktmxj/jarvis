@@ -16,6 +16,8 @@ import { listPlanPerfUpload, savePlanPerfUpload, uploadPlanPerfExcel } from "../
 import { downloadPlanPerfTemplate, exportPlanPerfUploadToExcel } from "../export";
 import { getPlanPerfUploadColumns } from "./columns";
 
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
+
 type FilterState = {
   q: string;
   ym: string;
@@ -147,10 +149,18 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast({
+        title: "파일이 너무 큽니다",
+        description: `${(file.size / 1024 / 1024).toFixed(1)}MB (최대 10MB)`,
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
     setIsUploading(true);
     try {
       const base64 = await fileToBase64(file);
-      const result = await uploadPlanPerfExcel({ base64 });
+      const result = await uploadPlanPerfExcel({ base64, mimeType: file.type || undefined });
       if (result.ok) {
         toast({
           title: "업로드 완료",

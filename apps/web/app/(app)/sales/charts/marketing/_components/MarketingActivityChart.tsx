@@ -1,12 +1,14 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type Item = { activityTypeName: string; count: number };
 
 export function MarketingActivityChart({ data }: { data: Item[] }) {
+  const t = useTranslations("Sales.Charts.Marketing");
   return (
     <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="marketing-activity-chart">
-      <h3 className="text-sm font-semibold text-slate-700">활동 유형별 건수</h3>
+      <h3 className="text-sm font-semibold text-slate-700">{t("activityByType")}</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={data}>

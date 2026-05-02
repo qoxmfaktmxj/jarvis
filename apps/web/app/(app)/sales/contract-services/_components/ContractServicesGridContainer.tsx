@@ -6,10 +6,12 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { findDuplicateKeys } from "@/lib/utils/validateDuplicateKeys";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
+import { calcManday } from "@/lib/utils/calcManday";
 import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
@@ -91,6 +93,7 @@ export function ContractServicesGridContainer({
   initialFilters,
 }: Props) {
   const common = useTranslations("Sales.Common");
+  const tContractServices = useTranslations("Sales.ContractServices");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
@@ -121,6 +124,29 @@ export function ContractServicesGridContainer({
   );
   const [dirtyCount, setDirtyCount] = useState(0);
   useTabDirty(dirtyCount > 0);
+
+  // ---------------------------------------------------------------------------
+  // M/M (manday) auto-calculation — legacy contractServMgr.jsp parity
+  // ---------------------------------------------------------------------------
+  // The TBIZ010 schema (SalesContractServiceRow) has no `manday` column today,
+  // so the computed value lives in client-only state and surfaces via toast.
+  // - mandayByRowId: rowId → computed manday (informational display only).
+  // - mandayOverrides: rowId set — rows where the user manually overrode M/M.
+  //   New rows reset (clear from override set on insert/blank); the toolbar
+  //   button below recomputes only for rows NOT in this set.
+  //
+  // TODO(schema): once a `manday` column is added to TBIZ010 + zod schema,
+  //   wire mandayByRowId into row.patch via `onGridRowsChange` and surface it
+  //   as a numeric column in `columns.ts`. For now the calc is a UX preview
+  //   that lets the user verify symd/eymd ranges before saving.
+  // TODO(holidays): integrate `useWorkspaceHolidays` (currently scoped to a
+  //   single calendar month) — for ranges spanning multiple months we need
+  //   either a wider range fetch (`/api/holidays/range?from=...&to=...`) or a
+  //   helper that fetches the spanned months. Empty Set is a safe default
+  //   (matches "no holidays defined" — falls back to weekday/Sat/Sun weights).
+  const [mandayByRowId, setMandayByRowId] = useState<Map<string, number>>(new Map());
+  const [mandayOverrides, setMandayOverrides] = useState<Set<string>>(new Set());
+  const [isRecalcManday, setIsRecalcManday] = useState(false);
 
   const tabKeyRef = useRef<string | null>(null);
   const pathname = usePathname() ?? "/sales/contract-services";
@@ -212,6 +238,79 @@ export function ContractServicesGridContainer({
     reload(1, { ...pendingFilters, page: "1" });
   }, [pendingFilters, setUrlFilter, reload]);
 
+  /**
+   * Recalculate M/M for every grid row that has both `symd` and `eymd`
+   * filled and is NOT in the override set. Computed values land in
+   * `mandayByRowId` (client-only display). Holidays Set is empty until the
+   * holiday-range fetch is integrated (see TODO above).
+   */
+  const handleRecalcManday = useCallback(() => {
+    setIsRecalcManday(true);
+    try {
+      const cache = gridRowsCacheRef.current;
+      const liveRows = cache.filter((r) => r.state !== "deleted").map((r) => r.data);
+      const next = new Map(mandayByRowId);
+      let computed = 0;
+      let skipped = 0;
+      let invalid = 0;
+      let total = 0;
+      const holidays = new Set<string>(); // TODO: wire workspace holidays.
+      for (const row of liveRows) {
+        if (mandayOverrides.has(row.id)) {
+          skipped += 1;
+          continue;
+        }
+        const value = calcManday(row.symd, row.eymd, holidays);
+        if (value === null) {
+          invalid += 1;
+          next.delete(row.id);
+          continue;
+        }
+        next.set(row.id, value);
+        computed += 1;
+        total += value;
+      }
+      setMandayByRowId(next);
+      const totalDisplay = Math.round(total * 10) / 10;
+      toast({
+        title: tContractServices("actions.recalcManday"),
+        description: tContractServices("toast.recalcMandayDone", {
+          computed,
+          skipped,
+          invalid,
+          total: totalDisplay,
+        }),
+      });
+    } finally {
+      setIsRecalcManday(false);
+    }
+  }, [mandayByRowId, mandayOverrides, tContractServices]);
+
+  /**
+   * When grid rows change (cell commit / insert / delete), drop stale entries
+   * from override + computed maps so newly-inserted rows start in auto-calc
+   * mode and removed rows don't keep ghost entries.
+   */
+  useEffect(() => {
+    const liveIds = new Set(gridRowsCache.map((r) => r.data.id));
+    let mutatedOverrides = false;
+    const nextOverrides = new Set<string>();
+    for (const id of mandayOverrides) {
+      if (liveIds.has(id)) nextOverrides.add(id);
+      else mutatedOverrides = true;
+    }
+    if (mutatedOverrides) setMandayOverrides(nextOverrides);
+
+    let mutatedManday = false;
+    const nextManday = new Map<string, number>();
+    for (const [id, v] of mandayByRowId) {
+      if (liveIds.has(id)) nextManday.set(id, v);
+      else mutatedManday = true;
+    }
+    if (mutatedManday) setMandayByRowId(nextManday);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gridRowsCache]);
+
   return (
     <div className="space-y-3">
       <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
@@ -243,6 +342,18 @@ export function ContractServicesGridContainer({
           />
         </GridFilterField>
       </GridSearchForm>
+
+      <div className="flex items-center justify-end">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={handleRecalcManday}
+          disabled={isRecalcManday}
+        >
+          {tContractServices("actions.recalcManday")}
+        </Button>
+      </div>
 
       <DataGrid<SalesContractServiceRow>
         rows={rows}

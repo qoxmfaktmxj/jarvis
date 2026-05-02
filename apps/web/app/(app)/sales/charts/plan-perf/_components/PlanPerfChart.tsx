@@ -30,7 +30,7 @@ export function PlanPerfChart({
             <XAxis dataKey="month" fontSize={11} />
             <YAxis fontSize={11} tickFormatter={fmtKR} />
             <Tooltip formatter={fmtKR} />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Legend wrapperStyle={{ fontSize: 11, whiteSpace: "normal", paddingTop: 8 }} />
             <Bar dataKey="PLAN" name="계획" fill="#94a3b8" radius={[4, 4, 0, 0]} />
             <Bar dataKey="ACTUAL" name="실적" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             <Line type="monotone" dataKey="FORECAST" name="전망" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />

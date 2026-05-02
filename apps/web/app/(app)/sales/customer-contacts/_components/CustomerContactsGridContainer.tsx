@@ -95,6 +95,7 @@ export function CustomerContactsGridContainer({
 }: Props) {
   const router = useRouter();
   const t = useTranslations("Sales.Common");
+  const tCols = useTranslations("Sales.CustomerContacts.columns");
 
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
@@ -191,20 +192,20 @@ export function CustomerContactsGridContainer({
   const COLUMNS: ColumnDef<CustomerContactRow>[] = [
     {
       key: "custNm",
-      label: "고객사명",
+      label: tCols("custMcd"),
       type: "readonly",
       width: 180,
       render: (row) => row.custNm ?? "—",
     },
-    { key: "custName", label: "담당자명", type: "text", width: 130, editable: true },
-    { key: "jikweeNm", label: "직위", type: "text", width: 120, editable: true },
-    { key: "orgNm", label: "소속", type: "text", width: 150, editable: true },
-    { key: "telNo", label: "전화", type: "text", width: 130, editable: true },
-    { key: "hpNo", label: "휴대폰", type: "text", width: 130, editable: true },
-    { key: "email", label: "이메일", type: "text", width: 200, editable: true },
+    { key: "custName", label: tCols("custName"), type: "text", width: 130, editable: true },
+    { key: "jikweeNm", label: tCols("jikweeNm"), type: "text", width: 120, editable: true },
+    { key: "orgNm", label: tCols("orgNm"), type: "text", width: 150, editable: true },
+    { key: "telNo", label: tCols("telNo"), type: "text", width: 130, editable: true },
+    { key: "hpNo", label: tCols("hpNo"), type: "text", width: 130, editable: true },
+    { key: "email", label: tCols("email"), type: "text", width: 200, editable: true },
     {
       key: "counts",
-      label: "탭",
+      label: t("tabLabel"),
       type: "readonly",
       width: 220,
       render: (row) =>
@@ -219,7 +220,7 @@ export function CustomerContactsGridContainer({
     },
     {
       key: "createdAt",
-      label: "등록일자",
+      label: tCols("insdate"),
       type: "readonly",
       width: 110,
       render: (row) => (row.createdAt ? row.createdAt.slice(0, 10) : "—"),
