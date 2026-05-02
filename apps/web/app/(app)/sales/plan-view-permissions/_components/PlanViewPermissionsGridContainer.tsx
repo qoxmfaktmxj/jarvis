@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
@@ -97,6 +98,7 @@ export function PlanViewPermissionsGridContainer({
   limit,
   initialFilters,
 }: Props) {
+  const router = useRouter();
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
     defaults: initialFilters,
   });
@@ -191,6 +193,7 @@ export function PlanViewPermissionsGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={{}}
+        onRowDoubleClick={(row) => router.push("/sales/plan-view-permissions/" + row.id + "/detail")}
         onPageChange={(page) => {
           setUrlFilter("page", String(page));
           reload(page, { ...urlFilters, page: String(page) });
