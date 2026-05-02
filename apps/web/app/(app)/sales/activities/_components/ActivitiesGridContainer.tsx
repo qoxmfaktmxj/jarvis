@@ -6,6 +6,7 @@
  * (TBIZ115 ground truth, plan estimate). schema는 더 많지만 grid에는 10개만 노출.
  */
 import { useCallback, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { type ActivityRow } from "@jarvis/shared/validation/sales/activity";
 import { listActivities, saveActivities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
@@ -62,6 +63,7 @@ export function ActivitiesGridContainer({
   codeOptions,
   opportunityOptions,
 }: Props) {
+  const router = useRouter();
   const [rows, setRows] = useState<Activity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useState(initialPage);
@@ -248,6 +250,7 @@ export function ActivitiesGridContainer({
         limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onRowDoubleClick={(row) => router.push("/sales/activities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}
