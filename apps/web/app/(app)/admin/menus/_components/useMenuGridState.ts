@@ -6,7 +6,10 @@
  * 공유 useGridState<T>를 MenuRow 타입으로 instantiate한 thin wrapper +
  * makeBlankMenu helper. (admin/codes 패턴 그대로.)
  */
-import { useGridState } from "@/components/grid/useGridState";
+import {
+  useGridState,
+  type UseGridStateOptions,
+} from "@/components/grid/useGridState";
 import type { MenuRow } from "@jarvis/shared/validation/admin/menu";
 
 export function makeBlankMenu(): MenuRow {
@@ -27,6 +30,9 @@ export function makeBlankMenu(): MenuRow {
   } satisfies MenuRow;
 }
 
-export function useMenuGridState(initial: MenuRow[]) {
-  return useGridState<MenuRow>(initial);
+export function useMenuGridState(
+  initial: MenuRow[],
+  options?: UseGridStateOptions<MenuRow>,
+) {
+  return useGridState<MenuRow>(initial, options);
 }
