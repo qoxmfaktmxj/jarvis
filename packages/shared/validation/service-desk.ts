@@ -21,7 +21,6 @@ export const statsInput = z.object({
   yyyymmTo: z.string().regex(/^\d{6}$/),
   categories: z.array(higherCdEnum).min(1),
   cntRatio: z.number().min(0).max(100).default(50),
-  managerOnly: z.boolean().optional().default(false),
 });
 
 export const statsRow = z.object({
