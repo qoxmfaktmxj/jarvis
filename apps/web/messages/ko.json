@@ -1294,7 +1294,8 @@
         "selectUser": "담당자 선택",
         "selectCompany": "고객사 선택",
         "cancel": "취소",
-        "save": "저장"
+        "save": "저장",
+        "close": "닫기"
       },
       "showPanel": {
         "userListTitle": "담당자",

@@ -124,6 +124,7 @@ export function NewAssignmentInlineForm({ contractTypeOptions, onCreated }: Prop
         </h3>
         <button
           type="button"
+          aria-label={t("dialog.close")}
           className="text-[12px] text-(--fg-secondary) hover:text-(--fg-primary)"
           onClick={() => {
             reset();

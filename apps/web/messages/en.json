@@ -752,7 +752,8 @@
         "selectUser": "Select Engineer",
         "selectCompany": "Select Customer",
         "cancel": "Cancel",
-        "save": "Save"
+        "save": "Save",
+        "close": "Close"
       },
       "showPanel": {
         "userListTitle": "Engineers",
