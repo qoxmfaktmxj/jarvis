@@ -58,3 +58,5 @@ export * from "./sales-plan-perf.js";
 export * from "./infra-system.js";
 // ScheduleMgr + ScheduleCalendarMgr (TSMT100) — 개인 일정
 export * from "./schedule.js";
+// DocNumMgr (TSMT050) — 연도별 문서번호 관리
+export * from "./document-number.js";
