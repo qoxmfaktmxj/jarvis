@@ -69,6 +69,9 @@ export default async function AddDevOverviewPage({
 
             <dt className="font-medium text-surface-500">{t("part")}</dt>
             <dd>{row.part ?? "—"}</dd>
+
+            <dt className="font-medium text-surface-500">{t("customerCompany")}</dt>
+            <dd>{row.customerCompanyName ?? "—"}</dd>
           </dl>
         </CardContent>
       </Card>
@@ -129,6 +132,9 @@ export default async function AddDevOverviewPage({
 
             <dt className="font-medium text-surface-500">{t("paidEffort")}</dt>
             <dd>{row.paidEffort ?? "—"}</dd>
+
+            <dt className="font-medium text-surface-500">{t("isOnsite")}</dt>
+            <dd>{row.isOnsite === true ? "예" : row.isOnsite === false ? "아니오" : "—"}</dd>
 
             <dt className="font-medium text-surface-500">{t("actualEffort")}</dt>
             <dd>{row.actualEffort ?? "—"}</dd>
