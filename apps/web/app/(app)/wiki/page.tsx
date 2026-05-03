@@ -13,7 +13,6 @@ import { WikiIndexSearch } from './_components/WikiIndexSearch';
 import { WikiIndexShell } from './_components/WikiIndexShell';
 
 export const dynamic = 'force-dynamic';
-export const metadata = { title: '위키' };
 
 const PAGE_SIZE = 20;
 

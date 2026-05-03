@@ -113,6 +113,3 @@ export default function Page(props: SearchPageRouteProps) {
   );
 }
 
-export const metadata = {
-  title: '검색 | Jarvis',
-};

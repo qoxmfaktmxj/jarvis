@@ -9,7 +9,6 @@ import { ScheduleCalendar } from "@/components/contractors/ScheduleCalendar";
 import { requirePageSession } from "@/lib/server/page-auth";
 import type { PageProps } from "@jarvis/shared/types/page";
 
-export const metadata = { title: "외주인력 일정" };
 export const dynamic = "force-dynamic";
 
 export default async function ContractorsSchedulePage({
