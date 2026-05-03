@@ -709,5 +709,65 @@
         "searchDevGbCd": "Type"
       }
     }
+  },
+  "Maintenance": {
+    "nav": {
+      "title": "Maintenance",
+      "assignments": "Maintenance Assignments"
+    },
+    "Assignments": {
+      "title": "Maintenance Assignments",
+      "subtitle": "Manage per-engineer customer maintenance contract assignments.",
+      "tabs": {
+        "manage": "Manage",
+        "show": "Overview"
+      },
+      "columns": {
+        "user": "Engineer",
+        "company": "Customer",
+        "startDate": "Start",
+        "endDate": "End",
+        "contractNumber": "Contract No.",
+        "contractType": "Contract Type",
+        "note": "Note",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "filters": {
+        "search": "Engineer / customer / contract no.",
+        "userId": "Engineer",
+        "companyId": "Customer",
+        "contractType": "Contract Type",
+        "activeOn": "Active On",
+        "all": "All"
+      },
+      "actions": {
+        "newAssignment": "+ New",
+        "save": "Save",
+        "delete": "Delete",
+        "exportExcel": "Excel"
+      },
+      "dialog": {
+        "newTitle": "New Assignment",
+        "selectUser": "Select Engineer",
+        "selectCompany": "Select Customer",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "showPanel": {
+        "userListTitle": "Engineers",
+        "userSearchPlaceholder": "Name / employee ID",
+        "selectUserHint": "Select an engineer.",
+        "responsibleCompanies": "{count} companies",
+        "noCompanies": "No companies assigned.",
+        "openCompany": "Open company"
+      },
+      "empty": "No assignments.",
+      "errors": {
+        "dateRange": "Start date must be earlier than or equal to end date.",
+        "duplicate": "An assignment with the same engineer/customer/start-date already exists.",
+        "noPermission": "You do not have permission for this action."
+      }
+    }
   }
 }

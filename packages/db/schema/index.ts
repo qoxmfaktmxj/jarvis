@@ -29,6 +29,7 @@ export * from "./user-session.js";
 // Phase-Harness (2026-04-23): embed_cache 테이블 폐지. migration 0038 참조.
 export * from "./additional-development.js";
 export * from "./contractor.js";
+export * from "./maintenance.js";
 export * from "./chat.js";
 // Phase-Dashboard (2026-04-30): 외부 시그널(환율/날씨) + 위키 퀴즈 + 시즌제
 export * from "./region-grid.js";
