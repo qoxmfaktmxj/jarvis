@@ -4,10 +4,11 @@ import {
   additionalDevelopmentEffort,
   additionalDevelopmentRevenue,
   additionalDevelopmentStaff,
+  company,
   project,
   user,
 } from "@jarvis/db/schema";
-import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { aliasedTable, and, count, desc, eq, ilike, or } from "drizzle-orm";
 
 type ListParams = {
   workspaceId: string;
@@ -46,10 +47,23 @@ export async function listAdditionalDev({
   }
   const where = and(...conds);
 
-  const [rows, totals] = await Promise.all([
+  const pmAlias = aliasedTable(user, "pm");
+  const devAlias = aliasedTable(user, "dev");
+
+  const [rowsRaw, totals] = await Promise.all([
     database
-      .select()
+      .select({
+        row: additionalDevelopment,
+        pmName: pmAlias.name,
+        pmSabun: pmAlias.employeeId,
+        devName: devAlias.name,
+        devSabun: devAlias.employeeId,
+        customerCompanyName: company.name,
+      })
       .from(additionalDevelopment)
+      .leftJoin(pmAlias, eq(additionalDevelopment.pmId, pmAlias.id))
+      .leftJoin(devAlias, eq(additionalDevelopment.developerId, devAlias.id))
+      .leftJoin(company, eq(additionalDevelopment.customerCompanyId, company.id))
       .where(where)
       .orderBy(desc(additionalDevelopment.createdAt))
       .limit(safeSize)
@@ -59,6 +73,16 @@ export async function listAdditionalDev({
       .from(additionalDevelopment)
       .where(where),
   ]);
+
+  const rows = rowsRaw.map((r) => ({
+    ...r.row,
+    pmName: r.pmName,
+    pmSabun: r.pmSabun,
+    devName: r.devName,
+    devSabun: r.devSabun,
+    customerCompanyName: r.customerCompanyName,
+  }));
+
   const total = Number(totals[0]?.total ?? 0);
   return {
     data: rows,
@@ -80,9 +104,22 @@ export async function getAdditionalDev({
   id: string;
   database?: typeof db;
 }) {
-  const [row] = await database
-    .select()
+  const pmAlias = aliasedTable(user, "pm");
+  const devAlias = aliasedTable(user, "dev");
+
+  const [rowRaw] = await database
+    .select({
+      row: additionalDevelopment,
+      pmName: pmAlias.name,
+      pmSabun: pmAlias.employeeId,
+      devName: devAlias.name,
+      devSabun: devAlias.employeeId,
+      customerCompanyName: company.name,
+    })
     .from(additionalDevelopment)
+    .leftJoin(pmAlias, eq(additionalDevelopment.pmId, pmAlias.id))
+    .leftJoin(devAlias, eq(additionalDevelopment.developerId, devAlias.id))
+    .leftJoin(company, eq(additionalDevelopment.customerCompanyId, company.id))
     .where(
       and(
         eq(additionalDevelopment.id, id),
@@ -90,7 +127,15 @@ export async function getAdditionalDev({
       ),
     )
     .limit(1);
-  return row ?? null;
+  if (!rowRaw) return null;
+  return {
+    ...rowRaw.row,
+    pmName: rowRaw.pmName,
+    pmSabun: rowRaw.pmSabun,
+    devName: rowRaw.devName,
+    devSabun: rowRaw.devSabun,
+    customerCompanyName: rowRaw.customerCompanyName,
+  };
 }
 
 export type CreateAdditionalDevInput = {
@@ -114,8 +159,10 @@ export type CreateAdditionalDevInput = {
   devEndDate?: string;
   pmId?: string;
   developerId?: string;
+  customerCompanyId?: string;
+  isOnsite?: boolean;
   vendorContactNote?: string;
-  estimatedEffort?: string;
+  paidEffort?: string;
   actualEffort?: string;
   attachmentFileRef?: string;
   remark?: string;
@@ -145,6 +192,18 @@ export async function createAdditionalDev({
       .where(and(eq(user.id, input.pmId), eq(user.workspaceId, workspaceId)))
       .limit(1);
     if (!pm) throw new Error('pmId not in workspace');
+  }
+
+  if (input.customerCompanyId) {
+    const [c] = await database
+      .select({ id: company.id })
+      .from(company)
+      .where(and(
+        eq(company.id, input.customerCompanyId),
+        eq(company.workspaceId, workspaceId),
+      ))
+      .limit(1);
+    if (!c) throw new Error('customerCompanyId not in workspace');
   }
 
   if (input.developerId) {
@@ -195,6 +254,18 @@ export async function updateAdditionalDev({
       .where(and(eq(user.id, input.pmId), eq(user.workspaceId, workspaceId)))
       .limit(1);
     if (!pm) throw new Error('pmId not in workspace');
+  }
+
+  if (input.customerCompanyId) {
+    const [c] = await database
+      .select({ id: company.id })
+      .from(company)
+      .where(and(
+        eq(company.id, input.customerCompanyId),
+        eq(company.workspaceId, workspaceId),
+      ))
+      .limit(1);
+    if (!c) throw new Error('customerCompanyId not in workspace');
   }
 
   if (input.developerId) {
