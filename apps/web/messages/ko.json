@@ -1320,6 +1320,60 @@
       "pathTraversal": "허용되지 않은 파일 경로입니다."
     }
   },
+  "Schedule": {
+    "nav": {
+      "title": "개인 일정",
+      "schedule": "개인 일정"
+    },
+    "Page": {
+      "title": "개인 일정",
+      "subtitle": "본인 일정과 공유받은 동료 일정을 관리합니다.",
+      "tabs": {
+        "list": "목록",
+        "calendar": "캘린더"
+      },
+      "columns": {
+        "user": "담당자",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "title": "제목",
+        "memo": "메모",
+        "isShared": "공유",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "제목/메모",
+        "month": "월",
+        "activeOn": "유효일자",
+        "ownOnly": "본인 일정만",
+        "all": "전체"
+      },
+      "actions": {
+        "newEvent": "+ 신규 일정",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 일정 등록",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기"
+      },
+      "shared": {
+        "yes": "공유",
+        "no": "비공개"
+      },
+      "empty": "등록된 일정이 없습니다.",
+      "errors": {
+        "dateRange": "시작일은 종료일보다 빠르거나 같아야 합니다.",
+        "duplicate": "동일 시작일/순번 조합이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다.",
+        "notOwner": "본인 일정만 편집/삭제할 수 있습니다."
+      }
+    }
+  },
   "Sales": {
     "nav": {
       "title": "영업관리",
