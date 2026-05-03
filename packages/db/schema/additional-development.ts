@@ -93,6 +93,7 @@ export const additionalDevelopmentStaff = pgTable("additional_development_staff"
 
 export const additionalDevelopmentRelations = relations(additionalDevelopment, ({ many, one }) => ({
   project: one(project, { fields: [additionalDevelopment.projectId], references: [project.id] }),
+  customerCompany: one(company, { fields: [additionalDevelopment.customerCompanyId], references: [company.id] }),
   pm: one(user, { fields: [additionalDevelopment.pmId], references: [user.id], relationName: "addDevPm" }),
   developer: one(user, { fields: [additionalDevelopment.developerId], references: [user.id], relationName: "addDevDeveloper" }),
   efforts: many(additionalDevelopmentEffort),
