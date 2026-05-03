@@ -53,7 +53,7 @@ export function NewDocNumberInlineForm({ onCreated }: Props) {
       return;
     }
     if (!form.docName.trim()) {
-      setError(t("columns.docName"));
+      setError(t("errors.docNameRequired"));
       return;
     }
 

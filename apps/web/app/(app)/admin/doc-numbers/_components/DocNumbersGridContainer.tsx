@@ -114,7 +114,7 @@ export function DocNumbersGridContainer({
         header: c.label,
       }));
       await exportToExcel({
-        filename: "문서번호",
+        filename: t("excelFilename"),
         sheetName: "DocNumbers",
         columns: exportColumns,
         rows,

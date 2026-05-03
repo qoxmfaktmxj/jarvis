@@ -1367,8 +1367,10 @@
       "errors": {
         "yearFormat": "연도는 yyyy 형식이어야 합니다.",
         "duplicate": "동일 연도/순번이 이미 존재합니다.",
-        "noPermission": "해당 작업 권한이 없습니다."
-      }
+        "noPermission": "해당 작업 권한이 없습니다.",
+        "docNameRequired": "문서명은 필수입니다."
+      },
+      "excelFilename": "문서번호"
     }
   },
   "Schedule": {

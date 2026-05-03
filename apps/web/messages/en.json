@@ -814,8 +814,10 @@
       "errors": {
         "yearFormat": "Year must be 4 digits (yyyy).",
         "duplicate": "A row with the same year/seq already exists.",
-        "noPermission": "You do not have permission for this action."
-      }
+        "noPermission": "You do not have permission for this action.",
+        "docNameRequired": "Document title is required."
+      },
+      "excelFilename": "DocumentNumbers"
     }
   },
   "Schedule": {
