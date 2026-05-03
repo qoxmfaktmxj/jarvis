@@ -12,6 +12,7 @@ import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { NewAssignmentInlineForm } from "./NewAssignmentInlineForm";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
@@ -148,6 +149,13 @@ export function ManageGridContainer({
 
   return (
     <div className="space-y-3">
+      {canWrite ? (
+        <NewAssignmentInlineForm
+          contractTypeOptions={contractTypeOptions}
+          onCreated={() => reload(1, filterValues)}
+        />
+      ) : null}
+
       <GridSearchForm
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
