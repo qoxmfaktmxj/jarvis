@@ -44,6 +44,16 @@ export default async function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning nonce={nonce}>
       <head>
+        {/* No-flash sidebar/theme sync — set data-sidebar/data-theme from localStorage
+            BEFORE React hydrates so CSS variables (--sidebar-width, etc.) match the
+            React state on first paint. Without this, the CSS default (rail/light)
+            mismatches React's DEFAULT (expanded/light) and causes layout flash. */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('jv.sidebar');var t=localStorage.getItem('jv.theme');document.documentElement.setAttribute('data-sidebar',s==='rail'?'rail':'expanded');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();`,
+          }}
+        />
         <link
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css"

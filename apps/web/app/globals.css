@@ -236,7 +236,7 @@
     /* Layout tokens */
     --sidebar-width: 60px;        /* rail (default) */
     --sidebar-width-collapsed: 60px;
-    --topbar-height: 52px;
+    --topbar-height: 47px;
 
     /* ── Prototype token aliases → new Notion-aligned scale ─── */
     --bg:          #ffffff;                       /* page */
