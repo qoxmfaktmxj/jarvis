@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/DatePicker";
-import { CompanyPicker } from "./CompanyPicker";
-import { searchCompanies } from "@/lib/server/companies";
+import { CompanyPicker } from "@/components/grid/CompanyPicker";
+import { searchCompanies } from "@/lib/server/companies-search";
 import { EmployeePicker } from "@/components/grid/EmployeePicker";
 import { searchEmployees } from "@/lib/server/employees";
 
