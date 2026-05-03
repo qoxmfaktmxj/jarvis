@@ -1,15 +1,21 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 
 type AddDevRow = {
   id: string;
   requestYearMonth: string | null;
   projectName: string | null;
+  customerCompanyName: string | null;
   part: string | null;
   requesterName: string | null;
   status: string;
   contractAmount: string | null;
   pmId: string | null;
+  pmName: string | null;
+  pmSabun: string | null;
   updatedAt: Date;
 };
 
@@ -20,9 +26,12 @@ const statusVariant = (status: string): "success" | "warning" | "outline" => {
 };
 
 export function AddDevTable({ data }: { data: AddDevRow[] }) {
+  const t = useTranslations("AdditionalDev.fields");
+  const tRoot = useTranslations("AdditionalDev");
+
   if (data.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-surface-500">추가개발 건이 없습니다.</p>
+      <p className="py-8 text-center text-sm text-surface-500">{tRoot("empty")}</p>
     );
   }
   return (
@@ -30,20 +39,22 @@ export function AddDevTable({ data }: { data: AddDevRow[] }) {
       <table className="w-full text-sm">
         <thead className="bg-surface-50 text-[13px] text-surface-600">
           <tr>
-            <th className="px-3 py-2 text-left">요청년월</th>
-            <th className="px-3 py-2 text-left">프로젝트명</th>
-            <th className="px-3 py-2 text-left">파트</th>
-            <th className="px-3 py-2 text-left">요청자</th>
-            <th className="px-3 py-2 text-left">상태</th>
-            <th className="px-3 py-2 text-right">계약금액</th>
-            <th className="px-3 py-2 text-left">PM</th>
-            <th className="px-3 py-2 text-left">업데이트</th>
+            <th className="px-3 py-2 text-left">{t("requestYearMonth")}</th>
+            <th className="px-3 py-2 text-left">{t("customerCompany")}</th>
+            <th className="px-3 py-2 text-left">{t("projectName")}</th>
+            <th className="px-3 py-2 text-left">{t("part")}</th>
+            <th className="px-3 py-2 text-left">{t("requesterName")}</th>
+            <th className="px-3 py-2 text-left">{t("status")}</th>
+            <th className="px-3 py-2 text-right">{t("contractAmount")}</th>
+            <th className="px-3 py-2 text-left">{t("pm")}</th>
+            <th className="px-3 py-2 text-left">{t("updatedAt")}</th>
           </tr>
         </thead>
         <tbody>
           {data.map((r) => (
             <tr key={r.id} className="border-t border-surface-100 hover:bg-surface-50">
               <td className="px-3 py-2 font-mono text-xs">{r.requestYearMonth ?? "—"}</td>
+              <td className="px-3 py-2">{r.customerCompanyName ?? "—"}</td>
               <td className="px-3 py-2">
                 <Link href={`/add-dev/${r.id}`} className="text-isu-600 hover:underline">
                   {r.projectName ?? "—"}
@@ -59,7 +70,9 @@ export function AddDevTable({ data }: { data: AddDevRow[] }) {
                   ? new Intl.NumberFormat("ko-KR").format(Number(r.contractAmount))
                   : "—"}
               </td>
-              <td className="px-3 py-2 text-xs">{r.pmId ?? "—"}</td>
+              <td className="px-3 py-2 text-xs">
+                {r.pmName ? `${r.pmSabun} · ${r.pmName}` : (r.pmId ?? "—")}
+              </td>
               <td className="px-3 py-2 text-xs text-surface-500">
                 {new Intl.DateTimeFormat("ko-KR", { dateStyle: "short" }).format(
                   new Date(r.updatedAt),

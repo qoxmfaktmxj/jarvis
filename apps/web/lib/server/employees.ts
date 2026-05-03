@@ -47,6 +47,9 @@ export async function searchEmployees(
     PERMISSIONS.MAINTENANCE_READ,
     PERMISSIONS.ADMIN_ALL,
     PERMISSIONS.USER_READ,
+    PERMISSIONS.ADDITIONAL_DEV_READ,
+    PERMISSIONS.ADDITIONAL_DEV_UPDATE,
+    PERMISSIONS.ADDITIONAL_DEV_CREATE,
   ];
   if (!allowedPerms.some((p) => hasPermission(session, p))) {
     throw new Error("Forbidden");

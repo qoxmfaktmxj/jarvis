@@ -1051,7 +1051,8 @@
     "parts": {
       "saas": "Saas",
       "external": "외부",
-      "mobile": "모바일"
+      "mobile": "모바일",
+      "recruitment": "채용"
     },
     "tabs": {
       "overview": "개요",
@@ -1079,17 +1080,20 @@
       "contractEndMonth": "계약종료",
       "contractAmount": "계약금액",
       "isPaid": "유상여부",
-      "invoiceIssued": "세금계산서",
+      "invoiceIssued": "세금계산서 발행",
       "inspectionConfirmed": "검수확인",
       "estimateProgress": "견적진행",
       "pm": "PM",
       "developer": "개발자",
       "devStartDate": "개발시작",
       "devEndDate": "개발종료",
-      "estimatedEffort": "유상공수",
       "actualEffort": "실공수",
       "vendorContactNote": "업체담당자",
-      "remark": "비고"
+      "remark": "비고",
+      "customerCompany": "요청회사",
+      "paidEffort": "유상공수",
+      "isOnsite": "상주여부",
+      "updatedAt": "업데이트"
     },
     "actions": {
       "saving": "저장 중...",
