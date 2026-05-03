@@ -1165,7 +1165,8 @@
       "half_pm": "오후반차",
       "hourly": "시간차",
       "sick": "병가",
-      "public": "공가"
+      "public": "공가",
+      "full": "전일"
     },
     "status": {
       "active": "진행중",
