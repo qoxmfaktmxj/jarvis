@@ -10,6 +10,7 @@ import {
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
@@ -166,7 +167,7 @@ export function ManageGridContainer({
             onChange={(e) => setPending("contractType", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{t("filters.all")}</option>
             {contractTypeOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -175,12 +176,10 @@ export function ManageGridContainer({
           </select>
         </GridFilterField>
         <GridFilterField label={t("filters.activeOn")} className="w-[160px]">
-          <Input
-            type="text"
-            value={pendingFilters.activeOn ?? ""}
-            onChange={(e) => setPending("activeOn", e.target.value)}
-            placeholder="yyyy-mm-dd"
-            className="h-8"
+          <DatePicker
+            value={pendingFilters.activeOn ?? null}
+            onChange={(v) => setPending("activeOn", v ?? "")}
+            ariaLabel={t("filters.activeOn")}
           />
         </GridFilterField>
       </GridSearchForm>

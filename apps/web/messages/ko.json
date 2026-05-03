@@ -1279,7 +1279,8 @@
         "userId": "담당자",
         "companyId": "고객사",
         "contractType": "계약구분",
-        "activeOn": "유효일자"
+        "activeOn": "유효일자",
+        "all": "전체"
       },
       "actions": {
         "newAssignment": "+ 신규 할당",

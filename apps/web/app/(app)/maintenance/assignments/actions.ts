@@ -135,7 +135,7 @@ export async function saveMaintenanceAction(
 
   const ws = ctx.session.workspaceId;
   const actorId = ctx.session.userId;
-  const actorIdent = (ctx.session.userId ?? "").slice(0, 50);
+  const actorIdent = ctx.session.employeeId ?? null;
   let inserted = 0;
   let updated = 0;
   let deleted = 0;
