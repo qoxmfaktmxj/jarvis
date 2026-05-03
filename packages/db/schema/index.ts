@@ -56,3 +56,5 @@ export * from "./sales-finance.js";
 export * from "./sales-plan-perf.js";
 // Plan 5: 인프라구성관리 Hybrid (Grid SoT + Wiki Runbook)
 export * from "./infra-system.js";
+// ScheduleMgr + ScheduleCalendarMgr (TSMT100) — 개인 일정
+export * from "./schedule.js";

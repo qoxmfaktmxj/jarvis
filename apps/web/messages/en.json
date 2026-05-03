@@ -770,5 +770,59 @@
         "noPermission": "You do not have permission for this action."
       }
     }
+  },
+  "Schedule": {
+    "nav": {
+      "title": "Schedule",
+      "schedule": "Personal Schedule"
+    },
+    "Page": {
+      "title": "Personal Schedule",
+      "subtitle": "Manage your own and shared schedules.",
+      "tabs": {
+        "list": "List",
+        "calendar": "Calendar"
+      },
+      "columns": {
+        "user": "Owner",
+        "startDate": "Start",
+        "endDate": "End",
+        "title": "Title",
+        "memo": "Memo",
+        "isShared": "Shared",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "filters": {
+        "search": "Title / memo",
+        "month": "Month",
+        "activeOn": "Active On",
+        "ownOnly": "My events only",
+        "all": "All"
+      },
+      "actions": {
+        "newEvent": "+ New",
+        "save": "Save",
+        "delete": "Delete",
+        "exportExcel": "Excel"
+      },
+      "dialog": {
+        "newTitle": "New Event",
+        "cancel": "Cancel",
+        "save": "Save",
+        "close": "Close"
+      },
+      "shared": {
+        "yes": "Shared",
+        "no": "Private"
+      },
+      "empty": "No events.",
+      "errors": {
+        "dateRange": "Start date must be earlier than or equal to end date.",
+        "duplicate": "An event with the same start-date/order already exists.",
+        "noPermission": "You do not have permission for this action.",
+        "notOwner": "You can only edit/delete your own events."
+      }
+    }
   }
 }
