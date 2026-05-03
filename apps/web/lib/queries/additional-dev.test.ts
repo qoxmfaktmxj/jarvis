@@ -13,9 +13,8 @@ import {
 // ---------------------------------------------------------------------------
 
 /**
- * Builds a two-call mock database:
- * - first call to `select()` → chain resolving to `firstRows`
- * - second call to `select()` → chain resolving to `secondRows`
+ * Builds a mock database chain that supports all Drizzle ORM method chains
+ * including leftJoin and offset (required by listAdditionalDev / getAdditionalDev).
  */
 function makeChainDatabase(resolveWith: unknown) {
   const chain: Record<string, unknown> = {};
@@ -85,14 +84,32 @@ function makeDeleteDatabase(returnRows: unknown[]) {
   };
 }
 
+/**
+ * Builds a single-select mock database that supports leftJoin and offset chains.
+ * Required by getAdditionalDev which does: select().from().leftJoin().leftJoin().leftJoin().where().limit(1)
+ */
 function makeSelectDatabase(resolveWith: unknown[]) {
-  const chain = {
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue(resolveWith),
+  return { select: vi.fn().mockReturnValue(makeChainDatabase(resolveWith)) };
+}
+
+// ---------------------------------------------------------------------------
+// Mock data helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Wraps flat additionalDevelopment fields in the joined row shape that Drizzle
+ * returns after `.select({ row: additionalDevelopment, pmName: ..., ... })`.
+ */
+function wrapJoinRow(flat: Record<string, unknown>) {
+  return {
+    row: flat,
+    pmName: null as string | null,
+    pmSabun: null as string | null,
+    devName: null as string | null,
+    devSabun: null as string | null,
+    customerCompanyName: null as string | null,
+    customerCompanyCode: null as string | null,
   };
-  return { select: vi.fn().mockReturnValue(chain) };
 }
 
 // ---------------------------------------------------------------------------
@@ -101,20 +118,19 @@ function makeSelectDatabase(resolveWith: unknown[]) {
 
 describe("listAdditionalDev", () => {
   it("returns paginated data with proper pagination metadata", async () => {
-    const rows = [
-      {
-        id: "add-dev-1",
-        workspaceId: "ws-1",
-        projectId: "proj-1",
-        projectName: "Test Project",
-        status: "협의중",
-        part: "Saas",
-        createdAt: new Date("2026-01-01"),
-        updatedAt: new Date("2026-01-01"),
-      },
-    ];
+    const flatRow = {
+      id: "add-dev-1",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Test Project",
+      status: "협의중",
+      part: "Saas",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
 
-    const db = makeTwoSelectDatabase(rows, [{ total: 1 }]);
+    // listAdditionalDev does select({ row, pmName, ... }) → rows are {row, pmName, ...} shaped
+    const db = makeTwoSelectDatabase([wrapJoinRow(flatRow)], [{ total: 1 }]);
 
     const result = await listAdditionalDev({
       workspaceId: "ws-1",
@@ -130,19 +146,17 @@ describe("listAdditionalDev", () => {
   });
 
   it("filters by status", async () => {
-    const rows = [
-      {
-        id: "add-dev-2",
-        workspaceId: "ws-1",
-        projectId: "proj-1",
-        projectName: "Status Filter Project",
-        status: "진행중",
-        createdAt: new Date("2026-01-02"),
-        updatedAt: new Date("2026-01-02"),
-      },
-    ];
+    const flatRow = {
+      id: "add-dev-2",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Status Filter Project",
+      status: "진행중",
+      createdAt: new Date("2026-01-02"),
+      updatedAt: new Date("2026-01-02"),
+    };
 
-    const db = makeTwoSelectDatabase(rows, [{ total: 1 }]);
+    const db = makeTwoSelectDatabase([wrapJoinRow(flatRow)], [{ total: 1 }]);
 
     const result = await listAdditionalDev({
       workspaceId: "ws-1",
@@ -155,20 +169,18 @@ describe("listAdditionalDev", () => {
   });
 
   it("filters by part", async () => {
-    const rows = [
-      {
-        id: "add-dev-3",
-        workspaceId: "ws-1",
-        projectId: "proj-1",
-        projectName: "Part Filter Project",
-        status: "협의중",
-        part: "모바일",
-        createdAt: new Date("2026-01-03"),
-        updatedAt: new Date("2026-01-03"),
-      },
-    ];
+    const flatRow = {
+      id: "add-dev-3",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Part Filter Project",
+      status: "협의중",
+      part: "모바일",
+      createdAt: new Date("2026-01-03"),
+      updatedAt: new Date("2026-01-03"),
+    };
 
-    const db = makeTwoSelectDatabase(rows, [{ total: 1 }]);
+    const db = makeTwoSelectDatabase([wrapJoinRow(flatRow)], [{ total: 1 }]);
 
     const result = await listAdditionalDev({
       workspaceId: "ws-1",
@@ -253,6 +265,37 @@ describe("createAdditionalDev", () => {
     const insertedValues = (insertChain.values as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
     expect(insertedValues).toMatchObject({ status: "진행중" });
   });
+
+  it("rejects customerCompanyId from another workspace", async () => {
+    // The FK guard select for project returns a row (project exists in workspace),
+    // but the FK guard select for company returns nothing (company is in another workspace).
+    const selectChain = {
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      // First call: project FK check → found. Second call: company FK check → not found.
+      limit: vi.fn()
+        .mockResolvedValueOnce([{ id: "proj-1" }])
+        .mockResolvedValueOnce([]),
+    };
+    const db = {
+      select: vi.fn().mockReturnValue(selectChain),
+      insert: vi.fn(),
+    };
+
+    await expect(
+      createAdditionalDev({
+        workspaceId: "ws-1",
+        input: {
+          projectId: "proj-1",
+          customerCompanyId: "company-from-ws-2",
+        },
+        database: db as never,
+      }),
+    ).rejects.toThrow("customerCompanyId not in workspace");
+
+    // Insert must never be called when FK validation fails.
+    expect(db.insert).not.toHaveBeenCalled();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -261,7 +304,7 @@ describe("createAdditionalDev", () => {
 
 describe("getAdditionalDev", () => {
   it("returns row by id scoped to workspace", async () => {
-    const row = {
+    const flatRow = {
       id: "add-dev-10",
       workspaceId: "ws-1",
       projectId: "proj-1",
@@ -270,7 +313,8 @@ describe("getAdditionalDev", () => {
       updatedAt: new Date("2026-01-01"),
     };
 
-    const db = makeSelectDatabase([row]);
+    // getAdditionalDev uses leftJoin — makeSelectDatabase now supports the full chain
+    const db = makeSelectDatabase([wrapJoinRow(flatRow)]);
 
     const result = await getAdditionalDev({
       workspaceId: "ws-1",
@@ -397,5 +441,108 @@ describe("upsertEffort", () => {
       effort: "10.5",
     });
     expect(insertChain.onConflictDoUpdate).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Additional tests for AddDev schema supplement plan
+// ---------------------------------------------------------------------------
+
+describe("listAdditionalDev — join field population", () => {
+  it("populates customerCompanyName in list result", async () => {
+    const flatRow = {
+      id: "add-dev-100",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Customer Co Project",
+      status: "협의중",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+    const joinedRow = {
+      row: flatRow,
+      pmName: null,
+      pmSabun: null,
+      devName: null,
+      devSabun: null,
+      customerCompanyName: "삼성전자",
+      customerCompanyCode: "SAMSUNG",
+    };
+
+    const db = makeTwoSelectDatabase([joinedRow], [{ total: 1 }]);
+
+    const result = await listAdditionalDev({
+      workspaceId: "ws-1",
+      database: db as never,
+    });
+
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]?.customerCompanyName).toBe("삼성전자");
+    expect(result.data[0]?.customerCompanyCode).toBe("SAMSUNG");
+  });
+
+  it("populates pmName and devName in list result when resolved", async () => {
+    const flatRow = {
+      id: "add-dev-101",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Staff Named Project",
+      status: "진행중",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+    const joinedRow = {
+      row: flatRow,
+      pmName: "홍길동",
+      pmSabun: "EMP001",
+      devName: "이순신",
+      devSabun: "EMP002",
+      customerCompanyName: null,
+      customerCompanyCode: null,
+    };
+
+    const db = makeTwoSelectDatabase([joinedRow], [{ total: 1 }]);
+
+    const result = await listAdditionalDev({
+      workspaceId: "ws-1",
+      database: db as never,
+    });
+
+    expect(result.data[0]?.pmName).toBe("홍길동");
+    expect(result.data[0]?.pmSabun).toBe("EMP001");
+    expect(result.data[0]?.devName).toBe("이순신");
+    expect(result.data[0]?.devSabun).toBe("EMP002");
+  });
+});
+
+describe("schema rename guard — paidEffort not estimatedEffort", () => {
+  it("list result row has paidEffort field (schema rename guard)", async () => {
+    // The schema renamed estimatedEffort → paidEffort.
+    // This test ensures the row shape does NOT accidentally re-introduce 'estimatedEffort'
+    // as a runtime key by verifying that paidEffort passes through and no estimatedEffort key exists.
+    const flatRow = {
+      id: "add-dev-200",
+      workspaceId: "ws-1",
+      projectId: "proj-1",
+      projectName: "Rename Guard Project",
+      status: "협의중",
+      paidEffort: "5.5",
+      createdAt: new Date("2026-01-01"),
+      updatedAt: new Date("2026-01-01"),
+    };
+
+    const db = makeTwoSelectDatabase([wrapJoinRow(flatRow)], [{ total: 1 }]);
+
+    const result = await listAdditionalDev({
+      workspaceId: "ws-1",
+      database: db as never,
+    });
+
+    const row = result.data[0];
+    expect(row).toBeDefined();
+    // paidEffort must survive the flatten
+    expect(row?.paidEffort).toBe("5.5");
+    // estimatedEffort must not appear — the old key was removed in migration
+    expect(row).not.toHaveProperty("estimatedEffort");
   });
 });
