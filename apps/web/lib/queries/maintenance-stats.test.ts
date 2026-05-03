@@ -21,11 +21,17 @@ vi.mock("drizzle-orm", () => ({
   ),
 }));
 
-const BASE_INPUT = {
+const BASE_INPUT: {
+  workspaceId: string;
+  yyyymmFrom: string;
+  yyyymmTo: string;
+  categories: ("H008" | "H028" | "H030" | "H010" | "H027" | "H038")[];
+  cntRatio: number;
+} = {
   workspaceId: "ws-1",
   yyyymmFrom: "202401",
   yyyymmTo: "202412",
-  categories: ["CAT_A", "CAT_B"],
+  categories: ["H008", "H028"],
   cntRatio: 40,
 };
 
@@ -105,8 +111,8 @@ describe("getStatsByGroupingSet", () => {
       ],
     });
     const result = await getStatsByGroupingSet(BASE_INPUT);
-    expect(result.byCompany[0].cnt).toBe(0);
-    expect(result.byCompany[0].workTime).toBe(0);
+    expect(result.byCompany[0]?.cnt).toBe(0);
+    expect(result.byCompany[0]?.workTime).toBe(0);
   });
 });
 
