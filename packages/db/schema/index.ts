@@ -54,3 +54,5 @@ export * from "./sales-contract-extra.js";
 export * from "./sales-finance.js";
 // Phase-Sales Group 6: 통계 차트 raw data (TBIZ_PLAN_PERF, B30010/B30030)
 export * from "./sales-plan-perf.js";
+// Plan 5: 인프라구성관리 Hybrid (Grid SoT + Wiki Runbook)
+export * from "./infra-system.js";
