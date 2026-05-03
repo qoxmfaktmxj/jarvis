@@ -51,9 +51,18 @@ export function setTheme(theme: ThemeMode) {
 }
 
 export function useSidebar(): SidebarMode {
-  const [mode, setMode] = useState<SidebarMode>(DEFAULT_SIDEBAR);
+  // SSR-safe initial: "rail" guarantees server HTML renders rail layout
+  // (toggle only, no Capy+Jarvis brand). This prevents the truncated
+  // Capy+Jarvis bug when CSS --sidebar-width=60px and React-rendered
+  // brand collides at 60px. Client useEffect upgrades to actual mode.
+  const [mode, setMode] = useState<SidebarMode>("rail");
   useEffect(() => {
-    setMode(readSidebar());
+    const initial = readSidebar();
+    setMode(initial);
+    // Defensive: ensure data-sidebar attribute matches state, in case the
+    // inline <head> script in layout.tsx was blocked or stripped during
+    // hydration. CSS --sidebar-width binds to this attribute.
+    document.documentElement.setAttribute("data-sidebar", initial);
     const handler = (e: Event) => {
       const detail = (e as CustomEvent<SidebarMode>).detail;
       if (detail === "rail" || detail === "expanded") setMode(detail);
