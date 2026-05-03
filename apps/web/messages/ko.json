@@ -1324,6 +1324,55 @@
       "pathTraversal": "허용되지 않은 파일 경로입니다."
     }
   },
+  "DocNumbers": {
+    "nav": {
+      "title": "문서번호",
+      "manage": "문서번호 관리"
+    },
+    "Page": {
+      "title": "문서번호 관리",
+      "subtitle": "회사가 발행하는 공식 문서의 연도별 일련번호를 관리합니다.",
+      "columns": {
+        "year": "연도",
+        "seq": "순번",
+        "docNo": "문서번호",
+        "docName": "문서명",
+        "user": "담당자",
+        "docDate": "발행일",
+        "note": "비고",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "문서명",
+        "year": "연도",
+        "all": "전체"
+      },
+      "actions": {
+        "newEntry": "+ 신규 발급",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 문서번호 발급",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기",
+        "selectUser": "담당자 선택",
+        "autoDocNo": "발급 시 자동 생성",
+        "yearHint": "연도 (예: 2026)"
+      },
+      "empty": "발급된 문서번호가 없습니다.",
+      "errors": {
+        "yearFormat": "연도는 yyyy 형식이어야 합니다.",
+        "duplicate": "동일 연도/순번이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다.",
+        "docNameRequired": "문서명은 필수입니다."
+      },
+      "excelFilename": "문서번호"
+    }
+  },
   "Schedule": {
     "nav": {
       "title": "개인 일정",

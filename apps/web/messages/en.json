@@ -771,6 +771,55 @@
       }
     }
   },
+  "DocNumbers": {
+    "nav": {
+      "title": "Document Numbers",
+      "manage": "Document Numbers"
+    },
+    "Page": {
+      "title": "Document Numbers",
+      "subtitle": "Manage yearly serial numbers for company-issued documents.",
+      "columns": {
+        "year": "Year",
+        "seq": "No.",
+        "docNo": "Document #",
+        "docName": "Title",
+        "user": "Owner",
+        "docDate": "Issued",
+        "note": "Note",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "filters": {
+        "search": "Title",
+        "year": "Year",
+        "all": "All"
+      },
+      "actions": {
+        "newEntry": "+ New",
+        "save": "Save",
+        "delete": "Delete",
+        "exportExcel": "Excel"
+      },
+      "dialog": {
+        "newTitle": "Issue New Document Number",
+        "cancel": "Cancel",
+        "save": "Save",
+        "close": "Close",
+        "selectUser": "Select Owner",
+        "autoDocNo": "Auto-generated on save",
+        "yearHint": "Year (e.g. 2026)"
+      },
+      "empty": "No document numbers issued.",
+      "errors": {
+        "yearFormat": "Year must be 4 digits (yyyy).",
+        "duplicate": "A row with the same year/seq already exists.",
+        "noPermission": "You do not have permission for this action.",
+        "docNameRequired": "Document title is required."
+      },
+      "excelFilename": "DocumentNumbers"
+    }
+  },
   "Schedule": {
     "nav": {
       "title": "Schedule",
