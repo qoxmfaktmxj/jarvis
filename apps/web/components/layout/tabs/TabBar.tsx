@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pin, X } from "lucide-react";
 import { useTabContext } from "./TabContext";
@@ -18,8 +18,16 @@ export function TabBar() {
   const { tabs, activeKey, focusTab, closeTab, isDirty } = useTabContext();
   const router = useRouter();
   const [menu, setMenu] = useState<{ tab: Tab; x: number; y: number } | null>(null);
+  // Mounted-gate prevents SSR/CSR mismatch: TabProvider's useReducer lazy
+  // initializer reads sessionStorage on client (returns persisted tabs) but
+  // not on server (returns []), so initial client render would diverge from
+  // SSR HTML. Gating on mount ensures both server and first paint render null.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (tabs.length === 0) return null;
+  if (!mounted || tabs.length === 0) return null;
 
   return (
     <>
