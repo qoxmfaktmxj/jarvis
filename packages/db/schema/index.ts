@@ -53,3 +53,6 @@ export * from "./sales-contract-extra.js";
 export * from "./sales-finance.js";
 // Phase-Sales Group 6: 통계 차트 raw data (TBIZ_PLAN_PERF, B30010/B30030)
 export * from "./sales-plan-perf.js";
+// Phase-ServiceDesk & MonthReport: 서비스 데스크 + 월별 현황 보고 (TSDT020/TSMT080/082/083)
+export * from "./service-desk.js";
+export * from "./month-report.js";
