@@ -5,7 +5,6 @@ import { listLeaveSummary } from "@/lib/queries/contractors";
 import { LeaveManagementPanel } from "@/components/contractors/LeaveManagementPanel";
 import type { PageProps } from "@jarvis/shared/types/page";
 
-export const metadata = { title: "휴가관리" };
 export const dynamic = "force-dynamic";
 
 export default async function ContractorsLeavesPage({

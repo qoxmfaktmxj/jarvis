@@ -1,6 +1,6 @@
 {
-  "id": "e8871654-9f1c-4a44-91f8-e9d8cf0758be",
-  "prevId": "4a0a3da3-2025-481b-8051-4fc579c87e14",
+  "id": "4a0a3da3-2025-481b-8051-4fc579c87e14",
+  "prevId": "c6aa604f-d32c-4b9e-be83-0ccee1c2e5e3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -7447,6 +7447,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "estimated_effort": {
+          "name": "estimated_effort",
+          "type": "numeric(8, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "actual_effort": {
           "name": "actual_effort",
           "type": "numeric(8, 2)",
@@ -7478,24 +7484,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "customer_company_id": {
-          "name": "customer_company_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "paid_effort": {
-          "name": "paid_effort",
-          "type": "numeric(8, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_onsite": {
-          "name": "is_onsite",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -7541,21 +7529,6 @@
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_add_dev_customer_company": {
-          "name": "idx_add_dev_customer_company",
-          "columns": [
-            {
-              "expression": "customer_company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "concurrently": false,
-          "isUnique": false,
           "method": "btree",
           "with": {}
         }
@@ -7606,20 +7579,6 @@
           "tableTo": "user",
           "columnsFrom": [
             "developer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "additional_development_customer_company_id_company_id_fk": {
-          "name": "additional_development_customer_company_id_company_id_fk",
-          "tableFrom": "additional_development",
-          "tableTo": "company",
-          "schemaTo": "public",
-          "columnsFrom": [
-            "customer_company_id"
           ],
           "columnsTo": [
             "id"

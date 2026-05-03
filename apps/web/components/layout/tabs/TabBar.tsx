@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pin, X } from "lucide-react";
 import { useTabContext } from "./TabContext";
@@ -18,8 +18,16 @@ export function TabBar() {
   const { tabs, activeKey, focusTab, closeTab, isDirty } = useTabContext();
   const router = useRouter();
   const [menu, setMenu] = useState<{ tab: Tab; x: number; y: number } | null>(null);
+  // Mounted-gate prevents SSR/CSR mismatch: TabProvider's useReducer lazy
+  // initializer reads sessionStorage on client (returns persisted tabs) but
+  // not on server (returns []), so initial client render would diverge from
+  // SSR HTML. Gating on mount ensures both server and first paint render null.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  if (tabs.length === 0) return null;
+  if (!mounted || tabs.length === 0) return null;
 
   return (
     <>
@@ -99,38 +107,28 @@ function TabItem({
       style={{
         gap: 8,
         paddingInline: 14,
-        borderRight: "1px solid var(--line)",
+        marginTop: 16,
+        marginBottom: active ? -1 : 0,
+        marginRight: 2,
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
+        borderTop: active ? "1px solid var(--line)" : "1px solid transparent",
+        borderLeft: active ? "1px solid var(--line)" : "1px solid transparent",
+        borderRight: active ? "1px solid var(--line)" : "1px solid transparent",
         background: active
-          ? "var(--accent-tint)"
+          ? "var(--bg)"
           : hovered
             ? "var(--line2)"
             : "transparent",
-        color: active ? "var(--accent-ink)" : "var(--ink2)",
+        color: active ? "var(--ink)" : "var(--ink2)",
         fontSize: 12,
-        fontWeight: active ? 500 : 400,
+        fontWeight: active ? 600 : 400,
         maxWidth: 180,
         minWidth: 96,
         transition:
-          "background var(--duration-fast) var(--ease-out-quart), color var(--duration-fast) var(--ease-out-quart)",
+          "background var(--duration-fast) var(--ease-out-quart), color var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) var(--ease-out-quart)",
       }}
     >
-      {/* Active indicator — bottom bar, animates in from center */}
-      <span
-        aria-hidden
-        style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 2,
-          background: "var(--accent)",
-          transform: active ? "scaleX(1)" : "scaleX(0)",
-          transformOrigin: "center",
-          transition: "transform var(--duration-normal) var(--ease-out-quint)",
-          pointerEvents: "none",
-        }}
-      />
-
       {tab.pinned ? (
         <Pin
           size={11}

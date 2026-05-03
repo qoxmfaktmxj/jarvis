@@ -6,6 +6,8 @@ export * from "./raw-source.js";
 export * from "./notice.js";
 export * from "./wiki.js";
 export * from "./additional-dev.js";
+export * from "./schedule.js";
+export * from "./maintenance.js";
 export * from "./uuid.js";
 export * from "./sales-contract.js";
 export * from "./sales-contract-extra.js";

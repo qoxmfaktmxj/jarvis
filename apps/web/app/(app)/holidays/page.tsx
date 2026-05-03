@@ -5,8 +5,6 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import type { PageProps } from "@jarvis/shared/types/page";
 
-export const metadata = { title: "공휴일 관리" };
-
 export default async function HolidaysPage({ searchParams }: PageProps) {
   const session = await requirePageSession(PERMISSIONS.CONTRACTOR_ADMIN, "/dashboard");
   const sp = await searchParams;

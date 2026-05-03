@@ -486,6 +486,13 @@
       "breakpoints": true
     },
     {
+      "idx": 69,
+      "version": "7",
+      "when": 1777823688000,
+      "tag": "0069_next_power_man",
+      "breakpoints": true
+    },
+    {
       "idx": 70,
       "version": "7",
       "when": 1777766400000,

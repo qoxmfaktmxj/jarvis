@@ -33,6 +33,10 @@ import {
   EXTERNAL_SIGNAL_FETCH_QUEUE,
   EXTERNAL_SIGNAL_FETCH_CRON,
 } from './jobs/external-signal-fetch.js';
+import {
+  wikiLinkInfraSystemHandler,
+  WIKI_LINK_INFRA_QUEUE,
+} from './jobs/wiki-link-infra-system.js';
 import { featureWikiLintCron } from '@jarvis/db/feature-flags';
 import { ensureBucket } from './lib/minio-client.js';
 import { registerBossForHealthcheck, startHealthServer } from './health.js';
@@ -51,7 +55,7 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE]) {
+  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE, WIKI_LINK_INFRA_QUEUE]) {
     await boss.createQueue(q);
   }
 
@@ -84,6 +88,11 @@ async function main() {
   // pg-boss schedule()은 큐 이름을 PK로 사용하므로 두 번 호출하면 마지막 값만 남는다.
   await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON, {});
   await boss.work(EXTERNAL_SIGNAL_FETCH_QUEUE, externalSignalFetchHandler);
+
+  // Plan 5 — H3: wiki ingest 후 infra_system.wikiPageId 자동 link.
+  // 트리거는 외부에서 boss.send(WIKI_LINK_INFRA_QUEUE, { workspaceId }).
+  // ingest write-and-commit 잡 완료 시 emit (별도 PR에서 hook 추가 예정).
+  await boss.work(WIKI_LINK_INFRA_QUEUE, wikiLinkInfraSystemHandler);
 
   // Phase-W2 T3 — weekly wiki lint (Sunday 03:00 KST = Saturday 18:00 UTC).
   // Only register when the feature flag is ON so the cron does not fire

@@ -29,6 +29,7 @@ export * from "./user-session.js";
 // Phase-Harness (2026-04-23): embed_cache 테이블 폐지. migration 0038 참조.
 export * from "./additional-development.js";
 export * from "./contractor.js";
+export * from "./maintenance.js";
 export * from "./chat.js";
 // Phase-Dashboard (2026-04-30): 외부 시그널(환율/날씨) + 위키 퀴즈 + 시즌제
 export * from "./region-grid.js";
@@ -53,3 +54,7 @@ export * from "./sales-contract-extra.js";
 export * from "./sales-finance.js";
 // Phase-Sales Group 6: 통계 차트 raw data (TBIZ_PLAN_PERF, B30010/B30030)
 export * from "./sales-plan-perf.js";
+// Plan 5: 인프라구성관리 Hybrid (Grid SoT + Wiki Runbook)
+export * from "./infra-system.js";
+// ScheduleMgr + ScheduleCalendarMgr (TSMT100) — 개인 일정
+export * from "./schedule.js";
