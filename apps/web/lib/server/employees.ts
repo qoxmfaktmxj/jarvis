@@ -39,7 +39,12 @@ export async function searchEmployees(
   if (!sid) throw new Error("Unauthorized");
   const session = await getSession(sid);
   if (!session) throw new Error("Unauthorized");
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
+  const allowed =
+    hasPermission(session, PERMISSIONS.SALES_ALL) ||
+    hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_READ) ||
+    hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_UPDATE) ||
+    hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_CREATE);
+  if (!allowed) {
     throw new Error("Forbidden");
   }
 
