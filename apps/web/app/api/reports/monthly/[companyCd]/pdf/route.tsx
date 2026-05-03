@@ -5,7 +5,7 @@ import { serviceDeskIncident } from "@jarvis/db/schema";
 import { requirePermission } from "@/lib/server/action-auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { getDetail } from "@/lib/queries/month-report";
-import { renderPdfFromReact } from "@/lib/pdf/render-pdf";
+import { renderPdfFromReact, getFontFaceCss } from "@/lib/pdf/render-pdf";
 import { MonthlyReportTemplate, type MonthlyReportData } from "@/lib/pdf/monthly-report-template";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +58,7 @@ export async function GET(
   // union that MonthlyReportData expects. Values are guaranteed to be Y/N at runtime.
   const master = detail.master as MonthlyReportData["master"];
 
+  const fontFaceCss = await getFontFaceCss();
   const pdfBuffer = await renderPdfFromReact(
     <MonthlyReportTemplate
       master={master}
@@ -65,6 +66,7 @@ export async function GET(
       otherDetail={detail.otherDetail}
       incidents={{ processed, unsolved }}
       ym={ym}
+      fontFaceCss={fontFaceCss}
     />,
   );
 
