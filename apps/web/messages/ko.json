@@ -1251,6 +1251,65 @@
       "delete": "삭제"
     }
   },
+  "Maintenance": {
+    "nav": {
+      "title": "유지보수",
+      "assignments": "유지보수 담당"
+    },
+    "Assignments": {
+      "title": "유지보수 담당",
+      "subtitle": "담당자별 고객사 유지보수 계약 정보를 관리합니다.",
+      "tabs": {
+        "manage": "관리",
+        "show": "현황"
+      },
+      "columns": {
+        "user": "담당자",
+        "company": "고객사",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "contractNumber": "계약번호",
+        "contractType": "계약구분",
+        "note": "메모",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "담당자/고객사/계약번호",
+        "userId": "담당자",
+        "companyId": "고객사",
+        "contractType": "계약구분",
+        "activeOn": "유효일자"
+      },
+      "actions": {
+        "newAssignment": "+ 신규 할당",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 할당 등록",
+        "selectUser": "담당자 선택",
+        "selectCompany": "고객사 선택",
+        "cancel": "취소",
+        "save": "저장"
+      },
+      "showPanel": {
+        "userListTitle": "담당자",
+        "userSearchPlaceholder": "이름·사번 검색",
+        "selectUserHint": "담당자를 선택하세요",
+        "responsibleCompanies": "{count}개 회사 담당",
+        "noCompanies": "담당 회사가 없습니다.",
+        "openCompany": "회사 상세 열기"
+      },
+      "empty": "할당 데이터가 없습니다.",
+      "errors": {
+        "dateRange": "시작일은 종료일보다 빠르거나 같아야 합니다.",
+        "duplicate": "동일 담당자·고객사·시작일 조합이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다."
+      }
+    }
+  },
   "Upload": {
     "Errors": {
       "magicMismatch": "파일 내용이 선언된 형식과 일치하지 않습니다. ({declared}로 선언되었으나 실제 파일 형식이 다릅니다.)",
