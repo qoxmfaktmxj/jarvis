@@ -1092,7 +1092,8 @@
       "remark": "비고",
       "customerCompany": "요청회사",
       "paidEffort": "유상공수",
-      "isOnsite": "상주여부"
+      "isOnsite": "상주여부",
+      "updatedAt": "업데이트"
     },
     "actions": {
       "saving": "저장 중...",
