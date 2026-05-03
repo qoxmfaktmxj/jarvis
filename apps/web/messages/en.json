@@ -816,6 +816,19 @@
         "yes": "Shared",
         "no": "Private"
       },
+      "calendar": {
+        "prev": "Previous month",
+        "next": "Next month",
+        "today": "Today",
+        "more": "more",
+        "loading": "Loading…",
+        "selectDate": "Select a date",
+        "selectHint": "Click a date on the calendar to see that day's events.",
+        "legend": {
+          "own": "Mine",
+          "shared": "Shared"
+        }
+      },
       "empty": "No events.",
       "errors": {
         "dateRange": "Start date must be earlier than or equal to end date.",
