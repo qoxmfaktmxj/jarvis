@@ -120,6 +120,7 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
       isPaid: raw.isPaid === "on",
       invoiceIssued: raw.invoiceIssued === "on",
       inspectionConfirmed: raw.inspectionConfirmed === "on",
+      isOnsite: raw.isOnsite === "on",
     };
 
     try {

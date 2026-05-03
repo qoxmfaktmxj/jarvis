@@ -1089,7 +1089,10 @@
       "estimatedEffort": "유상공수",
       "actualEffort": "실공수",
       "vendorContactNote": "업체담당자",
-      "remark": "비고"
+      "remark": "비고",
+      "customerCompany": "요청회사",
+      "paidEffort": "유상공수",
+      "isOnsite": "상주여부"
     },
     "actions": {
       "saving": "저장 중...",

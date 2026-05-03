@@ -56,7 +56,9 @@ export default async function AddDevEditPage({
           developerId: row.developerId ?? undefined,
           developerDisplay: row.developerId && row.devSabun && row.devName ? `${row.devSabun} · ${row.devName}` : undefined,
           customerCompanyId: row.customerCompanyId ?? undefined,
-          customerCompanyDisplay: row.customerCompanyId && row.customerCompanyName ? `${row.customerCompanyName}` : undefined,
+          customerCompanyDisplay: row.customerCompanyCode && row.customerCompanyName
+            ? `${row.customerCompanyCode} · ${row.customerCompanyName}`
+            : (row.customerCompanyName ?? undefined),
           vendorContactNote: row.vendorContactNote ?? undefined,
           paidEffort: row.paidEffort ?? undefined,
           actualEffort: row.actualEffort ?? undefined,

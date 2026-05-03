@@ -59,6 +59,7 @@ export async function listAdditionalDev({
         devName: devAlias.name,
         devSabun: devAlias.employeeId,
         customerCompanyName: company.name,
+        customerCompanyCode: company.code,
       })
       .from(additionalDevelopment)
       .leftJoin(pmAlias, eq(additionalDevelopment.pmId, pmAlias.id))
@@ -81,6 +82,7 @@ export async function listAdditionalDev({
     devName: r.devName,
     devSabun: r.devSabun,
     customerCompanyName: r.customerCompanyName,
+    customerCompanyCode: r.customerCompanyCode,
   }));
 
   const total = Number(totals[0]?.total ?? 0);
@@ -115,6 +117,7 @@ export async function getAdditionalDev({
       devName: devAlias.name,
       devSabun: devAlias.employeeId,
       customerCompanyName: company.name,
+      customerCompanyCode: company.code,
     })
     .from(additionalDevelopment)
     .leftJoin(pmAlias, eq(additionalDevelopment.pmId, pmAlias.id))
@@ -135,6 +138,7 @@ export async function getAdditionalDev({
     devName: rowRaw.devName,
     devSabun: rowRaw.devSabun,
     customerCompanyName: rowRaw.customerCompanyName,
+    customerCompanyCode: rowRaw.customerCompanyCode,
   };
 }
 
