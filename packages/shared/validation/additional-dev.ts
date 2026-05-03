@@ -7,7 +7,7 @@ export const createAdditionalDevSchema = z.object({
   requestSequence: z.coerce.number().int().min(1).optional(),
   requesterName: z.string().max(100).optional(),
   requestContent: z.string().optional(),
-  part: z.enum(["Saas", "외부", "모바일"]).optional(),
+  part: z.enum(["Saas", "외부", "모바일", "채용"]).optional(),
   status: z.enum(["협의중", "진행중", "완료", "보류"]).optional(),
   contractNumber: z.string().max(50).optional(),
   contractStartMonth: z.string().regex(/^\d{4}-\d{2}$/).optional(),
@@ -22,9 +22,11 @@ export const createAdditionalDevSchema = z.object({
   pmId: z.string().uuid().optional(),
   developerId: z.string().uuid().optional(),
   vendorContactNote: z.string().optional(),
-  estimatedEffort: z.string().optional(),
+  paidEffort: z.string().optional(),
   actualEffort: z.string().optional(),
   attachmentFileRef: z.string().max(500).optional(),
+  customerCompanyId: z.string().uuid().optional(),
+  isOnsite: z.boolean().optional(),
   remark: z.string().optional(),
 });
 
