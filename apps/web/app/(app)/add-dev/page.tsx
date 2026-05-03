@@ -84,6 +84,7 @@ export default async function AddDevListPage({
           <option value="Saas">Saas</option>
           <option value="외부">외부</option>
           <option value="모바일">모바일</option>
+          <option value="채용">채용</option>
         </select>
         <Button type="submit" variant="outline">
           {t("applyFilters")}
