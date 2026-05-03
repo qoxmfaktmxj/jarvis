@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { CompanyPicker } from "./CompanyPicker";
+import { searchCompanies } from "@/lib/server/companies";
+import { EmployeePicker } from "@/components/grid/EmployeePicker";
+import { searchEmployees } from "@/lib/server/employees";
 
 type AddDevFormValues = {
   projectId: string;
@@ -28,12 +32,17 @@ type AddDevFormValues = {
   devStartDate: string;
   devEndDate: string;
   pmId: string;
+  pmDisplay: string;
   developerId: string;
+  developerDisplay: string;
+  customerCompanyId: string;
+  customerCompanyDisplay: string;
   vendorContactNote: string;
-  estimatedEffort: string;
+  paidEffort: string;
   actualEffort: string;
   attachmentFileRef: string;
   remark: string;
+  isOnsite: boolean;
 };
 
 type Props = {
@@ -64,12 +73,17 @@ function normalizeDefaults(v?: Partial<AddDevFormValues>): AddDevFormValues {
     devStartDate: v?.devStartDate ?? "",
     devEndDate: v?.devEndDate ?? "",
     pmId: v?.pmId ?? "",
+    pmDisplay: v?.pmDisplay ?? "",
     developerId: v?.developerId ?? "",
+    developerDisplay: v?.developerDisplay ?? "",
+    customerCompanyId: v?.customerCompanyId ?? "",
+    customerCompanyDisplay: v?.customerCompanyDisplay ?? "",
     vendorContactNote: v?.vendorContactNote ?? "",
-    estimatedEffort: v?.estimatedEffort ?? "",
+    paidEffort: v?.paidEffort ?? "",
     actualEffort: v?.actualEffort ?? "",
     attachmentFileRef: v?.attachmentFileRef ?? "",
     remark: v?.remark ?? "",
+    isOnsite: v?.isOnsite ?? false,
   };
 }
 
@@ -86,6 +100,12 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
   });
   const [devStartDate, setDevStartDate] = React.useState<string | null>(vals.devStartDate || null);
   const [devEndDate, setDevEndDate] = React.useState<string | null>(vals.devEndDate || null);
+  const [customerCompanyId, setCustomerCompanyId] = React.useState<string | null>(vals.customerCompanyId || null);
+  const [customerCompanyDisplay, setCustomerCompanyDisplay] = React.useState<string>(vals.customerCompanyDisplay || "");
+  const [pmId, setPmId] = React.useState<string | null>(vals.pmId || null);
+  const [pmDisplay, setPmDisplay] = React.useState<string>(vals.pmDisplay || "");
+  const [developerId, setDeveloperId] = React.useState<string | null>(vals.developerId || null);
+  const [developerDisplay, setDeveloperDisplay] = React.useState<string>(vals.developerDisplay || "");
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -152,6 +172,20 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
           <Input id="projectId" name="projectId" defaultValue={vals.projectId} required placeholder="UUID" />
         </div>
 
+        <div className="block space-y-2">
+          <label className="text-sm font-medium text-surface-700">{t("customerCompany")}</label>
+          <input type="hidden" name="customerCompanyId" value={customerCompanyId ?? ""} readOnly />
+          <CompanyPicker
+            value={customerCompanyDisplay}
+            onSelect={(hit) => {
+              setCustomerCompanyId(hit.id);
+              setCustomerCompanyDisplay(`${hit.code} · ${hit.name}`);
+            }}
+            search={async (q, limit) => searchCompanies({ q, limit })}
+            placeholder={t("customerCompany")}
+          />
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("requestYearMonth")}</span>
@@ -196,6 +230,7 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
               <option value="Saas">Saas</option>
               <option value="외부">외부</option>
               <option value="모바일">모바일</option>
+              <option value="채용">채용</option>
             </select>
           </label>
           <label className="space-y-2">
@@ -281,24 +316,47 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("pm")}</span>
-            <Input name="pmId" defaultValue={vals.pmId} placeholder="PM UUID" />
+            <input type="hidden" name="pmId" value={pmId ?? ""} readOnly />
+            <EmployeePicker
+              value={pmDisplay}
+              onSelect={(hit) => {
+                setPmId(hit.userId);
+                setPmDisplay(`${hit.sabun} · ${hit.name}`);
+              }}
+              search={async (q, limit) => searchEmployees({ q, limit })}
+              placeholder={t("pm")}
+            />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("developer")}</span>
-            <Input name="developerId" defaultValue={vals.developerId} placeholder="개발자 UUID" />
+            <input type="hidden" name="developerId" value={developerId ?? ""} readOnly />
+            <EmployeePicker
+              value={developerDisplay}
+              onSelect={(hit) => {
+                setDeveloperId(hit.userId);
+                setDeveloperDisplay(`${hit.sabun} · ${hit.name}`);
+              }}
+              search={async (q, limit) => searchEmployees({ q, limit })}
+              placeholder={t("developer")}
+            />
           </label>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2">
-            <span className="text-sm font-medium text-surface-700">{t("estimatedEffort")}</span>
-            <Input name="estimatedEffort" defaultValue={vals.estimatedEffort} placeholder="0.00" />
+            <span className="text-sm font-medium text-surface-700">{t("paidEffort")}</span>
+            <Input name="paidEffort" defaultValue={vals.paidEffort} placeholder="0.00" />
           </label>
           <label className="space-y-2">
             <span className="text-sm font-medium text-surface-700">{t("actualEffort")}</span>
             <Input name="actualEffort" defaultValue={vals.actualEffort} placeholder="0.00" />
           </label>
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-surface-700">
+          <input type="checkbox" name="isOnsite" defaultChecked={vals.isOnsite} />
+          {t("isOnsite")}
+        </label>
 
         <label className="block space-y-2">
           <span className="text-sm font-medium text-surface-700">{t("vendorContactNote")}</span>

@@ -52,12 +52,17 @@ export default async function AddDevEditPage({
           devStartDate: row.devStartDate ?? undefined,
           devEndDate: row.devEndDate ?? undefined,
           pmId: row.pmId ?? undefined,
+          pmDisplay: row.pmId && row.pmSabun && row.pmName ? `${row.pmSabun} · ${row.pmName}` : undefined,
           developerId: row.developerId ?? undefined,
+          developerDisplay: row.developerId && row.devSabun && row.devName ? `${row.devSabun} · ${row.devName}` : undefined,
+          customerCompanyId: row.customerCompanyId ?? undefined,
+          customerCompanyDisplay: row.customerCompanyId && row.customerCompanyName ? `${row.customerCompanyName}` : undefined,
           vendorContactNote: row.vendorContactNote ?? undefined,
-          estimatedEffort: row.estimatedEffort ?? undefined,
+          paidEffort: row.paidEffort ?? undefined,
           actualEffort: row.actualEffort ?? undefined,
           attachmentFileRef: row.attachmentFileRef ?? undefined,
           remark: row.remark ?? undefined,
+          isOnsite: row.isOnsite ?? undefined,
         }}
       />
     </div>
