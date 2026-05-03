@@ -709,5 +709,106 @@
         "searchDevGbCd": "Type"
       }
     }
+  },
+  "Maintenance": {
+    "Stats": {
+      "title": "Operations Status",
+      "description": "Service Desk incident statistics — by company / manager / combined ranking",
+      "search": "Search",
+      "searching": "Searching...",
+      "toolbar": {
+        "from": "Year-Month (From)",
+        "to": "Year-Month (To)",
+        "categories": "Categories",
+        "cntRatio": "Count Weight {value}%"
+      },
+      "categories": {
+        "h008": "OPTI-HR",
+        "h028": "Recruitment",
+        "h030": "Work Mgmt",
+        "h010": "SAP ERP",
+        "h027": "Mobile",
+        "h038": "E-Doc"
+      },
+      "tabs": {
+        "company": "By Company",
+        "manager": "By Manager",
+        "combined": "Combined"
+      },
+      "columns": {
+        "companyName": "Company",
+        "managerName": "Manager",
+        "cnt": "Count",
+        "workTime": "Work Time (min)",
+        "rankingTime": "Time Rank",
+        "rankingCnt": "Count Rank",
+        "finalRank": "Final Rank",
+        "total": "Total Score",
+        "subtotal": "(Subtotal)",
+        "empty": "No results"
+      },
+      "import": {
+        "button": "Re-import {ym}",
+        "importing": "Importing...",
+        "success": "{inserted} records saved.",
+        "error": "Error: {message}"
+      }
+    }
+  },
+  "Reports": {
+    "Monthly": {
+      "title": "Monthly Report",
+      "list": {
+        "searchPlaceholder": "Enter search",
+        "loading": "Loading...",
+        "empty": "No results",
+        "optionsBadge": "Options"
+      },
+      "detail": {
+        "placeholder": "Loading details...",
+        "loading": "Loading...",
+        "noData": "No data"
+      },
+      "master": {
+        "title": "Basic Info",
+        "save": "Save",
+        "saving": "Saving...",
+        "signatureYn": "Signature",
+        "userCntYn": "User Count",
+        "cpnCntYn": "Legal Entity Count",
+        "workTypeYn": "Work Type",
+        "treatTypeYn": "Treatment Type",
+        "solvedYn": "Resolved",
+        "unsolvedYn": "Unresolved",
+        "chargerYn": "Manager",
+        "infraYn": "Infrastructure",
+        "replyYn": "Reply"
+      },
+      "month": {
+        "title": "Monthly Status",
+        "save": "Save",
+        "saving": "Saving...",
+        "aaCnt": "AA Count",
+        "raCnt": "RA Count",
+        "newCnt": "New Count",
+        "cpnCnt": "Legal Entity Count",
+        "attr1": "Attribute 1",
+        "attr2": "Attribute 2"
+      },
+      "other": {
+        "title": "Other",
+        "add": "Add",
+        "save": "Save",
+        "saving": "Saving...",
+        "etcBizCd": "Business Code",
+        "etcTitle": "Title",
+        "etcMemo": "Memo",
+        "empty": "No items registered.",
+        "delete": "Delete"
+      },
+      "pdf": {
+        "button": "Download PDF"
+      }
+    }
   }
 }
