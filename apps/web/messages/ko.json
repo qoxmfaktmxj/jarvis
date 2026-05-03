@@ -1971,5 +1971,60 @@
         }
       }
     }
+  },
+  "Infra": {
+    "title": "인프라 구성",
+    "description": "회사 · 시스템 · 환경별 자산 구성을 관리합니다. 배포·운영 절차는 Runbook(위키)에서 작성하세요.",
+    "tabs": {
+      "grid": "자산 목록",
+      "runbooks": "Runbook 문서"
+    },
+    "columns": {
+      "company": "회사",
+      "systemName": "시스템",
+      "envType": "환경",
+      "dbType": "DB 종류",
+      "dbVersion": "DB 버전",
+      "osType": "OS",
+      "osVersion": "OS 버전",
+      "domainAddr": "도메인",
+      "port": "포트",
+      "connectMethod": "접속 방식",
+      "deployMethod": "배포 방식",
+      "deployFolder": "배포 폴더",
+      "ownerName": "담당자",
+      "ownerContact": "담당자 연락처",
+      "note": "비고",
+      "runbook": "Runbook",
+      "updatedBy": "수정자",
+      "updatedAt": "수정일시"
+    },
+    "filters": {
+      "searchPlaceholder": "시스템·회사·도메인 검색",
+      "allCompanies": "전체 회사",
+      "allEnvs": "전체 환경",
+      "allDbTypes": "전체 DB"
+    },
+    "envType": {
+      "prod": "운영",
+      "staging": "스테이징",
+      "dev": "개발",
+      "dr": "DR"
+    },
+    "noRunbook": "Runbook 미작성",
+    "createRunbook": "Runbook 작성",
+    "viewRunbook": "Runbook 보기",
+    "linkRunbook": "Runbook 연결",
+    "unlinkRunbook": "Runbook 해제",
+    "empty": "등록된 시스템이 없습니다.",
+    "saveSuccess": "저장되었습니다.",
+    "saveFailed": "저장 실패",
+    "deleteConfirm": "선택한 시스템을 삭제하시겠습니까?",
+    "Detail": {
+      "title": "{systemName} 상세",
+      "asset": "자산 정보",
+      "runbookSection": "Runbook (위키)",
+      "noRunbookCta": "이 시스템의 운영 Runbook이 없습니다. 위키에 작성하세요."
+    }
   }
 }

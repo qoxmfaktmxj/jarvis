@@ -40,6 +40,11 @@ export const PERMISSIONS = {
 
   // Phase-Sales (2026-04-30): 영업관리모듈 Phase 1
   SALES_ALL: "sales:all",
+
+  // Plan 5: 인프라구성관리 Hybrid (Grid SoT + Wiki Runbook)
+  INFRA_READ: "infra:read",
+  INFRA_WRITE: "infra:write",
+  INFRA_ADMIN: "infra:admin",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -70,6 +75,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.MAINTENANCE_READ,
     PERMISSIONS.MAINTENANCE_WRITE,
     PERMISSIONS.SALES_ALL,
+    PERMISSIONS.INFRA_READ,
+    PERMISSIONS.INFRA_WRITE,
   ],
   // Phase-W3 RBAC 참고:
   // DEVELOPER는 KNOWLEDGE_REVIEW가 없으므로, wiki_page_index의 sensitivity='RESTRICTED'
@@ -88,7 +95,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.GRAPH_BUILD,
     PERMISSIONS.NOTICE_READ,
     PERMISSIONS.CONTRACTOR_READ,
-    PERMISSIONS.MAINTENANCE_READ
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.INFRA_READ
   ],
   HR: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -108,6 +116,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.GRAPH_READ,
     PERMISSIONS.NOTICE_READ,
     PERMISSIONS.CONTRACTOR_READ,
-    PERMISSIONS.MAINTENANCE_READ
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.INFRA_READ
   ]
 };
