@@ -60,3 +60,5 @@ export * from "./infra-system.js";
 export * from "./schedule.js";
 // DocNumMgr (TSMT050) — 연도별 문서번호 관리
 export * from "./document-number.js";
+// FaqMgr (TSMT030) — 사내 FAQ
+export * from "./faq.js";

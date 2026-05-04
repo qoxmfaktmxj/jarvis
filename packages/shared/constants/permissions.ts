@@ -54,6 +54,11 @@ export const PERMISSIONS = {
   DOC_NUM_READ: "doc-num:read",
   DOC_NUM_WRITE: "doc-num:write",
   DOC_NUM_ADMIN: "doc-num:admin",
+
+  // FaqMgr (TSMT030) — 사내 FAQ
+  FAQ_READ: "faq:read",
+  FAQ_WRITE: "faq:write",
+  FAQ_ADMIN: "faq:admin",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -90,6 +95,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.SCHEDULE_WRITE,
     PERMISSIONS.DOC_NUM_READ,
     PERMISSIONS.DOC_NUM_WRITE,
+    PERMISSIONS.FAQ_READ,
+    PERMISSIONS.FAQ_WRITE,
   ],
   // Phase-W3 RBAC 참고:
   // DEVELOPER는 KNOWLEDGE_REVIEW가 없으므로, wiki_page_index의 sensitivity='RESTRICTED'
@@ -112,7 +119,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.INFRA_READ,
     PERMISSIONS.SCHEDULE_READ,
     PERMISSIONS.SCHEDULE_WRITE,
-    PERMISSIONS.DOC_NUM_READ
+    PERMISSIONS.DOC_NUM_READ,
+    PERMISSIONS.FAQ_READ
   ],
   HR: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -126,7 +134,8 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.CONTRACTOR_ADMIN,
     PERMISSIONS.SCHEDULE_READ,
     PERMISSIONS.SCHEDULE_WRITE,
-    PERMISSIONS.DOC_NUM_READ
+    PERMISSIONS.DOC_NUM_READ,
+    PERMISSIONS.FAQ_READ
   ],
   VIEWER: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -139,6 +148,7 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.INFRA_READ,
     PERMISSIONS.SCHEDULE_READ,
     PERMISSIONS.SCHEDULE_WRITE,
-    PERMISSIONS.DOC_NUM_READ
+    PERMISSIONS.DOC_NUM_READ,
+    PERMISSIONS.FAQ_READ
   ]
 };

@@ -8,6 +8,7 @@ export * from "./wiki.js";
 export * from "./additional-dev.js";
 export * from "./schedule.js";
 export * from "./document-number.js";
+export * from "./faq.js";
 export * from "./maintenance.js";
 export * from "./uuid.js";
 export * from "./sales-contract.js";

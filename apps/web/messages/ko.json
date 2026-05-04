@@ -1324,6 +1324,49 @@
       "pathTraversal": "허용되지 않은 파일 경로입니다."
     }
   },
+  "Faq": {
+    "nav": {
+      "title": "FAQ",
+      "manage": "FAQ 관리"
+    },
+    "Page": {
+      "title": "FAQ 관리",
+      "subtitle": "사내 자주 묻는 질문/답변을 관리합니다.",
+      "columns": {
+        "seq": "순번",
+        "bizCode": "업무",
+        "question": "질문",
+        "answer": "답변",
+        "fileSeq": "첨부",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "질문/답변",
+        "bizCode": "업무",
+        "all": "전체"
+      },
+      "actions": {
+        "newEntry": "+ 신규 FAQ",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 FAQ 등록",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기"
+      },
+      "empty": "등록된 FAQ 가 없습니다.",
+      "errors": {
+        "questionRequired": "질문은 필수입니다.",
+        "answerRequired": "답변은 필수입니다.",
+        "noPermission": "해당 작업 권한이 없습니다."
+      },
+      "excelFilename": "FAQ"
+    }
+  },
   "DocNumbers": {
     "nav": {
       "title": "문서번호",

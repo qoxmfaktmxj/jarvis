@@ -771,6 +771,49 @@
       }
     }
   },
+  "Faq": {
+    "nav": {
+      "title": "FAQ",
+      "manage": "FAQ"
+    },
+    "Page": {
+      "title": "FAQ",
+      "subtitle": "Manage frequently asked questions/answers.",
+      "columns": {
+        "seq": "No.",
+        "bizCode": "Domain",
+        "question": "Question",
+        "answer": "Answer",
+        "fileSeq": "File",
+        "updatedBy": "Updated By",
+        "updatedAt": "Updated At"
+      },
+      "filters": {
+        "search": "Question / answer",
+        "bizCode": "Domain",
+        "all": "All"
+      },
+      "actions": {
+        "newEntry": "+ New FAQ",
+        "save": "Save",
+        "delete": "Delete",
+        "exportExcel": "Excel"
+      },
+      "dialog": {
+        "newTitle": "New FAQ Entry",
+        "cancel": "Cancel",
+        "save": "Save",
+        "close": "Close"
+      },
+      "empty": "No FAQ entries.",
+      "errors": {
+        "questionRequired": "Question is required.",
+        "answerRequired": "Answer is required.",
+        "noPermission": "You do not have permission for this action."
+      },
+      "excelFilename": "FAQ"
+    }
+  },
   "DocNumbers": {
     "nav": {
       "title": "Document Numbers",
