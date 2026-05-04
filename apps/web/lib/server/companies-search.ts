@@ -1,12 +1,12 @@
 "use server";
 import { z } from "zod";
 import { and, eq, ilike, or } from "drizzle-orm";
-import { headers, cookies } from "next/headers";
 import { db } from "@jarvis/db/client";
 import { company } from "@jarvis/db/schema/company";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { resolveRequestSessionId } from "@/lib/server/_resolveRequestSession";
 
 const searchCompaniesInput = z.object({
   q: z.string().transform((s) => s.trim()).pipe(z.string().min(1).max(200)),
@@ -21,21 +21,10 @@ export type CompanyHit = {
   objectDiv: string;
 };
 
-async function resolveSessionId(): Promise<string | null> {
-  const headerStore = await headers();
-  const cookieStore = await cookies();
-  return (
-    headerStore.get("x-session-id") ??
-    cookieStore.get("sessionId")?.value ??
-    cookieStore.get("jarvis_session")?.value ??
-    null
-  );
-}
-
 export async function searchCompanies(
   rawInput: z.input<typeof searchCompaniesInput>,
 ): Promise<CompanyHit[]> {
-  const sid = await resolveSessionId();
+  const sid = await resolveRequestSessionId();
   if (!sid) throw new Error("Unauthorized");
   const session = await getSession(sid);
   if (!session) throw new Error("Unauthorized");
