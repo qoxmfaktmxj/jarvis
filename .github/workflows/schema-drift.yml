@@ -67,6 +67,15 @@ jobs:
           PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
             -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
+      - name: Generate baseline migration from schema
+        run: |
+          # public-repo CI runs the external-user flow (README §17.1).
+          # packages/db/drizzle/ is gitignored (private zip channel for internal
+          # users); CI always regenerates a single baseline from
+          # packages/db/schema/** so checkout state is irrelevant.
+          rm -rf packages/db/drizzle
+          pnpm --filter @jarvis/db generate --name ci_baseline
+
       - name: Run DB migrations
         run: pnpm db:migrate
 
