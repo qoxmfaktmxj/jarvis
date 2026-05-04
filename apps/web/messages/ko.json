@@ -761,7 +761,21 @@
     "noData": "데이터가 없습니다.",
     "error": "오류가 발생했습니다.",
     "profile": "프로필",
-    "searchKnowledge": "지식 검색..."
+    "searchKnowledge": "지식 검색...",
+    "Calendar": {
+      "monthLabel": "{year}년 {month}월",
+      "prev": "이전 달",
+      "next": "다음 달",
+      "weekdays": {
+        "sun": "일",
+        "mon": "월",
+        "tue": "화",
+        "wed": "수",
+        "thu": "목",
+        "fri": "금",
+        "sat": "토"
+      }
+    }
   },
   "SearchPage": {
     "tabKnowledge": "지식 위키",

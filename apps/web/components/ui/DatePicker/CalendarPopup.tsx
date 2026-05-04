@@ -1,11 +1,12 @@
 // apps/web/components/ui/DatePicker/CalendarPopup.tsx
 "use client";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useWorkspaceHolidays } from "./useWorkspaceHolidays";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 
 type Props = {
   value: string | null;       // ISO yyyy-mm-dd or null
@@ -26,6 +27,8 @@ function isInRange(iso: string, min?: string, max?: string) {
 }
 
 export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
+  const t = useTranslations("Common.Calendar");
+  const tWeekday = useTranslations("Common.Calendar.weekdays");
   const today = useMemo(() => {
     const d = new Date();
     return fmt(d.getFullYear(), d.getMonth(), d.getDate());
@@ -112,17 +115,19 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
   return (
     <div className="z-50 w-[280px] rounded-lg border border-warm-200 bg-white p-3 shadow-lg">
       <div className="mb-2 flex items-center justify-between">
-        <button type="button" onClick={goPrevMonth} aria-label="이전 달" className="rounded p-1 hover:bg-warm-100">
+        <button type="button" onClick={goPrevMonth} aria-label={t("prev")} className="rounded p-1 hover:bg-warm-100">
           <ChevronLeft size={16} />
         </button>
-        <div className="text-sm font-semibold text-warm-900">{year}년 {monthIndex + 1}월</div>
-        <button type="button" onClick={goNextMonth} aria-label="다음 달" className="rounded p-1 hover:bg-warm-100">
+        <div className="text-sm font-semibold text-warm-900">
+          {t("monthLabel", { year, month: monthIndex + 1 })}
+        </div>
+        <button type="button" onClick={goNextMonth} aria-label={t("next")} className="rounded p-1 hover:bg-warm-100">
           <ChevronRight size={16} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-medium text-warm-500">
-        {WEEKDAYS.map((w, i) => (
-          <div key={w} className={cn("py-1", i === 0 && "text-red-500", i === 6 && "text-notion-blue-text")}>{w}</div>
+        {WEEKDAY_KEYS.map((k, i) => (
+          <div key={k} className={cn("py-1", i === 0 && "text-red-500", i === 6 && "text-notion-blue-text")}>{tWeekday(k)}</div>
         ))}
       </div>
       <div
