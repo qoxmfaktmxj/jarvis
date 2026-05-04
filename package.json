@@ -13,6 +13,7 @@
     "db:seed": "pnpm --filter=@jarvis/db seed",
     "db:studio": "pnpm --filter=@jarvis/db studio",
     "db:push": "pnpm --filter=@jarvis/db push",
+    "db:reset": "bash .local/scripts/db-reset.sh",
     "eval:run": "tsx apps/worker/eval/run.ts",
     "test:integration": "pnpm --filter=@jarvis/worker test:integration",
     "wiki:check": "node scripts/wiki-check.mjs",
