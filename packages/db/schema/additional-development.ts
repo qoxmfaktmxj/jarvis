@@ -12,6 +12,7 @@ import {
   varchar
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { company } from "./company.js";
 import { project } from "./project.js";
 import { user } from "./user.js";
 import { workspace } from "./tenant.js";
@@ -28,6 +29,7 @@ export const additionalDevelopment = pgTable("additional_development", {
   requestContent: text("request_content"),
   part: varchar("part", { length: 20 }),
   status: varchar("status", { length: 30 }).default("협의중").notNull(),
+  customerCompanyId: uuid("customer_company_id").references(() => company.id),
 
   // 프로젝트/계약
   projectName: varchar("project_name", { length: 500 }),
@@ -46,8 +48,9 @@ export const additionalDevelopment = pgTable("additional_development", {
   pmId: uuid("pm_id").references(() => user.id),
   developerId: uuid("developer_id").references(() => user.id),
   vendorContactNote: text("vendor_contact_note"),
-  estimatedEffort: numeric("estimated_effort", { precision: 8, scale: 2 }),
+  paidEffort: numeric("paid_effort", { precision: 8, scale: 2 }),
   actualEffort: numeric("actual_effort", { precision: 8, scale: 2 }),
+  isOnsite: boolean("is_onsite"),
 
   // 메타
   attachmentFileRef: varchar("attachment_file_ref", { length: 500 }),
@@ -58,6 +61,7 @@ export const additionalDevelopment = pgTable("additional_development", {
   projectIdx: index("idx_add_dev_project").on(t.projectId),
   statusIdx: index("idx_add_dev_status").on(t.status),
   yearMonthIdx: index("idx_add_dev_year_month").on(t.requestYearMonth),
+  customerCompanyIdx: index("idx_add_dev_customer_company").on(t.customerCompanyId),
 }));
 
 export const additionalDevelopmentEffort = pgTable("additional_development_effort", {
@@ -89,6 +93,7 @@ export const additionalDevelopmentStaff = pgTable("additional_development_staff"
 
 export const additionalDevelopmentRelations = relations(additionalDevelopment, ({ many, one }) => ({
   project: one(project, { fields: [additionalDevelopment.projectId], references: [project.id] }),
+  customerCompany: one(company, { fields: [additionalDevelopment.customerCompanyId], references: [company.id] }),
   pm: one(user, { fields: [additionalDevelopment.pmId], references: [user.id], relationName: "addDevPm" }),
   developer: one(user, { fields: [additionalDevelopment.developerId], references: [user.id], relationName: "addDevDeveloper" }),
   efforts: many(additionalDevelopmentEffort),

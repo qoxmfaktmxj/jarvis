@@ -1051,7 +1051,8 @@
     "parts": {
       "saas": "Saas",
       "external": "외부",
-      "mobile": "모바일"
+      "mobile": "모바일",
+      "recruitment": "채용"
     },
     "tabs": {
       "overview": "개요",
@@ -1079,17 +1080,20 @@
       "contractEndMonth": "계약종료",
       "contractAmount": "계약금액",
       "isPaid": "유상여부",
-      "invoiceIssued": "세금계산서",
+      "invoiceIssued": "세금계산서 발행",
       "inspectionConfirmed": "검수확인",
       "estimateProgress": "견적진행",
       "pm": "PM",
       "developer": "개발자",
       "devStartDate": "개발시작",
       "devEndDate": "개발종료",
-      "estimatedEffort": "유상공수",
       "actualEffort": "실공수",
       "vendorContactNote": "업체담당자",
-      "remark": "비고"
+      "remark": "비고",
+      "customerCompany": "요청회사",
+      "paidEffort": "유상공수",
+      "isOnsite": "상주여부",
+      "updatedAt": "업데이트"
     },
     "actions": {
       "saving": "저장 중...",
@@ -1252,11 +1256,188 @@
       "delete": "삭제"
     }
   },
+  "Maintenance": {
+    "nav": {
+      "title": "유지보수",
+      "assignments": "유지보수 담당"
+    },
+    "Assignments": {
+      "title": "유지보수 담당",
+      "subtitle": "담당자별 고객사 유지보수 계약 정보를 관리합니다.",
+      "tabs": {
+        "manage": "관리",
+        "show": "현황"
+      },
+      "columns": {
+        "user": "담당자",
+        "company": "고객사",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "contractNumber": "계약번호",
+        "contractType": "계약구분",
+        "note": "메모",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "담당자/고객사/계약번호",
+        "userId": "담당자",
+        "companyId": "고객사",
+        "contractType": "계약구분",
+        "activeOn": "유효일자",
+        "all": "전체"
+      },
+      "actions": {
+        "newAssignment": "+ 신규 할당",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 할당 등록",
+        "selectUser": "담당자 선택",
+        "selectCompany": "고객사 선택",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기"
+      },
+      "showPanel": {
+        "userListTitle": "담당자",
+        "userSearchPlaceholder": "이름·사번 검색",
+        "selectUserHint": "담당자를 선택하세요",
+        "responsibleCompanies": "{count}개 회사 담당",
+        "noCompanies": "담당 회사가 없습니다.",
+        "openCompany": "회사 상세 열기"
+      },
+      "empty": "할당 데이터가 없습니다.",
+      "errors": {
+        "dateRange": "시작일은 종료일보다 빠르거나 같아야 합니다.",
+        "duplicate": "동일 담당자·고객사·시작일 조합이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다."
+      }
+    }
+  },
   "Upload": {
     "Errors": {
       "magicMismatch": "파일 내용이 선언된 형식과 일치하지 않습니다. ({declared}로 선언되었으나 실제 파일 형식이 다릅니다.)",
       "finalizeFailed": "파일 업로드 검증에 실패했습니다. 다시 시도해주세요.",
       "pathTraversal": "허용되지 않은 파일 경로입니다."
+    }
+  },
+  "DocNumbers": {
+    "nav": {
+      "title": "문서번호",
+      "manage": "문서번호 관리"
+    },
+    "Page": {
+      "title": "문서번호 관리",
+      "subtitle": "회사가 발행하는 공식 문서의 연도별 일련번호를 관리합니다.",
+      "columns": {
+        "year": "연도",
+        "seq": "순번",
+        "docNo": "문서번호",
+        "docName": "문서명",
+        "user": "담당자",
+        "docDate": "발행일",
+        "note": "비고",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "문서명",
+        "year": "연도",
+        "all": "전체"
+      },
+      "actions": {
+        "newEntry": "+ 신규 발급",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 문서번호 발급",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기",
+        "selectUser": "담당자 선택",
+        "autoDocNo": "발급 시 자동 생성",
+        "yearHint": "연도 (예: 2026)"
+      },
+      "empty": "발급된 문서번호가 없습니다.",
+      "errors": {
+        "yearFormat": "연도는 yyyy 형식이어야 합니다.",
+        "duplicate": "동일 연도/순번이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다.",
+        "docNameRequired": "문서명은 필수입니다."
+      },
+      "excelFilename": "문서번호"
+    }
+  },
+  "Schedule": {
+    "nav": {
+      "title": "개인 일정",
+      "schedule": "개인 일정"
+    },
+    "Page": {
+      "title": "개인 일정",
+      "subtitle": "본인 일정과 공유받은 동료 일정을 관리합니다.",
+      "tabs": {
+        "list": "목록",
+        "calendar": "캘린더"
+      },
+      "columns": {
+        "user": "담당자",
+        "startDate": "시작일",
+        "endDate": "종료일",
+        "title": "제목",
+        "memo": "메모",
+        "isShared": "공유",
+        "updatedBy": "수정자",
+        "updatedAt": "수정일"
+      },
+      "filters": {
+        "search": "제목/메모",
+        "month": "월",
+        "activeOn": "유효일자",
+        "ownOnly": "본인 일정만",
+        "all": "전체"
+      },
+      "actions": {
+        "newEvent": "+ 신규 일정",
+        "save": "저장",
+        "delete": "삭제",
+        "exportExcel": "Excel 다운로드"
+      },
+      "dialog": {
+        "newTitle": "신규 일정 등록",
+        "cancel": "취소",
+        "save": "저장",
+        "close": "닫기"
+      },
+      "shared": {
+        "yes": "공유",
+        "no": "비공개"
+      },
+      "calendar": {
+        "prev": "이전 달",
+        "next": "다음 달",
+        "today": "오늘",
+        "more": "더보기",
+        "loading": "불러오는 중…",
+        "selectDate": "날짜를 선택하세요",
+        "selectHint": "캘린더에서 날짜를 클릭하면 그날의 일정이 표시됩니다.",
+        "legend": {
+          "own": "본인",
+          "shared": "공유"
+        }
+      },
+      "empty": "등록된 일정이 없습니다.",
+      "errors": {
+        "dateRange": "시작일은 종료일보다 빠르거나 같아야 합니다.",
+        "duplicate": "동일 시작일/순번 조합이 이미 존재합니다.",
+        "noPermission": "해당 작업 권한이 없습니다.",
+        "notOwner": "본인 일정만 편집/삭제할 수 있습니다."
+      }
     }
   },
   "Sales": {
@@ -1965,6 +2146,61 @@
       "pdf": {
         "button": "PDF 내보내기"
       }
+    }
+  },
+  "Infra": {
+    "title": "인프라 구성",
+    "description": "회사 · 시스템 · 환경별 자산 구성을 관리합니다. 배포·운영 절차는 Runbook(위키)에서 작성하세요.",
+    "tabs": {
+      "grid": "자산 목록",
+      "runbooks": "Runbook 문서"
+    },
+    "columns": {
+      "company": "회사",
+      "systemName": "시스템",
+      "envType": "환경",
+      "dbType": "DB 종류",
+      "dbVersion": "DB 버전",
+      "osType": "OS",
+      "osVersion": "OS 버전",
+      "domainAddr": "도메인",
+      "port": "포트",
+      "connectMethod": "접속 방식",
+      "deployMethod": "배포 방식",
+      "deployFolder": "배포 폴더",
+      "ownerName": "담당자",
+      "ownerContact": "담당자 연락처",
+      "note": "비고",
+      "runbook": "Runbook",
+      "updatedBy": "수정자",
+      "updatedAt": "수정일시"
+    },
+    "filters": {
+      "searchPlaceholder": "시스템·회사·도메인 검색",
+      "allCompanies": "전체 회사",
+      "allEnvs": "전체 환경",
+      "allDbTypes": "전체 DB"
+    },
+    "envType": {
+      "prod": "운영",
+      "staging": "스테이징",
+      "dev": "개발",
+      "dr": "DR"
+    },
+    "noRunbook": "Runbook 미작성",
+    "createRunbook": "Runbook 작성",
+    "viewRunbook": "Runbook 보기",
+    "linkRunbook": "Runbook 연결",
+    "unlinkRunbook": "Runbook 해제",
+    "empty": "등록된 시스템이 없습니다.",
+    "saveSuccess": "저장되었습니다.",
+    "saveFailed": "저장 실패",
+    "deleteConfirm": "선택한 시스템을 삭제하시겠습니까?",
+    "Detail": {
+      "title": "{systemName} 상세",
+      "asset": "자산 정보",
+      "runbookSection": "Runbook (위키)",
+      "noRunbookCta": "이 시스템의 운영 Runbook이 없습니다. 위키에 작성하세요."
     }
   }
 }

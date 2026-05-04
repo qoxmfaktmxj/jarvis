@@ -39,7 +39,19 @@ export async function searchEmployees(
   if (!sid) throw new Error("Unauthorized");
   const session = await getSession(sid);
   if (!session) throw new Error("Unauthorized");
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
+  // Generalized: any domain that needs to pick an engineer/employee can call
+  // this. Add the relevant read-permission to the OR list when introducing a
+  // new domain (sales, maintenance, etc.).
+  const allowedPerms = [
+    PERMISSIONS.SALES_ALL,
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.ADMIN_ALL,
+    PERMISSIONS.USER_READ,
+    PERMISSIONS.ADDITIONAL_DEV_READ,
+    PERMISSIONS.ADDITIONAL_DEV_UPDATE,
+    PERMISSIONS.ADDITIONAL_DEV_CREATE,
+  ];
+  if (!allowedPerms.some((p) => hasPermission(session, p))) {
     throw new Error("Forbidden");
   }
 

@@ -20,6 +20,10 @@ export const PERMISSIONS = {
   CONTRACTOR_READ: "contractor:read",
   CONTRACTOR_ADMIN: "contractor:admin",
 
+  MAINTENANCE_READ: "maintenance:read",
+  MAINTENANCE_WRITE: "maintenance:write",
+  MAINTENANCE_ADMIN: "maintenance:admin",
+
   USER_READ: "admin:users:read",
   USER_WRITE: "admin:users:write",
   AUDIT_READ: "admin:audit:read",
@@ -42,6 +46,20 @@ export const PERMISSIONS = {
 
   // Phase-Sales (2026-04-30): 영업관리모듈 Phase 1
   SALES_ALL: "sales:all",
+
+  // Plan 5: 인프라구성관리 Hybrid (Grid SoT + Wiki Runbook)
+  INFRA_READ: "infra:read",
+  INFRA_WRITE: "infra:write",
+  INFRA_ADMIN: "infra:admin",
+
+  // ScheduleMgr + ScheduleCalendarMgr (TSMT100) — 개인 일정
+  SCHEDULE_READ: "schedule:read",
+  SCHEDULE_WRITE: "schedule:write",
+
+  // DocNumMgr (TSMT050) — 연도별 문서번호
+  DOC_NUM_READ: "doc-num:read",
+  DOC_NUM_WRITE: "doc-num:write",
+  DOC_NUM_ADMIN: "doc-num:admin",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
@@ -73,7 +91,15 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.MAINTENANCE_STATS_READ,
     PERMISSIONS.MONTH_REPORT_READ,
     PERMISSIONS.MONTH_REPORT_WRITE,
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.MAINTENANCE_WRITE,
     PERMISSIONS.SALES_ALL,
+    PERMISSIONS.INFRA_READ,
+    PERMISSIONS.INFRA_WRITE,
+    PERMISSIONS.SCHEDULE_READ,
+    PERMISSIONS.SCHEDULE_WRITE,
+    PERMISSIONS.DOC_NUM_READ,
+    PERMISSIONS.DOC_NUM_WRITE,
   ],
   // Phase-W3 RBAC 참고:
   // DEVELOPER는 KNOWLEDGE_REVIEW가 없으므로, wiki_page_index의 sensitivity='RESTRICTED'
@@ -94,6 +120,11 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.CONTRACTOR_READ,
     PERMISSIONS.MAINTENANCE_STATS_READ,
     PERMISSIONS.MONTH_REPORT_READ,
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.INFRA_READ,
+    PERMISSIONS.SCHEDULE_READ,
+    PERMISSIONS.SCHEDULE_WRITE,
+    PERMISSIONS.DOC_NUM_READ,
   ],
   HR: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -107,6 +138,9 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.CONTRACTOR_ADMIN,
     PERMISSIONS.MAINTENANCE_STATS_READ,
     PERMISSIONS.MONTH_REPORT_READ,
+    PERMISSIONS.SCHEDULE_READ,
+    PERMISSIONS.SCHEDULE_WRITE,
+    PERMISSIONS.DOC_NUM_READ,
   ],
   VIEWER: [
     PERMISSIONS.KNOWLEDGE_READ,
@@ -117,5 +151,10 @@ export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     PERMISSIONS.CONTRACTOR_READ,
     PERMISSIONS.MAINTENANCE_STATS_READ,
     PERMISSIONS.MONTH_REPORT_READ,
+    PERMISSIONS.MAINTENANCE_READ,
+    PERMISSIONS.INFRA_READ,
+    PERMISSIONS.SCHEDULE_READ,
+    PERMISSIONS.SCHEDULE_WRITE,
+    PERMISSIONS.DOC_NUM_READ,
   ]
 };
