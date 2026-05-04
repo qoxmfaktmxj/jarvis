@@ -710,6 +710,62 @@
       }
     }
   },
+  "Reports": {
+    "Monthly": {
+      "title": "Monthly Report",
+      "list": {
+        "searchPlaceholder": "Search company name",
+        "loading": "Loading…",
+        "empty": "No companies found.",
+        "optionsBadge": "{count} options active"
+      },
+      "detail": {
+        "placeholder": "Select a company from the list on the left.",
+        "loading": "Loading…",
+        "noData": "No data for this month."
+      },
+      "master": {
+        "title": "Report Options",
+        "save": "Save",
+        "saving": "Saving…",
+        "signatureYn": "Signature",
+        "userCntYn": "User count",
+        "cpnCntYn": "Contact count",
+        "workTypeYn": "Work type",
+        "treatTypeYn": "Process type",
+        "solvedYn": "Resolved",
+        "unsolvedYn": "Unresolved",
+        "chargerYn": "Assignee",
+        "infraYn": "Infra",
+        "replyYn": "Reply"
+      },
+      "month": {
+        "title": "Monthly Status",
+        "save": "Save",
+        "saving": "Saving…",
+        "aaCnt": "AA count",
+        "raCnt": "RA count",
+        "newCnt": "New count",
+        "cpnCnt": "Contact count",
+        "attr1": "Note 1",
+        "attr2": "Note 2"
+      },
+      "other": {
+        "title": "Other Items",
+        "add": "Add row",
+        "save": "Save ({count})",
+        "saving": "Saving…",
+        "empty": "No other items",
+        "delete": "Delete",
+        "etcBizCd": "Biz code",
+        "etcTitle": "Title",
+        "etcMemo": "Memo"
+      },
+      "pdf": {
+        "button": "Export PDF"
+      }
+    }
+  },
   "Maintenance": {
     "nav": {
       "title": "Maintenance",

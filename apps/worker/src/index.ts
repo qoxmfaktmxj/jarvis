@@ -4,6 +4,7 @@ import { initSentry } from '@jarvis/shared/sentry';
 initSentry();
 
 import 'dotenv/config';
+import type PgBoss from 'pg-boss';
 import { boss } from './lib/boss.js';
 import { ingestHandler } from './jobs/ingest.js';
 // Phase-Harness (2026-04-23): embedHandler 제거. embed 파이프라인 폐지.
@@ -33,6 +34,7 @@ import {
   EXTERNAL_SIGNAL_FETCH_QUEUE,
   EXTERNAL_SIGNAL_FETCH_CRON,
 } from './jobs/external-signal-fetch.js';
+import { serviceDeskImport } from './jobs/service-desk-import.js';
 import {
   wikiLinkInfraSystemHandler,
   WIKI_LINK_INFRA_QUEUE,
@@ -43,6 +45,14 @@ import { registerBossForHealthcheck, startHealthServer } from './health.js';
 import { logger, getQueueMetrics } from './lib/observability/index.js';
 
 const QUEUE_METRICS_INTERVAL_MS = 60_000;
+
+interface ServiceDeskImportJobData {
+  workspaceId: string;
+  enterCd: string;
+  ym: string;
+  ssnGrpCd?: string;
+  userId?: string;
+}
 
 async function main() {
   await boss.start();
@@ -55,7 +65,7 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE, WIKI_LINK_INFRA_QUEUE]) {
+  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', 'service-desk-import', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE, WIKI_LINK_INFRA_QUEUE]) {
     await boss.createQueue(q);
   }
 
@@ -89,6 +99,37 @@ async function main() {
   await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON, {});
   await boss.work(EXTERNAL_SIGNAL_FETCH_QUEUE, externalSignalFetchHandler);
 
+  // Phase-C (TSVD999) — service desk incident import.
+  // Direct work handler — UI button or schedule fan-out sends jobs to this queue.
+  await boss.work('service-desk-import', async (jobs: PgBoss.Job<ServiceDeskImportJobData>[]) => {
+    for (const job of jobs) {
+      const { workspaceId, enterCd, ym, ssnGrpCd, userId } = job.data;
+      await serviceDeskImport({ workspaceId, enterCd, ym, ssnGrpCd, userId });
+    }
+  });
+
+  // Monthly schedule (KST 1st 00:00) — fan-out via env-configured default workspace.
+  // Multi-workspace fan-out is out of scope (single workspace assumption per design doc §12).
+  await boss.schedule('service-desk-import-monthly', '0 0 1 * *', {}, { tz: 'Asia/Seoul' });
+
+  await boss.work('service-desk-import-monthly', async () => {
+    const defaultWsId = process.env.SERVICE_DESK_DEFAULT_WORKSPACE_ID;
+    const defaultEnterCd = process.env.SERVICE_DESK_DEFAULT_ENTER_CD;
+    if (!defaultWsId || !defaultEnterCd) {
+      logger.warn('[service-desk-import-monthly] SERVICE_DESK_DEFAULT_WORKSPACE_ID / _ENTER_CD env not set; skipping');
+      return;
+    }
+    const now = new Date();
+    // Fetch previous month's data
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const ym = `${lastMonth.getFullYear()}${String(lastMonth.getMonth() + 1).padStart(2, '0')}`;
+    await boss.send('service-desk-import', {
+      workspaceId: defaultWsId,
+      enterCd: defaultEnterCd,
+      ym,
+    });
+  });
+
   // Plan 5 — H3: wiki ingest 후 infra_system.wikiPageId 자동 link.
   // 트리거는 외부에서 boss.send(WIKI_LINK_INFRA_QUEUE, { workspaceId }).
   // ingest write-and-commit 잡 완료 시 emit (별도 PR에서 hook 추가 예정).
@@ -116,6 +157,7 @@ async function main() {
     'check-freshness',
     'aggregate-popular',
     'cleanup', 'cache-cleanup',
+    'service-desk-import',
     WIKI_LINT_QUEUE,
     QUIZ_GENERATE_QUEUE,
     QUIZ_SEASON_ROTATE_QUEUE,

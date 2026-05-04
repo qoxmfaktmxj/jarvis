@@ -2135,6 +2135,62 @@
       }
     }
   },
+  "Reports": {
+    "Monthly": {
+      "title": "월간보고",
+      "list": {
+        "searchPlaceholder": "회사명 검색",
+        "loading": "불러오는 중…",
+        "empty": "해당 회사가 없습니다.",
+        "optionsBadge": "{count}개 항목 활성"
+      },
+      "detail": {
+        "placeholder": "좌측 목록에서 회사를 선택하세요.",
+        "loading": "불러오는 중…",
+        "noData": "해당 월의 데이터가 없습니다."
+      },
+      "master": {
+        "title": "보고 항목 설정",
+        "save": "저장",
+        "saving": "저장 중…",
+        "signatureYn": "서명",
+        "userCntYn": "사용자수",
+        "cpnCntYn": "담당자수",
+        "workTypeYn": "업무유형",
+        "treatTypeYn": "처리유형",
+        "solvedYn": "해결",
+        "unsolvedYn": "미해결",
+        "chargerYn": "담당자",
+        "infraYn": "인프라",
+        "replyYn": "답변"
+      },
+      "month": {
+        "title": "월별 현황",
+        "save": "저장",
+        "saving": "저장 중…",
+        "aaCnt": "AA 건수",
+        "raCnt": "RA 건수",
+        "newCnt": "신규 건수",
+        "cpnCnt": "담당자 수",
+        "attr1": "비고1",
+        "attr2": "비고2"
+      },
+      "other": {
+        "title": "기타사항",
+        "add": "행 추가",
+        "save": "저장 ({count})",
+        "saving": "저장 중…",
+        "empty": "기타사항 없음",
+        "delete": "삭제",
+        "etcBizCd": "업무코드",
+        "etcTitle": "제목",
+        "etcMemo": "내용"
+      },
+      "pdf": {
+        "button": "PDF 내보내기"
+      }
+    }
+  },
   "Infra": {
     "title": "인프라 구성",
     "description": "회사 · 시스템 · 환경별 자산 구성을 관리합니다. 배포·운영 절차는 Runbook(위키)에서 작성하세요.",
