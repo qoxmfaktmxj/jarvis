@@ -67,6 +67,13 @@ jobs:
           PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
             -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
+      # packages/db/drizzle/는 보안 정책상 gitignored (private zip 채널로만 배포).
+      # 외부 사용자 가이드(README)와 동일하게 schema/*.ts에서 baseline을 생성한 뒤
+      # migrate를 적용한다. _journal.json도 이 단계에서 만들어지므로
+      # 아래 'Schema drift check' 단계가 정상 작동한다.
+      - name: Generate baseline migrations from schema
+        run: pnpm db:generate
+
       - name: Run DB migrations
         run: |
           pnpm db:migrate 2>&1 | tee /tmp/migrate.log
