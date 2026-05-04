@@ -67,6 +67,19 @@ jobs:
           PGPASSWORD=jarvis psql -h localhost -U jarvis -d jarvis_test \
             -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
+      # packages/db/drizzle/는 보안 정책상 gitignored (private zip 채널로만 배포).
+      # 그러나 .gitignore 추가 이전에 이미 추적 중이던 0062~0070 .sql + _journal.json이
+      # 부분적으로 남아 있어 일관성이 깨진 상태(_journal은 0000부터 가리키는데 .sql은 0062~).
+      # CI는 일회용 ephemeral DB이므로 drizzle 폴더를 wipe하고 schema/*.ts에서
+      # full baseline(0000_*.sql)을 새로 생성해 적용한다.
+      - name: Reset drizzle baseline (CI ephemeral)
+        run: |
+          rm -rf packages/db/drizzle
+          mkdir -p packages/db/drizzle
+
+      - name: Generate baseline migrations from schema
+        run: pnpm db:generate
+
       - name: Run DB migrations
         run: pnpm db:migrate
 
