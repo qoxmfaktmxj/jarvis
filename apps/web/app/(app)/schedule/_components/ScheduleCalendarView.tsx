@@ -9,7 +9,7 @@ import { useWorkspaceHolidays } from "@/components/ui/DatePicker/useWorkspaceHol
 import { listCalendarEventsAction } from "../actions";
 import type { ScheduleEventRow } from "@jarvis/shared/validation/schedule";
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 const MAX_VISIBLE_PER_DAY = 3;
 
 function fmt(year: number, monthIndex: number, day: number) {
@@ -67,6 +67,8 @@ function eventsByDate(events: ScheduleEventRow[]): Map<string, ScheduleEventRow[
 export function ScheduleCalendarView() {
   const t = useTranslations("Schedule.Page");
   const tCal = useTranslations("Schedule.Page.calendar");
+  const tCommonCal = useTranslations("Common.Calendar");
+  const tWeekday = useTranslations("Common.Calendar.weekdays");
   const today = useMemo(() => {
     const d = new Date();
     return fmt(d.getFullYear(), d.getMonth(), d.getDate());
@@ -136,7 +138,7 @@ export function ScheduleCalendarView() {
               <ChevronLeft size={18} />
             </button>
             <div className="text-[14px] font-semibold text-(--fg-primary)">
-              {year}년 {monthIndex + 1}월
+              {tCommonCal("monthLabel", { year, month: monthIndex + 1 })}
             </div>
             <button
               type="button"
@@ -161,16 +163,16 @@ export function ScheduleCalendarView() {
         </header>
 
         <div className="grid grid-cols-7 gap-px text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
-          {WEEKDAYS.map((w, i) => (
+          {WEEKDAY_KEYS.map((k, i) => (
             <div
-              key={w}
+              key={k}
               className={cn(
                 "px-2 py-2 text-center",
                 i === 0 && "text-rose-500",
                 i === 6 && "text-blue-600",
               )}
             >
-              {w}
+              {tWeekday(k)}
             </div>
           ))}
         </div>
