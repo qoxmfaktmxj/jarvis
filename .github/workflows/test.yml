@@ -68,9 +68,16 @@ jobs:
             -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
       # packages/db/drizzle/는 보안 정책상 gitignored (private zip 채널로만 배포).
-      # 외부 사용자 가이드(README)와 동일하게 schema/*.ts에서 baseline을 생성한 뒤
-      # migrate를 적용한다. _journal.json도 이 단계에서 만들어지므로
-      # 아래 'Schema drift check' 단계가 정상 작동한다.
+      # 그러나 .gitignore 추가 이전에 이미 추적 중이던 0062~0070 .sql + _journal.json이
+      # 부분적으로 남아 있어 일관성이 깨진 상태(_journal은 0000부터 가리키는데 .sql은 0062~).
+      # CI는 일회용 ephemeral DB이므로 drizzle 폴더를 wipe하고 schema/*.ts에서
+      # full baseline(0000_*.sql)을 새로 생성해 적용한다.
+      # 외부 사용자 가이드(README)와 동일하게 schema가 SoT임을 따른다.
+      - name: Reset drizzle baseline (CI ephemeral)
+        run: |
+          rm -rf packages/db/drizzle
+          mkdir -p packages/db/drizzle
+
       - name: Generate baseline migrations from schema
         run: pnpm db:generate
 
