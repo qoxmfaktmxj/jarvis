@@ -4,19 +4,22 @@
  * Sidebar — rail(60px) / expanded(220px) 2모드.
  *
  * - rail:     아이콘만, 활성은 좌측 3px 인디케이터. 헤더는 토글 버튼만.
+ *             그룹 헤더는 숨기고 자식 리프만 평면 렌더.
  * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터.
  *             헤더는 [Capy + "Jarvis"] 좌측, 토글 버튼 우측 끝.
+ *             그룹은 NavGroup으로 collapsible 렌더.
  *
  * 모드 전환은 헤더의 토글 버튼. localStorage 키 `jv.sidebar`.
+ * 트리 펼침/접힘은 useNavTreeOpen 훅 (localStorage 키 `jv.sidebar.tree`).
  * 색상은 app.jsx 디자인 토큰(--panel/--line/--ink/--muted/--line2) 사용.
  *
  * 데이터 소스: 상위 RSC(layout.tsx → AppShell)에서 `getVisibleMenuTree(session,
  * "menu")` 결과를 props로 받는다. RBAC 필터링은 서버에서 끝났으므로 여기서는
- * `code` prefix(`nav.*` / `admin.*`)로 그룹만 분리해 렌더한다.
+ * 트리 구조(parent_id 기반)를 재귀 렌더한다. 그룹 헤더는 routePath="" 으로
+ * 식별하며, 자식이 모두 보이지 않으면 buildMenuTree에서 prune된다.
  *
- * Badge 지원: `MenuTreeNode.badge`(menu_item.badge 컬럼) 값이 있으면 라벨
- * 옆에 작은 태그를 렌더한다 (expanded 모드에서만 — rail에서는 라벨 자체가
- * 안 보이므로 배지도 생략). nav.ask 의 "AI" 표시가 대표 케이스.
+ * Badge 지원: `MenuTreeNode.badge` 값이 있으면 라벨 옆 작은 태그를 렌더한다
+ * (expanded 모드 한정).
  */
 
 import Link from "next/link";
@@ -27,6 +30,8 @@ import { Capy } from "./Capy";
 import { setSidebar, useSidebar } from "./uiPrefs";
 import { resolveIcon } from "./icon-map";
 import { useTabContext } from "./tabs/TabContext";
+import { NavGroup } from "./NavGroup";
+import { useNavTreeOpen } from "./useNavTreeOpen";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
@@ -180,35 +185,68 @@ function NavButton({
   );
 }
 
+type RenderArgs = {
+  pathname: string;
+  expanded: boolean;
+  isOpen: (code: string) => boolean;
+  toggle: (code: string) => void;
+};
+
+function renderTreeNode(
+  node: MenuTreeNode,
+  depth: number,
+  args: RenderArgs,
+): React.ReactNode {
+  const { pathname, expanded, isOpen, toggle } = args;
+  const isGroup = !node.routePath || node.routePath === "";
+
+  if (!expanded) {
+    // Rail mode: flatten leaves only (skip group wrappers).
+    if (isGroup) {
+      return node.children.map((child) => renderTreeNode(child, depth, args));
+    }
+    const item = toRenderItem(node);
+    if (!item) return null;
+    return (
+      <NavButton
+        key={node.code}
+        item={item}
+        active={isActive(pathname, item.href)}
+        expanded={false}
+      />
+    );
+  }
+
+  if (isGroup) {
+    return (
+      <NavGroup
+        key={node.code}
+        label={node.label}
+        Icon={resolveIcon(node.icon)}
+        open={isOpen(node.code)}
+        onToggle={() => toggle(node.code)}
+        depth={depth}
+      >
+        {node.children.map((child) => renderTreeNode(child, depth + 1, args))}
+      </NavGroup>
+    );
+  }
+
+  // Leaf in expanded mode
+  const item = toRenderItem(node);
+  if (!item) return null;
+  return (
+    <div key={node.code} style={{ paddingLeft: depth * 12 }}>
+      <NavButton item={item} active={isActive(pathname, item.href)} expanded={true} />
+    </div>
+  );
+}
+
 export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
   const pathname = usePathname();
   const mode = useSidebar();
   const expanded = mode === "expanded";
-
-  // Dev-only: warn if MENU_SEEDS ever introduces `parent_id` rows. Sidebar
-  // currently renders flat (no submenu UI). Children would be silently dropped.
-  if (process.env.NODE_ENV !== "production") {
-    if (menus.some((m) => m.children.length > 0)) {
-      console.warn(
-        "[Sidebar] menu tree contains nested children but Sidebar renders flat. Hierarchical menus will be lost until submenu UI is added.",
-      );
-    }
-  }
-
-  // Convention: code-prefix split. `nav.*` renders in the main nav; `admin.*`
-  // renders below the separator. Matches the seed in `packages/db/seed/menus.ts`.
-  const navItems = menus
-    .filter((m) => m.code.startsWith("nav."))
-    .map(toRenderItem)
-    .filter((x): x is RenderItem => x !== null);
-  const salesItems = menus
-    .filter((m) => m.code.startsWith("sales."))
-    .map(toRenderItem)
-    .filter((x): x is RenderItem => x !== null);
-  const adminItems = menus
-    .filter((m) => m.code.startsWith("admin."))
-    .map(toRenderItem)
-    .filter((x): x is RenderItem => x !== null);
+  const { isOpen, toggle } = useNavTreeOpen({ menus, pathname });
 
   return (
     <aside
@@ -221,7 +259,7 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
         transition: "width .2s ease",
       }}
     >
-      {/* Brand header — expanded: [Capy + Jarvis] 좌측, toggle 우측 끝. rail: toggle만 가운데. */}
+      {/* Brand header — UNCHANGED from previous version */}
       <div
         className="flex items-center border-b"
         style={{
@@ -267,76 +305,15 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
         </button>
       </div>
 
-      {/* Nav */}
+      {/* Tree-rendered nav */}
       <nav
         aria-label="Main"
         className="flex flex-1 flex-col overflow-y-auto"
         style={{ padding: 8, gap: 2 }}
       >
-        {navItems.map((item) => (
-          <NavButton
-            key={item.code}
-            item={item}
-            active={isActive(pathname, item.href)}
-            expanded={expanded}
-          />
-        ))}
-
-        {/* Sales group separator + heading — only when at least one sales item visible */}
-        {salesItems.length > 0 ? (
-          <>
-            <div
-              aria-hidden
-              className="mt-2 border-t"
-              style={{ borderColor: "var(--line)", marginInline: -8 }}
-            />
-            {expanded ? (
-              <div
-                className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: "var(--muted)" }}
-              >
-                영업관리
-              </div>
-            ) : null}
-            {salesItems.map((item) => (
-              <NavButton
-                key={item.code}
-                item={item}
-                active={isActive(pathname, item.href)}
-                expanded={expanded}
-              />
-            ))}
-          </>
-        ) : null}
-
-        {/* Admin group separator + heading — only render when at least one
-            admin item is visible (viewer roles otherwise see an orphan
-            divider). */}
-        {adminItems.length > 0 ? (
-          <>
-            <div
-              aria-hidden
-              className="mt-2 border-t"
-              style={{ borderColor: "var(--line)", marginInline: -8 }}
-            />
-            {expanded ? (
-              <div
-                className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: "var(--muted)" }}
-              >
-                관리자
-              </div>
-            ) : null}
-            {adminItems.map((item) => (
-              <NavButton
-                key={item.code}
-                item={item}
-                active={isActive(pathname, item.href)}
-                expanded={expanded}
-              />
-            ))}
-          </>
-        ) : null}
+        {menus.map((node) =>
+          renderTreeNode(node, 0, { pathname, expanded, isOpen, toggle }),
+        )}
       </nav>
     </aside>
   );
