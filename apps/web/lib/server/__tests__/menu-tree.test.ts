@@ -95,3 +95,50 @@ describe("buildMenuTree", () => {
     expect(Array.isArray(tree)).toBe(true);
   });
 });
+
+describe("buildMenuTree — empty-group prune", () => {
+  it("prunes group header (routePath='') with no children", () => {
+    const flat: FlatMenuItem[] = [
+      { id: "h1", parentId: null, code: "group.knowledge", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 1 },
+    ];
+    const tree = buildMenuTree(flat);
+    expect(tree).toHaveLength(0);
+  });
+
+  it("keeps group header when it has at least one visible child", () => {
+    const flat: FlatMenuItem[] = [
+      { id: "h1", parentId: null, code: "group.knowledge", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 1 },
+      { id: "c1", parentId: "h1", code: "nav.ask", kind: "menu", label: "Label", routePath: "/ask", icon: null, sortOrder: 2 },
+    ];
+    const tree = buildMenuTree(flat);
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.code).toBe("group.knowledge");
+    expect(tree[0]!.children).toHaveLength(1);
+    expect(tree[0]!.children[0]!.code).toBe("nav.ask");
+  });
+
+  it("keeps two-level group when leaf is under sub-group", () => {
+    const flat: FlatMenuItem[] = [
+      { id: "h1", parentId: null, code: "group.sales", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 1 },
+      { id: "h2", parentId: "h1", code: "group.sales.master", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 2 },
+      { id: "c1", parentId: "h2", code: "sales.customers", kind: "menu", label: "Label", routePath: "/sales/customers", icon: null, sortOrder: 3 },
+    ];
+    const tree = buildMenuTree(flat);
+    expect(tree).toHaveLength(1);
+    expect(tree[0]!.code).toBe("group.sales");
+    expect(tree[0]!.children[0]!.code).toBe("group.sales.master");
+    expect(tree[0]!.children[0]!.children[0]!.code).toBe("sales.customers");
+  });
+
+  it("prunes empty sub-group but keeps top-level when sibling sub-group has leaf", () => {
+    const flat: FlatMenuItem[] = [
+      { id: "h1", parentId: null, code: "group.sales", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 1 },
+      { id: "h2", parentId: "h1", code: "group.sales.master", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 2 },
+      { id: "h3", parentId: "h1", code: "group.sales.empty", kind: "menu", label: "Label", routePath: "", icon: null, sortOrder: 3 },
+      { id: "c1", parentId: "h2", code: "sales.customers", kind: "menu", label: "Label", routePath: "/sales/customers", icon: null, sortOrder: 4 },
+    ];
+    const tree = buildMenuTree(flat);
+    expect(tree[0]!.children).toHaveLength(1);
+    expect(tree[0]!.children[0]!.code).toBe("group.sales.master");
+  });
+});
