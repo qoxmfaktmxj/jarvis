@@ -7,13 +7,22 @@ import { userSession } from '@jarvis/db/schema/user-session';
 import { ROLE_PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 /**
- * apps/web/e2e/sidebar-rbac.spec.ts (Task 7)
+ * apps/web/e2e/sidebar-rbac.spec.ts (Task 7 + Task 8 IA reorg)
  *
- * Verifies the DB-driven RBAC sidebar (Tasks 1-5):
- * - admin@jarvis.dev (ADMIN role) sees both NAV menus and the "관리자" admin
- *   group with admin-only entries.
- * - bob@jarvis.dev (VIEWER role) sees a subset of NAV menus and DOES NOT see
- *   the admin group at all.
+ * Verifies the DB-driven RBAC sidebar with the new tree IA (sidebar-tree-ia
+ * plan, 2026-05-05):
+ * - admin@jarvis.dev (ADMIN role) sees the admin-gated group buttons
+ *   (인력, 설정 — both have ADMIN_ALL leaves) and can reach admin-only
+ *   leaves once the group is expanded.
+ * - bob@jarvis.dev (VIEWER role) sees a subset of group buttons but DOES
+ *   NOT see groups whose every leaf is gated by ADMIN_ALL — most notably
+ *   `group.settings` (all 8 children require ADMIN_ALL or CONTRACTOR_ADMIN,
+ *   which VIEWER lacks → buildMenuTree empty-group prune removes the header).
+ *
+ * Old "관리자" / "영업관리" flat headings are GONE — the IA collapsed admin
+ * menus into domain groups (인력 / 설정 / 지식 / 프로젝트). NavGroup renders
+ * each group as a `<button aria-expanded>`, so assertions use
+ * `getByRole("button", { name })`.
  *
  * The sidebar reads from `getVisibleMenuTree(session, "menu")`, which JOINs
  * through `menu_permission ⨯ role_permission ⨯ user_role` and filters by
@@ -81,31 +90,60 @@ async function loginAsSeededUser(page: Page, email: string, role: string): Promi
 }
 
 test.describe('Sidebar RBAC (DB-driven)', () => {
-  test('admin sees admin group with admin-only menu items', async ({ page }) => {
+  test('admin sees admin-gated group buttons and reaches admin-only leaves', async ({ page }) => {
     await loginAsSeededUser(page, 'admin@jarvis.dev', 'ADMIN');
     await page.goto('/dashboard');
 
-    // 사이드바에 "관리자" 헤딩이 보여야 함 (sortOrder >= 200 group).
-    await expect(page.getByText('관리자', { exact: true })).toBeVisible();
+    // New IA: admin-only leaves are distributed across domain groups (인력,
+    // 설정, 지식). NavGroup renders the header as a `<button aria-expanded>`,
+    // so we assert on role=button. The flat "관리자" heading is gone.
+    await expect(page.getByRole('button', { name: '설정', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '인력', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '지식', exact: true })).toBeVisible();
 
-    // ADMIN_ALL을 가진 admin은 admin/menus + admin/companies 등을 모두 봄.
+    // The old flat "관리자" / "영업관리" group labels must NEVER render.
+    await expect(page.getByRole('button', { name: '관리자', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '영업관리', exact: true })).toHaveCount(0);
+
+    // Reach admin-only leaves through their new groups. Navigate to
+    // /admin/users to trigger useNavTreeOpen's active-route auto-expand for
+    // group.people (server-rendered link doesn't require explicit clicks).
+    await page.goto('/admin/users');
+    await expect(page.getByRole('link', { name: '사용자', exact: true })).toBeVisible();
+
+    // /admin/companies auto-expands group.settings → 회사 + 메뉴 visible.
+    await page.goto('/admin/companies');
     await expect(page.getByRole('link', { name: '회사', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: '메뉴', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: '사용자', exact: true })).toBeVisible();
   });
 
-  test('viewer sees a subset of NAV but no admin group', async ({ page }) => {
+  test('viewer sees permitted groups but admin-only groups are pruned', async ({ page }) => {
     await loginAsSeededUser(page, 'bob@jarvis.dev', 'VIEWER');
     await page.goto('/dashboard');
 
-    // VIEWER는 KNOWLEDGE_READ + NOTICE_READ + GRAPH_READ 등을 가져 일부 NAV는 보임.
+    // VIEWER has KNOWLEDGE_READ, GRAPH_READ, NOTICE_READ, etc., so the
+    // standalone 공지사항 leaf renders. (공지사항 is sortOrder=80, no group.)
     await expect(page.getByRole('link', { name: '공지사항', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: '위키', exact: true })).toBeVisible();
 
-    // ADMIN_ALL이 없으므로 admin 그룹 헤딩과 admin 항목은 절대 보이지 않아야 함.
-    await expect(page.getByText('관리자', { exact: true })).toHaveCount(0);
+    // Old flat "관리자" / "영업관리" headings — must NEVER appear in any role.
+    await expect(page.getByRole('button', { name: '관리자', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '영업관리', exact: true })).toHaveCount(0);
+
+    // group.settings: all 8 children require ADMIN_ALL or CONTRACTOR_ADMIN.
+    // VIEWER has neither, so buildMenuTree's empty-group prune drops the
+    // header entirely → button absent.
+    await expect(page.getByRole('button', { name: '설정', exact: true })).toHaveCount(0);
+
+    // group.sales: every sales.* leaf requires SALES_ALL. VIEWER lacks it,
+    // so the entire group (and its sub-groups) prunes.
+    await expect(page.getByRole('button', { name: '영업', exact: true })).toHaveCount(0);
+
+    // Specific admin-only leaves — never reachable for VIEWER regardless of
+    // group expand state, because the link itself was filtered by
+    // permission JOIN.
     await expect(page.getByRole('link', { name: '회사', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: '메뉴', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '사용자', exact: true })).toHaveCount(0);
   });
 
   test('viewer hitting /admin/menus directly redirects to /dashboard?error=forbidden', async ({ page }) => {
