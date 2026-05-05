@@ -18,11 +18,16 @@ import type { JarvisSession } from "@jarvis/auth/types";
  *   filtering of a parent does not remove the entire subtree, and detect
  *   parent_id cycles (defensive — DB schema does not currently enforce
  *   acyclic parents). Cyclic nodes are pruned with no infinite recursion.
- * - `getVisibleMenuTree(session, kind)` issues a single OR-match join through
- *   `role_permission` and `user_role`, returning DISTINCT `menu_item` rows
- *   the user is allowed to see, then delegates to `buildMenuTree`. DB errors
- *   are caught and logged so the global app shell does not 500 if this query
- *   fails for any reason — callers receive an empty tree instead.
+ * - `getVisibleMenuTree(session, kind)` issues two parallel queries: (A) a
+ *   join through `menu_permission ⨯ role_permission ⨯ user_role` for the
+ *   permission-filtered leaves the user is allowed to see, and (B) a plain
+ *   `menu_item` scan for group-header rows (`routePath = ""`) which have no
+ *   `menu_permission` entries by design. The results are deduped by id and
+ *   passed to `buildMenuTree`, whose empty-group prune drops any header
+ *   whose subtree has no surviving leaf (so the unfiltered (B) query does
+ *   not leak headers for empty subtrees). DB errors are caught and logged
+ *   so the global app shell does not 500 if either query fails for any
+ *   reason — callers receive an empty tree instead.
  *
  * **Admin viewer uses a different function.** For unfiltered admin listings
  * (e.g. `/admin/menus` viewer) use `getMenuTree(workspaceId)` at
@@ -101,7 +106,9 @@ export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
       path.add(n.id);
       const pruned: MenuTreeNode = { ...n, children: sortAndPrune(n.children, path) };
       path.delete(n.id);
-      if (pruned.routePath !== null || pruned.children.length > 0) {
+      const hasNoRoute = pruned.routePath === null || pruned.routePath === "";
+      const isEmptyGroup = hasNoRoute && pruned.children.length === 0;
+      if (!isEmptyGroup) {
         result.push(pruned);
       }
     }
@@ -114,8 +121,15 @@ export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
 /**
  * Returns the menu tree visible to `session` for the given `kind`. Empty array
  * is returned (without throwing) if the session is missing required ids or if
- * the DB query fails. Callers fetching both kinds should issue two calls in
- * `Promise.all` — the cost is two short index-driven JOINs.
+ * the DB query fails.
+ *
+ * Two queries (run in parallel) feed buildMenuTree:
+ *   (A) leaves the user is permission-allowed to see — joins through
+ *       menu_permission ⨯ role_permission ⨯ user_role.
+ *   (B) group-header rows (routePath = "") for the workspace — fetched
+ *       unconditionally because they have no menu_permission entries by
+ *       design. buildMenuTree's empty-group prune drops headers whose
+ *       subtree has no visible leaf, so privacy is not affected.
  */
 export async function getVisibleMenuTree(
   session: JarvisSession,
@@ -125,47 +139,80 @@ export async function getVisibleMenuTree(
   if (!session.userId || !session.workspaceId) return [];
 
   try {
-    const rows = await db
-      .selectDistinct({
-        id: menuItem.id,
-        parentId: menuItem.parentId,
-        code: menuItem.code,
-        kind: menuItem.kind,
-        label: menuItem.label,
-        icon: menuItem.icon,
-        routePath: menuItem.routePath,
-        sortOrder: menuItem.sortOrder,
-        badge: menuItem.badge,
-        keywords: menuItem.keywords,
-      })
-      .from(menuItem)
-      .innerJoin(menuPermission, eq(menuPermission.menuItemId, menuItem.id))
-      .innerJoin(
-        rolePermission,
-        eq(rolePermission.permissionId, menuPermission.permissionId),
-      )
-      // Tenant-isolate the role: a user_role row pointing to a role in
-      // workspace B must not surface workspace A's menus, even if their
-      // permission_id collides via menu_permission.
-      .innerJoin(
-        role,
-        and(
-          eq(role.id, rolePermission.roleId),
-          eq(role.workspaceId, session.workspaceId),
+    const [visibleLeaves, groupHeaders] = await Promise.all([
+      // (A) permission-filtered rows — current join chain (UNCHANGED logic)
+      db
+        .selectDistinct({
+          id: menuItem.id,
+          parentId: menuItem.parentId,
+          code: menuItem.code,
+          kind: menuItem.kind,
+          label: menuItem.label,
+          icon: menuItem.icon,
+          routePath: menuItem.routePath,
+          sortOrder: menuItem.sortOrder,
+          badge: menuItem.badge,
+          keywords: menuItem.keywords,
+        })
+        .from(menuItem)
+        .innerJoin(menuPermission, eq(menuPermission.menuItemId, menuItem.id))
+        .innerJoin(
+          rolePermission,
+          eq(rolePermission.permissionId, menuPermission.permissionId),
+        )
+        // Tenant-isolate the role: a user_role row pointing to a role in
+        // workspace B must not surface workspace A's menus, even if their
+        // permission_id collides via menu_permission.
+        .innerJoin(
+          role,
+          and(
+            eq(role.id, rolePermission.roleId),
+            eq(role.workspaceId, session.workspaceId),
+          ),
+        )
+        .innerJoin(userRole, eq(userRole.roleId, role.id))
+        .where(
+          and(
+            eq(userRole.userId, session.userId),
+            eq(menuItem.workspaceId, session.workspaceId),
+            eq(menuItem.kind, kind),
+            eq(menuItem.isVisible, true),
+          ),
+        )
+        .orderBy(asc(menuItem.sortOrder)),
+      // (B) group headers — rows with empty routePath, no permission filter.
+      // buildMenuTree's empty-group prune drops headers whose subtree has no
+      // visible leaf, so this is safe (no privacy leak).
+      db
+        .select({
+          id: menuItem.id,
+          parentId: menuItem.parentId,
+          code: menuItem.code,
+          kind: menuItem.kind,
+          label: menuItem.label,
+          icon: menuItem.icon,
+          routePath: menuItem.routePath,
+          sortOrder: menuItem.sortOrder,
+          badge: menuItem.badge,
+          keywords: menuItem.keywords,
+        })
+        .from(menuItem)
+        .where(
+          and(
+            eq(menuItem.workspaceId, session.workspaceId),
+            eq(menuItem.kind, kind),
+            eq(menuItem.isVisible, true),
+            eq(menuItem.routePath, ""),
+          ),
         ),
-      )
-      .innerJoin(userRole, eq(userRole.roleId, role.id))
-      .where(
-        and(
-          eq(userRole.userId, session.userId),
-          eq(menuItem.workspaceId, session.workspaceId),
-          eq(menuItem.kind, kind),
-          eq(menuItem.isVisible, true),
-        ),
-      )
-      .orderBy(asc(menuItem.sortOrder));
+    ]);
 
-    return buildMenuTree(rows);
+    // Dedup by id (a row matching both queries — defensive — counted once).
+    const merged = new Map<string, (typeof visibleLeaves)[number]>();
+    for (const row of visibleLeaves) merged.set(row.id, row);
+    for (const row of groupHeaders) if (!merged.has(row.id)) merged.set(row.id, row);
+
+    return buildMenuTree([...merged.values()]);
   } catch (err) {
     // The sidebar lives in the global app shell; a DB hiccup here must not
     // 500 the entire page. Log and degrade to "no menus" so navigation
