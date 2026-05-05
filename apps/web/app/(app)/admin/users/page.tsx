@@ -33,7 +33,13 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
   if (!session) throw new Error("Unauthorized");
 
   const [users, orgTree, positionCodes, jobTitleCodes] = await Promise.all([
-    listUsers({ ...initialFilters, page: 1, limit: 50 }),
+    listUsers({
+      ...initialFilters,
+      q: initialFilters.q || undefined,
+      orgId: initialFilters.orgId || undefined,
+      page: 1,
+      limit: 50,
+    }),
     getOrgTree(session.workspaceId),
     getCodesByGroup(session.workspaceId, "POSITION"),
     getCodesByGroup(session.workspaceId, "JOB_TITLE"),
