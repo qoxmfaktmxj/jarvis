@@ -65,7 +65,7 @@ async function main() {
 
   // pg-boss v10: queues must be created before schedule/work.
   // Sequential to avoid DDL deadlocks on pgboss.queue.
-  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', 'service-desk-import', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE, WIKI_LINK_INFRA_QUEUE]) {
+  for (const q of ['ingest', 'compile', 'graphify-build', 'check-freshness', 'aggregate-popular', 'cleanup', 'cache-cleanup', 'service-desk-import', 'service-desk-import-monthly', QUIZ_GENERATE_QUEUE, QUIZ_SEASON_ROTATE_QUEUE, EXTERNAL_SIGNAL_FETCH_QUEUE, WIKI_LINK_INFRA_QUEUE]) {
     await boss.createQueue(q);
   }
 
@@ -158,6 +158,7 @@ async function main() {
     'aggregate-popular',
     'cleanup', 'cache-cleanup',
     'service-desk-import',
+    'service-desk-import-monthly',
     WIKI_LINT_QUEUE,
     QUIZ_GENERATE_QUEUE,
     QUIZ_SEASON_ROTATE_QUEUE,
