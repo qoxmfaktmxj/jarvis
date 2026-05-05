@@ -75,6 +75,20 @@ function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): Pal
   };
 }
 
+function flattenForPalette(
+  nodes: MenuTreeNode[],
+  section: "navigate" | "actions",
+  out: PaletteItem[],
+) {
+  for (const n of nodes) {
+    const item = toPaletteItem(n, section);
+    if (item) out.push(item);
+    if (n.children.length > 0) {
+      flattenForPalette(n.children, section, out);
+    }
+  }
+}
+
 type Props = {
   menus: MenuTreeNode[];
   actions: MenuTreeNode[];
@@ -112,24 +126,11 @@ export function CommandPalette({ menus, actions }: Props) {
     }
   }, [open]);
 
-  // Dev-only: Sidebar warns the same; surfacing here too because actions might
-  // be authored separately and arrive nested even when sidebar menus are flat.
-  if (process.env.NODE_ENV !== "production") {
-    if ([...menus, ...actions].some((m) => m.children.length > 0)) {
-      console.warn(
-        "[CommandPalette] menu/action tree contains nested children but palette renders flat. Hierarchical entries will be lost.",
-      );
-    }
-  }
-
   const items = useMemo<PaletteItem[]>(() => {
-    const navItems = menus
-      .map((n) => toPaletteItem(n, "navigate"))
-      .filter((x): x is PaletteItem => x !== null);
-    const actionItems = actions
-      .map((a) => toPaletteItem(a, "actions"))
-      .filter((x): x is PaletteItem => x !== null);
-    return [...navItems, ...actionItems];
+    const out: PaletteItem[] = [];
+    flattenForPalette(menus, "navigate", out);
+    flattenForPalette(actions, "actions", out);
+    return out;
   }, [menus, actions]);
 
   const filtered = useMemo(() => {
