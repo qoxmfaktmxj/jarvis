@@ -30,6 +30,7 @@ export async function HeroGreeting({
         width={40}
         height={40}
         priority
+        unoptimized
         aria-hidden="true"
         className="shrink-0"
       />

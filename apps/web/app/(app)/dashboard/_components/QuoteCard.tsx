@@ -28,6 +28,7 @@ export function QuoteCard({ now }: { now: Date }) {
           alt=""
           width={56}
           height={56}
+          unoptimized
           className="shrink-0 rounded-lg"
           aria-hidden="true"
         />

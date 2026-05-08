@@ -72,6 +72,7 @@ export function Capy({ name, size = 120, className, alt, priority = false }: Cap
       width={size}
       height={size}
       priority={priority}
+      unoptimized
       className={cn("select-none", className)}
       draggable={false}
     />
