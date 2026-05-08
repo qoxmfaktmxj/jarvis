@@ -13,8 +13,12 @@ import { checkRateLimit } from "@/lib/server/rate-limit";
 // dev-account login endpoint — production에서 절대 활성화 불가.
 // JARVIS_ENABLE_TEMP_LOGIN env override는 완전히 제거됨.
 
-const LOGIN_RATE_MAX = 5;
-const LOGIN_RATE_WINDOW_SEC = 60;
+// 사무실 NAT 공유 IP에서 한 사용자의 비밀번호 오타가 다른 사용자까지 막던
+// false-positive를 줄이기 위해 5회/60초 → 20회/30초로 완화. brute-force
+// 보호는 유지하면서 일반 사용자의 정상 재시도(오타 4~5회 + 옆자리 시도)는
+// 통과시키는 한도. (3-인 팀 기조 — env화는 필요 시 별도 처리.)
+const LOGIN_RATE_MAX = 20;
+const LOGIN_RATE_WINDOW_SEC = 30;
 
 // zero UUID: workspaceId NOT NULL fallback for system-level audit events (no authenticated workspace).
 const SYSTEM_WORKSPACE_ID = "00000000-0000-0000-0000-000000000000";
