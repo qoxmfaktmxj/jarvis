@@ -1,12 +1,9 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem, salesOpportunity } from "@jarvis/db/schema";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { ActivitiesGridContainer } from "./_components/ActivitiesGridContainer";
 import { listActivities } from "./actions";
 
@@ -35,12 +32,7 @@ export default async function SalesActivitiesPage({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);

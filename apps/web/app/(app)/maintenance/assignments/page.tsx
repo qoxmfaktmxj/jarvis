@@ -1,13 +1,11 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
-import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { listMaintenanceAction } from "./actions";
 import { MaintenanceTabsClient } from "./_components/MaintenanceTabsClient";
 
@@ -23,18 +21,10 @@ async function loadCodeOptions(workspaceId: string, groupCode: string) {
 
 export default async function MaintenanceAssignmentsPage() {
   const t = await getTranslations("Maintenance.Assignments");
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (
-    !session ||
-    !(
-      hasPermission(session, PERMISSIONS.MAINTENANCE_READ) ||
-      hasPermission(session, PERMISSIONS.ADMIN_ALL)
-    )
-  ) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(
+    [PERMISSIONS.MAINTENANCE_READ, PERMISSIONS.ADMIN_ALL],
+    "/dashboard?error=forbidden",
+  );
 
   const canWrite =
     hasPermission(session, PERMISSIONS.MAINTENANCE_WRITE) ||

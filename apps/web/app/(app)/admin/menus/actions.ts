@@ -17,12 +17,14 @@
  *     menu_permission 행은 menu_item.workspaceId 만 검증한다.
  */
 import { cookies, headers } from "next/headers";
+import { revalidateTag } from "next/cache";
 import { and, asc, count, eq, ilike, inArray, sql, isNull } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
 import { auditLog, menuItem, menuPermission, permission } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { menuTreeWorkspaceTag } from "@/lib/server/menu-tree";
 import {
   listMenusInput,
   listMenusOutput,
@@ -379,6 +381,13 @@ export async function saveMenus(rawInput: z.input<typeof saveMenusInput>) {
     errors.push({ message: e instanceof Error ? e.message : "save failed" });
   }
 
+  // Evict cached menu trees for every user in this workspace — menu rows that
+  // changed (insert/update/delete) may have shifted what the sidebar renders
+  // for everyone in the tenant.
+  if (errors.length === 0) {
+    revalidateTag(menuTreeWorkspaceTag(ctx.workspaceId));
+  }
+
   return saveMenusOutput.parse({
     ok: errors.length === 0,
     created,
@@ -575,6 +584,12 @@ export async function saveMenuPermissions(
     });
   } catch (e: unknown) {
     errors.push({ message: e instanceof Error ? e.message : "save failed" });
+  }
+
+  // Evict cached menu trees for every user in this workspace — granting or
+  // revoking a permission on a menu row immediately changes who can see it.
+  if (errors.length === 0) {
+    revalidateTag(menuTreeWorkspaceTag(ctx.workspaceId));
   }
 
   return saveMenuPermissionsOutput.parse({

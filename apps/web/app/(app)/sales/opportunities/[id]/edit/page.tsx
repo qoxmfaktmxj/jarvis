@@ -1,12 +1,10 @@
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { getOpportunity } from "../../actions";
 import { OpportunityEditForm } from "./_components/OpportunityEditForm";
 
@@ -25,12 +23,7 @@ export default async function OpportunityEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const { id } = await params;
   const [result, productTypeOptions, bizStepOptions, bizOpSourceOptions] = await Promise.all([

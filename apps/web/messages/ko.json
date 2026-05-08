@@ -558,6 +558,11 @@
   },
   "Dashboard": {
     "greeting": "안녕하세요, {name}님",
+    "forbiddenBanner": {
+      "title": "권한이 없는 페이지에 접근했습니다",
+      "body": "요청한 화면을 볼 수 있는 권한이 없어 대시보드로 이동했습니다. 권한이 필요하면 관리자에게 문의하세요.",
+      "dismiss": "닫기"
+    },
     "info": {
       "todayLabel": "오늘",
       "timeLabel": "현재 시각",

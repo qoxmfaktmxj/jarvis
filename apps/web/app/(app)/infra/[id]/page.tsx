@@ -6,13 +6,11 @@
  *
  * 권한: INFRA_READ.
  */
-import { notFound, redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { getInfraSystemById } from "@/lib/queries/infra-system";
 import { InfraSystemDetail } from "./_components/InfraSystemDetail";
 import { RunbookEmbed } from "./_components/RunbookEmbed";
@@ -22,12 +20,7 @@ export const dynamic = "force-dynamic";
 type Params = Promise<{ id: string }>;
 
 export default async function InfraSystemDetailPage(props: { params: Params }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.INFRA_READ)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.INFRA_READ, "/dashboard?error=forbidden");
   const { id } = await props.params;
   const row = await getInfraSystemById(session.workspaceId, id);
   if (!row) notFound();

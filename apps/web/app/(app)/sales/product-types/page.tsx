@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { ProductTypesGridContainer } from "./_components/ProductTypesGridContainer";
 import { listProductTypes } from "./actions";
 
 export default async function SalesProductTypesPage() {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) redirect("/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const limit = 50;
   const listResult = await listProductTypes({ page: 1, limit });

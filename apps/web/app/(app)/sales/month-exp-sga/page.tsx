@@ -1,10 +1,7 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { listMonthExpSga } from "../_lib/finance-actions";
 import { MonthExpSgaGridContainer } from "./_components/MonthExpSgaGridContainer";
 
@@ -19,11 +16,7 @@ export default async function SalesMonthExpSgaPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const headerStore = await headers();
-  const session = await getSession(headerStore.get("x-session-id") ?? "");
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.MonthExpSga");
   const params = await searchParams;

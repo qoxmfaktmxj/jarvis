@@ -10,13 +10,10 @@
  *
  * 기존 wiki dashboard 코드는 `/infra/runbooks/page.tsx`로 이동되었다.
  */
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { listInfraSystems } from "@/lib/queries/infra-system";
 import { listCompanyOptions } from "@/lib/queries/infra-license";
 import { InfraSystemsGridContainer } from "./_components/InfraSystemsGridContainer";
@@ -28,12 +25,7 @@ export const dynamic = "force-dynamic";
 export default async function InfraPage(props: {
   searchParams?: SearchParams;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.INFRA_READ)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.INFRA_READ, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Infra");
   const sp = props.searchParams ? await props.searchParams : {};

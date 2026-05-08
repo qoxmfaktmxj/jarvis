@@ -7,31 +7,23 @@
  * 마스터(menu_item) flat list + 디테일(menu_permission)은 admin/codes 패턴을
  * 따르며, MenuTreeViewer(read-only)는 본 화면에서 제거되었다.
  */
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { asc, eq } from "drizzle-orm";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
 import { menuItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { ICON_MAP } from "@/components/layout/icon-map";
 import { listMenus } from "./actions";
 import { MenusPageClient } from "./_components/MenusPageClient";
 
 export default async function AdminMenusPage() {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
   // Defense-in-depth: admin/layout.tsx redirects non-admins, but we re-check
   // here so a future refactor doesn't silently lose the gate. Match the
   // layout's redirect target — sending an authenticated non-admin to /login
   // causes a confusing reauth loop.
-  if (!session || !hasPermission(session, PERMISSIONS.ADMIN_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.ADMIN_ALL, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Admin.Menus");
 

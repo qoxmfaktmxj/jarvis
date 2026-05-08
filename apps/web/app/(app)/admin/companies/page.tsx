@@ -1,14 +1,11 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { CompaniesGridContainer } from "./_components/CompaniesGridContainer";
 import { listCompanies } from "./actions";
 
@@ -24,12 +21,7 @@ async function loadCodeOptions(workspaceId: string, groupCode: string) {
 
 export default async function AdminCompaniesPage() {
   const t = await getTranslations("Admin.Companies");
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.ADMIN_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.ADMIN_ALL, "/dashboard?error=forbidden");
 
   const [initialResult, objectDivOptions, groupOptions, industryOptions] = await Promise.all([
     listCompanies({ page: 1, limit: 50 }),

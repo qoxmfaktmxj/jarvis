@@ -1,11 +1,8 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { hasPermission } from "@jarvis/auth";
-import { getSession } from "@jarvis/auth/session";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { TrendGbEnum } from "@jarvis/shared/validation/sales-charts";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { getTrend } from "./actions";
 import { TrendChart } from "./_components/TrendChart";
 import { TrendTabs } from "./_components/TrendTabs";
@@ -28,12 +25,7 @@ export default async function SalesChartsTrendPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.Charts.Trend");
   const params = await searchParams;

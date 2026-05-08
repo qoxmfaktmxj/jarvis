@@ -96,6 +96,20 @@ companies-source.sql
 data/infra/
 data/case-source.json
 
+# Legacy Oracle table dumps (TSMT*/TSYS*/TSVD*) — contain plaintext credentials and PII, NEVER commit
+/TSMT*.sql
+/TSYS*.sql
+/TSVD*.sql
+/tsmt*.sql
+/tsys*.sql
+/tsvd*.sql
+data/TSMT*.json
+data/TSYS*.json
+data/TSVD*.json
+data/tsmt*.json
+data/tsys*.json
+data/tsvd*.json
+
 # Add-dev source xls (contains client project details) — local only
 /추가개발/
 

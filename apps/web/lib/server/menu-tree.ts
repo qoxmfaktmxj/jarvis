@@ -1,10 +1,3 @@
-import { and, asc, eq } from "drizzle-orm";
-import { db } from "@jarvis/db/client";
-import { menuItem } from "@jarvis/db/schema/menu";
-import { menuPermission } from "@jarvis/db/schema/menu-permission";
-import { role, rolePermission, userRole } from "@jarvis/db/schema/user";
-import type { JarvisSession } from "@jarvis/auth/types";
-
 /**
  * apps/web/lib/server/menu-tree.ts
  *
@@ -34,6 +27,28 @@ import type { JarvisSession } from "@jarvis/auth/types";
  * `apps/web/lib/queries/admin.ts` — that function returns ALL rows in the
  * workspace and assumes the calling page has already enforced ADMIN_ALL.
  */
+import { unstable_cache } from "next/cache";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { db } from "@jarvis/db/client";
+import { menuItem } from "@jarvis/db/schema/menu";
+import { menuPermission } from "@jarvis/db/schema/menu-permission";
+import { role, rolePermission, userRole } from "@jarvis/db/schema/user";
+import type { JarvisSession } from "@jarvis/auth/types";
+
+/**
+ * Cache tag helpers — exported so server actions that mutate menu_item /
+ * menu_permission / user_role can call `revalidateTag` to evict stale trees.
+ *
+ * Granularity:
+ * - Workspace-scoped tag invalidates every user's tree in that workspace
+ *   (use after menu_item / menu_permission writes — the structural shape may
+ *   have changed for everyone).
+ * - User-scoped tag invalidates one user's tree (use after user_role / role
+ *   changes — only that user's permission set shifted).
+ */
+export const menuTreeWorkspaceTag = (workspaceId: string) =>
+  `menu-tree:workspace:${workspaceId}`;
+export const menuTreeUserTag = (userId: string) => `menu-tree:user:${userId}`;
 
 export type MenuKind = "menu" | "action";
 
@@ -130,6 +145,16 @@ export function buildMenuTree(flat: FlatMenuItem[]): MenuTreeNode[] {
  *       unconditionally because they have no menu_permission entries by
  *       design. buildMenuTree's empty-group prune drops headers whose
  *       subtree has no visible leaf, so privacy is not affected.
+ *
+ * Caching: results are cached per (userId, workspaceId, kind) for 5 minutes
+ * via `unstable_cache`. Tagged with both a workspace tag (invalidate after
+ * menu_item / menu_permission edits) and a user tag (invalidate after role
+ * grants/revocations). Without this, every authenticated page request hits
+ * the 4-way join + group-header query — at 5k users navigating ~50 pages per
+ * session that is ~500k unnecessary DB round trips per day. The 5-minute
+ * stale window is acceptable because RBAC mutations explicitly call
+ * `revalidateTag` (admin/menus actions today; role-change actions when those
+ * land); read-only navigation never sees a stale tree longer than the TTL.
  */
 export async function getVisibleMenuTree(
   session: JarvisSession,
@@ -138,6 +163,24 @@ export async function getVisibleMenuTree(
   // Fail-closed: invalid session shape → no menus, do not query.
   if (!session.userId || !session.workspaceId) return [];
 
+  const userId = session.userId;
+  const workspaceId = session.workspaceId;
+  const cached = unstable_cache(
+    () => fetchVisibleMenuTreeUncached(userId, workspaceId, kind),
+    ["menu-tree", userId, workspaceId, kind],
+    {
+      tags: [menuTreeWorkspaceTag(workspaceId), menuTreeUserTag(userId)],
+      revalidate: 300,
+    },
+  );
+  return cached();
+}
+
+async function fetchVisibleMenuTreeUncached(
+  userId: string,
+  workspaceId: string,
+  kind: MenuKind,
+): Promise<MenuTreeNode[]> {
   try {
     const [visibleLeaves, groupHeaders] = await Promise.all([
       // (A) permission-filtered rows — current join chain (UNCHANGED logic)
@@ -167,22 +210,26 @@ export async function getVisibleMenuTree(
           role,
           and(
             eq(role.id, rolePermission.roleId),
-            eq(role.workspaceId, session.workspaceId),
+            eq(role.workspaceId, workspaceId),
           ),
         )
         .innerJoin(userRole, eq(userRole.roleId, role.id))
         .where(
           and(
-            eq(userRole.userId, session.userId),
-            eq(menuItem.workspaceId, session.workspaceId),
+            eq(userRole.userId, userId),
+            eq(menuItem.workspaceId, workspaceId),
             eq(menuItem.kind, kind),
             eq(menuItem.isVisible, true),
           ),
         )
         .orderBy(asc(menuItem.sortOrder)),
-      // (B) group headers — rows with empty routePath, no permission filter.
-      // buildMenuTree's empty-group prune drops headers whose subtree has no
-      // visible leaf, so this is safe (no privacy leak).
+      // (B) group headers — rows with empty OR null routePath, no permission
+      // filter. Admin actions/seed scripts may store header rows with either
+      // `routePath = ''` (current convention) or `routePath = NULL` (since the
+      // column is nullable and `actions.ts` writes `c.routePath ?? null`). We
+      // accept both so subtrees aren't promoted to flat orphans when an admin
+      // clears the field. buildMenuTree's empty-group prune drops headers whose
+      // subtree has no visible leaf, so this is safe (no privacy leak).
       db
         .select({
           id: menuItem.id,
@@ -199,10 +246,10 @@ export async function getVisibleMenuTree(
         .from(menuItem)
         .where(
           and(
-            eq(menuItem.workspaceId, session.workspaceId),
+            eq(menuItem.workspaceId, workspaceId),
             eq(menuItem.kind, kind),
             eq(menuItem.isVisible, true),
-            eq(menuItem.routePath, ""),
+            or(eq(menuItem.routePath, ""), isNull(menuItem.routePath)),
           ),
         ),
     ]);
@@ -218,7 +265,7 @@ export async function getVisibleMenuTree(
     // 500 the entire page. Log and degrade to "no menus" so navigation
     // disappears but the rest of the page still renders.
     console.warn(
-      `[menu-tree] getVisibleMenuTree failed (user=${session.userId}, ws=${session.workspaceId}, kind=${kind}):`,
+      `[menu-tree] getVisibleMenuTree failed (user=${userId}, ws=${workspaceId}, kind=${kind}):`,
       err,
     );
     return [];

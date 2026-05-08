@@ -1,9 +1,6 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { CustomerContactsGridContainer } from "./_components/CustomerContactsGridContainer";
 import { listCustomerContacts } from "./actions";
 
@@ -24,12 +21,7 @@ export default async function SalesCustomerContactsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);

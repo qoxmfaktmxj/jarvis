@@ -11,24 +11,16 @@
  *    그대로 두고 화면 진입점만 교체.
  *  - Dispatch C: legacy CodeTable + /api/admin/codes 정리, ko.json i18n 키 추가.
  */
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { getCodesByGroup } from "@/lib/queries/admin";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { listCodeGroups } from "./actions";
 import { CodesPageClient } from "./_components/CodesPageClient";
 
 export default async function AdminCodesPage() {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.ADMIN_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.ADMIN_ALL, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Admin.Codes");
 

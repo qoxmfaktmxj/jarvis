@@ -1,27 +1,17 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { DocNumbersGridContainer } from "./_components/DocNumbersGridContainer";
 import { listDocumentNumbersAction, listDocumentYearsAction } from "./actions";
 
 export default async function DocNumbersPage() {
   const t = await getTranslations("DocNumbers.Page");
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (
-    !session ||
-    !(
-      hasPermission(session, PERMISSIONS.DOC_NUM_READ) ||
-      hasPermission(session, PERMISSIONS.ADMIN_ALL)
-    )
-  ) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(
+    [PERMISSIONS.DOC_NUM_READ, PERMISSIONS.ADMIN_ALL],
+    "/dashboard?error=forbidden",
+  );
 
   const canWrite =
     hasPermission(session, PERMISSIONS.DOC_NUM_WRITE) ||

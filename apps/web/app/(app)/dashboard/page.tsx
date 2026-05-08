@@ -8,6 +8,7 @@ import { getDailySignals } from "@/lib/queries/dashboard-signals";
 import { getNextHoliday } from "@/lib/queries/dashboard-dday";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { QuizCard } from "@/components/dashboard/QuizCard";
+import { ForbiddenBanner } from "./_components/ForbiddenBanner";
 import { HeroGreeting } from "./_components/HeroGreeting";
 import { InfoCardRow } from "./_components/InfoCardRow";
 import { LoungeChat } from "./_components/LoungeChat";
@@ -17,8 +18,14 @@ import { WikiWidget } from "./_components/WikiWidget";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   const session = await requirePageSession();
+  const sp = await searchParams;
+  const showForbidden = sp.error === "forbidden";
   const now = new Date();
 
   const [
@@ -45,6 +52,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto flex max-w-[1360px] flex-col gap-4 p-6">
+      {showForbidden ? <ForbiddenBanner /> : null}
       <HeroGreeting name={displayName} now={now} />
       <InfoCardRow now={now} signals={signals} nextHoliday={nextHoliday} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">

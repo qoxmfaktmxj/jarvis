@@ -1,10 +1,7 @@
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { hasPermission } from "@jarvis/auth";
-import { getSession } from "@jarvis/auth/session";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import { listCloudPeopleBase } from "./actions";
 import { CloudPeopleBaseGridContainer } from "./_components/CloudPeopleBaseGridContainer";
 
@@ -18,12 +15,7 @@ type SearchParams = {
 };
 
 export default async function SalesCloudPeopleBasePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.CloudPeopleBase");
   const params = await searchParams;

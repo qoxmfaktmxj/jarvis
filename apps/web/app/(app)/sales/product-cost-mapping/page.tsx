@@ -7,12 +7,9 @@
  *
  * 권한: SALES_ALL — 다른 sales/* 라우트와 동일.
  */
-import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { requirePageSession } from "@/lib/server/page-auth";
 import {
   listCostMasterOptions,
   listProductTypeOptions,
@@ -27,12 +24,7 @@ export default async function SalesProductCostMappingPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const headerStore = await headers();
-  const sessionId = headerStore.get("x-session-id") ?? "";
-  const session = await getSession(sessionId);
-  if (!session || !hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    redirect("/dashboard?error=forbidden");
-  }
+  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const sp = await searchParams;
   const limit = 50;
