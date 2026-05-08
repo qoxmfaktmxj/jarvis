@@ -1,4 +1,5 @@
 import type { WeatherSignal } from "@/lib/queries/dashboard-signals";
+import { formatFetchedAt } from "@/lib/utils/format-fetched-at";
 import { TodayClock } from "./TodayClock";
 
 /**
@@ -61,12 +62,8 @@ export function TodayCard({
                 미세먼지 {weather.dust}
               </>
             ) : null}
-            {weather.stale ? (
-              <>
-                <span className="mx-1.5">·</span>
-                <span title="갱신 대기">갱신중</span>
-              </>
-            ) : null}
+            <span className="mx-1.5">·</span>
+            {formatFetchedAt(weather.fetchedAt)}
           </>
         ) : (
           "날씨 데이터를 불러오는 중…"

@@ -1,4 +1,5 @@
 import type { FxSignal } from "@/lib/queries/dashboard-signals";
+import { formatFetchedAt } from "@/lib/utils/format-fetched-at";
 
 /**
  * FxCardServer — Phase 1 external_signal 캐시 기반 RSC 환율 카드.
@@ -37,11 +38,6 @@ export function FxCardServer({ fx }: { fx: FxSignal | null }) {
     <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
       <span className="text-[13px] font-medium text-(--fg-secondary)">
         환율 · KRW 기준
-        {fx.stale ? (
-          <span className="ml-1.5 text-(--fg-muted)" title="갱신 대기">
-            (갱신중)
-          </span>
-        ) : null}
       </span>
       <ul className="grid grid-cols-3 gap-3">
         {rates.map((r) => (
@@ -57,6 +53,9 @@ export function FxCardServer({ fx }: { fx: FxSignal | null }) {
           </li>
         ))}
       </ul>
+      <span className="text-[11px] text-(--fg-muted) tabular-nums">
+        {formatFetchedAt(fx.fetchedAt)}
+      </span>
     </div>
   );
 }
