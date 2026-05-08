@@ -9,11 +9,12 @@ const STYLES: Record<RowStatus, string> = {
   deleted: "bg-rose-100 text-rose-700",
 };
 
+// 라벨은 항상 한글 2자로 통일 — 좁은 상태 컬럼에서 세로 줄바꿈 방지 + 시각적 일관성.
 const LABELS: Record<RowStatus, string> = {
   clean: "",
-  new: "신규",
-  dirty: "변경됨",
-  deleted: "삭제됨",
+  new: "입력",
+  dirty: "수정",
+  deleted: "삭제",
 };
 
 export function RowStatusBadge({ state }: { state: RowStatus }) {
@@ -21,7 +22,8 @@ export function RowStatusBadge({ state }: { state: RowStatus }) {
   return (
     <span
       className={cn(
-        "inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight",
+        // whitespace-nowrap: 좁은 셀에서도 라벨이 세로로 깨지지 않게 강제.
+        "inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold leading-tight",
         STYLES[state],
       )}
     >

@@ -227,13 +227,15 @@ export function DataGrid<T extends WithId>({
               </tr>
             ) : null}
             <tr className="border-b border-(--border-default)">
-              <th className="w-10 px-2 py-2 text-left">No</th>
-              <th className="w-10 px-2 py-2">삭제</th>
+              {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
+                  No=44px, 삭제=56px, 상태=64px 최소폭 보장. */}
+              <th className="w-11 whitespace-nowrap px-2 py-2 text-left">No</th>
+              <th className="w-14 whitespace-nowrap px-2 py-2 text-center">삭제</th>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={[
-                    "px-2 py-2",
+                    "whitespace-nowrap px-2 py-2",
                     col.type === "numeric" ? "text-right" : "text-left",
                   ].join(" ")}
                   style={col.width ? { width: col.width } : undefined}
@@ -241,7 +243,7 @@ export function DataGrid<T extends WithId>({
                   {col.label}
                 </th>
               ))}
-              <th className="w-16 px-2 py-2 text-left">상태</th>
+              <th className="w-16 whitespace-nowrap px-2 py-2 text-center">상태</th>
             </tr>
             <ColumnFilterRow<T>
               filters={filters}
@@ -273,10 +275,10 @@ export function DataGrid<T extends WithId>({
                     r.state === "dirty" ? "bg-amber-50/40" : "",
                   ].join(" ")}
                 >
-                  <td className="h-8 w-10 px-2 align-middle text-[12px] text-(--fg-muted)">
+                  <td className="h-8 w-11 whitespace-nowrap px-2 align-middle text-[12px] text-(--fg-muted)">
                     {(page - 1) * limit + i + 1}
                   </td>
-                  <td className="h-8 w-10 px-2 text-center align-middle">
+                  <td className="h-8 w-14 whitespace-nowrap px-2 text-center align-middle">
                     <input
                       type="checkbox"
                       checked={r.state === "deleted"}
@@ -372,7 +374,7 @@ export function DataGrid<T extends WithId>({
                       </td>
                     );
                   })}
-                  <td className="h-8 w-16 px-2 align-middle">
+                  <td className="h-8 w-16 whitespace-nowrap px-2 text-center align-middle">
                     <RowStatusBadge state={r.state} />
                   </td>
                 </tr>

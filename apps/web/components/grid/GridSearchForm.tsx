@@ -21,6 +21,22 @@ type Props = {
  *
  * 자동 적용(per-column filter row)과 다르게 사용자가 [조회]를 눌러야 호출된다.
  * 도메인 GridContainer는 children에 <GridFilterField>로 감싼 input/select를 전달.
+ *
+ * **공통 그리드 규칙 — 조회 시 미저장 변경 폐기:**
+ * `onSearch` 핸들러는 서버에서 새 데이터를 fetch한 뒤 반드시
+ * `useGridState.reset(serverRows)`를 호출해야 한다. `reset`은 모든 행을
+ * `state: "clean"`으로 교체하므로 사용자가 편집한 dirty/new/deleted 행이
+ * 자동으로 폐기되고 초기 상태로 돌아간다.
+ *
+ * 예:
+ * ```ts
+ * const onSearch = () => {
+ *   startTransition(async () => {
+ *     const res = await listX(filters);
+ *     if (!res.error) grid.reset(res.rows);  // ← 미저장 변경 자동 폐기
+ *   });
+ * };
+ * ```
  */
 export function GridSearchForm({
   children,

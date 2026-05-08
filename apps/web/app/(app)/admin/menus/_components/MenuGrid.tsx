@@ -277,14 +277,16 @@ export function MenuGrid({
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
-              <th className="w-10 px-2 py-2">{t("columns.delete")}</th>
-              <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
+              {/* whitespace-nowrap + 최소폭 보장 — 한글 헤더(삭제/상태 등)가
+                  좁은 컬럼에서 세로로 줄바꿈되지 않게. 공통 그리드 룰. */}
+              <th className="w-11 whitespace-nowrap px-2 py-2 text-left">{t("columns.no")}</th>
+              <th className="w-14 whitespace-nowrap px-2 py-2 text-center">{t("columns.delete")}</th>
+              <th className="w-16 whitespace-nowrap px-2 py-2 text-center">{t("columns.status")}</th>
               {COLUMNS.map((col) => (
                 <th
                   key={col.key}
                   className={[
-                    "px-2 py-2",
+                    "whitespace-nowrap px-2 py-2",
                     col.type === "numeric"
                       ? "text-right"
                       : col.type === "boolean"
@@ -327,11 +329,11 @@ export function MenuGrid({
                       isSelected ? "ring-2 ring-blue-400 ring-inset" : "",
                     ].join(" ")}
                   >
-                    <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
+                    <td className="h-8 w-11 whitespace-nowrap px-2 align-middle text-[12px] text-slate-500">
                       {i + 1}
                     </td>
                     <td
-                      className="h-8 w-10 px-2 text-center align-middle"
+                      className="h-8 w-14 whitespace-nowrap px-2 text-center align-middle"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <input
@@ -345,7 +347,7 @@ export function MenuGrid({
                         className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                       />
                     </td>
-                    <td className="h-8 w-16 px-2 align-middle">
+                    <td className="h-8 w-16 whitespace-nowrap px-2 text-center align-middle">
                       <RowStatusBadge state={r.state} />
                     </td>
                     {COLUMNS.map((col) => {
