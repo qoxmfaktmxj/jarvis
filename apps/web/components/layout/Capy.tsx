@@ -73,7 +73,7 @@ export function Capy({ name, size = 120, className, alt, priority = false }: Cap
       height={size}
       priority={priority}
       unoptimized
-      className={cn("select-none", className)}
+      className={cn("select-none object-contain", className)}
       draggable={false}
     />
   );

@@ -32,7 +32,7 @@ export async function HeroGreeting({
         priority
         unoptimized
         aria-hidden="true"
-        className="shrink-0"
+        className="shrink-0 object-contain"
       />
       <span className="text-[13px] text-(--fg-secondary)">
         {mood.message}

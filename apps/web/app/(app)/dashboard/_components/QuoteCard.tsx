@@ -29,7 +29,7 @@ export function QuoteCard({ now }: { now: Date }) {
           width={56}
           height={56}
           unoptimized
-          className="shrink-0 rounded-lg"
+          className="shrink-0 rounded-lg object-contain"
           aria-hidden="true"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
