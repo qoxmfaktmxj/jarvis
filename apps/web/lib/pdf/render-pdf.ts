@@ -1,4 +1,3 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { promises as fs } from "node:fs";
 import { join } from "node:path";
 import type { ReactElement } from "react";
@@ -37,10 +36,13 @@ function buildFontFaceCss(base64: string): string {
 }
 
 export async function renderPdfFromReact(element: ReactElement): Promise<Buffer> {
+  // Dynamic import keeps react-dom/server out of the static module graph so
+  // Next.js 15 doesn't reject this server-only PDF helper as a potential
+  // client-bundle leak. Playwright is also lazy-loaded just below.
+  const { renderToStaticMarkup } = await import("react-dom/server");
   const markup = renderToStaticMarkup(element);
   const html = `<!doctype html>${markup}`;
 
-  // Lazy import to avoid loading Playwright on module init
   const { chromium } = await import("playwright");
 
   const browser = await chromium.launch({ headless: true });
