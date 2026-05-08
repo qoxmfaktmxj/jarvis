@@ -88,3 +88,40 @@ describe('useGridState.update', () => {
     expect(batch.deletes).toEqual([]);
   });
 });
+
+describe('useGridState.discardChanges', () => {
+  it('reverts dirty rows to original, undeletes deleted rows, drops new rows', () => {
+    const { result } = renderHook(() => useGridState<Row>(seed));
+    // a: clean → dirty
+    act(() => result.current.update('a', 'name', 'AlphaX'));
+    // b: clean → deleted
+    act(() => result.current.toggleDelete('b'));
+    // c: new
+    act(() =>
+      result.current.insertBlank({ id: 'c', name: 'Charlie', note: null }),
+    );
+    expect(result.current.dirtyCount).toBe(3);
+
+    act(() => result.current.discardChanges());
+
+    const a = result.current.rows.find((r) => r.data.id === 'a');
+    expect(a?.state).toBe('clean');
+    expect(a?.data.name).toBe('Alpha');
+
+    const b = result.current.rows.find((r) => r.data.id === 'b');
+    expect(b?.state).toBe('clean');
+
+    const c = result.current.rows.find((r) => r.data.id === 'c');
+    expect(c).toBeUndefined();
+
+    expect(result.current.dirtyCount).toBe(0);
+  });
+
+  it('is a no-op when there are no unsaved changes', () => {
+    const { result } = renderHook(() => useGridState<Row>(seed));
+    const before = result.current.rows;
+    act(() => result.current.discardChanges());
+    expect(result.current.rows).toEqual(before);
+    expect(result.current.dirtyCount).toBe(0);
+  });
+});

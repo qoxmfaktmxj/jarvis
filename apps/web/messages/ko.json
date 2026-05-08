@@ -254,6 +254,12 @@
           "saveCount": "저장 ({count})",
           "export": "다운로드"
         },
+        "iconPicker": {
+          "search": "아이콘 검색",
+          "clear": "지우기",
+          "empty": "(없음)",
+          "noResults": "검색 결과가 없습니다."
+        },
         "empty": "데이터가 없습니다."
       },
       "detailSection": {

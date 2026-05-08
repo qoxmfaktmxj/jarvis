@@ -28,10 +28,16 @@ import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@/components/grid/types";
 import type { MenuRow } from "@jarvis/shared/validation/admin/menu";
 import type { useGridState } from "@/components/grid/useGridState";
+import { IconPickerCell } from "./IconPickerCell";
 
 type GridApi = ReturnType<typeof useGridState<MenuRow>>;
 
-type MenuColumnDef = ColumnDef<MenuRow> & {
+/** Local widening of the shared ColumnDef union — `icon` renders an icon
+ * picker (lucide thumbnail + name), distinct from a plain `select`. */
+type MenuColumnType = ColumnDef<MenuRow>["type"] | "icon";
+
+type MenuColumnDef = Omit<ColumnDef<MenuRow>, "type"> & {
+  type: MenuColumnType;
   /** 기존 행에서 readOnly로 표시 (= legacy KeyField). */
   lockOnExisting?: boolean;
 };
@@ -145,8 +151,8 @@ export function MenuGrid({
       {
         key: "icon",
         label: t("columns.icon"),
-        type: "select",
-        width: 150,
+        type: "icon",
+        width: 170,
         editable: true,
         options: iconOptions,
       },
@@ -440,6 +446,19 @@ export function MenuGrid({
                                 )
                               }
                               required={col.required}
+                            />
+                          )}
+                          {col.type === "icon" && (
+                            <IconPickerCell
+                              value={(val as string | null) || null}
+                              options={col.options ?? []}
+                              onCommit={(v) =>
+                                update(
+                                  row.id,
+                                  col.key,
+                                  v as MenuRow[typeof col.key],
+                                )
+                              }
                             />
                           )}
                           {col.type === "numeric" && (

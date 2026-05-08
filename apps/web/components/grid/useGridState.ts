@@ -169,6 +169,34 @@ export function useGridState<T extends { id: string }>(
     setRows((prev) => prev.filter((r) => !(r.data.id === id && r.state === "new")));
   }, []);
 
+  /**
+   * Wipe all unsaved work without a server round-trip.
+   *  - dirty   → revert `data` to `original`, drop snapshot, state="clean"
+   *  - deleted → toggle back to clean (preserve original snapshot if present)
+   *  - new     → drop the row entirely
+   *
+   * Used when the user issues an explicit refresh (e.g. 조회 button, tab
+   * reload) and we want immediate visual feedback before the new server
+   * payload arrives.
+   */
+  const discardChanges = useCallback(() => {
+    setRows((prev) =>
+      prev
+        .filter((r) => r.state !== "new")
+        .map((r) => {
+          if (r.state === "dirty") {
+            const original = r.original ?? r.data;
+            return { data: original, state: "clean" as const };
+          }
+          if (r.state === "deleted") {
+            const original = r.original ?? r.data;
+            return { data: original, state: "clean" as const };
+          }
+          return r;
+        }),
+    );
+  }, []);
+
   const dirtyCount = useMemo(
     () => rows.filter((r) => r.state !== "clean").length,
     [rows],
@@ -184,6 +212,7 @@ export function useGridState<T extends { id: string }>(
     update,
     toggleDelete,
     removeNew,
+    discardChanges,
     dirtyCount,
     toBatch,
   };

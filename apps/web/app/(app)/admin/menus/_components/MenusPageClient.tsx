@@ -464,22 +464,28 @@ export function MenusPageClient({
   }, [detailGrid.rows, selectedMenuId, selectedMenuCode, tDetail, t]);
 
   // ---- Master filter apply / reset ----
+  // 공통 그리드 룰: 조회/초기화는 즉시 dirty/new/deleted 행을 폐기한다 (GridSearchForm
+  // 헤더 주석 참조). discardChanges()로 클릭 즉시 시각 반영하고 reloadMaster의
+  // reset()이 서버 응답을 덮어쓴다.
   const applyMasterFilters = useCallback(() => {
+    masterGrid.discardChanges();
     setMasterUrlFilter("q", masterDraft.q);
     setMasterUrlFilter("qLabel", masterDraft.qLabel);
     setMasterUrlFilter("kind", masterDraft.kind);
     setMasterUrlFilter("parentCode", masterDraft.parentCode);
     reloadMaster(masterDraft);
-  }, [masterDraft, reloadMaster, setMasterUrlFilter]);
+  }, [masterDraft, masterGrid, reloadMaster, setMasterUrlFilter]);
 
   const resetMasterFilters = useCallback(() => {
+    masterGrid.discardChanges();
     resetMasterUrl();
     setMasterDraft(MASTER_DEFAULTS);
     reloadMaster(MASTER_DEFAULTS);
-  }, [reloadMaster, resetMasterUrl]);
+  }, [masterGrid, reloadMaster, resetMasterUrl]);
 
   // ---- Detail filter apply / reset (client-side filter over full set) ----
   const applyDetailFilters = useCallback(() => {
+    detailGrid.discardChanges();
     setDetailFilters(detailDraft);
     if (selectedMenuId) {
       const filtered = applyDetailFilterToRows(detailFullSet, detailDraft);
@@ -489,6 +495,7 @@ export function MenusPageClient({
   }, [detailDraft, detailFullSet, detailGrid, selectedMenuId, applyDetailFilterToRows]);
 
   const resetDetailFilters = useCallback(() => {
+    detailGrid.discardChanges();
     setDetailDraft(DETAIL_DEFAULTS);
     setDetailFilters(DETAIL_DEFAULTS);
     if (selectedMenuId) {
