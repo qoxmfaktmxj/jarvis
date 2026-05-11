@@ -4,12 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./types": "./src/types.ts",
-    "./exchangerate": "./src/exchangerate.ts",
-    "./kma": "./src/kma.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./exchangerate": {
+      "types": "./dist/exchangerate.d.ts",
+      "default": "./dist/exchangerate.js"
+    },
+    "./kma": {
+      "types": "./dist/kma.d.ts",
+      "default": "./dist/kma.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
