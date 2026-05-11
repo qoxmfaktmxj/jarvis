@@ -38,7 +38,28 @@ This work is structural (build config), not behavioral. Verification is done via
 
 ## Phase 1 — Per-Package Migration (Tasks 1–9, parallelizable)
 
-> **NOTE (discovered during Task 1 execution):** Base `tsconfig.json` has `"noEmit": true` globally. Every package `tsconfig.json` must add `"noEmit": false` under `compilerOptions` to enable `dist/` emit. This applies to Tasks 1–9 — wherever the task says "Verify tsconfig (no edit)", **instead add `"noEmit": false` if not already present** and commit the tsconfig change together with the package.json change. The commit message stays the same (`build(<name>): emit dist/...`).
+> **NOTE 1 (Task 1 execution):** Base `tsconfig.json` has `"noEmit": true` globally. Every package `tsconfig.json` must add `"noEmit": false` under `compilerOptions` to enable `dist/` emit. This applies to Tasks 1–9 — wherever the task says "Verify tsconfig (no edit)", **instead add `"noEmit": false` if not already present** and commit the tsconfig change together with the package.json change. The commit message stays the same (`build(<name>): emit dist/...`).
+>
+> **NOTE 2 (Task 1 code review):** Each package `tsconfig.json` must exclude test files from the build output so `dist/` doesn't ship `__tests__/` or `vitest.config.js`. Use this exclude shape (extend per package layout — flat vs src/):
+> ```json
+> "exclude": ["dist", "node_modules", "__tests__", "**/*.test.ts", "vitest.config.ts"]
+> ```
+> Packages that already exclude `__tests__` (db, external-signals, wiki-fs, wiki-agent) need only to add the `*.test.ts` + `vitest.config.ts` glob if relevant. Packages with no test files (e.g. secret) can keep their existing exclude.
+>
+> **NOTE 3 (Task 1 code review):** Use **prettier-compatible multi-line form** for the `exports` block in every package. Conditional `{ types, default }` objects must be expanded; no column alignment. Example template:
+> ```json
+> "exports": {
+>   ".": {
+>     "types": "./dist/index.d.ts",
+>     "default": "./dist/index.js"
+>   },
+>   "./sub": {
+>     "types": "./dist/sub.d.ts",
+>     "default": "./dist/sub.js"
+>   }
+> }
+> ```
+> The per-task JSON snippets in this plan still show the *content* (which subpaths map where) but the **style is the multi-line form above**, regardless of how the snippet is laid out in this document.
 
 All 9 tasks are **isolated** — each touches only its own `packages/<name>/package.json` and `packages/<name>/tsconfig.json`. No cross-package edits. Conflicts impossible.
 
