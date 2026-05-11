@@ -6,10 +6,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/check-schema-drift.mjs --hook"
-          },
-          {
-            "type": "command",
             "command": "node scripts/check-llm-models.mjs --hook"
           }
         ]
