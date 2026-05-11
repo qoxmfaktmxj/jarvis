@@ -38,6 +38,8 @@ This work is structural (build config), not behavioral. Verification is done via
 
 ## Phase 1 — Per-Package Migration (Tasks 1–9, parallelizable)
 
+> **NOTE (discovered during Task 1 execution):** Base `tsconfig.json` has `"noEmit": true` globally. Every package `tsconfig.json` must add `"noEmit": false` under `compilerOptions` to enable `dist/` emit. This applies to Tasks 1–9 — wherever the task says "Verify tsconfig (no edit)", **instead add `"noEmit": false` if not already present** and commit the tsconfig change together with the package.json change. The commit message stays the same (`build(<name>): emit dist/...`).
+
 All 9 tasks are **isolated** — each touches only its own `packages/<name>/package.json` and `packages/<name>/tsconfig.json`. No cross-package edits. Conflicts impossible.
 
 Task ordering note: although tasks can run in parallel, build verification in step 5 of each task requires upstream packages to be built first. Subagent runner should either run tasks in topological order or have all subagents run `pnpm install` + `pnpm build` once before per-task verification.
