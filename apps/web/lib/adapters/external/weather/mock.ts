@@ -1,4 +1,4 @@
-import type { WeatherAdapter, WeatherSnapshot } from "./types.js";
+import type { WeatherAdapter, WeatherSnapshot } from "./types";
 
 const MOCK: Omit<WeatherSnapshot, "fetchedAt"> = {
   region: "seoul",

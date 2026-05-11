@@ -1,4 +1,4 @@
-import { hashSeed } from "./mascot-pool.js";
+import { hashSeed } from "./mascot-pool";
 
 /**
  * mulberry32 PRNG. 같은 seed로 같은 sequence를 보장 — 사용자별 일일 chunk 결정에 사용.

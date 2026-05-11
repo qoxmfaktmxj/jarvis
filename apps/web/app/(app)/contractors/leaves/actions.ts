@@ -14,7 +14,7 @@ import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   leaveBatchInputSchema,
   validateBatchBusinessRules
-} from "./actions.validators.js";
+} from "./actions.validators";
 
 // ---------------------------------------------------------------------------
 // Server action

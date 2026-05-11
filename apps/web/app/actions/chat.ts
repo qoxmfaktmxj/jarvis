@@ -11,7 +11,7 @@ import type { ChatReactionEmoji } from "@jarvis/shared/constants/chat";
 import { chatChannel } from "@jarvis/shared/chat/channel";
 import { cookies, headers } from "next/headers";
 import type { JarvisSession } from "@jarvis/auth/types";
-import { validateSend, validateToggle, validateDelete } from "./chat.validators.js";
+import { validateSend, validateToggle, validateDelete } from "./chat.validators";
 
 // ---------------------------------------------------------------------------
 // Internal session helper (mirrors profile.ts pattern)

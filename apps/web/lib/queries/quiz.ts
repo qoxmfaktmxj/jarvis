@@ -12,8 +12,8 @@ import {
   type QuizDifficulty,
   type QuizQuestion
 } from "@jarvis/shared/validation/quiz";
-import { kstDateKey, seededShuffle } from "@/lib/quiz/seeded-shuffle.js";
-import { BASELINE_MASCOTS } from "@/lib/quiz/mascot-pool.js";
+import { kstDateKey, seededShuffle } from "@/lib/quiz/seeded-shuffle";
+import { BASELINE_MASCOTS } from "@/lib/quiz/mascot-pool";
 
 type DbLike = typeof db;
 type DbOrTx = DbLike | Parameters<Parameters<DbLike["transaction"]>[0]>[0];

@@ -11,7 +11,7 @@ import type {
 import {
   canViewSensitivity,
   type DbSensitivity,
-} from "./wiki-sensitivity.js";
+} from "./wiki-sensitivity";
 
 /**
  * 세션 권한 매트릭스를 역방향으로 읽어 허용 sensitivity 목록을 계산.

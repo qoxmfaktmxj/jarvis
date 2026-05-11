@@ -1,4 +1,4 @@
-import type { FxAdapter, FxSnapshot } from "./types.js";
+import type { FxAdapter, FxSnapshot } from "./types";
 
 const MOCK_RATES = [
   { code: "USD", value: 1342, delta: 0.3, basis: "1" },

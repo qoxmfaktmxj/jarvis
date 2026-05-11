@@ -6,7 +6,7 @@ import {
   parseFrontmatter,
   type WikiFrontmatter,
 } from "@jarvis/wiki-fs";
-import { resolveWikiPath } from "./repo-root.js";
+import { resolveWikiPath } from "./repo-root";
 import { resolveAllowedWikiSensitivities } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 

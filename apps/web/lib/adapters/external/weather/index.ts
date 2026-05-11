@@ -1,7 +1,7 @@
-import type { WeatherAdapter } from "./types.js";
-import { MockWeatherAdapter } from "./mock.js";
+import type { WeatherAdapter } from "./types";
+import { MockWeatherAdapter } from "./mock";
 
-export type { WeatherAdapter, WeatherSnapshot } from "./types.js";
+export type { WeatherAdapter, WeatherSnapshot } from "./types";
 
 export function getWeatherAdapter(): WeatherAdapter {
   return new MockWeatherAdapter();
