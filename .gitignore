@@ -21,6 +21,9 @@ next-env.d.ts
 # Turbo
 .turbo/
 
+# Subagent worktree scratch (superpowers:dispatching-parallel-agents)
+.clone/
+
 # Drizzle (anchored to root — packages/db/drizzle/ is also blocked, delivered via private zip)
 /drizzle/
 packages/db/drizzle/
