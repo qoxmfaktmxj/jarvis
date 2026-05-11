@@ -1,8 +1,7 @@
 // packages/ai/agent/tools/__tests__/wiki-grep.test.ts
 //
 // wiki-grep tool 단위 테스트.
-// 실제 DB 연결 없이 @jarvis/db/client · @jarvis/db/schema · drizzle-orm ·
-// @jarvis/auth 를 mock 처리.
+// 실제 DB 연결 없이 @jarvis/db/client · @jarvis/db/schema · drizzle-orm 를 mock 처리.
 
 import {
   beforeEach,
@@ -30,7 +29,6 @@ vi.mock("@jarvis/db/schema", () => ({
     title: "wiki.title",
     path: "wiki.path",
     sensitivity: "wiki.sensitivity",
-    requiredPermission: "wiki.requiredPermission",
     publishedStatus: "wiki.publishedStatus",
     routeKey: "wiki.routeKey",
     frontmatter: "wiki.frontmatter",
@@ -51,25 +49,17 @@ vi.mock("drizzle-orm", () => ({
     })),
     {
       raw: vi.fn((s: string) => ({ raw: s, op: "sql.raw" })),
-      // sql.join: pgTextArray가 사용. 실제 drizzle은 SQL chunk를 separator로 합치지만
-      // 테스트에서는 입력 보존만 하면 충분.
+      // sql.join: 호환을 위해 mock 유지 (현재 wiki-grep 본체는 사용 안 함).
       join: vi.fn((items: unknown[], sep: unknown) => ({ items, sep, op: "sql.join" })),
     }
   ),
   asc: vi.fn((col: unknown) => col),
 }));
 
-vi.mock("@jarvis/auth", () => ({
-  resolveAllowedWikiSensitivities: vi.fn((permissions: string[]) => {
-    if (permissions.includes("admin:all")) return ["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"];
-    if (permissions.includes("knowledge:read")) return ["PUBLIC", "INTERNAL"];
-    return [];
-  }),
+vi.mock("@jarvis/shared/constants/permissions", () => ({
   PERMISSIONS: {
     ADMIN_ALL: "admin:all",
     KNOWLEDGE_READ: "knowledge:read",
-    KNOWLEDGE_REVIEW: "knowledge:review",
-    PROJECT_ACCESS_SECRET: "project.access:secret",
   },
 }));
 
@@ -79,7 +69,6 @@ vi.mock("@jarvis/auth", () => ({
 
 import { db } from "@jarvis/db/client";
 import { ilike, sql } from "drizzle-orm";
-import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
 import { wikiGrep } from "../wiki-grep.js";
 import type { ToolContext } from "../types.js";
 
@@ -141,7 +130,7 @@ describe("wiki-grep tool", () => {
   // 2. 정상 쿼리 → matches 배열 반환
   it("returns matches when query is valid", async () => {
     const rows = [
-      { slug: "leave-policy", title: "연차 정책", path: "wiki/ws-1/manual/hr/leave-policy.md", sensitivity: "INTERNAL" },
+      { slug: "leave-policy", title: "연차 정책", path: "wiki/ws-1/manual/hr/leave-policy.md" },
     ];
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain(rows));
@@ -155,7 +144,6 @@ describe("wiki-grep tool", () => {
         slug: "leave-policy",
         title: "연차 정책",
         path: "wiki/ws-1/manual/hr/leave-policy.md",
-        sensitivity: "INTERNAL",
         snippet: "",
       });
     }
@@ -231,18 +219,7 @@ describe("wiki-grep tool", () => {
     expect(scopeCall).toBeUndefined();
   });
 
-  // 5. sensitivity filter — resolveAllowedWikiSensitivities 호출됨
-  it("applies sensitivity filter using resolveAllowedWikiSensitivities", async () => {
-    const selectMock = db.select as unknown as Mock;
-    selectMock.mockReturnValue(createChain([]));
-    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
-
-    await wikiGrep.execute({ query: "policy" }, baseCtx);
-
-    expect(resolvedMock).toHaveBeenCalledWith(baseCtx.permissions);
-  });
-
-  // 6. 0 matches → ok({matches:[]})
+  // 5. 0 matches → ok({matches:[]})
   it("returns empty matches array when no results found", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain([]));
@@ -255,7 +232,7 @@ describe("wiki-grep tool", () => {
     }
   });
 
-  // 7. db 예외 → {ok:false, code:"unknown"}
+  // 6. db 예외 → {ok:false, code:"unknown"}
   it("returns unknown error when db throws", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockImplementation(() => {
@@ -285,47 +262,20 @@ describe("wiki-grep tool", () => {
     }
   });
 
-  // 8. publishedStatus='draft' 필터 — SQL 레벨 필터가 적용됨 (new ACL tests)
+  // 7. publishedStatus='draft' 필터 — SQL 레벨 필터가 적용됨 (비-admin)
   it("SQL 레벨에서 publishedStatus 필터 적용 확인 (eq 호출)", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain([]));
 
     await wikiGrep.execute({ query: "policy" }, baseCtx);
 
-    // eq(wikiPageIndex.publishedStatus, "published")이 호출되는지 확인
-    // 비-admin이므로 publishedStatus 필터 적용
+    // 비-admin이므로 publishedStatus='published' 필터가 적용됨
     const sqlMock = sql as unknown as Mock;
     const sqlCalls = sqlMock.mock.calls as Array<[TemplateStringsArray, ...unknown[]]>;
-    // publishedStatus 관련 sql 조건이 생성됨
     expect(sqlCalls.length).toBeGreaterThan(0);
   });
 
-  it("admin 권한이면 resolveAllowedWikiSensitivities가 전체 반환", async () => {
-    const selectMock = db.select as unknown as Mock;
-    selectMock.mockReturnValue(createChain([]));
-    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
-
-    const adminCtx = { ...baseCtx, permissions: ["admin:all"] };
-    await wikiGrep.execute({ query: "policy" }, adminCtx);
-
-    expect(resolvedMock).toHaveBeenCalledWith(adminCtx.permissions);
-    expect(resolvedMock.mock.results[0]?.value).toEqual(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]);
-  });
-
-  it("권한 없으면 빈 배열 반환 (early return)", async () => {
-    const selectMock = db.select as unknown as Mock;
-    selectMock.mockReturnValue(createChain([]));
-    const resolvedMock = resolveAllowedWikiSensitivities as unknown as Mock;
-    resolvedMock.mockReturnValueOnce([]);
-
-    const result = await wikiGrep.execute({ query: "policy" }, { ...baseCtx, permissions: [] });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.data.matches).toEqual([]);
-    }
-  });
-
-  // 9. tenant 하드코딩 제거 확인 — 'wiki/jarvis/' 패턴이 ilike에 나타나지 않음
+  // 8. tenant 하드코딩 제거 확인 — 'wiki/jarvis/' 패턴이 ilike에 나타나지 않음
   it("scope filter는 workspace-relative이고 wiki/jarvis/ 하드코딩이 없음", async () => {
     const selectMock = db.select as unknown as Mock;
     selectMock.mockReturnValue(createChain([]));

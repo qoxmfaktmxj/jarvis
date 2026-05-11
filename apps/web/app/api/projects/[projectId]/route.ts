@@ -17,7 +17,6 @@ type RouteContext = {
 const updateProjectBodySchema = z.object({
   name: z.string().min(1).max(300).optional(),
   description: z.string().max(4000).optional().or(z.literal("")),
-  sensitivity: z.enum(["PUBLIC", "INTERNAL", "RESTRICTED", "SECRET_REF_ONLY"]).optional(),
   status: z.enum(["active", "deprecated", "decommissioned"]).optional(),
   prodDomainUrl: z.string().url().optional().or(z.literal("")),
   prodConnectType: z.enum(["IP", "VPN", "VDI", "RE"]).optional(),

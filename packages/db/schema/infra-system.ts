@@ -63,9 +63,6 @@ export const infraSystem = pgTable(
     }),
 
     note: text("note"),
-    sensitivity: varchar("sensitivity", { length: 30 })
-      .default("INTERNAL")
-      .notNull(),
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
@@ -83,10 +80,6 @@ export const infraSystem = pgTable(
     wsCompanyIdx: index("idx_infra_system_ws_company").on(
       t.workspaceId,
       t.companyId,
-    ),
-    wsSensIdx: index("idx_infra_system_ws_sens").on(
-      t.workspaceId,
-      t.sensitivity,
     ),
     companyNameEnvUniq: uniqueIndex("infra_system_company_name_env_uniq").on(
       t.companyId,

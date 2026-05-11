@@ -2,13 +2,15 @@
 //
 // Ask AI harness tool: 위키 페이지를 keyword로 검색.
 // 본문은 포함하지 않고 후보 리스트만 반환 — 본문은 wiki-read tool이 담당.
+//
+// 2026-05-11 (D4=A): 행 단위 sensitivity 필터링 제거. RBAC 게이트(KNOWLEDGE_READ
+// 보유 여부)는 tool 노출 단계에서 결정되고, 여기서는 workspaceId 격리만 걸린다.
+// requiredPermission 컬럼 필터도 제거 — 페이지별 권한 게이트는 폐기됨.
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
-import { resolveAllowedWikiSensitivities } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { pgTextArray } from "../../sql-utils.js";
 import {
   ok,
   err,
@@ -27,7 +29,6 @@ export interface WikiGrepMatch {
   slug: string;
   title: string;
   path: string;
-  sensitivity: string;
   /** Phase A3에서 wiki-fs를 읽어 채움. 현재는 빈 문자열. */
   snippet: string;
 }
@@ -70,11 +71,6 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
     const escaped = escapeIlike(q);
     const perms = ctx.permissions as string[];
     const isAdmin = perms.includes(PERMISSIONS.ADMIN_ALL);
-    const allowedSensitivities = resolveAllowedWikiSensitivities(perms);
-
-    if (allowedSensitivities.length === 0) {
-      return ok({ matches: [] });
-    }
 
     // workspace-relative scope: '%/{zone}/%' 형태로 매칭 (멀티테넌트 안전)
     const scopeCond =
@@ -82,13 +78,7 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
         ? sql`true`
         : sql`${wikiPageIndex.path} LIKE ${`%/${scope}/%`}`;
 
-    // ACL: requiredPermission이 null이거나, caller가 보유, 또는 ADMIN_ALL
-    // pgTextArray: drizzle이 plain JS array를 row literal `($1,$2,...)`로 인라인하는 걸
-    // 회피하고 `ARRAY[$1,$2,...]::text[]`로 emit (sql-utils.ts 주석 참조).
-    const requiredPermissionCond = isAdmin
-      ? sql`true`
-      : sql`(${wikiPageIndex.requiredPermission} IS NULL OR ${wikiPageIndex.requiredPermission} = ANY(${pgTextArray(perms)}))`;
-
+    // 비-admin 은 published 만 — draft/archived 는 작성자/관리자 영역.
     const publishedCond = isAdmin
       ? sql`true`
       : eq(wikiPageIndex.publishedStatus, "published");
@@ -104,7 +94,6 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
           slug: wikiPageIndex.slug,
           title: wikiPageIndex.title,
           path: wikiPageIndex.path,
-          sensitivity: wikiPageIndex.sensitivity,
         })
         .from(wikiPageIndex)
         .where(
@@ -117,8 +106,6 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
               aliasMatch,
             ),
             scopeCond,
-            sql`${wikiPageIndex.sensitivity} = ANY(${pgTextArray(allowedSensitivities)})`,
-            requiredPermissionCond,
             publishedCond,
           ),
         )
@@ -130,7 +117,6 @@ export const wikiGrep: ToolDefinition<WikiGrepInput, WikiGrepOutput> = {
           slug: r.slug,
           title: r.title,
           path: r.path,
-          sensitivity: r.sensitivity,
           snippet: "",
         })),
       });

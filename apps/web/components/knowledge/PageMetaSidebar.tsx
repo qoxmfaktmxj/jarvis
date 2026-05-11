@@ -3,7 +3,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Edit, Clock, History, ShieldCheck, Tag } from 'lucide-react';
+import { Edit, Clock, History, Tag } from 'lucide-react';
 import type { KnowledgePageWithVersion } from '@/lib/queries/knowledge';
 
 interface PageMetaSidebarProps {
@@ -16,13 +16,6 @@ const PAGE_TYPE_LABELS: Record<string, string> = {
   runbook: 'Runbook', onboarding: 'Onboarding', 'hr-policy': 'HR Policy',
   'tool-guide': 'Tool Guide', faq: 'FAQ', decision: 'Decision',
   incident: 'Incident', analysis: 'Analysis', glossary: 'Glossary',
-};
-
-const SENSITIVITY_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  PUBLIC: 'outline',
-  INTERNAL: 'secondary',
-  RESTRICTED: 'default',
-  SECRET_REF_ONLY: 'destructive',
 };
 
 const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -70,15 +63,6 @@ export function PageMetaSidebar({ page, canEdit }: PageMetaSidebarProps) {
         <div className="flex items-center justify-between">
           <span className="text-(--fg-secondary)">Type</span>
           <span className="font-medium">{PAGE_TYPE_LABELS[page.pageType] ?? page.pageType}</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-1 text-(--fg-secondary)">
-            <ShieldCheck className="h-3.5 w-3.5" /> Sensitivity
-          </span>
-          <Badge variant={SENSITIVITY_VARIANTS[page.sensitivity ?? 'INTERNAL']}>
-            {page.sensitivity ?? 'INTERNAL'}
-          </Badge>
         </div>
 
         <div className="flex items-center justify-between">

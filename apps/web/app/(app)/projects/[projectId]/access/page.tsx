@@ -23,11 +23,11 @@ export default async function ProjectAccessPage({
     notFound();
   }
 
+  // Step 2E (D5): sessionRoles/sessionPermissions 게이트는 폐지됐다.
+  // PROJECT_READ 가드를 통과하면 모든 access entry + secret이 노출된다.
   const entries = await listProjectAccessEntries({
     workspaceId: session.workspaceId,
-    projectId,
-    sessionRoles: session.roles ?? [],
-    sessionPermissions: session.permissions ?? []
+    projectId
   });
 
   if (!entries) {

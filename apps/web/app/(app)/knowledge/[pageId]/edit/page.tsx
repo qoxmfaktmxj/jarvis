@@ -26,7 +26,6 @@ export default async function EditKnowledgePage({ params }: Props) {
         title: page.title,
         slug: page.slug,
         pageType: page.pageType,
-        sensitivity: page.sensitivity ?? 'INTERNAL',
         mdxContent: page.currentVersion?.mdxContent ?? '',
         tags,
         summary: page.summary ?? '',

@@ -2,27 +2,21 @@
 
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { and, desc, eq, notInArray } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 import { db } from "@jarvis/db/client";
 import { graphSnapshot } from "@jarvis/db/schema/graph";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 interface Props {
   workspaceId: string;
-  permissions: string[];
 }
 
 type BuildStatus = 'pending' | 'running' | 'done' | 'error';
 
-export async function BuildLifecycleSection({ workspaceId, permissions }: Props) {
+// Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B) — sensitivity 필터 삭제.
+// 페이지 진입 단계에서 graph:read 권한 이미 체크 → workspaceId 격리만 적용한다.
+export async function BuildLifecycleSection({ workspaceId }: Props) {
   const t = await getTranslations("Architecture.BuildLifecycle");
-
-  // Push sensitivity filter to DB level (same pattern as ArchitecturePage)
-  const hasAdminAll = permissions.includes(PERMISSIONS.ADMIN_ALL);
-  const sensitivityCondition = hasAdminAll
-    ? undefined
-    : notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']);
 
   const authorized = await db
     .select({
@@ -32,11 +26,7 @@ export async function BuildLifecycleSection({ workspaceId, permissions }: Props)
       createdAt: graphSnapshot.createdAt,
     })
     .from(graphSnapshot)
-    .where(
-      sensitivityCondition
-        ? and(eq(graphSnapshot.workspaceId, workspaceId), sensitivityCondition)
-        : eq(graphSnapshot.workspaceId, workspaceId),
-    )
+    .where(eq(graphSnapshot.workspaceId, workspaceId))
     .orderBy(desc(graphSnapshot.createdAt))
     .limit(100);
 

@@ -3,10 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import type {
-  CreateNoticeInput,
-  NoticeSensitivity,
-} from '@jarvis/shared/validation';
+import type { CreateNoticeInput } from '@jarvis/shared/validation';
 
 const NoticeEditor = dynamic(
   () =>
@@ -19,7 +16,6 @@ interface EditNoticeClientShellProps {
   initialData: {
     title: string;
     bodyMd: string;
-    sensitivity: NoticeSensitivity;
     pinned: boolean;
     publishedAt: string | null;
     expiresAt: string | null;

@@ -1,20 +1,16 @@
 /**
  * packages/shared/validation/infra/system.ts
  *
- * 인프라구성관리 (Plan 5) Zod 스키마.
+ * 인프라구성관리 Zod 스키마.
  * `/infra` Grid 라우트의 list/save/delete/linkRunbook server action에서 사용.
  *
  * 컬럼은 schema/infra-system.ts와 1:1 매핑. workspaceId는 session에서 주입하므로
  * 입력 schema에는 포함하지 않음 (output 전용).
+ *
+ * Step 2E (sensitivity 제거): `sensitivity` 필드를 schema에서 제거. infra_system은
+ * INFRA_READ/INFRA_WRITE + workspaceId만으로 격리한다. DB 컬럼은 Step 3에서 drop.
  */
 import { z } from "zod";
-
-export const SENSITIVITY_VALUES = [
-  "PUBLIC",
-  "INTERNAL",
-  "RESTRICTED",
-  "SECRET_REF_ONLY",
-] as const;
 
 export const infraSystemRow = z.object({
   id: z.string().uuid(),
@@ -34,7 +30,6 @@ export const infraSystemRow = z.object({
   ownerContact: z.string().max(100).nullable(),
   wikiPageId: z.string().uuid().nullable(),
   note: z.string().nullable(),
-  sensitivity: z.enum(SENSITIVITY_VALUES).default("INTERNAL"),
   // audit (output-only)
   createdAt: z.string().optional(),
   updatedAt: z.string().nullable().optional(),

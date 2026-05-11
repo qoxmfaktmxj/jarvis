@@ -78,13 +78,14 @@ function makeTwoSelectDatabase(firstRows: unknown[], secondRows: unknown[]) {
 // ---------------------------------------------------------------------------
 
 describe("listProjectAccessEntries", () => {
-  it("filters out entries above the caller role and hides secret values without secret permission", async () => {
+  // Step 2E (D5): role-based row gating + secret canView 분기 폐지.
+  // PROJECT_READ 가드를 통과한 호출자는 모든 access entry + 모든 secret을 본다.
+  it("returns all access entries and resolves all secrets without role gating", async () => {
     const database = makeAccessDatabase(
       [
         {
           id: "proj-1",
-          workspaceId: "ws-1",
-          sensitivity: "INTERNAL"
+          workspaceId: "ws-1"
         }
       ],
       [
@@ -126,25 +127,25 @@ describe("listProjectAccessEntries", () => {
     const entries = await listProjectAccessEntries({
       workspaceId: "ws-1",
       projectId: "proj-1",
-      sessionRoles: ["VIEWER"],
-      sessionPermissions: ["project:read"],
       database: database as never,
       resolver
     });
 
-    expect(entries).toHaveLength(1);
-    expect(entries?.[0]?.id).toBe("viewer-entry");
-    expect(entries?.[0]?.usernameRef).toEqual({
-      ref: null,
-      resolved: null,
-      canView: false
+    // 둘 다 노출 (role gating 폐지)
+    expect(entries).toHaveLength(2);
+    // viewer-entry의 plain (non-secret-ref) usernameRef는 그대로 노출 + canView=true
+    const viewer = entries?.find((e) => e.id === "viewer-entry");
+    expect(viewer?.usernameRef).toEqual({
+      ref: "plain-user",
+      resolved: "plain-user",
+      canView: true
     });
-    expect(entries?.[0]?.passwordRef).toEqual({
-      ref: null,
-      resolved: null,
-      canView: false
-    });
-    expect(resolver.resolve).not.toHaveBeenCalled();
+    // developer-entry의 vault:// SecretRef는 resolver.resolve로 풀린다
+    const developer = entries?.find((e) => e.id === "developer-entry");
+    expect(developer?.usernameRef.canView).toBe(true);
+    expect(developer?.passwordRef.canView).toBe(true);
+    // 적어도 한 번은 resolver가 호출됨 (vault://… 두 항목 × 2 entries × 4 refs)
+    expect(resolver.resolve).toHaveBeenCalled();
   });
 });
 

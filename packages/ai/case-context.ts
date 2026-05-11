@@ -4,9 +4,9 @@
 
 import { db } from '@jarvis/db/client';
 import { precedentCase } from '@jarvis/db/schema/case';
-import { eq, and, sql, or, ilike, notInArray, type SQL } from 'drizzle-orm';
-import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
+import { eq, and, sql, or, ilike } from 'drizzle-orm';
 // Phase-Harness (2026-04-23): generateEmbedding 제거. 벡터 검색은 keywordFallback 으로 대체.
+// Step 2D (2026-05-11): sensitivity 모델 제거 (D2=B 결정) — RBAC + workspaceId 만 사용.
 import type { CaseSourceRef } from './types.js';
 
 export interface RetrievedCase {
@@ -31,31 +31,6 @@ export interface CaseContext {
   xml: string;   // ask.ts system prompt에 주입할 XML 형식 컨텍스트
 }
 
-export type CaseSensitivityPolicy = 'all' | 'public-internal' | 'none';
-
-export function getCaseSensitivityPolicy(userPermissions: string[] = []): CaseSensitivityPolicy {
-  if (
-    userPermissions.includes(PERMISSIONS.ADMIN_ALL) ||
-    userPermissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE) ||
-    userPermissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)
-  ) {
-    return 'all';
-  }
-  if (userPermissions.includes(PERMISSIONS.KNOWLEDGE_READ)) {
-    return 'public-internal';
-  }
-  return 'none';
-}
-
-function caseSensitivityCondition(userPermissions: string[] = []): SQL | undefined {
-  const policy = getCaseSensitivityPolicy(userPermissions);
-  if (policy === 'all') return undefined;
-  if (policy === 'public-internal') {
-    return notInArray(precedentCase.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']);
-  }
-  return sql`1 = 0`;
-}
-
 // ---------------------------------------------------------------------------
 // retrieveRelevantCases — 메인 retrieval 함수
 // ---------------------------------------------------------------------------
@@ -68,6 +43,8 @@ export async function retrieveRelevantCases(
     userCompany?: string;         // 사용자 소속 고객사 (soft boost)
     companyBoost?: number;        // 같은 고객사 가산점 (default 0.15)
     includeNonDigest?: boolean;
+    // Step 2D (2026-05-11): userPermissions 옵션은 호출자 계약 호환을 위해 유지하지만
+    // 더 이상 sensitivity 필터에 사용되지 않는다. Step 3 cleanup 시 시그니처에서 제거.
     userPermissions?: string[];
   } = {},
 ): Promise<CaseContext> {
@@ -78,14 +55,13 @@ export async function retrieveRelevantCases(
     // 조합에 사용됐으나 벡터 검색 제거로 현재는 keywordFallback 결과만 리턴.
     // 시그니처 호환을 위해 옵션은 유지하되 내부에서는 미사용.
     includeNonDigest = false,
-    userPermissions = [],
   } = options;
   // Phase-Harness (2026-04-23): precedent_case.embedding 컬럼이 migration 0037 로
   // 드롭되었기 때문에 벡터 similarity 검색 경로가 제거되었다. 모든 쿼리는
   // keywordFallback (BM25 유사: title/symptom/category ILIKE) 로 처리된다.
   // 향후 Phase F 에서 pg_trgm 기반 검색으로 업그레이드하거나, ask-agent
   // 내부에 wiki-grep 에 흡수될 수 있다.
-  return keywordFallback(question, workspaceId, topK, companyFilter, includeNonDigest, userPermissions);
+  return keywordFallback(question, workspaceId, topK, companyFilter, includeNonDigest);
 }
 
 // ---------------------------------------------------------------------------
@@ -97,7 +73,6 @@ async function keywordFallback(
   topK: number,
   companyFilter?: string,
   includeNonDigest = false,
-  userPermissions: string[] = [],
 ): Promise<CaseContext> {
   // 질문에서 핵심 키워드 추출 (간단히 2글자 이상 한글·영문 토큰)
   const tokens = question.match(/[가-힣a-zA-Z]{2,}/g) ?? [];
@@ -119,10 +94,6 @@ async function keywordFallback(
 
   if (!includeNonDigest) {
     conditions.push(eq(precedentCase.isDigest, true));
-  }
-  const sensitivityCondition = caseSensitivityCondition(userPermissions);
-  if (sensitivityCondition) {
-    conditions.push(sensitivityCondition);
   }
   if (companyFilter) {
     conditions.push(eq(precedentCase.requestCompany, companyFilter));

@@ -1,13 +1,14 @@
 /**
  * apps/web/lib/queries/infra-system.ts
  *
- * 인프라구성관리 (Plan 5) read-only 쿼리.
+ * 인프라구성관리 read-only 쿼리.
  * `/infra` Grid RSC 페이지 + Grid container에서 사용.
  *
  * 쓰기/감사 로깅은 actions.ts (`saveInfraSystems`, `linkRunbook`)에서 담당.
  *
- * Sensitivity: Plan 5 사용자 결정 — INFRA_*  RBAC로 통제하므로 row sensitivity는
- * 메타데이터로만 두고 쿼리 WHERE에서 필터하지 않는다 (`05-infra-hybrid-grid.md`).
+ * Step 2E (sensitivity 제거): infra_system은 INFRA_READ + workspaceId만으로 격리한다.
+ * 기존 Plan 5 주석(row sensitivity 메타데이터) 폐지. A8 B-P0-02의 wiki_page_index
+ * sensitivity-aware join도 폐지 — `canViewWikiPage`는 stub이고 Step 3에서 함수 자체 제거.
  */
 import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
@@ -33,16 +34,7 @@ export type InfraSystemListItem = {
   wikiPageId: string | null;
   wikiPageRouteKey: string | null;
   wikiPageTitle: string | null;
-  /**
-   * B-P0-02: page-load ACL gating data for the linked wiki page (if any).
-   * Three columns from `wiki_page_index` needed by `canViewWikiPage` to decide
-   * whether the user may see the deep link / title. Null when no wiki link.
-   */
-  wikiPageSensitivity: string | null;
-  wikiPageRequiredPermission: string | null;
-  wikiPagePublishedStatus: string | null;
   note: string | null;
-  sensitivity: "PUBLIC" | "INTERNAL" | "RESTRICTED" | "SECRET_REF_ONLY";
   createdAt: string;
   updatedAt: string | null;
   createdBy: string | null;
@@ -103,11 +95,7 @@ export async function listInfraSystems(
         wikiPageId: infraSystem.wikiPageId,
         wikiPageRouteKey: wikiPageIndex.routeKey,
         wikiPageTitle: wikiPageIndex.title,
-        wikiPageSensitivity: wikiPageIndex.sensitivity,
-        wikiPageRequiredPermission: wikiPageIndex.requiredPermission,
-        wikiPagePublishedStatus: wikiPageIndex.publishedStatus,
         note: infraSystem.note,
-        sensitivity: infraSystem.sensitivity,
         createdAt: infraSystem.createdAt,
         updatedAt: infraSystem.updatedAt,
         createdBy: infraSystem.createdBy,
@@ -148,11 +136,7 @@ export async function listInfraSystems(
       wikiPageId: r.wikiPageId,
       wikiPageRouteKey: r.wikiPageRouteKey ?? null,
       wikiPageTitle: r.wikiPageTitle ?? null,
-      wikiPageSensitivity: r.wikiPageSensitivity ?? null,
-      wikiPageRequiredPermission: r.wikiPageRequiredPermission ?? null,
-      wikiPagePublishedStatus: r.wikiPagePublishedStatus ?? null,
       note: r.note,
-      sensitivity: r.sensitivity as InfraSystemListItem["sensitivity"],
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
       createdBy: r.createdBy,
@@ -187,11 +171,7 @@ export async function getInfraSystemById(
       wikiPageId: infraSystem.wikiPageId,
       wikiPageRouteKey: wikiPageIndex.routeKey,
       wikiPageTitle: wikiPageIndex.title,
-      wikiPageSensitivity: wikiPageIndex.sensitivity,
-      wikiPageRequiredPermission: wikiPageIndex.requiredPermission,
-      wikiPagePublishedStatus: wikiPageIndex.publishedStatus,
       note: infraSystem.note,
-      sensitivity: infraSystem.sensitivity,
       createdAt: infraSystem.createdAt,
       updatedAt: infraSystem.updatedAt,
       createdBy: infraSystem.createdBy,
@@ -224,11 +204,7 @@ export async function getInfraSystemById(
     wikiPageId: row.wikiPageId,
     wikiPageRouteKey: row.wikiPageRouteKey ?? null,
     wikiPageTitle: row.wikiPageTitle ?? null,
-    wikiPageSensitivity: row.wikiPageSensitivity ?? null,
-    wikiPageRequiredPermission: row.wikiPageRequiredPermission ?? null,
-    wikiPagePublishedStatus: row.wikiPagePublishedStatus ?? null,
     note: row.note,
-    sensitivity: row.sensitivity as InfraSystemListItem["sensitivity"],
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt ? row.updatedAt.toISOString() : null,
     createdBy: row.createdBy,

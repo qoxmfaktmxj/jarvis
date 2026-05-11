@@ -3,11 +3,13 @@
  *
  * Phase-γ T7 — RBAC catalog pull (C 설계 Step 2).
  * DB는 권한 게이트키퍼. 탐색은 llm-shortlist.ts.
- * SELECT path/title/slug/aliases/tags/snippet/updated_at with workspace + sensitivity + permission + (optional) domain filter.
+ * SELECT path/title/slug/aliases/tags/snippet/updated_at with workspace + (optional) domain filter.
+ *
+ * 접근 제어: sensitivity / requiredPermission 격리는 RBAC + workspaceId 모델로
+ * 일원화되었다 (2026-05-11 sensitivity 제거 step 2A).
  */
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 
 export interface CatalogRow {
   path: string;
@@ -28,7 +30,6 @@ export interface CatalogOptions {
 
 export async function getCatalog(opts: CatalogOptions): Promise<CatalogRow[]> {
   const limit = Math.min(opts.limit ?? 500, 1500);
-  const sensitivityClause = buildWikiSensitivitySqlFragment(opts.userPermissions);
 
   const result = await db.execute<{
     path: string;
@@ -49,11 +50,6 @@ export async function getCatalog(opts: CatalogOptions): Promise<CatalogRow[]> {
       updated_at
     FROM wiki_page_index
     WHERE workspace_id = ${opts.workspaceId}
-      ${sensitivityClause}
-      AND (
-        required_permission IS NULL
-        OR required_permission = ANY(${opts.userPermissions})
-      )
       ${opts.domain ? sql`AND frontmatter->>'domain' = ${opts.domain}` : sql``}
     ORDER BY updated_at DESC
     LIMIT ${limit}

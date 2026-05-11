@@ -10,7 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 type ProjectFormValues = {
   name: string;
   description: string;
-  sensitivity: string;
   status: string;
 };
 
@@ -24,7 +23,6 @@ function normalizeDefaultValues(values?: Partial<ProjectFormValues>): ProjectFor
   return {
     name: values?.name ?? "",
     description: values?.description ?? "",
-    sensitivity: values?.sensitivity ?? "INTERNAL",
     status: values?.status ?? "active"
   };
 }
@@ -88,20 +86,6 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
       </label>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <label className="space-y-2">
-          <span className="text-sm font-medium text-surface-700">{t("sensitivity")}</span>
-          <select
-            name="sensitivity"
-            defaultValue={vals.sensitivity}
-            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
-          >
-            <option value="INTERNAL">INTERNAL</option>
-            <option value="PUBLIC">PUBLIC</option>
-            <option value="RESTRICTED">RESTRICTED</option>
-            <option value="SECRET_REF_ONLY">SECRET_REF_ONLY</option>
-          </select>
-        </label>
-
         <label className="space-y-2">
           <span className="text-sm font-medium text-surface-700">{t("status")}</span>
           <select

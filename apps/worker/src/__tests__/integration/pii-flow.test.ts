@@ -2,19 +2,18 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db } from "@jarvis/db/client";
 import { rawSource } from "@jarvis/db/schema/file";
 import { reviewQueue } from "@jarvis/db/schema/review-queue";
-import { workspace } from "@jarvis/db/schema/tenant";
 import { and, eq } from "drizzle-orm";
 
 // Skip integration tests if no DB is available
 const DB_AVAILABLE = !!process.env["DATABASE_URL"] || !!process.env["INTEGRATION_TEST"];
 
-// Unit-level integration: calls processIngest-equivalent logic by exercising
-// the exported step-0 branch via a synthetic raw_source row.
-// If processIngest is not directly exported, this test exercises the
-// pii-redactor + DB insertion path that ingest.ts uses.
+// Unit-level integration: exercises the pii-redactor + DB insertion path that
+// ingest.ts uses for SECRET keyword routing.
+// Step 2D (2026-05-11): raw_source.sensitivity 컬럼 제거 (D2=B). SECRET 키워드는
+// 여전히 ingest 흐름을 정지하고 review_queue 행을 만들지만, sensitivity 분류는
+// 더 이상 수행되지 않는다.
 
 import {
-  computeSensitivity,
   detectSecretKeywords,
 } from "../../lib/pii-redactor.js";
 
@@ -35,7 +34,6 @@ describe.skipIf(!DB_AVAILABLE)("PII flow integration (G3)", () => {
         storagePath: "test/pii.txt",
         mimeType: "text/plain",
         ingestStatus: "pending",
-        sensitivity: "INTERNAL",
         parsedContent: null,
       })
       .returning({ id: rawSource.id });
@@ -49,14 +47,11 @@ describe.skipIf(!DB_AVAILABLE)("PII flow integration (G3)", () => {
     await db.delete(rawSource).where(eq(rawSource.id, rawId));
   });
 
-  it("SECRET keyword → review_queue row + sensitivity SECRET_REF_ONLY", async () => {
+  it("SECRET keyword → review_queue row + ingestStatus queued_for_review", async () => {
     const text = "사내 매뉴얼. api_key=ABCDEF. 비밀번호: hunter2";
     const hits = detectSecretKeywords(text);
     expect(hits).toContain("api_key");
     expect(hits).toContain("비밀번호");
-
-    const newSens = computeSensitivity(text, "INTERNAL");
-    expect(newSens).toBe("SECRET_REF_ONLY");
 
     // simulate Step 0 branch
     await db.insert(reviewQueue).values({
@@ -69,7 +64,7 @@ describe.skipIf(!DB_AVAILABLE)("PII flow integration (G3)", () => {
     });
     await db
       .update(rawSource)
-      .set({ sensitivity: "SECRET_REF_ONLY", ingestStatus: "queued_for_review" })
+      .set({ ingestStatus: "queued_for_review" })
       .where(eq(rawSource.id, rawId));
 
     const queued = await db
@@ -88,7 +83,6 @@ describe.skipIf(!DB_AVAILABLE)("PII flow integration (G3)", () => {
       .select()
       .from(rawSource)
       .where(eq(rawSource.id, rawId));
-    expect(updated!.sensitivity).toBe("SECRET_REF_ONLY");
     expect(updated!.ingestStatus).toBe("queued_for_review");
   });
 });

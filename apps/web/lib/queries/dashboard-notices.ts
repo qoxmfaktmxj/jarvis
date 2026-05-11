@@ -7,7 +7,6 @@ export interface DashboardNoticeRow {
   id: string;
   title: string;
   bodyMd: string;
-  sensitivity: "PUBLIC" | "INTERNAL";
   pinned: boolean;
   publishedAt: Date | null;
   expiresAt: Date | null;
@@ -49,7 +48,6 @@ export async function listDashboardNotices(
       id: notice.id,
       title: notice.title,
       bodyMd: notice.bodyMd,
-      sensitivity: notice.sensitivity,
       pinned: notice.pinned,
       publishedAt: notice.publishedAt,
       expiresAt: notice.expiresAt,

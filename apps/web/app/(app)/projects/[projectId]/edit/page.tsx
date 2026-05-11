@@ -5,15 +5,6 @@ import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
-function coerceSensitivity(value: string | null) {
-  return value === "PUBLIC" ||
-    value === "INTERNAL" ||
-    value === "RESTRICTED" ||
-    value === "SECRET_REF_ONLY"
-    ? value
-    : "INTERNAL";
-}
-
 function coerceStatus(value: string | null) {
   return value === "active" ||
     value === "deprecated" ||
@@ -52,7 +43,6 @@ export default async function EditProjectPage({
         defaultValues={{
           name: project.name,
           description: project.description ?? "",
-          sensitivity: coerceSensitivity(project.sensitivity),
           status: coerceStatus(project.status)
         }}
       />

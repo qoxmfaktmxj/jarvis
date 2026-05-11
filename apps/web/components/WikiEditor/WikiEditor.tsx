@@ -87,13 +87,6 @@ function splitFrontmatter(input: string): FrontmatterParseResult {
       fm.title = value.replace(/^["']|["']$/g, "");
       continue;
     }
-    if (key === "sensitivity") {
-      const cleaned = value.replace(/^["']|["']$/g, "");
-      if (cleaned === "public" || cleaned === "internal" || cleaned === "restricted" || cleaned === "secret") {
-        fm.sensitivity = cleaned;
-      }
-      continue;
-    }
     try {
       fm[key] = JSON.parse(value);
     } catch {

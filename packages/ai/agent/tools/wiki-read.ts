@@ -1,11 +1,14 @@
 // packages/ai/agent/tools/wiki-read.ts
 //
 // slug 로 위키 페이지 전체 내용을 읽어 frontmatter + content + outbound wikilinks 반환.
+//
+// 2026-05-11 (D4=A): 페이지별 sensitivity/requiredPermission/publishedStatus
+// ACL 게이트 제거. workspaceId + slug 매칭으로 충분 — RBAC 게이트는 tool
+// 노출 단계에서 처리된다.
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq } from "drizzle-orm";
-import { canViewWikiPage } from "@jarvis/auth";
 import { readPage } from "@jarvis/wiki-fs";
 import { splitFrontmatter } from "@jarvis/wiki-fs/frontmatter";
 import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
@@ -19,7 +22,6 @@ export interface WikiReadOutput {
   slug: string;
   title: string;
   path: string;
-  sensitivity: string;
   /** raw frontmatter string or null when no frontmatter block present */
   frontmatter: unknown;
   /** frontmatter 제외한 본문 */
@@ -50,9 +52,6 @@ export const wikiRead: ToolDefinition<WikiReadInput, WikiReadOutput> = {
           slug: wikiPageIndex.slug,
           title: wikiPageIndex.title,
           path: wikiPageIndex.path,
-          sensitivity: wikiPageIndex.sensitivity,
-          requiredPermission: wikiPageIndex.requiredPermission,
-          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -67,19 +66,6 @@ export const wikiRead: ToolDefinition<WikiReadInput, WikiReadOutput> = {
         return err("not_found", `slug "${slug}" not found`);
       }
 
-      if (
-        !canViewWikiPage(
-          {
-            sensitivity: row.sensitivity,
-            requiredPermission: row.requiredPermission,
-            publishedStatus: row.publishedStatus,
-          },
-          ctx.permissions as string[],
-        )
-      ) {
-        return err("forbidden", "access denied");
-      }
-
       const raw = await readPage(ctx.workspaceId, row.path);
       const { frontmatter, body } = splitFrontmatter(raw);
       const links = parseWikilinks(body);
@@ -91,7 +77,6 @@ export const wikiRead: ToolDefinition<WikiReadInput, WikiReadOutput> = {
         slug: row.slug,
         title: row.title,
         path: row.path,
-        sensitivity: row.sensitivity,
         frontmatter: frontmatter ?? null,
         content: body,
         outbound_wikilinks,

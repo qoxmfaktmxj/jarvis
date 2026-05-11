@@ -2,14 +2,16 @@
 //
 // graphify CLI 래퍼 — Jarvis 위키 지식 그래프 쿼리.
 // Karpathy "LLM Wiki + Graphify" 패턴: neighbors/path/community/search 4가지 모드.
+//
+// 2026-05-11 (D4=A): wiki-page kind 노드에 대한 행 단위 sensitivity ACL 필터링
+// 제거. graphify 빌드 산출물 자체가 workspace-scoped(`GRAPHIFY_GRAPH_PATH`)이고,
+// tool 노출은 GRAPH_READ/ADMIN_ALL 권한 보유자에게만 허용된다 (ask-agent
+// 메인 루프 P1 #3 참조). DB 의 page index 를 다시 조회해 페이지별 게이트를
+// 거는 단계는 제거.
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { promisify } from "node:util";
-import { db } from "@jarvis/db/client";
-import { wikiPageIndex } from "@jarvis/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
-import { canViewWikiPage } from "@jarvis/auth";
 import { ok, err, type ToolDefinition } from "./types.js";
 
 const execFileP = promisify(execFile);
@@ -98,7 +100,7 @@ export const wikiGraphQuery: ToolDefinition<WikiGraphQueryInput, WikiGraphQueryO
     },
   },
 
-  async execute(input, ctx) {
+  async execute(input, _ctx) {
     // 1. graph.json 경로 결정 및 존재 확인
     const graphPath =
       process.env["GRAPHIFY_GRAPH_PATH"] ?? "graphify-out/graph.json";
@@ -129,60 +131,13 @@ export const wikiGraphQuery: ToolDefinition<WikiGraphQueryInput, WikiGraphQueryO
         maxBuffer: 2_000_000,
       });
 
-      // 4. stdout 파싱
+      // 4. stdout 파싱 — graphify-out 자체가 workspace-scoped 산출물이므로
+      // 추가 DB 게이트 없이 그대로 반환.
       const raw = JSON.parse(stdout) as Partial<WikiGraphQueryOutput>;
       const nodes: GraphNodeRef[] = raw.nodes ?? [];
       const edges: GraphEdgeRef[] = raw.edges ?? [];
 
-      // 5. wiki-page kind 노드에 sensitivity 필터 적용
-      const wikiPageSlugs = nodes
-        .filter((n) => n.kind === "wiki-page")
-        .map((n) => n.id);
-
-      let allowedSlugs = new Set<string>();
-      if (wikiPageSlugs.length > 0) {
-        const rows = await db
-          .select({
-            slug: wikiPageIndex.slug,
-            sensitivity: wikiPageIndex.sensitivity,
-            requiredPermission: wikiPageIndex.requiredPermission,
-            publishedStatus: wikiPageIndex.publishedStatus,
-          })
-          .from(wikiPageIndex)
-          .where(
-            and(
-              eq(wikiPageIndex.workspaceId, ctx.workspaceId),
-              inArray(wikiPageIndex.slug, wikiPageSlugs),
-            ),
-          );
-        allowedSlugs = new Set(
-          rows
-            .filter((r) =>
-              canViewWikiPage(
-                {
-                  sensitivity: r.sensitivity,
-                  requiredPermission: r.requiredPermission,
-                  publishedStatus: r.publishedStatus,
-                },
-                ctx.permissions as string[],
-              ),
-            )
-            .map((r) => r.slug),
-        );
-      }
-
-      // 6. 가시 노드 필터링: wiki-page 가 아닌 노드는 모두 통과
-      const visibleNodes = nodes.filter(
-        (n) => n.kind !== "wiki-page" || allowedSlugs.has(n.id),
-      );
-      const visibleNodeIds = new Set(visibleNodes.map((n) => n.id));
-
-      // 7. edge 필터링: 양 끝 노드가 모두 가시 집합 내에 있어야 함
-      const visibleEdges = edges.filter(
-        (e) => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target),
-      );
-
-      return ok({ nodes: visibleNodes, edges: visibleEdges, summary: raw.summary });
+      return ok({ nodes, edges, summary: raw.summary });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       const code = /timeout|ETIMEDOUT/i.test(msg) ? "timeout" : "unknown";

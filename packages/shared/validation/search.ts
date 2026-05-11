@@ -1,12 +1,11 @@
 import { z } from "zod";
-import { PAGE_TYPES, SENSITIVITY_LEVELS } from "../types/page.js";
+import { PAGE_TYPES } from "../types/page.js";
 
 export const searchQuerySchema = z.object({
   query: z.string().min(1).max(500),
   filters: z
     .object({
       pageType: z.array(z.enum(PAGE_TYPES)).optional(),
-      sensitivity: z.array(z.enum(SENSITIVITY_LEVELS)).optional(),
       dateFrom: z.string().datetime().optional(),
       dateTo: z.string().datetime().optional()
     })

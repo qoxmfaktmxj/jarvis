@@ -265,8 +265,6 @@ async function upsertPageIndex(
       slug: page.slug,
       type: fm.type ?? "concept",
       authority: fm.authority ?? "auto",
-      sensitivity: fm.sensitivity ?? "INTERNAL",
-      requiredPermission: fm.requiredPermission ?? "knowledge:read",
       frontmatter: fm as Record<string, unknown>,
       gitSha,
       stale: false,

@@ -593,7 +593,6 @@
       "viewAll": "전체",
       "badgePinned": "필독",
       "badgeNotice": "공지",
-      "badgeEvent": "이벤트",
       "empty": "게시된 공지가 없습니다."
     },
     "vacations": {
@@ -1087,11 +1086,6 @@
     "edit": "공지사항 수정",
     "delete": "공지사항 삭제",
     "deleteConfirm": "정말 삭제하시겠습니까?",
-    "sensitivity": {
-      "label": "공개 범위",
-      "PUBLIC": "전체 공개",
-      "INTERNAL": "내부 공개"
-    },
     "pinned": "상단 고정",
     "publishedAt": "게시 일시",
     "expiresAt": "만료 일시",

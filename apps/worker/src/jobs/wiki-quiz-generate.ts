@@ -88,7 +88,6 @@ interface CandidatePage {
   path: string;
   title: string;
   type: string;
-  sensitivity: string;
 }
 
 export async function listCandidatePages(
@@ -101,16 +100,14 @@ export async function listCandidatePages(
       workspaceId: wikiPageIndex.workspaceId,
       path: wikiPageIndex.path,
       title: wikiPageIndex.title,
-      type: wikiPageIndex.type,
-      sensitivity: wikiPageIndex.sensitivity
+      type: wikiPageIndex.type
     })
     .from(wikiPageIndex)
     .where(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
         eq(wikiPageIndex.publishedStatus, "published"),
-        sql`${wikiPageIndex.updatedAt} >= now() - interval '90 days'`,
-        inArray(wikiPageIndex.sensitivity, ["PUBLIC", "INTERNAL"])
+        sql`${wikiPageIndex.updatedAt} >= now() - interval '90 days'`
       )
     )
     .orderBy(desc(wikiPageIndex.updatedAt));

@@ -6,13 +6,12 @@
  *
  * 권한: INFRA_READ.
  *
- * B-P0-02 fix: 위키 페이지 deep link는 `wiki_page_index`의
- * (publishedStatus, requiredPermission, sensitivity)로 page-load 시 ACL 게이팅.
- * 미허가 사용자에게는 title/routeKey 자체를 노출하지 않는다 (정보 누설 방지).
+ * Step 2E (sensitivity 제거): A8 B-P0-02 fix의 `canViewWikiPage` 게이팅은 폐지됐다.
+ * `INFRA_READ` 가드를 통과하면 link된 wiki 페이지의 title/routeKey를 그대로 노출한다.
+ * (canViewWikiPage helper는 Step 1에서 stub으로 전환됐고, Step 3에서 함수 자체 제거.)
  */
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { canViewWikiPage } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
@@ -32,24 +31,6 @@ export default async function InfraSystemDetailPage(props: { params: Params }) {
 
   const t = await getTranslations("Infra");
 
-  // B-P0-02: only expose the wiki page link if the caller can actually view
-  // the page. The join in getInfraSystemById is sensitivity-blind, so we gate
-  // here against (publishedStatus, requiredPermission, sensitivity). If the
-  // ACL denies access we pass null fields to RunbookEmbed — it renders the
-  // "no runbook" CTA instead of leaking title / routeKey.
-  const wikiLinkAllowed =
-    row.wikiPageId !== null &&
-    row.wikiPageSensitivity !== null &&
-    row.wikiPagePublishedStatus !== null &&
-    canViewWikiPage(
-      {
-        sensitivity: row.wikiPageSensitivity,
-        requiredPermission: row.wikiPageRequiredPermission,
-        publishedStatus: row.wikiPagePublishedStatus,
-      },
-      session.permissions,
-    );
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -59,9 +40,9 @@ export default async function InfraSystemDetailPage(props: { params: Params }) {
       />
       <InfraSystemDetail row={row} />
       <RunbookEmbed
-        wikiPageId={wikiLinkAllowed ? row.wikiPageId : null}
-        wikiPageRouteKey={wikiLinkAllowed ? row.wikiPageRouteKey : null}
-        wikiPageTitle={wikiLinkAllowed ? row.wikiPageTitle : null}
+        wikiPageId={row.wikiPageId}
+        wikiPageRouteKey={row.wikiPageRouteKey}
+        wikiPageTitle={row.wikiPageTitle}
       />
     </div>
   );

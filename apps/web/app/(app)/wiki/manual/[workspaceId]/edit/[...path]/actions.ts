@@ -6,8 +6,6 @@ import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
 import { auditLog } from "@jarvis/db/schema/audit";
-import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
-import { and, eq } from "drizzle-orm";
 import { PERMISSIONS } from "@jarvis/shared/constants";
 import { wikiSavePayloadSchema } from "@jarvis/shared/validation";
 import { writeAuditLog } from "@jarvis/shared/audit-log";
@@ -16,7 +14,6 @@ import {
   defaultBotAuthor,
   parseFrontmatter,
   serializeFrontmatter,
-  type WikiSensitivity,
 } from "@jarvis/wiki-fs";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
 import { projectManualPage } from "@jarvis/wiki-agent/projection";
@@ -103,7 +100,9 @@ export async function saveWikiPage(
   } catch {
     return { ok: false, error: "invalid_input" };
   }
-  // 보안 필드는 클라이언트 입력에서 제거 — 기존 DB 값 유지 (A안)
+  // sensitivity / requiredPermission / publishedStatus 는 더 이상 row-level 격리
+  // 키가 아니므로 클라이언트 입력에서 제거하고 프론트매터에 덧붙이지 않는다.
+  // (2026-05-11 sensitivity 제거 step 2A)
   const {
     sensitivity: _s,
     requiredPermission: _rp,
@@ -111,33 +110,11 @@ export async function saveWikiPage(
     ...safeFm
   } = parsed.data.frontmatter;
 
-  // 기존 DB row에서 보안 필드 조회 (신규 페이지는 INTERNAL/knowledge:read defaults)
-  const existingRow = await db
-    .select({
-      sensitivity: wikiPageIndex.sensitivity,
-      requiredPermission: wikiPageIndex.requiredPermission,
-    })
-    .from(wikiPageIndex)
-    .where(
-      and(
-        eq(wikiPageIndex.workspaceId, parsed.data.workspaceId),
-        eq(wikiPageIndex.path, repoRelPath),
-      ),
-    )
-    .limit(1);
-
-  const securityFields = existingRow[0] ?? {
-    sensitivity: "INTERNAL" as WikiSensitivity,
-    requiredPermission: "knowledge:read" as string | null,
-  };
-
   const mergedFm = {
     ...safeFm,
     workspaceId: parsed.data.workspaceId,
     authority: "manual" as const,
     updated: new Date().toISOString(),
-    sensitivity: (securityFields.sensitivity ?? "INTERNAL") as WikiSensitivity,
-    requiredPermission: securityFields.requiredPermission ?? "knowledge:read",
   };
   const fileContent = serializeFrontmatter(mergedFm, incomingBody);
 

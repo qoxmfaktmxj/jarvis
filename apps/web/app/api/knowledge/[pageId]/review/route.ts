@@ -4,14 +4,13 @@ import { db } from '@jarvis/db/client';
 import { knowledgePage } from '@jarvis/db/schema/knowledge';
 import { reviewRequest } from '@jarvis/db/schema/review';
 import { requireApiSession } from '@/lib/server/api-auth';
-import { canAccessKnowledgeSensitivity, hasPermission } from '@jarvis/auth/rbac';
+import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { and, eq, desc } from 'drizzle-orm';
 
 type Params = { params: Promise<{ pageId: string }> };
 
 const REVIEW_REQUIRED_TYPES = new Set(['access', 'hr-policy', 'incident']);
-const REVIEW_REQUIRED_SENSITIVITIES = new Set(['RESTRICTED', 'SECRET_REF_ONLY']);
 
 const reviewActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('submit'), reviewerId: z.string().uuid().optional() }),
@@ -33,9 +32,6 @@ export async function POST(request: NextRequest, { params }: Params) {
     .limit(1);
 
   if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  if (!canAccessKnowledgeSensitivity(session, page.sensitivity ?? 'INTERNAL')) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
 
   let body: unknown;
   try { body = await request.json(); } catch {
@@ -61,9 +57,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       );
     }
 
-    const needsReview =
-      REVIEW_REQUIRED_TYPES.has(page.pageType) ||
-      REVIEW_REQUIRED_SENSITIVITIES.has(page.sensitivity ?? '');
+    const needsReview = REVIEW_REQUIRED_TYPES.has(page.pageType);
 
     const result = await db.transaction(async (tx) => {
       await tx.update(knowledgePage).set({ publishStatus: 'review', updatedAt: new Date() }).where(eq(knowledgePage.id, pageId));

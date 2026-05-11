@@ -5,10 +5,6 @@ import {
   isSecretRef,
   type SecretResolver
 } from "@jarvis/secret";
-import {
-  canAccessProjectAccessEntry,
-  canResolveProjectSecrets
-} from "@jarvis/auth/rbac";
 import { and, count, desc, eq, ilike, isNotNull, or } from "drizzle-orm";
 
 type ProjectsDb = typeof db;
@@ -22,7 +18,6 @@ export interface ProjectTableRow {
   prodDomainUrl: string | null;
   devDomainUrl: string | null;
   status: string;
-  sensitivity: string;
   ownerName: string | null;
   updatedAt: Date;
 }
@@ -73,7 +68,6 @@ type CreateProjectInput = {
   companyId: string;
   name: string;
   description?: string;
-  sensitivity?: "PUBLIC" | "INTERNAL" | "RESTRICTED" | "SECRET_REF_ONLY";
   status?: "active" | "deprecated" | "decommissioned";
   prodDomainUrl?: string;
   prodConnectType?: "IP" | "VPN" | "VDI" | "RE";
@@ -155,7 +149,6 @@ export async function listProjects({
         prodDomainUrl: project.prodDomainUrl,
         devDomainUrl: project.devDomainUrl,
         status: project.status,
-        sensitivity: project.sensitivity,
         updatedAt: project.updatedAt,
         companyCode: company.code,
         companyName: company.name,
@@ -203,7 +196,6 @@ export async function createProject({
       ownerId: userId,
       name: input.name,
       description: normalizeOptionalString(input.description),
-      sensitivity: input.sensitivity ?? "INTERNAL",
       status: input.status ?? "active",
       prodDomainUrl: normalizeOptionalString(input.prodDomainUrl),
       prodConnectType: normalizeOptionalString(input.prodConnectType),
@@ -261,7 +253,6 @@ export async function updateProject({
       ...(input.description !== undefined
         ? { description: normalizeOptionalString(input.description) }
         : {}),
-      ...(input.sensitivity !== undefined ? { sensitivity: input.sensitivity } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.prodDomainUrl !== undefined
         ? { prodDomainUrl: normalizeOptionalString(input.prodDomainUrl) }
@@ -374,15 +365,22 @@ async function resolveSecretField(
 export async function listProjectAccessEntries({
   workspaceId,
   projectId,
-  sessionRoles,
-  sessionPermissions,
   database = db,
   resolver = createEnvSecretResolver()
 }: {
   workspaceId: string;
   projectId: string;
-  sessionRoles: string[];
-  sessionPermissions: string[];
+  /**
+   * @deprecated Step 2E (sensitivity 제거): `requiredRole` row gating은 폐지됐다.
+   * PROJECT_READ 권한 보유자는 모든 access entry 메타데이터·secret을 조회한다.
+   * 본 매개변수는 호출처 호환을 위해 잠시 유지하나 무시된다. Step 3에서 시그니처에서도 제거.
+   */
+  sessionRoles?: string[];
+  /**
+   * @deprecated Step 2E (sensitivity 제거 + D5): `canResolveProjectSecrets` 분기 폐지.
+   * PROJECT_READ 보유자는 secret을 항상 resolve한다. Step 3에서 시그니처에서도 제거.
+   */
+  sessionPermissions?: string[];
   database?: ProjectsDb;
   resolver?: SecretResolver;
 }): Promise<ResolvedAccessEntry[] | null> {
@@ -399,17 +397,13 @@ export async function listProjectAccessEntries({
     )
     .orderBy(projectAccess.sortOrder);
 
-  const visibleRows = rows.filter((row: ProjectAccessRow) =>
-    canAccessProjectAccessEntry(sessionRoles, row.requiredRole)
-  );
-
-  const allowResolve = canResolveProjectSecrets(
-    sessionPermissions,
-    proj.sensitivity
-  );
+  // D5 결정 (Step 2E): PROJECT_READ 가드를 통과한 사용자에게는 모든 secret 노출.
+  // 권한 분기 제거 — `canResolveProjectSecrets`는 stub(항상 true) 이고, 호출 자체를
+  // 제거해 의도를 명시한다.
+  const allowResolve = true;
 
   return Promise.all(
-    visibleRows.map(async (row: ProjectAccessRow) => ({
+    rows.map(async (row: ProjectAccessRow) => ({
       id: row.id,
       accessType: row.accessType,
       label: row.label,

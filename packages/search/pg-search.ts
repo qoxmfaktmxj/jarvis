@@ -5,7 +5,8 @@
 // 더 이상 존재하지 않는다. FTS(tsvector) + pg_trgm fallback 만 남는다.
 // 기존 `mergeByRRF`, `assertValidEmbedding`, `runVectorSearch`, `embedQuery`
 // 옵션 등은 전부 제거.
-import { buildLegacyKnowledgeSensitivitySqlFragment } from '@jarvis/auth/rbac';
+// 2026-05-11: sensitivity 제거 (D1=B). knowledge_page.sensitivity 컬럼이 drop 되어
+// secret filter 도 사라짐. RBAC + workspaceId 만으로 격리.
 import { db } from '@jarvis/db/client';
 import { searchLog, popularSearch } from '@jarvis/db/schema';
 import { sql, type SQL } from 'drizzle-orm';
@@ -190,7 +191,6 @@ export class PgSearchAdapter implements SearchAdapter {
       id: string;
       title: string;
       page_type: string;
-      sensitivity: string;
       updated_at: Date;
       fts_rank: number;
       trgm_sim: number;
@@ -202,7 +202,6 @@ export class PgSearchAdapter implements SearchAdapter {
         id,
         title,
         page_type,
-        sensitivity,
         updated_at,
         ts_rank_cd(search_vector, ${tsquerySql}, 4)   AS fts_rank,
         similarity(title, ${term})                     AS trgm_sim,
@@ -268,7 +267,6 @@ export class PgSearchAdapter implements SearchAdapter {
       id: string;
       title: string;
       page_type: string;
-      sensitivity: string;
       updated_at: Date;
       trgm_sim: number;
       headline: string;
@@ -278,7 +276,6 @@ export class PgSearchAdapter implements SearchAdapter {
         id,
         title,
         page_type,
-        sensitivity,
         updated_at,
         similarity(title, ${term})          AS trgm_sim,
         left(coalesce(summary, ''), 300)     AS headline,
@@ -302,7 +299,6 @@ export class PgSearchAdapter implements SearchAdapter {
       title: row.title,
       headline: sanitizeHeadline(row.headline ?? ''),
       pageType: row.page_type,
-      sensitivity: row.sensitivity,
       updatedAt: row.updated_at.toISOString(),
       ftsRank: 0,
       trgmSim: row.trgm_sim,
@@ -330,7 +326,6 @@ export class PgSearchAdapter implements SearchAdapter {
       id: string;
       title: string;
       page_type: string;
-      sensitivity: string;
       updated_at: Date;
       fts_rank: number;
       trgm_sim: number;
@@ -346,7 +341,6 @@ export class PgSearchAdapter implements SearchAdapter {
       title: row.title,
       headline: sanitizeHeadline(row.headline ?? ''),
       pageType: row.page_type,
-      sensitivity: row.sensitivity,
       updatedAt: row.updated_at.toISOString(),
       ftsRank: row.fts_rank,
       trgmSim: row.trgm_sim,
@@ -366,15 +360,11 @@ export class PgSearchAdapter implements SearchAdapter {
   }
 
   /**
-   * Returns Drizzle SQL fragment to exclude pages the user cannot access,
-   * based on session.permissions (mirrors legacyCanAccessSensitivity in packages/auth/rbac.ts).
-   *
-   * - SYSTEM_ACCESS_SECRET or ADMIN_ALL → empty fragment (can see everything)
-   * - SYSTEM_READ only                  → exclude SECRET_REF_ONLY
-   * - no elevated permission            → AND 1 = 0
+   * @deprecated 2026-05-11: sensitivity 컬럼 제거. 빈 SQL fragment 반환.
+   * 호출처는 점진적으로 제거 예정.
    */
-  private buildSecretFilter(userPermissions: string[]): SQL {
-    return buildLegacyKnowledgeSensitivitySqlFragment(userPermissions);
+  private buildSecretFilter(_userPermissions: string[]): SQL {
+    return sql``;
   }
 
   /**
@@ -396,12 +386,7 @@ export class PgSearchAdapter implements SearchAdapter {
       parts.push(sql` AND page_type = ${query.pageType}`);
     }
 
-    // Whitelist known sensitivity values
-    const VALID_SENSITIVITIES = new Set(['PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY']);
-    if (query.sensitivity && VALID_SENSITIVITIES.has(query.sensitivity)) {
-      // sensitivity is a whitelisted enum — safe to bind as a parameter
-      parts.push(sql` AND sensitivity = ${query.sensitivity}`);
-    }
+    // 2026-05-11: sensitivity 컬럼 제거. 필터 자체 폐기.
 
     // Strict ISO date validation — only allow YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ patterns
     // Values are parameter-bound by Drizzle (no sql.raw) even after validation

@@ -4,7 +4,6 @@ import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
 import { updateNoticeSchema } from '@jarvis/shared/validation';
 import {
-  canViewInternalNotice,
   deleteNotice,
   getNoticeById,
   updateNotice,
@@ -28,10 +27,8 @@ export async function GET(
   const { session } = auth;
 
   const { id } = await ctx.params;
-  // P1 #10 — INTERNAL 공지는 내부 직원 role 보유자만 열람. 미보유자에겐 404 동등.
   // A9 F3 — non-admin 에게 만료/미발행 공지 노출 차단 (ADMIN 은 통과).
   const found = await getNoticeById(id, session.workspaceId, {
-    canViewInternal: canViewInternalNotice(session.roles),
     actorRole: pickActorRole(session.roles),
   });
   if (!found) {

@@ -13,8 +13,7 @@ function make(p: Partial<W>): W {
     authorId: p.authorId ?? "u",
     authorName: p.authorName ?? "작성자",
     createdAt: p.createdAt ?? new Date("2026-04-20T00:00:00Z"),
-    updatedAt: p.updatedAt ?? new Date("2026-04-20T00:00:00Z"),
-    sensitivity: p.sensitivity ?? "INTERNAL"
+    updatedAt: p.updatedAt ?? new Date("2026-04-20T00:00:00Z")
   };
 }
 

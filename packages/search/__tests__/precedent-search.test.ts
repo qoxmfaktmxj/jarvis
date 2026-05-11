@@ -1,6 +1,8 @@
 // packages/search/__tests__/precedent-search.test.ts
 // Phase-Harness (2026-04-23): 벡터 검색 제거 후 BM25/trigram 기반 adapter 의
 // 단위 테스트. embedQuery 옵션과 vector_sim 필드는 더 이상 존재하지 않는다.
+// Step 2D (2026-05-11): precedent_case.sensitivity 컬럼 제거 (D2=B) — sensitivity
+// SELECT/필드 모두 삭제.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { SearchQuery } from '../types.js';
@@ -39,7 +41,6 @@ describe('PrecedentSearchAdapter (Phase-Harness: BM25/trigram)', () => {
           id: 'case-1',
           title: '연차 신청 오류',
           cluster_label: '근태 / 연차',
-          sensitivity: 'INTERNAL',
           updated_at: new Date(),
           trgm_sim: 0.73,
           total_count: '1',
@@ -55,6 +56,8 @@ describe('PrecedentSearchAdapter (Phase-Harness: BM25/trigram)', () => {
     expect(hit.trgmSim).toBeCloseTo(0.73, 5);
     expect(hit.hybridScore).toBeCloseTo(0.73, 5);
     expect(hit.headline).toBe('근태 / 연차');
+    // Step 2D: sensitivity 컬럼 제거 — hit 에 sensitivity 필드 없음
+    expect(hit.sensitivity).toBeUndefined();
   });
 
   it('never reads knowledge_page (physical Lane A/B isolation)', async () => {

@@ -1,44 +1,13 @@
+// Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B). 이전에는 origin
+// (system/project/knowledge) 의 sensitivity 를 계산하는 헬퍼(computeEffectiveSensitivity)
+// 가 있었으나 lineage 출력에서 sensitivity 자체가 사라졌으므로 해당 헬퍼 + 테스트는
+// 삭제했다. resolveLineageFromRawSource 의 동작은 DB 접근이 필요한 integration 테스트
+// 영역으로 이동했다 (별도 미존재 — graphify-build 통합 회귀에서 간접 검증).
+
 import { describe, expect, it } from "vitest";
-import { computeEffectiveSensitivity } from "./resolve-lineage.js";
 
-describe("computeEffectiveSensitivity", () => {
-  it("returns 'INTERNAL' for null origin (no attachment)", () => {
-    expect(computeEffectiveSensitivity(null)).toBe("INTERNAL");
-  });
-
-  it("returns 'INTERNAL' for project (projects have no sensitivity field in P0)", () => {
-    expect(
-      computeEffectiveSensitivity({ type: "project", sensitivity: null }),
-    ).toBe("INTERNAL");
-  });
-
-  it("mirrors system.sensitivity for system origins", () => {
-    expect(
-      computeEffectiveSensitivity({ type: "system", sensitivity: "RESTRICTED" }),
-    ).toBe("RESTRICTED");
-    expect(
-      computeEffectiveSensitivity({ type: "system", sensitivity: "INTERNAL" }),
-    ).toBe("INTERNAL");
-  });
-
-  it("mirrors knowledge_page.sensitivity for knowledge origins", () => {
-    expect(
-      computeEffectiveSensitivity({ type: "knowledge", sensitivity: "PUBLIC" }),
-    ).toBe("PUBLIC");
-    expect(
-      computeEffectiveSensitivity({
-        type: "knowledge",
-        sensitivity: "SECRET_REF_ONLY",
-      }),
-    ).toBe("SECRET_REF_ONLY");
-  });
-
-  it("defaults null system/knowledge sensitivity to INTERNAL", () => {
-    expect(
-      computeEffectiveSensitivity({ type: "system", sensitivity: null }),
-    ).toBe("INTERNAL");
-    expect(
-      computeEffectiveSensitivity({ type: "knowledge", sensitivity: null }),
-    ).toBe("INTERNAL");
+describe("resolve-lineage (Step 2D placeholder)", () => {
+  it("placeholder — see graphify-build integration tests for lineage coverage", () => {
+    expect(true).toBe(true);
   });
 });

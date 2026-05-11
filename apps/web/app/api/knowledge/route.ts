@@ -12,13 +12,10 @@ const PAGE_TYPES = [
   'hr-policy', 'tool-guide', 'faq', 'decision', 'incident', 'analysis', 'glossary',
 ] as const;
 
-const SENSITIVITIES = ['PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY'] as const;
-
 const createPageSchema = z.object({
   slug: z.string().min(1).max(500).regex(/^[a-z0-9-/]+$/, 'Slug must be lowercase alphanumeric with hyphens/slashes'),
   title: z.string().min(1).max(500),
   pageType: z.enum(PAGE_TYPES),
-  sensitivity: z.enum(SENSITIVITIES).default('INTERNAL'),
   mdxContent: z.string().min(1),
   frontmatter: z.record(z.unknown()).optional().default({}),
   changeNote: z.string().max(500).optional(),
@@ -33,14 +30,12 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const pageType = searchParams.get('pageType') ?? undefined;
   const publishStatus = searchParams.get('publishStatus') ?? undefined;
-  const sensitivity = searchParams.get('sensitivity') ?? undefined;
   const q = searchParams.get('q') ?? undefined;
   const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
   const limit = Math.min(100, Math.max(1, Number(searchParams.get('limit') ?? '20')));
   const result = await getKnowledgePages(session.workspaceId, session.permissions ?? [], {
     pageType,
     publishStatus,
-    sensitivity,
     q,
     page,
     limit,
@@ -67,7 +62,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 422 });
   }
 
-  const { slug, title, pageType, sensitivity, mdxContent, frontmatter, changeNote } = parsed.data;
+  const { slug, title, pageType, mdxContent, frontmatter, changeNote } = parsed.data;
   const workspaceId = session.workspaceId;
   const createdBy = session.userId;
 
@@ -85,7 +80,7 @@ export async function POST(request: NextRequest) {
   const result = await db.transaction(async (tx) => {
     const insertedPages = await tx
       .insert(knowledgePage)
-      .values({ workspaceId, slug, title, pageType, sensitivity, publishStatus: 'draft', createdBy })
+      .values({ workspaceId, slug, title, pageType, publishStatus: 'draft', createdBy })
       .returning();
 
     const page = insertedPages[0];

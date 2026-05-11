@@ -1,7 +1,6 @@
 import {
   boolean,
   index,
-  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -12,11 +11,6 @@ import { relations } from "drizzle-orm";
 import { workspace } from "./tenant.js";
 import { user } from "./user.js";
 
-export const noticeSensitivityEnum = pgEnum("notice_sensitivity", [
-  "PUBLIC",
-  "INTERNAL"
-]);
-
 export const notice = pgTable(
   "notice",
   {
@@ -26,9 +20,6 @@ export const notice = pgTable(
       .references(() => workspace.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 500 }).notNull(),
     bodyMd: text("body_md").notNull(),
-    sensitivity: noticeSensitivityEnum("sensitivity")
-      .default("INTERNAL")
-      .notNull(),
     pinned: boolean("pinned").default(false).notNull(),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),

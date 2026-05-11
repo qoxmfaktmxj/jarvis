@@ -2,10 +2,9 @@
 
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
-import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
-import { eq, desc, notInArray, and } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { Network } from 'lucide-react';
@@ -26,21 +25,12 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   const workspaceId = session.workspaceId;
   const { snapshot: selectedId } = await searchParams;
 
-  // Build sensitivity filter at DB level so the limit applies after authorization,
-  // not before — otherwise 20 newer unauthorized snapshots could hide older done ones.
-  const hasAdminAll = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
-  const sensitivityCondition = hasAdminAll
-    ? undefined
-    : notInArray(graphSnapshot.sensitivity, ['RESTRICTED', 'SECRET_REF_ONLY']);
-
+  // Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B) — 페이지 권한
+  // (graph:read) + workspaceId 격리만 사용한다.
   const authorizedSnapshots = await db
     .select()
     .from(graphSnapshot)
-    .where(
-      sensitivityCondition
-        ? and(eq(graphSnapshot.workspaceId, workspaceId), sensitivityCondition)
-        : eq(graphSnapshot.workspaceId, workspaceId),
-    )
+    .where(eq(graphSnapshot.workspaceId, workspaceId))
     .orderBy(desc(graphSnapshot.createdAt))
     .limit(100);
 
@@ -75,7 +65,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
 
       <div className="space-y-6">
         {/* Build lifecycle overview — always visible if workspace has any snapshots */}
-        <BuildLifecycleSection workspaceId={workspaceId} permissions={session.permissions} />
+        <BuildLifecycleSection workspaceId={workspaceId} />
 
         {/* No snapshots at all */}
         {authorizedSnapshots.length === 0 && (

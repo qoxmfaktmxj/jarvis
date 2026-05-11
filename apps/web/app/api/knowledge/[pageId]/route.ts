@@ -11,7 +11,6 @@ type Params = { params: Promise<{ pageId: string }> };
 
 const updatePageSchema = z.object({
   title: z.string().min(1).max(500).optional(),
-  sensitivity: z.enum(['PUBLIC', 'INTERNAL', 'RESTRICTED', 'SECRET_REF_ONLY']).optional(),
   mdxContent: z.string().min(1),
   frontmatter: z.record(z.unknown()).optional(),
   changeNote: z.string().max(500).optional(),
@@ -63,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Validation failed', issues: parsed.error.issues }, { status: 422 });
   }
 
-  const { mdxContent, frontmatter, changeNote, title, sensitivity, summary } = parsed.data;
+  const { mdxContent, frontmatter, changeNote, title, summary } = parsed.data;
   const pageTitle = title ?? page.title;
 
   const result = await db.transaction(async (tx) => {
@@ -91,7 +90,6 @@ export async function PUT(request: NextRequest, { params }: Params) {
     // Move back to draft when editing a published page
     const updateValues: Record<string, unknown> = { updatedAt: new Date() };
     if (title) updateValues.title = title;
-    if (sensitivity) updateValues.sensitivity = sensitivity;
     if (summary !== undefined) updateValues.summary = summary;
     if (page.publishStatus === 'published') updateValues.publishStatus = 'draft';
 

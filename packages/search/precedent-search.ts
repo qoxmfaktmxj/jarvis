@@ -8,9 +8,11 @@
 // 의 wiki-grep 동급 도구로 흡수되거나 별도 case-grep tool 로 분리될 수
 // 있음 (Phase G 이후 과제).
 //
+// Step 2D (2026-05-11): precedent_case.sensitivity 컬럼 제거 (D2=B) — RBAC + workspaceId
+// 만 사용. sensitivity SQL fragment / select 컬럼 / hit.sensitivity 모두 삭제.
+//
 // 격리 원칙은 유지: 이 adapter 는 절대 knowledge_page 를 조회하지 않는다.
 
-import { buildLegacyKnowledgeSensitivitySqlFragment } from '@jarvis/auth/rbac';
 import { db } from '@jarvis/db/client';
 import { sql } from 'drizzle-orm';
 import type { SearchAdapter } from './adapter.js';
@@ -41,9 +43,6 @@ export class PrecedentSearchAdapter implements SearchAdapter {
     const limit = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const offset = ((query.page ?? 1) - 1) * limit;
 
-    // Apply same sensitivity-based RBAC as Lane A.
-    const secretFragment = buildLegacyKnowledgeSensitivitySqlFragment(query.userPermissions);
-
     // BM25-like 근사: title + symptom + cluster_label 에 pg_trgm similarity 사용.
     // precedent_case 는 search_vector 컬럼이 없어 FTS 대신 trigram 유사도로 대체.
     //
@@ -70,7 +69,6 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       id: string;
       title: string;
       cluster_label: string | null;
-      sensitivity: string;
       updated_at: Date;
       trgm_sim: number;
       total_count: string;
@@ -79,7 +77,6 @@ export class PrecedentSearchAdapter implements SearchAdapter {
         id,
         title,
         cluster_label,
-        sensitivity,
         updated_at,
         GREATEST(
           similarity(title, ${q}),
@@ -94,7 +91,6 @@ export class PrecedentSearchAdapter implements SearchAdapter {
           OR symptom ILIKE ${likePattern}
           OR cluster_label ILIKE ${likePattern}
         )
-        ${secretFragment}
       ORDER BY trgm_sim DESC, updated_at DESC
       LIMIT ${limit} OFFSET ${offset}
     `);
@@ -106,7 +102,6 @@ export class PrecedentSearchAdapter implements SearchAdapter {
       resourceType: 'case',
       title: row.title,
       headline: row.cluster_label ?? '',
-      sensitivity: row.sensitivity,
       updatedAt: row.updated_at.toISOString(),
       ftsRank: 0,
       trgmSim: Number(row.trgm_sim),

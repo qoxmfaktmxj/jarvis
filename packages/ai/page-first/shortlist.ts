@@ -20,19 +20,13 @@
  *   - tags ILIKE hit       — low weight (x1, frontmatter tags signal)
  *   - freshness bonus      — `updatedAt` recency tiebreaker
  *
- * Permission filter:
- *   - Uses `buildWikiSensitivitySqlFilter` (Phase-W3 T5) — the strict
- *     wiki-sensitivity.ts `canViewSensitivity` contract: RESTRICTED requires
- *     KNOWLEDGE_REVIEW, SECRET_REF_ONLY requires SYSTEM_ACCESS_SECRET. This
- *     supersedes the legacy (looser) `buildKnowledgeSensitivitySqlFilter`
- *     that treated KNOWLEDGE_UPDATE as sufficient for RESTRICTED.
- *   - `requiredPermission` (wiki_page_index column, nullable) enforces
- *     page-level ACL: if set, the caller MUST carry that permission string.
+ * 접근 제어: sensitivity / requiredPermission 격리는 RBAC + workspaceId 모델로
+ * 일원화되었다 (2026-05-11 sensitivity 제거 step 2A). 본 함수는 workspace 범위
+ * 안에서만 동작한다.
  */
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 import { pgTextArray } from "../sql-utils.js";
 
 export interface ShortlistHit {
@@ -40,8 +34,6 @@ export interface ShortlistHit {
   path: string;
   title: string;
   slug: string;
-  sensitivity: string;
-  requiredPermission: string | null;
   updatedAt: Date;
   score: number;
 }
@@ -98,7 +90,7 @@ function tokenize(question: string): string[] {
 export async function legacyLexicalShortlist(
   opts: ShortlistOptions,
 ): Promise<ShortlistHit[]> {
-  const { workspaceId, userPermissions, question } = opts;
+  const { workspaceId, question } = opts;
   const topK = opts.topK ?? 20;
   const tokens = tokenize(question);
 
@@ -106,12 +98,6 @@ export async function legacyLexicalShortlist(
   // return something when the user types e.g. "?" or whitespace; the
   // synthesis step will then refuse to answer.)
   const hasTokens = tokens.length > 0;
-
-  const sensitivityClause = buildWikiSensitivitySqlFragment(userPermissions, {
-    column: "wpi.sensitivity",
-  });
-
-  const permArray = pgTextArray(userPermissions);
 
   // Optional domain filter. Bound via parameter (not sql.raw) to avoid SQL
   // injection even though callers today only pass trusted constants.
@@ -126,23 +112,14 @@ export async function legacyLexicalShortlist(
       path: string;
       title: string;
       slug: string;
-      sensitivity: string;
-      required_permission: string | null;
       updated_at: Date;
     }>(sql`
       SELECT
-        wpi.id, wpi.path, wpi.title, wpi.slug,
-        wpi.sensitivity, wpi.required_permission, wpi.updated_at
+        wpi.id, wpi.path, wpi.title, wpi.slug, wpi.updated_at
       FROM wiki_page_index wpi
       WHERE wpi.workspace_id = ${workspaceId}::uuid
         AND wpi.published_status = 'published'
         AND wpi.stale = FALSE
-        AND (
-          wpi.required_permission IS NULL
-          OR wpi.required_permission = ANY(${permArray})
-          OR 'admin:all' = ANY(${permArray})
-        )
-        ${sensitivityClause}
         ${domainClause}
       ORDER BY wpi.updated_at DESC
       LIMIT ${topK}
@@ -152,8 +129,6 @@ export async function legacyLexicalShortlist(
       path: r.path,
       title: r.title,
       slug: r.slug,
-      sensitivity: r.sensitivity,
-      requiredPermission: r.required_permission,
       updatedAt: r.updated_at,
       score: 0,
     }));
@@ -163,15 +138,11 @@ export async function legacyLexicalShortlist(
 
   // Scoring weights: title=3, alias=2, slug=1, path=1, tags=1, +freshness.
   // extract(epoch) / 86400000 gives a monotonic updatedAt tiebreaker.
-  // Overfetch topK*3 to compensate for requiredPermission filtering in SQL.
-  const fetchLimit = topK * 3;
   const rows = await db.execute<{
     id: string;
     path: string;
     title: string;
     slug: string;
-    sensitivity: string;
-    required_permission: string | null;
     updated_at: Date;
     score: number;
   }>(sql`
@@ -180,8 +151,6 @@ export async function legacyLexicalShortlist(
       wpi.path,
       wpi.title,
       wpi.slug,
-      wpi.sensitivity,
-      wpi.required_permission,
       wpi.updated_at,
       (
         (SELECT COUNT(*) FROM unnest(${tokenArray}) AS t
@@ -203,18 +172,11 @@ export async function legacyLexicalShortlist(
     WHERE wpi.workspace_id = ${workspaceId}::uuid
       AND wpi.published_status = 'published'
       AND wpi.stale = FALSE
-      AND (
-        wpi.required_permission IS NULL
-        OR wpi.required_permission = ANY(${permArray})
-        OR 'admin:all' = ANY(${permArray})
-      )
-      ${sensitivityClause}
       ${domainClause}
     ORDER BY score DESC, wpi.updated_at DESC
-    LIMIT ${fetchLimit}
+    LIMIT ${topK}
   `);
 
-  // requiredPermission is now enforced in SQL WHERE. Map and trim to topK.
   return rows.rows
     .slice(0, topK)
     .map((r) => ({
@@ -222,8 +184,6 @@ export async function legacyLexicalShortlist(
       path: r.path,
       title: r.title,
       slug: r.slug,
-      sensitivity: r.sensitivity,
-      requiredPermission: r.required_permission,
       updatedAt: r.updated_at,
       score: Number(r.score),
     }));

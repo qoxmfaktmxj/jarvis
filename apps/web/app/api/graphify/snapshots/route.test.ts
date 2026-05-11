@@ -1,14 +1,10 @@
 /**
- * P1 #4 — graph snapshots 목록 API ACL 회귀 테스트.
+ * GET /api/graphify/snapshots — 인증/권한 회귀 테스트.
  *
- * 기존: knowledge:read 만 요구하고 graph sensitivity 필터링이 없어서, 같은
- * workspace 내 graph snapshot 을 모든 직원이 권한 무관하게 조회 가능했음.
- * 동일 도메인의 graph file API 는 graph:read + canAccessGraphSnapshotSensitivity
- * 를 모두 검사하는데 비해 약한 ACL.
- *
- * 픽스 후 동작:
- *   1. 권한: knowledge:read → graph:read 또는 admin:all
- *   2. 결과 행 sensitivity 필터: RESTRICTED/SECRET_REF_ONLY 는 admin:all 만
+ * Step 2D (2026-05-11): graph_snapshot.sensitivity 컬럼 제거 (D2=B). row-level
+ * sensitivity 필터링은 사라지고 RBAC + workspaceId 격리만 사용한다. 따라서:
+ *   1. graph:read 권한이 없으면 requireApiSession 이 401/403 반환.
+ *   2. graph:read 보유자 → workspace 의 모든 snapshot 반환 (sensitivity 필터 없음).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -51,7 +47,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-describe("GET /api/graphify/snapshots — P1 #4 ACL", () => {
+describe("GET /api/graphify/snapshots — Step 2D (RBAC + workspace only)", () => {
   it("graph:read 권한 없으면 requireApiSession 이 401/403 반환 → 그대로 통과", async () => {
     requireApiSessionMock.mockResolvedValue({
       response: NextResponse.json({ error: "forbidden" }, { status: 403 }),
@@ -62,36 +58,19 @@ describe("GET /api/graphify/snapshots — P1 #4 ACL", () => {
     expect(requireApiSessionMock).toHaveBeenCalledWith(expect.anything(), "graph:read");
   });
 
-  it("graph:read 보유자: RESTRICTED/SECRET_REF_ONLY snapshot 은 응답에서 제외", async () => {
+  it("graph:read 보유자: workspace 의 모든 snapshot 반환 (sensitivity 필터 없음)", async () => {
     requireApiSessionMock.mockResolvedValue({
       session: { workspaceId: "ws-1", permissions: ["graph:read"] },
     });
     dbSelectMock.mockReturnValue([
-      { id: "s1", title: "Public", sensitivity: "PUBLIC" },
-      { id: "s2", title: "Internal", sensitivity: "INTERNAL" },
-      { id: "s3", title: "Restricted", sensitivity: "RESTRICTED" },
-      { id: "s4", title: "Secret", sensitivity: "SECRET_REF_ONLY" },
+      { id: "s1", title: "First" },
+      { id: "s2", title: "Second" },
+      { id: "s3", title: "Third" },
     ]);
     const res = await GET(makeReq());
     expect(res.status).toBe(200);
-    const body = await res.json() as { snapshots: Array<{ id: string }> };
-    const ids = body.snapshots.map((s) => s.id);
-    expect(ids).toEqual(["s1", "s2"]);
-  });
-
-  it("admin:all 보유자: 전체 sensitivity 노출", async () => {
-    requireApiSessionMock.mockResolvedValue({
-      session: { workspaceId: "ws-1", permissions: ["admin:all"] },
-    });
-    dbSelectMock.mockReturnValue([
-      { id: "s1", sensitivity: "PUBLIC" },
-      { id: "s3", sensitivity: "RESTRICTED" },
-      { id: "s4", sensitivity: "SECRET_REF_ONLY" },
-    ]);
-    const res = await GET(makeReq());
-    expect(res.status).toBe(200);
-    const body = await res.json() as { snapshots: Array<{ id: string }> };
-    expect(body.snapshots.map((s) => s.id)).toEqual(["s1", "s3", "s4"]);
+    const body = (await res.json()) as { snapshots: Array<{ id: string }> };
+    expect(body.snapshots.map((s) => s.id)).toEqual(["s1", "s2", "s3"]);
   });
 });
 

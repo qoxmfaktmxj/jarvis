@@ -239,15 +239,7 @@ describe("dashboard queries", () => {
         { column: "wiki.workspaceId", value: "ws-1" },
         { column: "wiki.publishedStatus", value: "published" },
         { value: "wiki.freshnessSlaDays", op: "isNotNull" },
-        expect.objectContaining({ column: "wiki.updatedAt", op: "lt" }),
-        { column: "wiki.sensitivity", op: "inArray", values: ["PUBLIC", "INTERNAL"] },
-        {
-          op: "or",
-          args: [
-            { value: "wiki.requiredPermission", op: "isNull" },
-            { column: "wiki.requiredPermission", op: "inArray", values: ["knowledge:read"] }
-          ]
-        }
+        expect.objectContaining({ column: "wiki.updatedAt", op: "lt" })
       ])
     );
     expect(whereArg).not.toContainEqual({ column: "wiki.stale", value: true });

@@ -27,10 +27,7 @@ type AccessEntry = {
 };
 
 function renderSecretValue(field: SecretField) {
-  if (!field.canView) {
-    return <span className="text-surface-400">Restricted</span>;
-  }
-
+  // Step 2E (D5): canView 분기 제거 — PROJECT_READ 보유자는 모든 secret을 본다.
   const value = field.resolved ?? field.ref;
   if (!value) {
     return <span className="text-surface-400">Not configured</span>;

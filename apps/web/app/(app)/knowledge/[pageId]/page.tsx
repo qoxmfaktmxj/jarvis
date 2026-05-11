@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
-import { canAccessKnowledgeSensitivity, hasPermission } from '@jarvis/auth/rbac';
+import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePage } from '@/lib/queries/knowledge';
 import { PageViewer } from '@/components/knowledge/PageViewer';
@@ -20,10 +20,6 @@ export default async function KnowledgePageView({ params }: Props) {
   const { pageId } = await params;
   const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
-
-  if (!canAccessKnowledgeSensitivity(session, page.sensitivity ?? 'INTERNAL')) {
-    notFound();
-  }
 
   const canEdit = hasPermission(session, PERMISSIONS.KNOWLEDGE_UPDATE);
   const mdxContent = page.currentVersion?.mdxContent ?? '';

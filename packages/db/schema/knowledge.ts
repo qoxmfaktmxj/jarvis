@@ -30,7 +30,6 @@ export const knowledgePage = pgTable("knowledge_page", {
   title: varchar("title", { length: 500 }).notNull(),
   slug: varchar("slug", { length: 500 }).notNull(),
   summary: text("summary"),
-  sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
   publishStatus: varchar("publish_status", { length: 30 }).default("draft").notNull(),
   freshnessSlaDays: integer("freshness_sla_days").default(90).notNull(),
   lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),

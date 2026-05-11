@@ -10,7 +10,6 @@ export const MOCK_WIKI_PAGES: WikiPage[] = [
   {
     slug: 'hr/leaves/annual-leave',
     title: '연차휴가 정책',
-    sensitivity: 'public',
     tags: ['HR', '휴가', '정책'],
     updatedAt: '2026-03-12T09:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -29,7 +28,6 @@ export const MOCK_WIKI_PAGES: WikiPage[] = [
   {
     slug: 'hr/leaves/sick-leave',
     title: '병가 신청 절차',
-    sensitivity: 'public',
     tags: ['HR', '병가', '복지'],
     updatedAt: '2026-02-28T08:30:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -51,7 +49,6 @@ export const MOCK_WIKI_PAGES: WikiPage[] = [
   {
     slug: 'it/vpn/setup',
     title: 'VPN 설정 가이드',
-    sensitivity: 'public',
     tags: ['IT', 'VPN', '원격근무'],
     updatedAt: '2026-04-02T11:15:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -74,7 +71,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'it/security/password-policy',
     title: '비밀번호 정책',
-    sensitivity: 'internal',
     tags: ['IT', '보안', '정책'],
     updatedAt: '2026-03-25T14:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -92,7 +88,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'hr/welfare/benefits',
     title: '복리후생 안내',
-    sensitivity: 'public',
     tags: ['HR', '복지'],
     updatedAt: '2026-01-15T07:45:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -114,7 +109,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'process/purchase/request',
     title: '구매 요청 절차',
-    sensitivity: 'public',
     tags: ['프로세스', '구매'],
     updatedAt: '2026-03-08T10:20:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -132,7 +126,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'process/approval/workflow',
     title: '결재 라인 안내',
-    sensitivity: 'public',
     tags: ['프로세스', '결재'],
     updatedAt: '2026-02-10T09:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -154,7 +147,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'org/teams/platform-engineering',
     title: '플랫폼 엔지니어링팀 소개',
-    sensitivity: 'public',
     tags: ['조직', '엔지니어링'],
     updatedAt: '2026-04-05T13:30:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -177,7 +169,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'legal/contracts/nda',
     title: 'NDA 안내',
-    sensitivity: 'restricted',
     tags: ['법무', '계약', 'NDA'],
     updatedAt: '2026-03-30T16:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,
@@ -196,7 +187,6 @@ sudo openvpn --config jarvis-corp.ovpn
   {
     slug: 'index',
     title: '위키 인덱스',
-    sensitivity: 'public',
     tags: ['인덱스', '목차'],
     updatedAt: '2026-04-14T18:00:00.000Z',
     workspaceId: DEFAULT_WORKSPACE,

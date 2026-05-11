@@ -174,12 +174,11 @@ describe("/api/projects/[projectId]/access", () => {
       params
     );
 
+    // Step 2E (D5): sessionRoles/sessionPermissions 게이트 폐지 — 더 이상 전달되지 않는다.
     expect(response.status).toBe(200);
     expect(listProjectAccessEntriesMock).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      projectId: "proj-1",
-      sessionRoles: ["ADMIN"],
-      sessionPermissions: ["project:read", "project:update"]
+      projectId: "proj-1"
     });
   });
 

@@ -1,11 +1,13 @@
 // packages/ai/agent/tools/wiki-follow-link.ts
 //
-// slug 에서 outbound wikilinks (1-hop) 을 반환. ACL 통과 못한 링크는 조용히 제외.
+// slug 에서 outbound wikilinks (1-hop) 을 반환.
+//
+// 2026-05-11 (D4=A): 페이지별 sensitivity/requiredPermission/publishedStatus
+// ACL 게이트 제거 (source + targets 양쪽 모두). workspaceId 매칭으로 충분.
 
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
-import { canViewWikiPage } from "@jarvis/auth";
 import { readPage } from "@jarvis/wiki-fs";
 import { splitFrontmatter } from "@jarvis/wiki-fs/frontmatter";
 import { parseWikilinks } from "@jarvis/wiki-fs/wikilink";
@@ -29,7 +31,7 @@ export interface WikiFollowLinkOutput {
 export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkOutput> = {
   name: "wiki_follow_link",
   description:
-    "slug에서 outbound wikilinks (1-hop) 목록. 접근 권한 없는 링크는 자동 제외.",
+    "slug에서 outbound wikilinks (1-hop) 목록.",
   parameters: {
     type: "object",
     required: ["from_slug"],
@@ -47,9 +49,6 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
       const [source] = await db
         .select({
           path: wikiPageIndex.path,
-          sensitivity: wikiPageIndex.sensitivity,
-          requiredPermission: wikiPageIndex.requiredPermission,
-          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -62,19 +61,6 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
 
       if (!source) {
         return err("not_found", `slug "${from_slug}" not found`);
-      }
-
-      if (
-        !canViewWikiPage(
-          {
-            sensitivity: source.sensitivity,
-            requiredPermission: source.requiredPermission,
-            publishedStatus: source.publishedStatus,
-          },
-          ctx.permissions as string[],
-        )
-      ) {
-        return err("forbidden", "access denied");
       }
 
       const raw = await readPage(ctx.workspaceId, source.path);
@@ -92,9 +78,6 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
         .select({
           slug: wikiPageIndex.slug,
           title: wikiPageIndex.title,
-          sensitivity: wikiPageIndex.sensitivity,
-          requiredPermission: wikiPageIndex.requiredPermission,
-          publishedStatus: wikiPageIndex.publishedStatus,
         })
         .from(wikiPageIndex)
         .where(
@@ -104,20 +87,13 @@ export const wikiFollowLink: ToolDefinition<WikiFollowLinkInput, WikiFollowLinkO
           ),
         );
 
-      const visible = targets
-        .filter((t) =>
-          canViewWikiPage(
-            {
-              sensitivity: t.sensitivity,
-              requiredPermission: t.requiredPermission,
-              publishedStatus: t.publishedStatus,
-            },
-            ctx.permissions as string[],
-          ),
-        )
-        .map((t) => ({ slug: t.slug, title: t.title, direction: "outbound" as const }));
+      const links = targets.map((t) => ({
+        slug: t.slug,
+        title: t.title,
+        direction: "outbound" as const,
+      }));
 
-      return ok({ links: visible });
+      return ok({ links });
     } catch (e) {
       return err("unknown", e instanceof Error ? e.message : String(e));
     }

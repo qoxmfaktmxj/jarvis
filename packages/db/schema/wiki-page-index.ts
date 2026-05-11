@@ -40,10 +40,6 @@ export const wikiPageIndex = pgTable(
     routeKey: varchar("route_key", { length: 500 }),
     type: varchar("type", { length: 20 }).notNull(),
     authority: varchar("authority", { length: 10 }).notNull(),
-    sensitivity: varchar("sensitivity", { length: 30 })
-      .default("INTERNAL")
-      .notNull(),
-    requiredPermission: varchar("required_permission", { length: 50 }),
     frontmatter: jsonb("frontmatter")
       .$type<Record<string, unknown>>()
       .default({})

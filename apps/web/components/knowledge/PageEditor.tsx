@@ -43,13 +43,6 @@ const PAGE_TYPES = [
   { value: 'glossary', label: 'Glossary' },
 ] as const;
 
-const SENSITIVITIES = [
-  { value: 'PUBLIC', label: 'Public' },
-  { value: 'INTERNAL', label: 'Internal' },
-  { value: 'RESTRICTED', label: 'Restricted' },
-  { value: 'SECRET_REF_ONLY', label: 'Secret (ref only)' },
-] as const;
-
 export interface PageEditorProps {
   mode: 'create' | 'edit';
   pageId?: string;
@@ -57,7 +50,6 @@ export interface PageEditorProps {
     slug?: string;
     title?: string;
     pageType?: string;
-    sensitivity?: string;
     mdxContent?: string;
     tags?: string[];
     summary?: string;
@@ -107,9 +99,6 @@ export function PageEditor({
     !!initialValues.slug,
   );
   const [pageType, setPageType] = useState(initialValues.pageType ?? 'project');
-  const [sensitivity, setSensitivity] = useState(
-    initialValues.sensitivity ?? 'INTERNAL',
-  );
   const [mdxContent, setMdxContent] = useState(
     initialValues.mdxContent ?? '',
   );
@@ -168,14 +157,12 @@ export function PageEditor({
                 slug,
                 title,
                 pageType,
-                sensitivity,
                 mdxContent,
                 changeNote: changeNote || 'Initial version',
                 frontmatter: { tags, summary },
               }
             : {
                 title,
-                sensitivity,
                 mdxContent,
                 changeNote: changeNote || 'Updated content',
                 frontmatter: { tags, summary },
@@ -208,7 +195,6 @@ export function PageEditor({
     pageId,
     pageType,
     router,
-    sensitivity,
     slug,
     summary,
     tagsInput,
@@ -279,22 +265,6 @@ export function PageEditor({
               {PAGE_TYPES.map((type) => (
                 <SelectItem key={type.value} value={type.value}>
                   {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label>{t('sensitivity')}</Label>
-          <Select value={sensitivity} onValueChange={setSensitivity}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SENSITIVITIES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
                 </SelectItem>
               ))}
             </SelectContent>

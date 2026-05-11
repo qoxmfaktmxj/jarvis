@@ -17,7 +17,6 @@ export function ProjectTable({ data }: { data: ProjectTableRow[] }) {
             <th className="px-3 py-2 text-left">운영 URL</th>
             <th className="px-3 py-2 text-left">개발 URL</th>
             <th className="px-3 py-2 text-left">상태</th>
-            <th className="px-3 py-2 text-left">민감도</th>
             <th className="px-3 py-2 text-left">담당자</th>
             <th className="px-3 py-2 text-left">업데이트</th>
           </tr>
@@ -64,9 +63,6 @@ export function ProjectTable({ data }: { data: ProjectTableRow[] }) {
                 <Badge variant={r.status === "active" ? "success" : "warning"}>
                   {r.status}
                 </Badge>
-              </td>
-              <td className="px-3 py-2">
-                <Badge variant="outline">{r.sensitivity}</Badge>
               </td>
               <td className="px-3 py-2">{r.ownerName ?? "—"}</td>
               <td className="px-3 py-2 text-xs text-surface-500">

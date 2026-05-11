@@ -24,7 +24,6 @@ export const project = pgTable("project", {
     .references(() => company.id),
   name: varchar("name", { length: 300 }).notNull(),
   description: text("description"),
-  sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
   status: varchar("status", { length: 30 }).default("active").notNull(),
   ownerId: uuid("owner_id").references(() => user.id),
   knowledgePageId: uuid("knowledge_page_id").references(() => knowledgePage.id),

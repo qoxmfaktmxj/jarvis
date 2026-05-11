@@ -6,15 +6,10 @@ import {
   and,
   asc,
   eq,
-  inArray,
   isNotNull,
-  isNull,
   lt,
-  or,
   sql
 } from "drizzle-orm";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
 import type { JarvisSession } from "@jarvis/auth/types";
 import {
   getVisibleMenuTree,
@@ -132,20 +127,10 @@ export const getQuickLinksWithRoleFilter = getQuickLinks;
 
 export async function getStalePages(
   workspaceId: string,
-  userPermissions: string[],
+  _userPermissions: string[],
   now: Date = new Date(),
   database: DashboardDb = db
 ): Promise<StalePage[]> {
-  const allowedSensitivities = getAllowedWikiSensitivityValues(userPermissions);
-  const requiredPermissionGate = userPermissions.includes(PERMISSIONS.ADMIN_ALL)
-    ? sql`TRUE`
-    : userPermissions.length > 0
-      ? or(
-          isNull(wikiPageIndex.requiredPermission),
-          inArray(wikiPageIndex.requiredPermission, userPermissions)
-        )
-      : isNull(wikiPageIndex.requiredPermission);
-
   const rows = await database
     .select({
       id: wikiPageIndex.id,
@@ -164,11 +149,7 @@ export async function getStalePages(
           wikiPageIndex.updatedAt,
           sql<Date>`(${now}::timestamptz - (${wikiPageIndex.freshnessSlaDays} * interval '1 day'))`
         ),
-        eq(wikiPageIndex.publishedStatus, "published"),
-        allowedSensitivities.length > 0
-          ? inArray(wikiPageIndex.sensitivity, allowedSensitivities)
-          : sql`FALSE`,
-        requiredPermissionGate
+        eq(wikiPageIndex.publishedStatus, "published")
       )
     )
     .orderBy(asc(wikiPageIndex.updatedAt))

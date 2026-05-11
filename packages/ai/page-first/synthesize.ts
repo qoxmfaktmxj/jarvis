@@ -143,7 +143,6 @@ export async function* synthesizePageFirstAnswer(
     path: p.path,
     slug: p.slug,
     title: p.title,
-    sensitivity: p.sensitivity,
     citation: `[[${p.slug}]]`,
     origin: p.origin,
     // Confidence falls off linearly with rank; origin==expand is penalized.

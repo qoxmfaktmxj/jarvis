@@ -10,7 +10,6 @@ function make(p: Partial<N>): N {
     id: p.id ?? "n",
     title: p.title ?? "t",
     bodyMd: p.bodyMd ?? "",
-    sensitivity: p.sensitivity ?? "INTERNAL",
     pinned: p.pinned ?? false,
     publishedAt: "publishedAt" in p ? (p.publishedAt as Date | null) : new Date("2026-04-22T00:00:00Z"),
     expiresAt: p.expiresAt ?? null,

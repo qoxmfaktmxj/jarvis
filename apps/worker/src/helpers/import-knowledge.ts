@@ -15,7 +15,15 @@ export interface ImportKnowledgeParams {
   slug: string;
   mdxContent: string;
   pageType: string;
-  sensitivity: string;
+  /**
+   * Optional sensitivity override for the knowledge_page row.
+   *
+   * Step 2D (2026-05-11): graphify-build no longer derives sensitivity from
+   * graph_snapshot lineage (D2=B). When omitted, the knowledge layer applies
+   * its own default ('INTERNAL'). Knowledge-domain sweep (Step 2A) drops the
+   * column entirely.
+   */
+  sensitivity?: string;
   createdBy: string | null;
   sourceType: string;
   sourceKey: string;
@@ -94,11 +102,19 @@ export async function importAsKnowledgePage(
         authorId: params.createdBy,
       });
 
-      // Update title, sensitivity, and updatedAt — do NOT touch publishStatus.
-      // Sensitivity must be refreshed so tightened source access takes effect immediately.
+      // Update title and updatedAt — do NOT touch publishStatus.
+      // Step 2D (2026-05-11): sensitivity 컬럼 업데이트 제거 (graphify lineage 가 더 이상
+      // sensitivity 를 제공하지 않음). 호출자가 명시적으로 전달했을 때만 갱신.
+      const updatePayload: Record<string, unknown> = {
+        title: params.title,
+        updatedAt: new Date(),
+      };
+      if (params.sensitivity !== undefined) {
+        updatePayload['sensitivity'] = params.sensitivity;
+      }
       await tx
         .update(knowledgePage)
-        .set({ title: params.title, sensitivity: params.sensitivity, updatedAt: new Date() })
+        .set(updatePayload)
         .where(eq(knowledgePage.id, existing.id));
 
       return {
@@ -129,18 +145,22 @@ export async function importAsKnowledgePage(
     }
 
     const pageId = randomUUID();
-    await tx.insert(knowledgePage).values({
+    // Step 2D: sensitivity 가 명시되지 않으면 knowledge_page 스키마 default 에 위임.
+    const insertPayload: Record<string, unknown> = {
       id: pageId,
       workspaceId: params.workspaceId,
       pageType: params.pageType,
       title: params.title,
       slug: resolvedSlug,
-      sensitivity: params.sensitivity,
       publishStatus: 'published',
       sourceType: params.sourceType,
       sourceKey: params.sourceKey,
       createdBy: params.createdBy,
-    });
+    };
+    if (params.sensitivity !== undefined) {
+      insertPayload['sensitivity'] = params.sensitivity;
+    }
+    await tx.insert(knowledgePage).values(insertPayload as never);
 
     await tx.insert(knowledgePageVersion).values({
       id: randomUUID(),

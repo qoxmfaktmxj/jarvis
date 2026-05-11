@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
 import { PERMISSIONS } from "@jarvis/shared/constants";
@@ -13,9 +13,11 @@ import { requireApiSession } from "@/lib/server/api-auth";
  *
  * - 권한: KNOWLEDGE_READ
  * - workspace 일치 검증: 세션의 workspaceId 와 쿼리의 workspaceId 가 다르면 403.
- * - sensitivity ACL + requiredPermission 필터 적용.
  * - title, slug, aliases, path 에 ilike 부분 일치, publishedStatus='published'.
  * - 응답에 path 미포함 (디렉터리 구조 노출 방지).
+ *
+ * Sensitivity 격리는 RBAC + workspaceId 모델로 일원화되었다
+ * (2026-05-11 sensitivity 제거 step 2A).
  */
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const auth = await requireApiSession(req, PERMISSIONS.KNOWLEDGE_READ);
@@ -56,48 +58,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const escaped = q.replace(/[\\%_]/g, "\\$&");
   const pattern = `%${escaped}%`;
 
-  // ── sensitivity ACL ──
-  // Resolve allowed sensitivity values from session permissions.
-  const perms = session.permissions;
-  const isAdmin = perms.includes(PERMISSIONS.ADMIN_ALL);
-  const allowedSensitivities: string[] = [];
-  if (!isAdmin) {
-    if (perms.includes(PERMISSIONS.KNOWLEDGE_READ)) {
-      allowedSensitivities.push("PUBLIC", "INTERNAL");
-    }
-    if (perms.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
-      allowedSensitivities.push("RESTRICTED");
-    }
-    if (perms.includes(PERMISSIONS.PROJECT_ACCESS_SECRET)) {
-      allowedSensitivities.push("SECRET_REF_ONLY");
-    }
-  }
-
-  // If not admin and no allowed sensitivities, no pages visible.
-  if (!isAdmin && allowedSensitivities.length === 0) {
-    return NextResponse.json({ pages: [] });
-  }
-
-  // ── requiredPermission filter ──
-  // Pages with a requiredPermission must match user perms or be admin.
-  const requiredPermFilter = isAdmin
-    ? undefined
-    : or(
-        isNull(wikiPageIndex.requiredPermission),
-        inArray(wikiPageIndex.requiredPermission, perms),
-      );
-
-  const baseWhere = and(
+  const where = and(
     eq(wikiPageIndex.workspaceId, parsed.data.workspaceId),
     eq(wikiPageIndex.publishedStatus, "published"),
-    // sensitivity filter (admin sees all)
-    ...(isAdmin ? [] : [inArray(wikiPageIndex.sensitivity, allowedSensitivities)]),
-    // requiredPermission filter
-    requiredPermFilter,
-  );
-
-  const where = and(
-    baseWhere,
     or(
       ilike(wikiPageIndex.title, pattern),
       ilike(wikiPageIndex.slug, pattern),
@@ -113,7 +76,6 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       slug: wikiPageIndex.slug,
       title: wikiPageIndex.title,
       routeKey: wikiPageIndex.routeKey,
-      sensitivity: wikiPageIndex.sensitivity,
     })
     .from(wikiPageIndex)
     .where(where)

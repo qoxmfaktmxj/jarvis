@@ -47,11 +47,6 @@ export default async function ProjectOverviewPage({
               </Badge>
             </dd>
 
-            <dt className="font-medium text-surface-500">Sensitivity</dt>
-            <dd>
-              <Badge variant="outline">{project.sensitivity}</Badge>
-            </dd>
-
             {project.description ? (
               <>
                 <dt className="font-medium text-surface-500">Description</dt>

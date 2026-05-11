@@ -64,7 +64,6 @@ export interface WikiPageSourceRef {
   path: string;          // repo-relative, e.g. "auto/entities/MindVault.md"
   slug: string;          // citation anchor, e.g. "mindvault"
   title: string;
-  sensitivity: string;   // PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY
   /** `[[page-slug]]` — convenience for the UI so it doesn't need to reformat. */
   citation: string;
   /** Rank origin: "shortlist" (lexical hit) or "expand" (1-hop wikilink). */

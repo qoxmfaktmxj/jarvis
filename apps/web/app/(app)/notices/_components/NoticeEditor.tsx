@@ -6,16 +6,12 @@ import { RichTextEditor } from '@/components/RichTextEditor/RichTextEditor';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import type {
-  CreateNoticeInput,
-  NoticeSensitivity,
-} from '@jarvis/shared/validation';
+import type { CreateNoticeInput } from '@jarvis/shared/validation';
 
 interface NoticeEditorProps {
   initialData?: Partial<{
     title: string;
     bodyMd: string;
-    sensitivity: NoticeSensitivity;
     pinned: boolean;
     publishedAt: string | null;
     expiresAt: string | null;
@@ -51,9 +47,6 @@ export function NoticeEditor({
   const t = useTranslations('Notices');
   const [title, setTitle] = useState(initialData?.title ?? '');
   const [bodyMd, setBodyMd] = useState(initialData?.bodyMd ?? '');
-  const [sensitivity, setSensitivity] = useState<NoticeSensitivity>(
-    initialData?.sensitivity ?? 'INTERNAL',
-  );
   const [pinned, setPinned] = useState(initialData?.pinned ?? false);
   const [publishedAt, setPublishedAt] = useState(
     toDatetimeLocal(initialData?.publishedAt ?? null),
@@ -67,7 +60,6 @@ export function NoticeEditor({
     await onSubmit({
       title: title.trim(),
       bodyMd,
-      sensitivity,
       pinned,
       publishedAt: fromDatetimeLocal(publishedAt),
       expiresAt: fromDatetimeLocal(expiresAt),
@@ -101,21 +93,6 @@ export function NoticeEditor({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1">
-          <Label htmlFor="notice-sensitivity">{t('sensitivity.label')}</Label>
-          <select
-            id="notice-sensitivity"
-            value={sensitivity}
-            onChange={(e) =>
-              setSensitivity(e.target.value as NoticeSensitivity)
-            }
-            className="w-full rounded-md border border-surface-300 px-3 py-2 text-sm"
-          >
-            <option value="INTERNAL">{t('sensitivity.INTERNAL')}</option>
-            <option value="PUBLIC">{t('sensitivity.PUBLIC')}</option>
-          </select>
-        </div>
-
         <div className="flex items-end gap-2">
           <input
             id="notice-pinned"

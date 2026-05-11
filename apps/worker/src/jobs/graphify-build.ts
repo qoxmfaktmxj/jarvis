@@ -68,7 +68,6 @@ function ensureDerivedFrontmatter(
   params: {
     title: string;
     workspaceId: string;
-    sensitivity: string;
     sourcePath: string;
   },
 ): string {
@@ -87,12 +86,13 @@ function ensureDerivedFrontmatter(
     }
   }
   const now = new Date().toISOString();
+  // Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B). derived frontmatter
+  // 에서 sensitivity 라인 삭제 — wiki 도메인이 자체적으로 처리.
   const fm = [
     '---',
     `title: ${JSON.stringify(params.title)}`,
     'type: derived',
     `workspaceId: ${params.workspaceId}`,
-    `sensitivity: ${params.sensitivity}`,
     'authority: auto',
     `sources:`,
     `  - ${params.sourcePath}`,
@@ -135,17 +135,16 @@ async function processGraphifyBuild(
 
   const lineage = await resolveLineageFromRawSource(rawSourceId);
   console.log(
-    `[graphify-build] Resolved lineage scopeType=${lineage.scopeType} scopeId=${lineage.scopeId} sensitivity=${lineage.sensitivity}`,
+    `[graphify-build] Resolved lineage scopeType=${lineage.scopeType} scopeId=${lineage.scopeId}`,
   );
 
-  // Create snapshot record with 'running' status
+  // Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 — sensitivity 컬럼 미작성.
   await db.insert(graphSnapshot).values({
     id: snapshotId,
     workspaceId,
     rawSourceId,
     scopeType: lineage.scopeType,
     scopeId: lineage.scopeId,
-    sensitivity: lineage.sensitivity,
     title: 'Building...',
     buildMode: mode ?? 'standard',
     buildStatus: 'running',
@@ -269,7 +268,6 @@ async function processGraphifyBuild(
       const reportContent = ensureDerivedFrontmatter(reportRaw, {
         title: reportTitle,
         workspaceId,
-        sensitivity: lineage.sensitivity,
         sourcePath: `attachment:${rawSourceId}`,
       });
       await importAsKnowledgePage({
@@ -278,7 +276,6 @@ async function processGraphifyBuild(
         slug: slugify(`graph-report-${snapshotId.slice(0, 8)}`),
         mdxContent: reportContent,
         pageType: 'analysis',
-        sensitivity: lineage.sensitivity,
         createdBy: requestedBy,
         sourceType: 'graphify',
         sourceKey: `${GRAPHIFY_SOURCE_KEY_PREFIX}:${rawSourceId}:${reportDerivedPath}`,
@@ -307,7 +304,6 @@ async function processGraphifyBuild(
         const content = ensureDerivedFrontmatter(rawContent, {
           title: `[Graph] ${title}`,
           workspaceId,
-          sensitivity: lineage.sensitivity,
           sourcePath: `attachment:${rawSourceId}`,
         });
 
@@ -317,7 +313,6 @@ async function processGraphifyBuild(
           slug: slugify(`graph-wiki-${snapshotId.slice(0, 8)}-${title}`),
           mdxContent: content,
           pageType: 'analysis',
-          sensitivity: lineage.sensitivity,
           createdBy: requestedBy,
           sourceType: 'graphify',
           sourceKey: `${GRAPHIFY_SOURCE_KEY_PREFIX}:${rawSourceId}:${derivedPath}`,

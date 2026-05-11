@@ -17,7 +17,6 @@ import { parsePdf } from '../lib/pdf-parser.js';
 import {
   detectSecretKeywords,
   redactPII,
-  type Sensitivity,
 } from '../lib/pii-redactor.js';
 // Phase-Harness (2026-04-23): embedding 제거. generateEmbedding import 삭제.
 import { callChatWithFallback } from '@jarvis/ai/breaker';
@@ -26,6 +25,14 @@ import { generate } from './ingest/generate.js';
 import { writeAndCommit } from './ingest/write-and-commit.js';
 import { recordReviewQueue } from './ingest/review-queue.js';
 import type { WikiSensitivity } from '@jarvis/wiki-fs';
+
+// Step 2D (2026-05-11): raw_source.sensitivity 제거 (D2=B 정책 file/raw_source 적용).
+// SECRET 키워드 검출은 review_queue 트리거 용도로 유지하되, sensitivity 분류는 더
+// 이상 수행하지 않는다. Knowledge / wiki 도메인 코드 경로(legacyTwoStepIngest /
+// wikiTwoStepIngest / write-and-commit) 는 자체 도메인의 sensitivity 모델을
+// 사용하므로 본 ingest job 에서는 기본값 'INTERNAL' 을 전달한다 — 추후 step 에서
+// 해당 도메인이 sweep 될 때 함께 제거된다.
+const DEFAULT_FALLBACK_SENSITIVITY: WikiSensitivity = 'INTERNAL';
 
 export interface IngestJobData {
   rawSourceId: string;
@@ -156,7 +163,6 @@ Respond ONLY with valid JSON. No markdown fences. No extra text.`;
       title: synthesis.title.slice(0, 500),
       slug,
       summary: synthesis.summary,
-      sensitivity: sensitivity,
       publishStatus: 'draft',
       authority: 'generated',
       sourceOrigin: 'ingest-two-step',
@@ -395,11 +401,9 @@ async function processIngest(
     }
 
     // ---- Step 0: PII / SECRET guard (single-pass) ----
-    // Run each scan exactly once to avoid redundant regex sweeps.
-    // computeSensitivity() is intentionally NOT called here because it would
-    // re-invoke detectSecretKeywords + redactPII internally.
-    const currentSensitivity =
-      (source.sensitivity as Sensitivity | null) ?? 'INTERNAL';
+    // Step 2D (2026-05-11): raw_source.sensitivity 컬럼 제거 (D2=B). SECRET 키워드는
+    // 여전히 ingest 정지 + review_queue 트리거 용도로 사용되지만, sensitivity 분류 /
+    // 승급 로직은 모두 제거되었다. PII redaction 은 그대로 유지 (실제 비식별화 효과).
     const secretHits = detectSecretKeywords(extractedText);
     const { redacted, hits: piiHits } = redactPII(extractedText);
 
@@ -416,7 +420,6 @@ async function processIngest(
         .update(rawSource)
         .set({
           ingestStatus: 'queued_for_review',
-          sensitivity: 'SECRET_REF_ONLY',
           updatedAt: new Date(),
         })
         .where(eq(rawSource.id, rawSourceId));
@@ -425,27 +428,6 @@ async function processIngest(
         '[ingest] SECRET hit — queued for review',
       );
       return;
-    }
-
-    // PII만 있음 → sensitivity만 승급하고 계속 진행
-    const hasPII = piiHits.length > 0;
-    const ORDER: Record<Sensitivity, number> = {
-      PUBLIC: 0,
-      INTERNAL: 1,
-      RESTRICTED: 2,
-      SECRET_REF_ONLY: 3,
-    };
-    const newSensitivity: Sensitivity = hasPII
-      ? (ORDER[currentSensitivity] >= ORDER.INTERNAL
-          ? currentSensitivity
-          : 'INTERNAL')
-      : currentSensitivity;
-
-    if (newSensitivity !== currentSensitivity) {
-      await db
-        .update(rawSource)
-        .set({ sensitivity: newSensitivity, updatedAt: new Date() })
-        .where(eq(rawSource.id, rawSourceId));
     }
 
     // extractedText는 이후 단계용으로 redacted 버전으로 교체
@@ -469,11 +451,13 @@ async function processIngest(
             rawSourceId,
             source.workspaceId,
             safeText,
-            newSensitivity,
+            // Step 2D: raw_source.sensitivity 제거. Wiki 도메인 sensitivity 는
+            // 자체 frontmatter 가 SoT — ingest 진입점에서는 항상 INTERNAL 전달.
+            DEFAULT_FALLBACK_SENSITIVITY,
             {
               sourceTitle: source.storagePath ?? `manual/${rawSourceId}`,
               ...fileNameOpt,
-              previousSensitivity: currentSensitivity,
+              previousSensitivity: DEFAULT_FALLBACK_SENSITIVITY,
               // PiiHit[] → string[] (kind label) for the review queue payload.
               piiHits: piiHits.map((h) => h.kind),
             },
@@ -486,8 +470,13 @@ async function processIngest(
             failures: wikiResult.failures,
           };
         } else {
-          // Legacy single-page knowledge_page path.
-          ingestResult = await legacyTwoStepIngest(rawSourceId, source.workspaceId, safeText, newSensitivity);
+          // Legacy single-page knowledge_page path. Step 2D: 항상 INTERNAL 전달.
+          ingestResult = await legacyTwoStepIngest(
+            rawSourceId,
+            source.workspaceId,
+            safeText,
+            DEFAULT_FALLBACK_SENSITIVITY,
+          );
         }
       } catch (err) {
         // Capture the error for DB status recording below, then rethrow so

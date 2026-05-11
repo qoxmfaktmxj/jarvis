@@ -4,7 +4,6 @@ import type { DashboardNoticeRow } from "@/lib/queries/dashboard-notices";
 
 function badgeClassFor(n: DashboardNoticeRow): string {
   if (n.pinned) return "bg-danger-subtle text-danger border-danger/30";
-  if (n.sensitivity === "PUBLIC") return "bg-warning-subtle text-warning border-warning/30";
   return "bg-(--bg-surface) text-(--fg-secondary) border-(--border-default)";
 }
 
@@ -41,7 +40,7 @@ export async function NoticesWidget({
                 <span
                   className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold ${badgeClassFor(n)}`}
                 >
-                  {n.pinned ? t("badgePinned") : n.sensitivity === "PUBLIC" ? t("badgeEvent") : t("badgeNotice")}
+                  {n.pinned ? t("badgePinned") : t("badgeNotice")}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm text-(--fg-primary)">{n.title}</div>

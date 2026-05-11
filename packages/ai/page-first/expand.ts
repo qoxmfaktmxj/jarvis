@@ -12,14 +12,13 @@
  * Invariants:
  *   - fanOut cap: 30 new pages max, to bound the disk-read step that
  *     follows. Spec-mandated (planner DoD).
- *   - permission + sensitivity re-checked here as defense-in-depth; the
- *     1-hop can cross authority/sensitivity boundaries in ways the
- *     shortlist filter did not.
+ *
+ * 접근 제어: sensitivity / requiredPermission 격리는 RBAC + workspaceId 모델로
+ * 일원화되었다 (2026-05-11 sensitivity 제거 step 2A).
  */
 
 import { sql } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
-import { buildWikiSensitivitySqlFragment } from "@jarvis/auth/rbac";
 import { pgArray } from "../sql-utils.js";
 
 import type { ShortlistHit } from "./shortlist.js";
@@ -29,8 +28,6 @@ export interface ExpandedPage {
   path: string;
   title: string;
   slug: string;
-  sensitivity: string;
-  requiredPermission: string | null;
   origin: "shortlist" | "expand";
   inboundCount: number;
   score: number;
@@ -49,17 +46,13 @@ const DEFAULT_FAN_OUT = 30;
 export async function expandOneHop(
   opts: ExpandOptions,
 ): Promise<ExpandedPage[]> {
-  const { workspaceId, userPermissions, shortlist } = opts;
+  const { workspaceId, shortlist } = opts;
   const fanOut = Math.min(opts.fanOut ?? DEFAULT_FAN_OUT, DEFAULT_FAN_OUT);
 
   if (shortlist.length === 0) return [];
 
   const shortlistIds = shortlist.map((s) => s.id);
   const shortlistIdSet = new Set(shortlistIds);
-
-  const sensitivityClause = buildWikiSensitivitySqlFragment(userPermissions, {
-    column: "wpi.sensitivity",
-  });
 
   // Aggregate the 1-hop neighbors (either direction) with inbound count.
   // inbound_count is across ALL links in the workspace, not just from the
@@ -69,8 +62,6 @@ export async function expandOneHop(
     path: string;
     title: string;
     slug: string;
-    sensitivity: string;
-    required_permission: string | null;
     inbound_count: number;
   }>(sql`
     WITH hops AS (
@@ -101,8 +92,6 @@ export async function expandOneHop(
       wpi.path,
       wpi.title,
       wpi.slug,
-      wpi.sensitivity,
-      wpi.required_permission,
       COALESCE(ic.cnt, 0)::int AS inbound_count
     FROM hops
     JOIN wiki_page_index wpi ON wpi.id = hops.neighbor_id
@@ -110,27 +99,17 @@ export async function expandOneHop(
     WHERE wpi.workspace_id = ${workspaceId}::uuid
       AND wpi.published_status = 'published'
       AND wpi.stale = FALSE
-      ${sensitivityClause}
     ORDER BY inbound_count DESC, wpi.updated_at DESC
     LIMIT ${fanOut}
 `);
 
-  const permSet = new Set(userPermissions);
   const neighbors: ExpandedPage[] = rows.rows
     .filter((r) => !shortlistIdSet.has(r.id))
-    .filter(
-      (r) =>
-        !r.required_permission ||
-        permSet.has(r.required_permission) ||
-        permSet.has("admin:all"),
-    )
     .map((r) => ({
       id: r.id,
       path: r.path,
       title: r.title,
       slug: r.slug,
-      sensitivity: r.sensitivity,
-      requiredPermission: r.required_permission,
       origin: "expand" as const,
       inboundCount: Number(r.inbound_count),
       // Score: inboundCount is primary signal; expansion is always lower-ranked
@@ -147,8 +126,6 @@ export async function expandOneHop(
         path: s.path,
         title: s.title,
         slug: s.slug,
-        sensitivity: s.sensitivity,
-        requiredPermission: s.requiredPermission,
         origin: "shortlist",
         inboundCount: 0,
         score: s.score,

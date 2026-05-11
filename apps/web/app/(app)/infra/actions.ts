@@ -2,15 +2,15 @@
 /**
  * apps/web/app/(app)/infra/actions.ts
  *
- * 인프라구성관리 (Plan 5) server actions.
+ * 인프라구성관리 server actions.
  *
- * 권한 모델 (Plan 5 confirmed):
+ * 권한 모델:
  *   - 조회 (saveInfraSystems 진입 차단용 baseline): INFRA_READ
  *   - 생성/수정/삭제: INFRA_WRITE
  *   - linkRunbook (wiki page 연결): INFRA_WRITE
- *   - INFRA_ADMIN은 ADMIN_ALL 자동 포함 (sensitivity 격상 등 별도 운영용)
  *
- * Sensitivity: row 메타데이터로만 (Plan 5 confirmed: "RBAC INFRA_*로 통제").
+ * Step 2E (sensitivity 제거): infra_system.sensitivity 입력·저장 폐지.
+ * INFRA_READ/INFRA_WRITE + workspaceId만으로 격리한다. DB 컬럼은 Step 3에서 drop.
  *
  * 감사: infra.system.{create,update,delete,linkRunbook}
  */
@@ -108,7 +108,6 @@ export async function listInfraSystems(
       wikiPageRouteKey: r.wikiPageRouteKey,
       wikiPageTitle: r.wikiPageTitle,
       note: r.note,
-      sensitivity: r.sensitivity,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
       createdBy: r.createdBy,
@@ -162,7 +161,7 @@ export async function saveInfraSystems(
             ownerContact: c.ownerContact ?? null,
             wikiPageId: c.wikiPageId ?? null,
             note: c.note ?? null,
-            sensitivity: c.sensitivity ?? "INTERNAL",
+            // Step 2E: sensitivity 입력 미사용. DB 컬럼은 default("INTERNAL")로 자동 채워지며 Step 3에서 drop.
             createdBy: ctx.userId,
             updatedBy: ctx.userId,
           })
@@ -212,7 +211,6 @@ export async function saveInfraSystems(
             ownerContact: infraSystem.ownerContact,
             wikiPageId: infraSystem.wikiPageId,
             note: infraSystem.note,
-            sensitivity: infraSystem.sensitivity,
           })
           .from(infraSystem)
           .where(

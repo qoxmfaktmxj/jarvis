@@ -35,9 +35,6 @@ export function NoticeListItem({
               {pinnedLabel}
             </span>
           )}
-          <span className="rounded border border-border px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
-            {notice.sensitivity}
-          </span>
           <h2 className="truncate text-base font-semibold text-foreground">
             {notice.title}
           </h2>

@@ -121,6 +121,9 @@ export async function* tutorAI(
       const shortlist = await legacyLexicalShortlist({
         workspaceId, userPermissions, question, topK: 20,
       });
+      // Step 2D (2026-05-11): wiki ShortlistHit/LoadedPage 의 sensitivity / requiredPermission
+      // 필드가 Step 2C sweep 에서 제거됨에 따라 fallback mapping 에서도 누락 — RBAC + workspaceId
+      // 만 사용한다.
       const candidates = await expandOneHop({
         workspaceId, userPermissions, shortlist, fanOut: 30,
       }).catch(() => shortlist.map((s) => ({
@@ -128,8 +131,6 @@ export async function* tutorAI(
         path: s.path,
         title: s.title,
         slug: s.slug,
-        sensitivity: s.sensitivity,
-        requiredPermission: s.requiredPermission,
         origin: 'shortlist' as const,
         inboundCount: 0,
         score: s.score,
@@ -181,14 +182,13 @@ export async function* tutorAI(
     { role: 'user', content: wrapUserContent(question, nonce) },
   ];
 
-  // 4. 소스 수집
+  // 4. 소스 수집 — Step 2D: WikiPageSourceRef.sensitivity 제거 (Step 2C sweep).
   const pageSources: SourceRef[] = pages.map((p) => ({
     kind: 'wiki-page' as const,
     pageId: p.id,
     path: p.path,
     slug: p.slug,
     title: p.title,
-    sensitivity: p.sensitivity,
     citation: `[[${p.slug}]]`,
     origin: p.origin,
     confidence: 0.8,

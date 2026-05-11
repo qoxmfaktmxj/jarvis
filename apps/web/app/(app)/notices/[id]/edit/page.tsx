@@ -48,7 +48,6 @@ export default async function EditNoticePage({ params }: Props) {
         initialData={{
           title: notice.title,
           bodyMd: notice.bodyMd,
-          sensitivity: notice.sensitivity,
           pinned: notice.pinned,
           publishedAt: notice.publishedAt
             ? notice.publishedAt.toISOString()

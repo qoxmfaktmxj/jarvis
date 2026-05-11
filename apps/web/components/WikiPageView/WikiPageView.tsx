@@ -13,32 +13,6 @@ import type { WikiPage } from './types';
 
 const WIKILINK_PATTERN = /\[\[([^\]]+)\]\]/g;
 
-const SENSITIVITY_STYLES: Record<
-  WikiPage['sensitivity'],
-  { chip: string; bar: string; label: string }
-> = {
-  public: {
-    chip: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-    bar: 'from-emerald-500/70 to-emerald-500/0',
-    label: 'Public',
-  },
-  internal: {
-    chip: 'bg-(--brand-primary-bg) text-(--brand-primary-text) ring-(--brand-primary-bg)',
-    bar: 'from-(--brand-primary)/70 to-(--brand-primary)/0',
-    label: 'Internal',
-  },
-  restricted: {
-    chip: 'bg-amber-50 text-amber-800 ring-amber-600/25',
-    bar: 'from-amber-500/70 to-amber-500/0',
-    label: 'Restricted',
-  },
-  secret: {
-    chip: 'bg-(--color-red-50) text-(--color-red-500) ring-(--color-red-500)/25',
-    bar: 'from-(--color-red-500)/70 to-(--color-red-500)/0',
-    label: 'Secret',
-  },
-};
-
 type WikiPageViewProps = {
   page: WikiPage;
   onWikiLinkClick: (slug: string) => void;
@@ -132,8 +106,7 @@ export function WikiPageView({
     ? new Set(orphanSlugs)
     : new Set();
   const t = useTranslations('Wiki');
-  const showEdit = page.slug.startsWith('manual/') && page.sensitivity !== 'secret';
-  const sens = SENSITIVITY_STYLES[page.sensitivity];
+  const showEdit = page.slug.startsWith('manual/');
 
   const formattedDate = new Date(page.updatedAt).toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -145,15 +118,6 @@ export function WikiPageView({
     <article className="mx-auto max-w-4xl px-4 py-8">
       {/* Header */}
       <header className="relative border-b border-(--border-default) pb-5">
-        {/* Sensitivity accent ribbon */}
-        <div
-          className={cn(
-            'absolute -left-4 top-0 h-1 w-[calc(100%+2rem)] rounded-full bg-gradient-to-r',
-            sens.bar,
-          )}
-          aria-hidden
-        />
-
         {/* Eyebrow — slug path */}
         <p className="text-display mt-2 truncate text-[11px] uppercase tracking-[0.12em] text-(--fg-muted)">
           {page.slug.split('/').join(' / ')}
@@ -165,14 +129,6 @@ export function WikiPageView({
           </h1>
           <div className="flex shrink-0 items-center gap-2">
             <Capy name="astronaut" size={48} className="shrink-0" />
-            <span
-              className={cn(
-                'rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset',
-                sens.chip,
-              )}
-            >
-              {t(`sensitivity.${page.sensitivity}`)}
-            </span>
           </div>
         </div>
 

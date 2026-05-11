@@ -1,6 +1,9 @@
 // apps/web/e2e/helpers/graph-fixtures.ts
 // Inserts and cleans up graph_snapshot rows for E2E tests.
 // Uses pg directly (same DSN as the app) to avoid circular imports.
+//
+// Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B) — sensitivity 컬럼
+// INSERT 삭제 (테스트 입력에서도 더 이상 받지 않음).
 
 import pg from 'pg';
 import { randomUUID } from 'crypto';
@@ -23,7 +26,6 @@ export async function createTestSnapshot(
     buildStatus: 'pending' | 'running' | 'done' | 'error';
     buildMode: string;
     buildError: string | null;
-    sensitivity: string;
   }> = {},
 ): Promise<FixtureSnapshot> {
   const client = new pg.Client({ connectionString: DB_URL });
@@ -42,8 +44,8 @@ export async function createTestSnapshot(
     await client.query(
       `INSERT INTO graph_snapshot
          (id, workspace_id, title, build_mode, build_status, build_error,
-          sensitivity, scope_type, scope_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'workspace', $2, NOW(), NOW())`,
+          scope_type, scope_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'workspace', $2, NOW(), NOW())`,
       [
         id,
         WORKSPACE_ID,
@@ -51,7 +53,6 @@ export async function createTestSnapshot(
         overrides.buildMode ?? 'full',
         buildStatus,
         overrides.buildError ?? null,
-        overrides.sensitivity ?? 'INTERNAL',
       ],
     );
   } finally {

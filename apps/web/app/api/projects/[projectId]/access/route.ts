@@ -21,11 +21,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
   }
 
   const { projectId } = await context.params;
+  // Step 2E (D5): sessionRoles/sessionPermissions 게이트 폐지.
   const entries = await listProjectAccessEntries({
     workspaceId: auth.session.workspaceId,
-    projectId,
-    sessionRoles: auth.session.roles,
-    sessionPermissions: auth.session.permissions
+    projectId
   });
 
   if (!entries) {

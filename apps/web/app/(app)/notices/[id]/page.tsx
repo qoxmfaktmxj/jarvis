@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { canViewInternalNotice, getNoticeById } from '@/lib/queries/notices';
+import { getNoticeById } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/patterns/PageHeader';
@@ -35,11 +35,9 @@ export default async function NoticeDetailPage({ params }: Props) {
   const { id } = await params;
   const t = await getTranslations('Notices');
 
-  // A9 F1 fix — INTERNAL 공지가 모든 사용자에게 404 처리되는 page ↔ API drift 해소.
   // A9 F3 fix — non-admin 에게 만료/미발행 공지가 노출되지 않도록 actorRole 전달.
   const actorRole = session.roles.includes('ADMIN') ? 'ADMIN' : (session.roles[0] ?? 'VIEWER');
   const notice = await getNoticeById(id, session.workspaceId, {
-    canViewInternal: canViewInternalNotice(session.roles),
     actorRole,
   });
   if (!notice) {
@@ -67,16 +65,13 @@ export default async function NoticeDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-4 flex items-center gap-2">
-        {notice.pinned && (
+      {notice.pinned && (
+        <div className="mb-4 flex items-center gap-2">
           <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
             {t('pinned')}
           </Badge>
-        )}
-        <Badge variant="outline" className="text-[10px] uppercase">
-          {notice.sensitivity}
-        </Badge>
-      </div>
+        </div>
+      )}
 
       <PageHeader
         eyebrow="Notice"

@@ -20,8 +20,7 @@ function isWikiReadOutput(data: unknown): data is WikiReadOutput {
     typeof data === "object" && data !== null &&
     "slug" in data && typeof (data as { slug: unknown }).slug === "string" &&
     "title" in data && typeof (data as { title: unknown }).title === "string" &&
-    "path" in data && typeof (data as { path: unknown }).path === "string" &&
-    "sensitivity" in data && typeof (data as { sensitivity: unknown }).sensitivity === "string"
+    "path" in data && typeof (data as { path: unknown }).path === "string"
   );
 }
 
@@ -74,7 +73,6 @@ export async function* askAgentToSSE(
               path: d.path,
               slug: d.slug,
               title: d.title,
-              sensitivity: d.sensitivity,
               citation: `[[${d.slug}]]`,
               origin: "shortlist",
               confidence: 0.8,

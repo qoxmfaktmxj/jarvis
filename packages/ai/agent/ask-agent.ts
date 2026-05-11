@@ -10,7 +10,7 @@
 // 이벤트를 추가한다.
 
 import type OpenAI from "openai";
-import { withSensitivityFilter } from "./tools/sensitivity-filter.js";
+import { withWorkspaceRbacFilter } from "./tools/sensitivity-filter.js";
 import type { ToolContext, ToolDefinition, ToolResult } from "./tools/types.js";
 import { wikiGrep } from "./tools/wiki-grep.js";
 import { wikiRead } from "./tools/wiki-read.js";
@@ -92,12 +92,14 @@ export type AskAgentEvent =
     };
 
 // ---------------------------------------------------------------------------
-// Tool registry — Phase A 에서 만든 tool 들을 sensitivity wrapper 로 감싸
+// Tool registry — Phase A 에서 만든 tool 들을 workspace+RBAC wrapper 로 감싸
 // 한 곳에서 이름→ToolDefinition 매핑.
 //
-// withSensitivityFilter 는 결과 행 단위 sensitivity 필터링이고, *권한* 게이팅이
-// 아니다. 도구 자체의 등록 여부(=LLM 노출 여부)는 ctx.permissions 를 기준으로
-// 별도 결정해야 한다 — P1 #3.
+// withWorkspaceRbacFilter 는 ctx 검증(workspaceId/userId/permissions 존재) +
+// 예외 안전망일 뿐, 도구 자체의 *등록 여부*(=LLM 노출 여부)는 ctx.permissions
+// 를 기준으로 별도 결정한다 — P1 #3.
+//
+// (D4=A 결정으로 행 단위 sensitivity 필터링은 제거됨 — 2026-05-11)
 // ---------------------------------------------------------------------------
 
 const GRAPH_READ = "graph:read";
@@ -126,7 +128,7 @@ function buildToolDict(
 
   const out: Record<string, ToolDefinition<unknown, unknown>> = {};
   for (const t of list) {
-    const wrapped = withSensitivityFilter(t);
+    const wrapped = withWorkspaceRbacFilter(t);
     out[wrapped.name] = wrapped;
   }
   return out;

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { and, eq, desc, count, sql } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
-import { canAccessGraphSnapshotSensitivity } from "@jarvis/auth/rbac";
+// Step 2D (2026-05-11): graph_snapshot.sensitivity 제거 (D2=B) — sensitivity 게이트 삭제.
 import { db } from "@jarvis/db/client";
 import { searchLog } from "@jarvis/db/schema";
 import { graphSnapshot } from "@jarvis/db/schema/graph";
@@ -63,7 +63,6 @@ export default async function AskPage({ searchParams }: Props) {
         .select({
           id: graphSnapshot.id,
           title: graphSnapshot.title,
-          sensitivity: graphSnapshot.sensitivity,
           buildStatus: graphSnapshot.buildStatus,
         })
         .from(graphSnapshot)
@@ -75,7 +74,7 @@ export default async function AskPage({ searchParams }: Props) {
           ),
         )
         .limit(1);
-      if (row && canAccessGraphSnapshotSensitivity(session.permissions, row.sensitivity)) {
+      if (row) {
         initialScope = { id: row.id, title: row.title };
       }
     } catch {

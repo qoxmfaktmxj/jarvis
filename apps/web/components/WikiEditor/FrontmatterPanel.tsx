@@ -4,28 +4,20 @@
  * FrontmatterPanel
  * ----------------------------------------------------------------------------
  * Edits the YAML frontmatter portion of a `wiki/manual/**` markdown page.
- * Known keys (title / sensitivity / tags) get dedicated inputs; every other
- * key falls into a free-form raw textarea so power users can keep custom
- * fields intact.
+ * Known keys (title / tags) get dedicated inputs; every other key falls into
+ * a free-form raw textarea so power users can keep custom fields intact.
+ *
+ * sensitivity 격리는 RBAC + workspaceId 모델로 일원화되었다 (2026-05-11 step 2A) —
+ * 본 패널에서 sensitivity 입력 제거.
  */
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-export type Sensitivity = "public" | "internal" | "restricted" | "secret";
-
 export interface Frontmatter {
   title: string;
-  sensitivity?: Sensitivity;
   tags?: string[];
   [key: string]: unknown;
 }
@@ -36,7 +28,7 @@ interface FrontmatterPanelProps {
   readOnly?: boolean;
 }
 
-const KNOWN_KEYS = new Set(["title", "sensitivity", "tags"]);
+const KNOWN_KEYS = new Set(["title", "tags"]);
 
 function serializeRawExtras(fm: Frontmatter): string {
   const extras = Object.entries(fm).filter(([k]) => !KNOWN_KEYS.has(k));
@@ -107,21 +99,16 @@ export function FrontmatterPanel({
       const next: Frontmatter = {
         ...extras,
         title: frontmatter.title,
-        sensitivity: frontmatter.sensitivity,
         tags: frontmatter.tags,
         ...patch,
       };
       onChange(next);
     },
-    [frontmatter.sensitivity, frontmatter.tags, frontmatter.title, onChange, rawExtras],
+    [frontmatter.tags, frontmatter.title, onChange, rawExtras],
   );
 
   const handleTitleChange = (value: string) => {
     emit({ title: value });
-  };
-
-  const handleSensitivityChange = (value: string) => {
-    emit({ sensitivity: value as Sensitivity });
   };
 
   const handleTagsBlur = () => {
@@ -142,34 +129,14 @@ export function FrontmatterPanel({
       className="rounded-lg border border-(--border-default) bg-(--bg-surface) p-4 space-y-4"
       data-testid="wiki-frontmatter-panel"
     >
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="wiki-fm-title">{t("title")}</Label>
-          <Input
-            id="wiki-fm-title"
-            value={frontmatter.title ?? ""}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            disabled={readOnly}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="wiki-fm-sensitivity">{t("sensitivity")}</Label>
-          <Select
-            value={frontmatter.sensitivity ?? "internal"}
-            onValueChange={handleSensitivityChange}
-            disabled={readOnly}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t("sensitivity")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="public">{t("public")}</SelectItem>
-              <SelectItem value="internal">{t("internal")}</SelectItem>
-              <SelectItem value="restricted">{t("restricted")}</SelectItem>
-              <SelectItem value="secret">{t("secret")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="wiki-fm-title">{t("title")}</Label>
+        <Input
+          id="wiki-fm-title"
+          value={frontmatter.title ?? ""}
+          onChange={(e) => handleTitleChange(e.target.value)}
+          disabled={readOnly}
+        />
       </div>
 
       <div className="space-y-1.5">

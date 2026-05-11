@@ -35,7 +35,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const { title, content, sensitivity, authorNote } = parsed.data;
+  // Step 2D (2026-05-11): raw_source.sensitivity 컬럼 제거 (D2=B). 입력 sensitivity
+  // 는 더 이상 사용하지 않는다 — Zod 스키마에서도 향후 제거 예정.
+  const { title, content, authorNote } = parsed.data;
 
   const [inserted] = await db
     .insert(rawSource)
@@ -43,7 +45,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       workspaceId: session.workspaceId,
       sourceType: 'manual',
       parsedContent: content,
-      sensitivity,
       metadata: {
         title,
         authorNote: authorNote ?? null,

@@ -1,8 +1,6 @@
-import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { wikiPageIndex } from "@jarvis/db/schema";
-import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 
 // NOTE: wiki-page-index has no authorId or tags columns.
 // authorId/authorName are returned as fixed stubs; tags as empty array.
@@ -16,7 +14,6 @@ export interface DashboardWikiRow {
   authorName: string;
   createdAt: Date;
   updatedAt: Date;
-  sensitivity: string;
 }
 
 export function orderLatestWikiPages(
@@ -30,22 +27,10 @@ export function orderLatestWikiPages(
 
 export async function listLatestWikiPages(
   workspaceId: string,
-  userPermissions: string[],
+  _userPermissions: string[],
   limit = 10,
   database: typeof db = db
 ): Promise<DashboardWikiRow[]> {
-  const allowed = getAllowedWikiSensitivityValues(userPermissions);
-  if (allowed.length === 0) return [];
-
-  const requiredPermissionGate = userPermissions.includes(PERMISSIONS.ADMIN_ALL)
-    ? sql`TRUE`
-    : userPermissions.length > 0
-      ? or(
-          isNull(wikiPageIndex.requiredPermission),
-          inArray(wikiPageIndex.requiredPermission, userPermissions)
-        )
-      : isNull(wikiPageIndex.requiredPermission);
-
   const rows = await database
     .select({
       id: wikiPageIndex.id,
@@ -53,16 +38,13 @@ export async function listLatestWikiPages(
       path: wikiPageIndex.path,
       slug: wikiPageIndex.slug,
       createdAt: wikiPageIndex.createdAt,
-      updatedAt: wikiPageIndex.updatedAt,
-      sensitivity: wikiPageIndex.sensitivity
+      updatedAt: wikiPageIndex.updatedAt
     })
     .from(wikiPageIndex)
     .where(
       and(
         eq(wikiPageIndex.workspaceId, workspaceId),
-        eq(wikiPageIndex.publishedStatus, "published"),
-        inArray(wikiPageIndex.sensitivity, allowed),
-        requiredPermissionGate
+        eq(wikiPageIndex.publishedStatus, "published")
       )
     )
     .orderBy(desc(wikiPageIndex.createdAt))

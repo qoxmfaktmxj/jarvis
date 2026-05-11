@@ -71,8 +71,8 @@ export const precedentCase = pgTable(
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
 
     // --- Jarvis 메타 ---
-    sensitivity: varchar("sensitivity", { length: 30 }).default("INTERNAL").notNull(),
     // Phase-Harness (2026-04-23): embedding 컬럼 제거. migration 0037 참조.
+    // 2026-05-11: sensitivity 컬럼 제거 (D2=B) — RBAC + workspaceId만으로 격리.
     tags: jsonb("tags").$type<string[]>().default([]).notNull(),
 
     createdBy: uuid("created_by").references(() => user.id, { onDelete: "set null" }),

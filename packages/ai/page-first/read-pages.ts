@@ -23,7 +23,6 @@ export interface LoadedPage {
   path: string;
   title: string;
   slug: string;
-  sensitivity: string;
   origin: "shortlist" | "expand";
   content: string; // raw markdown (frontmatter + body)
 }
@@ -86,7 +85,6 @@ export async function readTopPages(
       path: r.page.path,
       title: r.page.title,
       slug: r.page.slug,
-      sensitivity: r.page.sensitivity,
       origin: r.page.origin,
       content: r.content,
     });

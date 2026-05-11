@@ -37,7 +37,7 @@ describe.skipIf(!DB_AVAILABLE)('two-step ingest integration', () => {
       .returning({ id: workspace.id });
     testWorkspaceId = ws!.id;
 
-    // Seed raw_source
+    // Seed raw_source — Step 2D: sensitivity 컬럼 제거.
     const [rs] = await db
       .insert(rawSource)
       .values({
@@ -47,7 +47,6 @@ describe.skipIf(!DB_AVAILABLE)('two-step ingest integration', () => {
         mimeType: 'text/plain',
         ingestStatus: 'done',
         parsedContent: SAMPLE_TEXT,
-        sensitivity: 'INTERNAL',
       })
       .returning({ id: rawSource.id });
     testRawSourceId = rs!.id;

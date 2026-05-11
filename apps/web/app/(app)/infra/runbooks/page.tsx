@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { sql } from 'drizzle-orm';
 import { db } from '@jarvis/db/client';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { buildWikiSensitivitySqlFilter } from '@jarvis/auth/rbac';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/patterns/PageHeader';
@@ -17,16 +16,13 @@ export const dynamic = 'force-dynamic';
  * wiki viewer at the page's `routeKey`.
  *
  * Query path: direct `wiki_page_index` projection (no API route needed).
- * Sensitivity filter: reuses `buildWikiSensitivitySqlFilter` so users who
- * cannot view RESTRICTED pages silently get the filtered subset — same
- * contract as `packages/ai/page-first/shortlist.ts`.
+ * 2026-05-11: sensitivity 컬럼 제거 (D4=A). KNOWLEDGE_READ + workspaceId 만으로 격리.
  */
 type InfraRow = {
   id: string;
   route_key: string | null;
   title: string;
   slug: string;
-  sensitivity: string;
   company_cd: string | null;
   env_type: string | null;
   connect_cd: string | null;
@@ -41,20 +37,14 @@ type CompanyGroup = {
 
 async function loadInfraPages(
   workspaceId: string,
-  userPermissions: string[],
+  _userPermissions: string[],
 ): Promise<CompanyGroup[]> {
-  const sensitivityFilter = buildWikiSensitivitySqlFilter(userPermissions, {
-    column: 'wpi.sensitivity',
-  }).trim();
-  const sensitivityClause = sensitivityFilter ? sql.raw(` ${sensitivityFilter}`) : sql.empty();
-
   const rows = await db.execute<InfraRow>(sql`
     SELECT
       wpi.id,
       wpi.route_key,
       wpi.title,
       wpi.slug,
-      wpi.sensitivity,
       wpi.updated_at,
       wpi.frontmatter -> 'infra' ->> 'companyCd' AS company_cd,
       wpi.frontmatter -> 'infra' ->> 'envType'   AS env_type,
@@ -65,7 +55,6 @@ async function loadInfraPages(
       AND wpi.published_status = 'published'
       AND wpi.stale = FALSE
       AND wpi.frontmatter ->> 'domain' = 'infra'
-      ${sensitivityClause}
     ORDER BY company_cd NULLS LAST, env_type, connect_cd, wpi.title
   `);
 

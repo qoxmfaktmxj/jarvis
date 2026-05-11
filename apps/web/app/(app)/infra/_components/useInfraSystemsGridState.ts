@@ -30,7 +30,6 @@ export function makeBlankInfraSystem(): InfraSystemListRow {
     wikiPageRouteKey: null,
     wikiPageTitle: null,
     note: null,
-    sensitivity: "INTERNAL",
   } satisfies InfraSystemListRow;
 }
 

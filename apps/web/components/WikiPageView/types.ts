@@ -4,15 +4,12 @@
  * Phase-W2 / Phase-W3 PR3 — WikiPage / WikiPageMeta 타입 정의.
  * mockWikiPages.ts 와 분리해 Storybook fixture 와 실 DB 로딩 코드가 같은 타입을 공유.
  *
- * sensitivity UI 4값: DB 의 PUBLIC|INTERNAL|RESTRICTED|SECRET_REF_ONLY 에 1:1 대응.
- * mappers.ts 의 mapDbSensitivity() 를 통해서만 변환한다. 직접 비교 금지.
+ * sensitivity 격리는 RBAC + workspaceId 모델로 일원화되었다 (2026-05-11 step 2A).
+ * 본 모듈에서 sensitivity 필드를 제거.
  */
-export type WikiSensitivityUi = "public" | "internal" | "restricted" | "secret";
-
 export type WikiPageMeta = {
   slug: string;
   title: string;
-  sensitivity: WikiSensitivityUi;
   tags: string[];
   updatedAt: string;
   workspaceId: string;

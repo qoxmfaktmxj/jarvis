@@ -44,8 +44,7 @@ export default async function OnboardingHubPage() {
                   {page.summary && (
                     <p className="line-clamp-2 text-sm text-muted-foreground">{page.summary}</p>
                   )}
-                  <div className="flex items-center justify-between pt-1">
-                    <Badge variant="outline" className="text-xs">{page.sensitivity}</Badge>
+                  <div className="flex items-center justify-end pt-1">
                     <span className="text-xs text-muted-foreground">
                       {page.updatedAt
                         ? formatDistanceToNow(new Date(page.updatedAt), { addSuffix: true })

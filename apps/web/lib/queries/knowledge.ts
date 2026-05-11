@@ -1,8 +1,7 @@
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { user } from '@jarvis/db/schema/user';
-import { canAccessKnowledgeSensitivityByPermissions } from '@jarvis/auth/rbac';
-import { and, desc, eq, ilike, count, or } from 'drizzle-orm';
+import { and, desc, eq, ilike, count } from 'drizzle-orm';
 
 export type KnowledgePage = typeof knowledgePage.$inferSelect;
 export type KnowledgePageVersion = typeof knowledgePageVersion.$inferSelect;
@@ -22,7 +21,6 @@ export type PageVersion = Pick<
 export interface KnowledgeFilters {
   pageType?: string;
   publishStatus?: string;
-  sensitivity?: string;
   q?: string;
   page?: number;
   limit?: number;
@@ -38,56 +36,17 @@ export interface KnowledgePaginatedResponse {
   };
 }
 
-function canAccessKnowledgePage(
-  permissions: string[],
-  sensitivity: KnowledgePage['sensitivity'],
-) {
-  return canAccessKnowledgeSensitivityByPermissions(
-    permissions,
-    sensitivity ?? 'INTERNAL',
-  );
-}
-
-function buildReadableSensitivityCondition(permissions: string[]) {
-  const canRestricted = canAccessKnowledgePage(permissions, 'RESTRICTED');
-  const canSecret = canAccessKnowledgePage(permissions, 'SECRET_REF_ONLY');
-
-  if (canRestricted && canSecret) {
-    // No sensitivity filter needed.
-    return null;
-  }
-
-  const allowed = [
-    eq(knowledgePage.sensitivity, 'PUBLIC'),
-    eq(knowledgePage.sensitivity, 'INTERNAL'),
-  ];
-  if (canRestricted) allowed.push(eq(knowledgePage.sensitivity, 'RESTRICTED'));
-  if (canSecret) allowed.push(eq(knowledgePage.sensitivity, 'SECRET_REF_ONLY'));
-
-  return or(...allowed);
-}
-
 export async function getKnowledgePages(
   workspaceId: string,
-  permissions: string[],
+  _permissions: string[],
   filters: KnowledgeFilters = {},
 ): Promise<KnowledgePaginatedResponse> {
-  const { pageType, publishStatus, sensitivity, q, page = 1, limit = 20 } = filters;
+  const { pageType, publishStatus, q, page = 1, limit = 20 } = filters;
   const offset = (page - 1) * limit;
 
-  if (sensitivity && !canAccessKnowledgePage(permissions, sensitivity as KnowledgePage['sensitivity'])) {
-    return {
-      data: [],
-      meta: { page, limit, total: 0, totalPages: 0 },
-    };
-  }
-
   const conditions = [eq(knowledgePage.workspaceId, workspaceId)];
-  const readableSensitivityCondition = buildReadableSensitivityCondition(permissions);
-  if (readableSensitivityCondition) conditions.push(readableSensitivityCondition);
   if (pageType) conditions.push(eq(knowledgePage.pageType, pageType));
   if (publishStatus) conditions.push(eq(knowledgePage.publishStatus, publishStatus));
-  if (sensitivity) conditions.push(eq(knowledgePage.sensitivity, sensitivity));
   if (q) conditions.push(ilike(knowledgePage.title, `%${q}%`));
 
   const where = and(...conditions);
@@ -108,7 +67,7 @@ export async function getKnowledgePages(
 export async function getKnowledgePage(
   pageId: string,
   workspaceId: string,
-  permissions: string[],
+  _permissions: string[],
 ): Promise<KnowledgePageWithVersion | null> {
   const [page] = await db
     .select()
@@ -117,7 +76,6 @@ export async function getKnowledgePage(
     .limit(1);
 
   if (!page) return null;
-  if (!canAccessKnowledgePage(permissions, page.sensitivity)) return null;
 
   const [version] = await db
     .select()
@@ -132,16 +90,16 @@ export async function getKnowledgePage(
 export async function getPageVersions(
   pageId: string,
   workspaceId: string,
-  permissions: string[],
+  _permissions: string[],
 ): Promise<PageVersion[]> {
   // Verify page belongs to workspace first
   const [page] = await db
-    .select({ id: knowledgePage.id, sensitivity: knowledgePage.sensitivity })
+    .select({ id: knowledgePage.id })
     .from(knowledgePage)
     .where(and(eq(knowledgePage.id, pageId), eq(knowledgePage.workspaceId, workspaceId)))
     .limit(1);
 
-  if (!page || !canAccessKnowledgePage(permissions, page.sensitivity)) return [];
+  if (!page) return [];
 
   return db
     .select({
@@ -161,7 +119,7 @@ export async function getPageVersions(
 
 export async function getPagesByType(
   workspaceId: string,
-  permissions: string[],
+  _permissions: string[],
   pageType: string,
   limit = 10,
 ): Promise<KnowledgePage[]> {
@@ -170,8 +128,6 @@ export async function getPagesByType(
     eq(knowledgePage.pageType, pageType),
     eq(knowledgePage.publishStatus, 'published'),
   ];
-  const readableSensitivityCondition = buildReadableSensitivityCondition(permissions);
-  if (readableSensitivityCondition) conditions.push(readableSensitivityCondition);
 
   return db
     .select()
@@ -184,7 +140,7 @@ export async function getPagesByType(
 export async function getVersionContent(
   versionId: string,
   workspaceId: string,
-  permissions: string[],
+  _permissions: string[],
 ): Promise<KnowledgePageVersion | null> {
   const [version] = await db
     .select()
@@ -196,10 +152,10 @@ export async function getVersionContent(
 
   // Ensure the parent page belongs to this workspace
   const [page] = await db
-    .select({ id: knowledgePage.id, sensitivity: knowledgePage.sensitivity })
+    .select({ id: knowledgePage.id })
     .from(knowledgePage)
     .where(and(eq(knowledgePage.id, version.pageId), eq(knowledgePage.workspaceId, workspaceId)))
     .limit(1);
 
-  return page && canAccessKnowledgePage(permissions, page.sensitivity) ? version : null;
+  return page ? version : null;
 }

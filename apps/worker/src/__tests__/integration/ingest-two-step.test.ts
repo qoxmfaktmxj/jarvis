@@ -187,6 +187,7 @@ describe.skipIf(!DB_AVAILABLE)('wiki two-step ingest integration (W2-T1)', () =>
       .returning({ id: workspace.id });
     testWorkspaceId = ws!.id;
 
+    // Step 2D: raw_source.sensitivity 컬럼 제거.
     const [rs] = await db
       .insert(rawSource)
       .values({
@@ -194,7 +195,6 @@ describe.skipIf(!DB_AVAILABLE)('wiki two-step ingest integration (W2-T1)', () =>
         sourceType: 'manual',
         parsedContent: '인사팀 연차 정책 등 사내 정책에 대한 문서입니다.',
         ingestStatus: 'done',
-        sensitivity: 'INTERNAL',
       })
       .returning({ id: rawSource.id });
     testRawSourceId = rs!.id;

@@ -21,7 +21,6 @@ vi.mock("@/lib/hooks/useAskAI", () => ({
         slug: "leave-policy",
         title: "휴가 정책",
         path: "wiki/ws/auto/concepts/leave-policy.md",
-        sensitivity: "PUBLIC",
         citation: "[[leave-policy]]",
         origin: "shortlist",
         confidence: 0.9,
