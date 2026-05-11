@@ -217,11 +217,15 @@ export function MenuGrid({
         isSearching={saving}
         searchLabel={t("filter.search")}
       >
-        <GridFilterField label={t("filter.code")} className="w-[140px]">
+        <GridFilterField label={t("filter.code")} className="w-[170px]">
+          {/* 코드 컬럼은 영문 도트 표기(예: nav.ask, admin.users). 사용자가
+              한국어 라벨을 코드 input에 입력해 0건이 나오는 인지 mismatch를
+              막기 위해 placeholder로 형식을 명시한다 (A1-F1). */}
           <input
             type="text"
             value={draftFilters.q}
             onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
+            placeholder={t("filter.codePlaceholder")}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           />
         </GridFilterField>
@@ -230,6 +234,7 @@ export function MenuGrid({
             type="text"
             value={draftFilters.qLabel}
             onChange={(e) => onDraftFilterChange({ ...draftFilters, qLabel: e.target.value })}
+            placeholder={t("filter.labelPlaceholder")}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           />
         </GridFilterField>

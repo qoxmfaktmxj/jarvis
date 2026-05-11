@@ -91,7 +91,7 @@ export function CodesPageClient({
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   // URL-synced master filter values (committed) + draft for input typing
-  const { values: masterUrlFilters, setValue: setMasterUrlFilter, reset: resetMasterUrl } =
+  const { values: masterUrlFilters, setValues: setMasterUrlValues, reset: resetMasterUrl } =
     useUrlFilters<MasterFilters>({ defaults: MASTER_DEFAULTS });
   const [masterDraft, setMasterDraft] = useState<MasterFilters>(masterUrlFilters);
   // Sync draft when URL changes externally (back/forward, refresh).
@@ -419,12 +419,19 @@ export function CodesPageClient({
 
   // ---- Master filter apply / reset ----
   const applyMasterFilters = useCallback(() => {
-    setMasterUrlFilter("q", masterDraft.q);
-    setMasterUrlFilter("qName", masterDraft.qName);
-    setMasterUrlFilter("includesDetailCodeNm", masterDraft.includesDetailCodeNm);
-    setMasterUrlFilter("kind", masterDraft.kind);
+    // server action을 먼저 발화. router.replace를 먼저 호출하면 Next.js 15의 RSC
+    // 재렌더가 useTransition 안의 in-flight server action(listCodeGroups)을
+    // cancel 시킨다 (admin/menus d7323aa fix와 동일 패턴 — A1-F2). 또한 4번의
+    // setMasterUrlFilter 호출을 단일 setValues 배치로 합쳐 router.replace를
+    // 한 번만 발화한다 (A1-F1 패턴 미러).
     reloadMaster(masterDraft);
-  }, [masterDraft, reloadMaster, setMasterUrlFilter]);
+    setMasterUrlValues({
+      q: masterDraft.q,
+      qName: masterDraft.qName,
+      includesDetailCodeNm: masterDraft.includesDetailCodeNm,
+      kind: masterDraft.kind,
+    });
+  }, [masterDraft, reloadMaster, setMasterUrlValues]);
 
   const resetMasterFilters = useCallback(() => {
     resetMasterUrl();

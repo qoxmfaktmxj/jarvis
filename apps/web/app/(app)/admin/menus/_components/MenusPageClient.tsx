@@ -128,7 +128,7 @@ export function MenusPageClient({
   // URL-synced master filters (committed) + draft for input typing.
   const {
     values: masterUrlFilters,
-    setValue: setMasterUrlFilter,
+    setValues: setMasterUrlValues,
     reset: resetMasterUrl,
   } = useUrlFilters<MasterFilters>({ defaults: MASTER_DEFAULTS });
   const [masterDraft, setMasterDraft] = useState<MasterFilters>(masterUrlFilters);
@@ -472,12 +472,18 @@ export function MenusPageClient({
     // server action을 먼저 발화. router.replace를 먼저 호출하면 Next.js의 RSC
     // 재렌더가 in-flight server action을 cancel 시킨다 (15.x). URL sync는
     // 사용자 가시 효과만 있는 cosmetic이므로 reload 뒤로 미룬다.
+    //
+    // 추가로 4번의 setMasterUrlFilter를 단일 setValues 배치 호출로 합쳐
+    // router.replace를 1번만 발화한다. 다중 replace는 RSC 재렌더 폭주로
+    // useTransition 내부 server action을 여전히 cancel 시킬 수 있다 (A1-F1).
     reloadMaster(masterDraft);
-    setMasterUrlFilter("q", masterDraft.q);
-    setMasterUrlFilter("qLabel", masterDraft.qLabel);
-    setMasterUrlFilter("kind", masterDraft.kind);
-    setMasterUrlFilter("parentCode", masterDraft.parentCode);
-  }, [masterDraft, masterGrid, reloadMaster, setMasterUrlFilter]);
+    setMasterUrlValues({
+      q: masterDraft.q,
+      qLabel: masterDraft.qLabel,
+      kind: masterDraft.kind,
+      parentCode: masterDraft.parentCode,
+    });
+  }, [masterDraft, masterGrid, reloadMaster, setMasterUrlValues]);
 
   const resetMasterFilters = useCallback(() => {
     masterGrid.discardChanges();
