@@ -14,8 +14,10 @@ describe("middleware", () => {
   });
 
   it("lets the HMR websocket endpoint bypass auth redirects", () => {
+    // Both webpack-hmr and turbopack-hmr must be excluded — Turbopack is the
+    // default bundler (pnpm dev) and webpack is the fallback (pnpm dev:webpack).
     expect(config.matcher).toContain(
-      "/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico).*)"
+      "/((?!_next/static|_next/image|_next/webpack-hmr|_next/turbopack-hmr|favicon.ico).*)"
     );
   });
 });

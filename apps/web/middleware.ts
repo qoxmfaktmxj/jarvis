@@ -105,5 +105,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico).*)"],
+  // Dev HMR endpoints (webpack-hmr / turbopack-hmr) must bypass the auth gate,
+  // otherwise the HMR websocket gets redirected to /login and hot reload breaks.
+  // Both are listed so `pnpm dev` (Turbopack, default) and `pnpm dev:webpack`
+  // (fallback) work identically.
+  matcher: ["/((?!_next/static|_next/image|_next/webpack-hmr|_next/turbopack-hmr|favicon.ico).*)"],
 };

@@ -18,8 +18,8 @@ export function buildCsp({ nonce, isProd }: BuildCspOptions): string {
     ? "'self'"
     : "'self' ws://localhost:*";
 
-  // Dev: webpack HMR / react-refresh use eval() — must allow unsafe-eval.
-  // Prod: strict-dynamic alone is sufficient.
+  // Dev: HMR (Turbopack default, Webpack fallback) and react-refresh use
+  // eval() — must allow unsafe-eval. Prod: strict-dynamic alone is sufficient.
   const scriptSrc = isProd
     ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
     : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
