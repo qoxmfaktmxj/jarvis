@@ -4,18 +4,50 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./types": "./types.ts",
-    "./ask": "./ask.ts",
-    "./provider": "./provider.ts",
-    "./breaker": "./breaker.ts",
-    "./page-first": "./page-first/index.ts",
-    "./page-first/shortlist": "./page-first/shortlist.ts",
-    "./page-first/expand": "./page-first/expand.ts",
-    "./page-first/read-pages": "./page-first/read-pages.ts",
-    "./page-first/synthesize": "./page-first/synthesize.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./ask": {
+      "types": "./dist/ask.d.ts",
+      "default": "./dist/ask.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./breaker": {
+      "types": "./dist/breaker.d.ts",
+      "default": "./dist/breaker.js"
+    },
+    "./page-first": {
+      "types": "./dist/page-first/index.d.ts",
+      "default": "./dist/page-first/index.js"
+    },
+    "./page-first/shortlist": {
+      "types": "./dist/page-first/shortlist.d.ts",
+      "default": "./dist/page-first/shortlist.js"
+    },
+    "./page-first/expand": {
+      "types": "./dist/page-first/expand.d.ts",
+      "default": "./dist/page-first/expand.js"
+    },
+    "./page-first/read-pages": {
+      "types": "./dist/page-first/read-pages.d.ts",
+      "default": "./dist/page-first/read-pages.js"
+    },
+    "./page-first/synthesize": {
+      "types": "./dist/page-first/synthesize.d.ts",
+      "default": "./dist/page-first/synthesize.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
