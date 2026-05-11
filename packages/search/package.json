@@ -4,20 +4,58 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./types": "./types.ts",
-    "./adapter": "./adapter.ts",
-    "./pg-search": "./pg-search.ts",
-    "./precedent-search": "./precedent-search.ts",
-    "./query-parser": "./query-parser.ts",
-    "./hybrid-ranker": "./hybrid-ranker.ts",
-    "./highlighter": "./highlighter.ts",
-    "./explain": "./explain.ts",
-    "./facet-counter": "./facet-counter.ts",
-    "./synonym-resolver": "./synonym-resolver.ts",
-    "./fallback-chain": "./fallback-chain.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./adapter": {
+      "types": "./dist/adapter.d.ts",
+      "default": "./dist/adapter.js"
+    },
+    "./pg-search": {
+      "types": "./dist/pg-search.d.ts",
+      "default": "./dist/pg-search.js"
+    },
+    "./precedent-search": {
+      "types": "./dist/precedent-search.d.ts",
+      "default": "./dist/precedent-search.js"
+    },
+    "./query-parser": {
+      "types": "./dist/query-parser.d.ts",
+      "default": "./dist/query-parser.js"
+    },
+    "./hybrid-ranker": {
+      "types": "./dist/hybrid-ranker.d.ts",
+      "default": "./dist/hybrid-ranker.js"
+    },
+    "./highlighter": {
+      "types": "./dist/highlighter.d.ts",
+      "default": "./dist/highlighter.js"
+    },
+    "./explain": {
+      "types": "./dist/explain.d.ts",
+      "default": "./dist/explain.js"
+    },
+    "./facet-counter": {
+      "types": "./dist/facet-counter.d.ts",
+      "default": "./dist/facet-counter.js"
+    },
+    "./synonym-resolver": {
+      "types": "./dist/synonym-resolver.d.ts",
+      "default": "./dist/synonym-resolver.js"
+    },
+    "./fallback-chain": {
+      "types": "./dist/fallback-chain.d.ts",
+      "default": "./dist/fallback-chain.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest run"
   },
