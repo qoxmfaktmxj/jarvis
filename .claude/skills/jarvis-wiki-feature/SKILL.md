@@ -173,15 +173,14 @@ wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`
 - **sensitivity 애플리케이션 레벨 필터** — `rows.filter(...)`로 나중에 거르면 count/pagination이 틀어지고 RESTRICTED 누수 가능.
 - **권한 체크 누락** — `requirePermission(PERMISSIONS.KNOWLEDGE_*)` 빠트리면 타입 체커는 못 잡는다.
 - **`index.md` / `log.md` 수동 편집** — 다음 sync에서 덮어쓰임.
-- **schema-drift 미검증** — `wiki_*` 테이블 수정 후 `pnpm db:generate` 누락 → `scripts/check-schema-drift.mjs --precommit` fail.
+- **운영 DB 미적용** — `wiki_*` 테이블 수정 후 운영 DB에 SQL 직접 적용을 빠뜨리면 스키마 불일치.
 - **chunk-level RAG 작성** — page-first 원칙 위반. 벡터로 chunk 가져와서 context로 주입하지 말 것. page를 가져와 disk에서 읽는다.
 - **wiki-agent에 디스크/DB 부작용 추가** — stateless 경계 깨짐. 프롬프트·파서만.
 
 ## 9. 빠른 검증 명령
 
 ```bash
-# schema drift (wiki_* 테이블 변경 후)
-node scripts/check-schema-drift.mjs --precommit
+# wiki_* 테이블 변경 후: 운영 DB에 해당 ALTER/CREATE SQL 직접 적용
 
 # wiki-fs ↔ DB projection 무결성 (commitSha ↔ git HEAD 등)
 pnpm wiki:check

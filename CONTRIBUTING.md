@@ -29,7 +29,6 @@ Jarvis에 기여하려는 새 개발자를 위한 온보딩 가이드입니다. 
 |------|-----------|-----------|
 | Node.js | 22.x+ | `node --version` |
 | pnpm | 10.x+ | `pnpm --version` |
-| Docker + Docker Compose | 최신 안정판 | `docker --version`, `docker compose version` |
 | Git | 2.40+ | `git --version` |
 
 Windows 사용자는 WSL2 혹은 Git Bash 환경을 권장합니다. PowerShell에서도 동작하지만 shell script 호환성이 떨어질 수 있습니다.
@@ -60,23 +59,11 @@ cp .env.example .env.local
 
 인증은 이메일+비밀번호 방식입니다. 로컬 개발에서는 로그인 페이지의 dev 계정을 사용합니다.
 
-### 3.3 인프라 기동
+### 3.3 인프라
 
-```bash
-docker compose up -d
-```
+원격 DB 사용 — 로컬 인프라 없음. `.env`의 `DATABASE_URL`, `MINIO_*` 등을 사내 개발 서버 또는 운영 서버로 설정합니다. DB 스키마 변경이 필요하면 `packages/db/schema/*.ts`를 수정한 뒤 해당 `ALTER/CREATE` SQL을 운영 DB에 직접 적용합니다.
 
-이 명령은 PostgreSQL, MinIO를 띄웁니다. `docker compose ps`로 2개 컨테이너가 `healthy` 상태인지 확인합니다.
-
-### 3.4 DB 마이그레이션
-
-```bash
-pnpm db:migrate
-```
-
-Drizzle이 `packages/db/migrations/` 아래 마이그레이션을 순차 적용합니다.
-
-### 3.5 개발 서버 기동
+### 3.4 개발 서버 기동
 
 ```bash
 pnpm dev
@@ -107,7 +94,7 @@ pnpm dev
 2. **요구 명료화** (애매할 때) — `superpowers:brainstorming`
 3. **계획 작성** — `superpowers:writing-plans` + `jarvis-architecture`의 영향도 체크리스트
 4. **구현 + 리뷰** — `superpowers:subagent-driven-development` (implementer는 TDD + 파일 변경 순서, spec-reviewer는 경계면 교차 비교)
-5. **완료 전 검증** — `superpowers:verification-before-completion` + `jarvis-architecture`의 검증 게이트 명령 (변경 범위에 맞는 것만: type-check/lint/test/schema-drift/wiki:check/audit:rsc/eval:budget-test)
+5. **완료 전 검증** — `superpowers:verification-before-completion` + `jarvis-architecture`의 검증 게이트 명령 (변경 범위에 맞는 것만: type-check/lint/test/운영 DB SQL 적용/wiki:check/audit:rsc/eval:budget-test)
 6. **브랜치 마감·PR** — `superpowers:finishing-a-development-branch`
 
 단일 파일 1~2줄 수정이나 단순 질문은 하네스를 거치지 않고 직접 응답합니다.
@@ -161,7 +148,6 @@ PR을 올리기 전 로컬에서 다음이 모두 통과해야 합니다.
 - [ ] `pnpm type-check` — TypeScript 에러 0
 - [ ] `pnpm lint` — ESLint 에러 0 (warning은 허용되나 신규 warning 지양)
 - [ ] `pnpm test` — 단위 테스트 전부 PASS
-- [ ] `node scripts/check-schema-drift.mjs --precommit` — schema-drift 통과
 - [ ] i18n 키 누락 없음 — 새 UI 문자열은 `apps/web/messages/ko.json`에 추가
 - [ ] 권한 체크 누락 없음 — 모든 server action 초입에 `PERMISSION_*` 상수로 권한 확인
 - [ ] Wiki 경계 준수 — `wiki/auto/` 직접 편집 UI 금지, `wiki/manual/`에 LLM 직접 쓰기 경로 없음
@@ -236,9 +222,8 @@ ls wiki/dev-workspace/auto/sources/
 | 증상 | 원인 | 조치 |
 |------|------|------|
 | `OPENAI_API_KEY not set` | `.env.local` 누락 | `.env.example` 복사 후 키 입력 |
-| `EACCES wiki/...` | 컨테이너 경로 mount 실패 | `WIKI_ROOT`를 호스트 절대경로로 변경 |
+| `EACCES wiki/...` | 경로 권한 오류 | `WIKI_ROOT`를 절대경로로 변경 |
 | `wiki_page_index drift detected` | 디스크↔DB 불일치 | `pnpm wiki:resync --workspace=<id>` |
-| `schema-drift: migration mismatch` | Drizzle migration 누락 | `pnpm db:generate` 후 재커밋 |
 
 ---
 

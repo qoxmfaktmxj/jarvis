@@ -100,7 +100,7 @@ Jarvis 프로젝트에서 아래 중 하나라도 해당되면 진입:
 
 - `pnpm --filter @jarvis/web type-check` / `lint` (항상)
 - `pnpm test` (범위 좁혀)
-- `pnpm db:generate` + `node scripts/check-schema-drift.mjs --precommit` (스키마 변경)
+- 운영 DB에 `ALTER/CREATE` SQL 직접 적용 (스키마 변경)
 - `pnpm wiki:check` (wiki 도메인)
 - `pnpm audit:rsc` (RSC 경계 변경)
 - `pnpm eval:budget-test` (AI 파이프라인 변경)
