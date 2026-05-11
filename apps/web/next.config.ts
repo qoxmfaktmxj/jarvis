@@ -12,15 +12,6 @@ const nextConfig: NextConfig = {
   // standalone output for Docker production builds (Linux only)
   // Disabled on Windows due to symlink permission limitations (EPERM)
   output: process.env.DOCKER_BUILD === '1' ? 'standalone' : undefined,
-  transpilePackages: [
-    "@jarvis/db",
-    "@jarvis/shared",
-    "@jarvis/auth",
-    "@jarvis/search",
-    "@jarvis/ai",
-    "@jarvis/secret",
-    "@jarvis/wiki-agent"
-  ],
   // Sentry (and its import-in-the-middle hook) is Node-only. Keep it
   // external so webpack never tries to bundle worker_threads/module for
   // the browser or edge bundles. Pair with the NEXT_RUNTIME guard in
@@ -35,6 +26,33 @@ const nextConfig: NextConfig = {
   // wiki viewer 403 응답을 200+content 대신 HTTP 403 으로 분기하기 위함.
   experimental: {
     authInterrupts: true,
+    // Barrel imports tree-shake — lucide-react/radix는 dev에서도 페이지마다
+    // re-resolve 비용이 커서 컴파일 시간을 눈에 띄게 줄임.
+    optimizePackageImports: [
+      "lucide-react",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-select",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-tabs",
+    ],
+  },
+  // Turbopack 설정. pnpm dev (--turbopack) 사용 시 활성화.
+  // webpack 폴백 (pnpm dev:webpack) 사용 시 아래 webpack(...) 콜백이 대신 적용됨.
+  turbopack: {
+    resolveExtensions: [
+      ".tsx",
+      ".ts",
+      ".jsx",
+      ".js",
+      ".mts",
+      ".mjs",
+      ".cts",
+      ".cjs",
+      ".json",
+    ],
   },
   webpack(config) {
     config.resolve.extensionAlias = {
