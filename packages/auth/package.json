@@ -4,15 +4,38 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./types": "./types.ts",
-    "./session": "./session.ts",
-    "./rbac": "./rbac.ts",
-    "./cookie": "./cookie.ts",
-    "./return-url": "./return-url.ts",
-    "./password": "./password.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./session": {
+      "types": "./dist/session.d.ts",
+      "default": "./dist/session.js"
+    },
+    "./rbac": {
+      "types": "./dist/rbac.d.ts",
+      "default": "./dist/rbac.js"
+    },
+    "./cookie": {
+      "types": "./dist/cookie.d.ts",
+      "default": "./dist/cookie.js"
+    },
+    "./return-url": {
+      "types": "./dist/return-url.d.ts",
+      "default": "./dist/return-url.js"
+    },
+    "./password": {
+      "types": "./dist/password.d.ts",
+      "default": "./dist/password.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest"
   },
