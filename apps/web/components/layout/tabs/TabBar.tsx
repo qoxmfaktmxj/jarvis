@@ -112,15 +112,27 @@ function TabItem({
         marginRight: 2,
         borderTopLeftRadius: 10,
         borderTopRightRadius: 10,
-        borderTop: active ? "1px solid var(--line)" : "1px solid transparent",
-        borderLeft: active ? "1px solid var(--line)" : "1px solid transparent",
-        borderRight: active ? "1px solid var(--line)" : "1px solid transparent",
+        borderTop: active
+          ? "1px solid var(--line)"
+          : hovered
+            ? "1px solid var(--line2)"
+            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
+        borderLeft: active
+          ? "1px solid var(--line)"
+          : hovered
+            ? "1px solid var(--line2)"
+            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
+        borderRight: active
+          ? "1px solid var(--line)"
+          : hovered
+            ? "1px solid var(--line2)"
+            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
         background: active
           ? "var(--bg)"
           : hovered
             ? "var(--line2)"
             : "transparent",
-        color: active ? "var(--ink)" : "var(--ink2)",
+        color: active || hovered ? "var(--ink)" : "var(--ink2)",
         fontSize: 12,
         fontWeight: active ? 600 : 400,
         maxWidth: 180,
