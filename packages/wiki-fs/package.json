@@ -4,15 +4,38 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./types": "./src/types.ts",
-    "./writer": "./src/writer.ts",
-    "./frontmatter": "./src/frontmatter.ts",
-    "./wikilink": "./src/wikilink.ts",
-    "./git": "./src/git.ts",
-    "./worktree": "./src/worktree.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./writer": {
+      "types": "./dist/writer.d.ts",
+      "default": "./dist/writer.js"
+    },
+    "./frontmatter": {
+      "types": "./dist/frontmatter.d.ts",
+      "default": "./dist/frontmatter.js"
+    },
+    "./wikilink": {
+      "types": "./dist/wikilink.d.ts",
+      "default": "./dist/wikilink.js"
+    },
+    "./git": {
+      "types": "./dist/git.d.ts",
+      "default": "./dist/git.js"
+    },
+    "./worktree": {
+      "types": "./dist/worktree.d.ts",
+      "default": "./dist/worktree.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
