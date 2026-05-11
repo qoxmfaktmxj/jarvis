@@ -4,7 +4,8 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "noEmit": false
   },
   "include": [
     "**/*.ts"
@@ -12,6 +13,8 @@
   "exclude": [
     "dist",
     "node_modules",
-    "__tests__"
+    "__tests__",
+    "**/*.test.ts",
+    "vitest.config.ts"
   ]
 }

@@ -4,14 +4,34 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./client": "./client.ts",
-    "./schema": "./schema/index.ts",
-    "./schema/*": "./schema/*.ts",
-    "./feature-flags": "./feature-flags.ts",
-    "./operators": "./operators.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "default": "./dist/schema/index.js"
+    },
+    "./schema/*": {
+      "types": "./dist/schema/*.d.ts",
+      "default": "./dist/schema/*.js"
+    },
+    "./feature-flags": {
+      "types": "./dist/feature-flags.d.ts",
+      "default": "./dist/feature-flags.js"
+    },
+    "./operators": {
+      "types": "./dist/operators.d.ts",
+      "default": "./dist/operators.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "node --test --import tsx ./guards/__tests__/body-column-guard.test.ts ./__tests__/schema/user-global-unique.test.ts ./__tests__/schema/sales-contract-schema.test.ts ./__tests__/schema/sales-people-schema.test.ts ./__tests__/schema/project-extension.test.ts"
   },
