@@ -83,7 +83,7 @@ pnpm dev
 - **진입점 스킬:** [`jarvis-feature`](.claude/skills/jarvis-feature/SKILL.md) — superpowers 워크플로우에 Jarvis 도메인 컨텍스트를 주입하는 얇은 오케스트레이터
 - **도메인 스킬 4개 (방법론 각 단계에 컨텍스트로 주입):**
   - [`jarvis-architecture`](.claude/skills/jarvis-architecture/SKILL.md) — 모노레포 구조 · 영향도 체크리스트(17계층) · 파일 변경 순서(20단계) · 검증 게이트 명령
-  - [`jarvis-db-patterns`](.claude/skills/jarvis-db-patterns/SKILL.md) — 31 스키마 · 34 권한 · 5 역할 · sensitivity · server action 두 패턴 · 경계면 교차 비교 체크리스트
+  - [`jarvis-db-patterns`](.claude/skills/jarvis-db-patterns/SKILL.md) — 54 스키마 · 47 권한 · 5 역할 · server action 두 패턴 · 경계면 교차 비교 체크리스트
   - [`jarvis-i18n`](.claude/skills/jarvis-i18n/SKILL.md) — ko.json · 보간 변수 · 경계면 검증
   - [`jarvis-wiki-feature`](.claude/skills/jarvis-wiki-feature/SKILL.md) — Karpathy 4원칙 · ingest 4단계 · wiki-fs/wiki-agent 경계
 - **방법론 (위임 대상):** `superpowers:brainstorming` · `writing-plans` · `subagent-driven-development` · `executing-plans` · `test-driven-development` · `verification-before-completion` · `requesting-code-review` · `receiving-code-review` · `systematic-debugging` · `dispatching-parallel-agents` · `using-git-worktrees` · `finishing-a-development-branch`
@@ -121,9 +121,9 @@ Codex CLI에도 동일한 원칙을 적용합니다. `/plugins` → `superpowers
 - Drizzle을 통해 `wiki_page_index` 등의 projection 테이블에 **직접 쓰기 금지**. 워커 동기화 잡이 디스크 → DB projection을 담당합니다.
 - `fs.writeFile('wiki/...')` 같은 직접 I/O는 `wiki-fs` 내부에서만 허용됩니다.
 
-### 5.3 sensitivity
+### 5.3 격리 (RBAC + workspaceId)
 
-`wiki_page_index.sensitivity`는 `PUBLIC | INTERNAL | RESTRICTED | SECRET_REF_ONLY` 중 하나. 권한 체크와 sensitivity 필터는 **동시에** 적용합니다.
+행 단위 sensitivity 필터는 2026-05-12 폐기되었다. `wiki_page_index`의 격리는 `requirePermission(PERMISSIONS.KNOWLEDGE_*)` + `eq(wiki_page_index.workspaceId, session.workspaceId)`로만 결정한다. 권한 없는 사용자는 화면 자체가 노출되지 않는다.
 
 ---
 
@@ -206,7 +206,7 @@ pnpm wiki:ingest --workspace=dev-workspace --source=<raw_source_id>
 [Step A] Analysis LLM  — index.md 로드, 관련 페이지 후보 선정
 [Step B] Generation LLM — 10~15개 페이지 본문 생성 + [[wikilink]] 삽입
 [Step C] Write         — temp worktree에 patch → validate → main merge
-[Step D] Review queue  — contradictions / sensitivity 변경 항목 등록
+[Step D] Review queue  — contradictions / PII 감지 항목 등록
 ```
 
 완료 후 확인:

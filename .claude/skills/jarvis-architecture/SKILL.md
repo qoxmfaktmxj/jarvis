@@ -29,7 +29,7 @@ jarvis/
 │     └─ src/jobs/       # ingest/, embed, compile, wiki-*, stale-check, ...
 ├─ packages/             # **9개** (web + worker 공유)
 │  ├─ ai/                # Ask AI 파이프라인 (4-tool agent, page-first 보조, tutor, 6 contexts)
-│  ├─ auth/              # 세션, RBAC, sensitivity 헬퍼
+│  ├─ auth/              # 세션, RBAC 헬퍼 (sensitivity 헬퍼는 2026-05-12 폐기)
 │  ├─ db/                # Drizzle schema (**54 파일**, ~70 테이블) + migrations (gitignored) + seed
 │  ├─ external-signals/  # FX·날씨 등 외부 신호 adapter (mock + prod 분기)
 │  ├─ search/            # 하이브리드 검색 어댑터 (FTS/trigram/RRF), precedent 독립 검색
@@ -60,26 +60,26 @@ jarvis/
 | 테스트 | Vitest + Playwright | `pnpm test`, `pnpm --filter @jarvis/web exec playwright test` |
 | 스타일 | Tailwind CSS 4 | 디자인 재구성 예정 |
 
-## 핵심 도메인 (31 스키마 파일 · 52 테이블)
+## 핵심 도메인 (54 스키마 파일 · ~70 테이블)
 
 `packages/db/schema/*.ts`. 대분류:
 
-| 도메인 | 파일 | 핵심 테이블 | sensitivity |
-|--------|------|-----------|-------------|
-| **Knowledge** (조직 위키 본체) | `knowledge.ts`, `review.ts` | knowledge_page, knowledge_page_version, knowledge_claim, owner, tag, review_request | **Yes** (PUBLIC/INTERNAL/RESTRICTED/SECRET_REF_ONLY) |
-| **Wiki-fs projection** | `wiki-page-index.ts`, `wiki-page-link.ts`, `wiki-page-source-ref.ts`, `wiki-commit-log.ts`, `wiki-lint-report.ts`, `review-queue.ts` (wiki_review_queue 포함) | wiki_page_index, wiki_page_link, wiki_commit_log, wiki_review_queue, wiki_lint_report | Yes (page-level) |
-| **Ask AI** | `ask-conversation.ts`, `feedback.ts`, `directory.ts`, `llm-call-log.ts` | ask_conversation, ask_message, answer_feedback, directory_entry, llm_call_log | No (knowledge layer 경유) |
-| **Project & Work** | `project.ts`, `additional-development.ts` | project, project_task, project_inquiry, project_staff, additional_development(+ effort/revenue/staff) | No |
-| **System Registry** | `system.ts` | system, system_access | Yes (INTERNAL/RESTRICTED) |
-| **Case/Precedent** | `case.ts` | precedent_case, case_cluster | Yes (독립 임베딩 공간) |
-| **Graph** | `graph.ts` | graph_snapshot, graph_node, graph_edge, graph_community | Yes |
-| **HR/근태** | `attendance.ts` | attendance, out_manage, out_manage_detail | No |
-| **Notice** | `notice.ts` | notice | Yes (PUBLIC/INTERNAL) |
-| **File** | `file.ts` | raw_source, attachment | Yes |
-| **Audit/Search/Master** | `audit.ts`, `search.ts`, `menu.ts`, `code.ts`, `company.ts`, `tenant.ts`, `user.ts` | audit_log, search_log, search_synonym, popular_search, menu_item, code_group/item, company, workspace, organization, user, role, permission, user_role, role_permission | 일부 (e.g. graph) |
-| **Infra** | `embed-cache.ts`, `user-session.ts` | embed_cache, user_session | No |
+| 도메인 | 파일 | 핵심 테이블 | 격리 축 |
+|--------|------|-----------|---------|
+| **Knowledge** (조직 위키 본체) | `knowledge.ts`, `review.ts` | knowledge_page, knowledge_page_version, knowledge_claim, owner, tag, review_request | RBAC + workspaceId |
+| **Wiki-fs projection** | `wiki-page-index.ts`, `wiki-page-link.ts`, `wiki-page-source-ref.ts`, `wiki-commit-log.ts`, `wiki-lint-report.ts`, `review-queue.ts` (wiki_review_queue 포함) | wiki_page_index, wiki_page_link, wiki_commit_log, wiki_review_queue, wiki_lint_report | RBAC + workspaceId |
+| **Ask AI** | `ask-conversation.ts`, `feedback.ts`, `directory.ts`, `llm-call-log.ts` | ask_conversation, ask_message, answer_feedback, directory_entry, llm_call_log | workspaceId + userId |
+| **Project & Work** | `project.ts`, `additional-development.ts` | project, project_task, project_inquiry, project_staff, additional_development(+ effort/revenue/staff) | RBAC + workspaceId |
+| **System Registry** | `system.ts` | system, system_access | RBAC + workspaceId |
+| **Case/Precedent** | `case.ts` | precedent_case, case_cluster | RBAC + workspaceId (독립 임베딩 공간) |
+| **Graph** | `graph.ts` | graph_snapshot, graph_node, graph_edge, graph_community | RBAC + workspaceId |
+| **HR/근태** | `attendance.ts` | attendance, out_manage, out_manage_detail | RBAC + workspaceId |
+| **Notice** | `notice.ts` | notice (단일 PUBLIC 도메인) | RBAC + workspaceId |
+| **File** | `file.ts` | raw_source, attachment | RBAC + workspaceId |
+| **Audit/Search/Master** | `audit.ts`, `search.ts`, `menu.ts`, `code.ts`, `company.ts`, `tenant.ts`, `user.ts` | audit_log, search_log, search_synonym, popular_search, menu_item, code_group/item, company, workspace, organization, user, role, permission, user_role, role_permission | RBAC + workspaceId |
+| **Infra** | `embed-cache.ts`, `user-session.ts` | embed_cache, user_session | workspaceId |
 
-> 스키마 파일이 29→31개로 늘어나는 중(진행형). 추가 도메인 다룰 때는 실제 `packages/db/schema/index.ts`를 먼저 확인.
+> 행 단위 `sensitivity` 컬럼은 모든 도메인에서 폐기됨 (2026-05-12). 격리는 RBAC + workspaceId만. 추가 도메인 다룰 때는 실제 `packages/db/schema/index.ts`를 먼저 확인.
 
 ## Ask AI 파이프라인 (tool-use agent · Karpathy LLM Wiki 패턴)
 
@@ -96,7 +96,7 @@ jarvis/
 | `wiki_follow_link` | `[[wikilink]]` 1-hop 추적 |
 | `wiki_graph_query` | graphify 그래프 쿼리 (커뮤니티·경로, `GRAPH_REPORT.md` 활용) |
 
-4개 도구는 모두 **`withSensitivityFilter`** (`packages/ai/agent/tools/sensitivity-filter.ts`)로 감싸진다. 래퍼는 `workspaceId + userId + sensitivity` 레벨을 쿼리 WHERE 절에서 집행 — 앱 레벨 필터 대체 불가. Phase A 핵심 deliverable.
+4개 도구는 모두 **`withWorkspaceRbacFilter`** (`packages/ai/agent/tools/sensitivity-filter.ts` — 파일명은 burn-in 후 rename 예정)로 감싸진다. 래퍼는 `workspaceId + userId + 보유 권한`을 검증한 뒤 LLM에 결과 전달. 행 단위 sensitivity 필터는 2026-05-12 폐기 — 격리는 workspaceId + RBAC만 사용.
 
 ```
 사용자 질문
@@ -196,7 +196,7 @@ import { PERMISSIONS } from "@jarvis/shared";
 
 export async function pinPage(pageId: string): Promise<{ ok: boolean; pinnedAt: string | null }> {
   const session = await requirePermission(PERMISSIONS.KNOWLEDGE_UPDATE);
-  // workspace + sensitivity 필터 필수
+  // workspaceId 필터 필수 (multi-tenant 격리)
 }
 ```
 
@@ -211,15 +211,15 @@ export async function listConversations() {
 }
 ```
 
-**필수:** 반환 타입 명시 · null/undefined 구별 · sensitivity 컬럼이 있는 엔티티는 쿼리 레벨 필터.
+**필수:** 반환 타입 명시 · null/undefined 구별 · 모든 쿼리에 `workspaceId` 필터 (행 단위 sensitivity 필터는 2026-05-12 폐기).
 
-### 3. 권한 (RBAC + sensitivity)
+### 3. 권한 (RBAC + workspaceId)
 
-- `packages/shared/constants/permissions.ts`에 **PERMISSIONS 34종** 정의 (KNOWLEDGE_*, PROJECT_*, SYSTEM_*, ATTENDANCE_*, NOTICE_*, ADDITIONAL_DEV_*, GRAPH_*, USER_*, AUDIT_READ, ADMIN_ALL, FILES_WRITE, SYSTEM_ACCESS_SECRET)
+- `packages/shared/constants/permissions.ts`에 **PERMISSIONS 47종** 정의 (KNOWLEDGE_*, PROJECT_*, SYSTEM_*, ATTENDANCE_*, NOTICE_*, ADDITIONAL_DEV_*, GRAPH_*, USER_*, AUDIT_READ, ADMIN_ALL, FILES_WRITE, SYSTEM_ACCESS_SECRET 등)
 - `ROLE_PERMISSIONS` 매핑: **5역할** (ADMIN, MANAGER, DEVELOPER, HR, VIEWER)
-  - DEVELOPER는 의도적으로 `KNOWLEDGE_REVIEW` 제외 → wiki_page_index sensitivity=RESTRICTED 페이지 차단 (필요 시 MANAGER 추가 부여)
+  - DEVELOPER는 의도적으로 `KNOWLEDGE_REVIEW` 제외 (review 권한은 MANAGER 이상)
   - `SYSTEM_ACCESS_SECRET`는 DEVELOPER에 명시적 허용 (credential 접근)
-- sensitivity는 `packages/auth/rbac.ts`의 `canAccessKnowledgeSensitivity` + 쿼리 레벨 `buildLegacyKnowledgeSensitivitySqlFilter` 병용 (legacy 필터는 Phase-W4까지)
+- 격리는 RBAC 권한 + `workspaceId` 일치만 사용. 행 단위 sensitivity 필터는 2026-05-12 폐기 — auth helper 14개(`canAccessKnowledgeSensitivity`/`buildWikiSensitivitySqlFilter`/`canViewWikiPage`/`canViewInternalNotice`/`canResolveProjectSecrets` 등) 완전 제거
 
 ### 4. 하이브리드 검색 (`packages/search`)
 
@@ -292,12 +292,12 @@ pnpm eval:budget-test                             # LLM budget 검증
 
 | 계층 | 확인 질문 | 파일 위치 |
 |------|----------|-----------|
-| DB 스키마 | 31개 파일 중 어디? 테이블/컬럼/인덱스? 운영 DB에 SQL 직접 적용 필요? | `packages/db/schema/*.ts` |
+| DB 스키마 | 54개 파일 중 어디? 테이블/컬럼/인덱스? 운영 DB에 SQL 직접 적용 필요? | `packages/db/schema/*.ts` |
 | Validation | Zod 스키마 추가/수정? | `packages/shared/validation/*.ts` |
-| 권한 (34 상수) | 기존 재사용? 새 PERMISSION 필요? 5 역할 매핑? | `packages/shared/constants/permissions.ts`, `packages/auth/rbac.ts` |
+| 권한 (47 상수) | 기존 재사용? 새 PERMISSION 필요? 5 역할 매핑? | `packages/shared/constants/permissions.ts`, `packages/auth/rbac.ts` |
 | 세션 vs 권한 모델 | Ask AI류(세션+user) vs Knowledge류(requirePermission)? | `packages/auth/session.ts` |
-| Sensitivity 필터 | 쿼리 WHERE에 sensitivity 절 넣는가? (앱 레벨 필터 금지) | `packages/auth/rbac.ts` |
-| Ask AI / tool-use agent | agent 도구(wiki_grep/read/follow_link/graph_query) 변경? sensitivity-filter 영향? SSE adapter 영향? | `packages/ai/agent/**`, `packages/ai/ask.ts` |
+| workspaceId 격리 | 모든 쿼리 WHERE에 `eq(*.workspaceId, session.workspaceId)`? (sensitivity 필터는 2026-05-12 폐기) | `packages/auth/rbac.ts` |
+| Ask AI / tool-use agent | agent 도구(wiki_grep/read/follow_link/graph_query) 변경? `withWorkspaceRbacFilter` 영향? SSE adapter 영향? | `packages/ai/agent/**`, `packages/ai/ask.ts` |
 | Wiki-fs (Karpathy) | auto/manual 경계 유지? wiki-fs API 경유? DB projection only? | `packages/wiki-fs/`, `packages/wiki-agent/`, `wiki/{ws}/**` |
 | 검색 | pg-search(knowledge) vs precedent-search(case) 어느 쪽? 혼합 금지 | `packages/search/` |
 | 서버 액션/API | 어느 파일에 생성? 응답 shape? | `apps/web/app/(app)/{domain}/**/actions.ts`, `app/api/**/route.ts`, `app/actions/` |
@@ -488,7 +488,7 @@ export async function save{Domain}(input: Save{Domain}Input):
 | 무한 스크롤 / virtualized rows | 서버 페이징 사용 |
 | 일러스트 / 이모지 / 애니메이션 강조 | AI slop 회피 |
 | `bg-blue-500` 등 raw Tailwind 색상 직접 적용 | 위 디자인 토큰만 사용 |
-| 클라이언트 측 sensitivity 필터 / 권한 필터 | 쿼리 WHERE에서 처리 (`jarvis-db-patterns` 4) |
+| 클라이언트 측 권한 필터 | 쿼리 WHERE의 workspaceId + server action 권한 가드에서 처리 (`jarvis-db-patterns` §4) |
 | 응답에 `passwordHash`/secret 컬럼 노출 | server action returning에 화이트리스트 강제 (admin/users 패턴 참고) |
 
 ### 8. 신규 그리드 PR 체크리스트

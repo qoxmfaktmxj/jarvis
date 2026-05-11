@@ -101,7 +101,7 @@ raw_source 1건 → Two-Step CoT → 다수 페이지 갱신.
 
 | 서브-잡 | 역할 | 출력 |
 |---------|------|------|
-| `analyze.ts` | Step A — 소스 분석 | JSON 메타(title·sensitivity·keyEntities·contradictions) |
+| `analyze.ts` | Step A — 소스 분석 | JSON 메타(title·keyEntities·contradictions) |
 | `generate.ts` | Step B — LLM 합성 (Anthropic) | 새 페이지 콘텐츠 draft |
 | `write-and-commit.ts` | wiki-fs로 디스크 write + git commit | `wiki/{ws}/auto/**` + `wiki_commit_log` row |
 | `review-queue.ts` | 민감/충돌/PII 감지 시 큐 기록 | `wiki_review_queue` row |
@@ -114,7 +114,7 @@ raw_source 1건 → Two-Step CoT → 다수 페이지 갱신.
 
 | 테이블 (파일) | 용도 | 누가 씀 |
 |-------------|------|---------|
-| `wiki_page_index` (`wiki-page-index.ts`) | 페이지 메타/요약/sensitivity — 조회용 | 워커 sync 잡만 |
+| `wiki_page_index` (`wiki-page-index.ts`) | 페이지 메타/요약 — 조회용 | 워커 sync 잡만 |
 | `wiki_page_link` (`wiki-page-link.ts`) | wikilink 그래프 | 워커 sync 잡만 |
 | `wiki_page_source_ref` (`wiki-page-source-ref.ts`) | 페이지 ↔ raw_source 역참조 | 워커 sync 잡만 |
 | `wiki_commit_log` (`wiki-commit-log.ts`) | git commit 감사 로그 | write-and-commit 잡 |
@@ -131,11 +131,11 @@ raw_source 1건 → Two-Step CoT → 다수 페이지 갱신.
 - `/wiki/[workspaceId]/manual/[...slug]` = editor + 역할(`WIKI_MANUAL_EDIT_ROLES`) 체크
 - Ask AI "Save as Page"는 `auto/syntheses/` 하위로만
 
-### 7.2 sensitivity 쿼리 필터
+### 7.2 RBAC + workspaceId 격리 (2026-05-12 이후)
 
-- 페이지 목록/검색 쿼리에 sensitivity 필터를 **쿼리 WHERE 절**에서 적용 (애플리케이션 레벨 필터링은 누수/pagination 어긋남)
-- 헬퍼: `packages/auth/rbac.ts`의 `canAccessKnowledgeSensitivity`, 쿼리 빌더 `buildLegacyKnowledgeSensitivitySqlFilter`
-- `SECRET_REF_ONLY` 페이지는 본문 대신 `secretRef` ID만 반환
+- 페이지 목록/검색은 `workspaceId` 일치 + `KNOWLEDGE_READ` 권한 검증만 적용. 행 단위 sensitivity 필터는 폐기됨.
+- 권한 없는 사용자는 화면(route) 자체가 노출되지 않음 (RBAC 메뉴 트리 + page-auth 가드).
+- 디스크 frontmatter의 `sensitivity` 필드는 SoT 보호 차원에서 형식상 남아있을 수 있으나, DB projection 및 쿼리 필터에는 사용되지 않음.
 
 ### 7.3 권한 상수
 
@@ -160,7 +160,7 @@ wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`
 
 ### 7.6 review-queue 연결
 
-- `contradictions`, sensitivity 상승, PII 감지 → `wiki_review_queue` row 생성
+- `contradictions`, PII 감지 → `wiki_review_queue` row 생성
 - 승인/반려는 admin 전용 `ApprovalDialog`. server action에 `KNOWLEDGE_REVIEW` 또는 `ADMIN_ALL` 체크 필수
 - 승인 시 manual 영역에 반영하는 것은 사람이 editor에서 수동으로. 자동 반영 금지.
 
@@ -170,7 +170,7 @@ wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`
 - **`manual/`에 LLM 직접 쓰기** — ingest가 manual 영역 건드리면 안 됨. 반드시 review-queue → 사람 수동 반영.
 - **wiki-fs 우회** — `fs.writeFile` / `child_process.exec('git')` 직접 호출은 Git 커밋 누락과 DB sync 누락을 동시에 유발.
 - **DB `wiki_page_index.body` 본문 저장** — SSoT 전도. 본문은 디스크.
-- **sensitivity 애플리케이션 레벨 필터** — `rows.filter(...)`로 나중에 거르면 count/pagination이 틀어지고 RESTRICTED 누수 가능.
+- **새로 sensitivity 컬럼/필터 추가** — 2026-05-12 정책으로 행 단위 sensitivity는 완전 폐기됨. 격리는 RBAC + workspaceId만 사용한다.
 - **권한 체크 누락** — `requirePermission(PERMISSIONS.KNOWLEDGE_*)` 빠트리면 타입 체커는 못 잡는다.
 - **`index.md` / `log.md` 수동 편집** — 다음 sync에서 덮어쓰임.
 - **운영 DB 미적용** — `wiki_*` 테이블 수정 후 운영 DB에 SQL 직접 적용을 빠뜨리면 스키마 불일치.
