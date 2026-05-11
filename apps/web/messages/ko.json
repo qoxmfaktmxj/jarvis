@@ -9,7 +9,8 @@
       "closeOthers": "다른 탭 모두 닫기",
       "pin": "📌 핀 고정",
       "unpin": "📌 핀 해제",
-      "reload": "🔄 새로고침 (데이터만)"
+      "reload": "🔄 새로고침 (데이터만)",
+      "dashboardFallback": "대시보드"
     },
     "unsaved": {
       "title": "{tabTitle} 탭이 닫힙니다",

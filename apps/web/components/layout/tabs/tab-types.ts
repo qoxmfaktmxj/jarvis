@@ -42,6 +42,6 @@ export interface TabContextValue {
   resolvePendingClose: (action: CloseAction) => void;
 }
 
-export const MAX_TABS = 5;
+export const MAX_TABS = 7;
 export const PERSISTENCE_VERSION = 1;
 export const PERSISTENCE_DEBOUNCE_MS = 500;

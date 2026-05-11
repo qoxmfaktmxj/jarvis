@@ -30,6 +30,7 @@ import { Capy } from "./Capy";
 import { setSidebar, useSidebar } from "./uiPrefs";
 import { resolveIcon } from "./icon-map";
 import { useTabContext } from "./tabs/TabContext";
+import { MAX_TABS } from "./tabs/tab-types";
 import { NavGroup } from "./NavGroup";
 import { useNavTreeOpen } from "./useNavTreeOpen";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
@@ -125,7 +126,7 @@ function NavButton({
     } else if (process.env.NODE_ENV !== "production") {
       // eslint-disable-next-line no-console
       console.warn(
-        `[Sidebar] openTab refused for ${href} — likely all 5 tabs are pinned.`,
+        `[Sidebar] openTab refused for ${href} — likely all ${MAX_TABS} tabs are pinned.`,
       );
     }
   };

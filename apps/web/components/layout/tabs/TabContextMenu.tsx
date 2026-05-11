@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useTabContext } from "./TabContext";
 import type { Tab } from "./tab-types";
@@ -13,7 +14,8 @@ interface Props {
 
 export function TabContextMenu({ tab, position, onClose }: Props) {
   const t = useTranslations("Tabs.contextMenu");
-  const { tabs, closeTab, closeBatch, pinTab, unpinTab, reload, activeKey } = useTabContext();
+  const { tabs, closeTab, closeBatch, pinTab, unpinTab, reload, openTab, activeKey } = useTabContext();
+  const router = useRouter();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -67,7 +69,16 @@ export function TabContextMenu({ tab, position, onClose }: Props) {
       <Item testid="ctx-closeRight" onClick={wrap(() => closeBatch((x) => tabs.indexOf(x) > idx && !x.pinned))}>
         {t("closeRight")}
       </Item>
-      <Item testid="ctx-closeAll" onClick={wrap(() => closeBatch((x) => !x.pinned))}>
+      <Item
+        testid="ctx-closeAll"
+        onClick={wrap(async () => {
+          await closeBatch((x) => !x.pinned);
+          // 핀 제외 모두 닫은 뒤 대시보드로 이동 + 대시보드 탭 자동 등록.
+          // 사용자가 빈 화면을 만나지 않도록 보장.
+          await openTab("/dashboard", t("dashboardFallback"));
+          router.push("/dashboard");
+        })}
+      >
         {t("closeAll")}
       </Item>
       <Item testid="ctx-closeOthers" onClick={wrap(() => closeBatch((x) => x.key !== tab.key && !x.pinned))}>
