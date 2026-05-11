@@ -4,19 +4,54 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./types": "./src/types.ts",
-    "./prompts/analysis": "./src/prompts/analysis.ts",
-    "./prompts/generation": "./src/prompts/generation.ts",
-    "./prompts/aliases-contract": "./src/prompts/aliases-contract.ts",
-    "./parsers/file-block": "./src/parsers/file-block.ts",
-    "./parsers/review-block": "./src/parsers/review-block.ts",
-    "./maintain-index": "./src/maintain-index.ts",
-    "./append-log": "./src/append-log.ts",
-    "./constants": "./src/constants.ts",
-    "./projection": "./src/projection.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "default": "./dist/types.js"
+    },
+    "./prompts/analysis": {
+      "types": "./dist/prompts/analysis.d.ts",
+      "default": "./dist/prompts/analysis.js"
+    },
+    "./prompts/generation": {
+      "types": "./dist/prompts/generation.d.ts",
+      "default": "./dist/prompts/generation.js"
+    },
+    "./prompts/aliases-contract": {
+      "types": "./dist/prompts/aliases-contract.d.ts",
+      "default": "./dist/prompts/aliases-contract.js"
+    },
+    "./parsers/file-block": {
+      "types": "./dist/parsers/file-block.d.ts",
+      "default": "./dist/parsers/file-block.js"
+    },
+    "./parsers/review-block": {
+      "types": "./dist/parsers/review-block.d.ts",
+      "default": "./dist/parsers/review-block.js"
+    },
+    "./maintain-index": {
+      "types": "./dist/maintain-index.d.ts",
+      "default": "./dist/maintain-index.js"
+    },
+    "./append-log": {
+      "types": "./dist/append-log.d.ts",
+      "default": "./dist/append-log.js"
+    },
+    "./constants": {
+      "types": "./dist/constants.d.ts",
+      "default": "./dist/constants.js"
+    },
+    "./projection": {
+      "types": "./dist/projection.d.ts",
+      "default": "./dist/projection.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch --preserveWatchOutput",
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
