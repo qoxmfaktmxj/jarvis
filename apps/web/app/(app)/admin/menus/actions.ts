@@ -76,7 +76,9 @@ async function resolveAdminContext() {
 // ---------------------------------------------------------------------------
 export async function listMenus(rawInput: z.input<typeof listMenusInput>) {
   const ctx = await resolveAdminContext();
-  if (!ctx.ok) return { ok: false as const, error: ctx.error, rows: [], total: 0 };
+  if (!ctx.ok) {
+    return { ok: false as const, error: ctx.error, rows: [], total: 0 };
+  }
 
   const input = listMenusInput.parse(rawInput);
   const offset = (input.page - 1) * input.limit;

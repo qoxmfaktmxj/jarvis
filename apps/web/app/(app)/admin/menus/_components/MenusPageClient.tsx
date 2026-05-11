@@ -469,11 +469,14 @@ export function MenusPageClient({
   // reset()이 서버 응답을 덮어쓴다.
   const applyMasterFilters = useCallback(() => {
     masterGrid.discardChanges();
+    // server action을 먼저 발화. router.replace를 먼저 호출하면 Next.js의 RSC
+    // 재렌더가 in-flight server action을 cancel 시킨다 (15.x). URL sync는
+    // 사용자 가시 효과만 있는 cosmetic이므로 reload 뒤로 미룬다.
+    reloadMaster(masterDraft);
     setMasterUrlFilter("q", masterDraft.q);
     setMasterUrlFilter("qLabel", masterDraft.qLabel);
     setMasterUrlFilter("kind", masterDraft.kind);
     setMasterUrlFilter("parentCode", masterDraft.parentCode);
-    reloadMaster(masterDraft);
   }, [masterDraft, masterGrid, reloadMaster, setMasterUrlFilter]);
 
   const resetMasterFilters = useCallback(() => {
