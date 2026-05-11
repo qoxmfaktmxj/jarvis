@@ -12,6 +12,7 @@
  * - 상태 배지: new/dirty/deleted 색상 pill
  */
 import { useCallback, useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useGridState, type GridRow } from "./useGridState";
 import { GridToolbar } from "./GridToolbar";
@@ -57,7 +58,7 @@ export type DataGridProps<T extends WithId> = {
   onSave: (changes: GridChanges<T>) => Promise<GridSaveResult>;
   /** 현재 필터 값 */
   filterValues?: Record<string, string>;
-  /** 빈 상태 메시지 */
+  /** 빈 상태 메시지 — 미지정 시 `Common.Grid.empty` 사용. */
   emptyMessage?: string;
   /**
    * 그리드의 dirty 행 수가 바뀔 때마다 호출. 탭 dirty 마커 + 저장 핸들러
@@ -85,9 +86,9 @@ export type DataGridProps<T extends WithId> = {
   onExport?: () => void | Promise<void>;
   /** 다운로드 진행 중 플래그 — 버튼 라벨 토글 + disabled 적용. */
   isExporting?: boolean;
-  /** 다운로드 버튼 라벨 (기본 "다운로드"). i18n 적용 시 호출자가 t() 결과 전달. */
+  /** 다운로드 버튼 라벨 (미지정 시 `Common.Grid.export`). 도메인 verb override용. */
   exportLabel?: string;
-  /** 다운로드 진행 중 라벨 (기본 "다운로드 중…"). */
+  /** 다운로드 진행 중 라벨 (미지정 시 `Common.Grid.exporting`). */
   exportingLabel?: string;
 };
 
@@ -103,7 +104,7 @@ export function DataGrid<T extends WithId>({
   onFilterChange,
   onSave,
   filterValues: externalFilterValues,
-  emptyMessage = "데이터가 없습니다.",
+  emptyMessage,
   groupHeaders,
   onDirtyChange,
   initialGridRows,
@@ -114,6 +115,12 @@ export function DataGrid<T extends WithId>({
   exportLabel,
   exportingLabel,
 }: DataGridProps<T>) {
+  // Baseline strings come from `Common.Grid.*`. Callers may still override
+  // `emptyMessage` per domain (e.g. "검색 결과 없음"), but DataGrid no longer
+  // ships hardcoded Korean fallbacks.
+  const t = useTranslations("Common.Grid");
+  const resolvedEmpty = emptyMessage ?? t("empty");
+
   if (groupHeaders && process.env.NODE_ENV !== "production") {
     const sum = groupHeaders.reduce((acc, g) => acc + g.span, 0);
     if (sum !== columns.length) {
@@ -159,11 +166,11 @@ export function DataGrid<T extends WithId>({
         // 여기서는 낙관적으로 상태만 clean으로 리셋
         grid.reset(grid.rows.map((r) => r.data));
       } else {
-        const msg = result.errors?.map((e) => e.message).join("\n") ?? "저장 실패";
+        const msg = result.errors?.map((e) => e.message).join("\n") ?? t("saveFailed");
         alert(msg);
       }
     });
-  }, [grid, onSave, setSaving]);
+  }, [grid, onSave, setSaving, t]);
 
   const handleFilterChange = useCallback(
     (next: Record<string, string>) => {
@@ -180,7 +187,7 @@ export function DataGrid<T extends WithId>({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-(--fg-secondary)">전체 {total.toLocaleString()}건</span>
+        <span className="text-sm text-(--fg-secondary)">{t("total", { count: total })}</span>
         <GridToolbar
           dirtyCount={grid.dirtyCount}
           saving={saving}
@@ -229,8 +236,8 @@ export function DataGrid<T extends WithId>({
             <tr className="border-b border-(--border-default)">
               {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
                   No=44px, 삭제=56px, 상태=64px 최소폭 보장. */}
-              <th className="w-11 whitespace-nowrap px-2 py-2 text-left">No</th>
-              <th className="w-14 whitespace-nowrap px-2 py-2 text-center">삭제</th>
+              <th className="w-11 whitespace-nowrap px-2 py-2 text-left">{t("no")}</th>
+              <th className="w-14 whitespace-nowrap px-2 py-2 text-center">{t("delete")}</th>
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -243,7 +250,7 @@ export function DataGrid<T extends WithId>({
                   {col.label}
                 </th>
               ))}
-              <th className="w-16 whitespace-nowrap px-2 py-2 text-center">상태</th>
+              <th className="w-16 whitespace-nowrap px-2 py-2 text-center">{t("status")}</th>
             </tr>
             <ColumnFilterRow<T>
               filters={filters}
@@ -256,7 +263,7 @@ export function DataGrid<T extends WithId>({
             {grid.rows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length + 3} className="px-4 py-12 text-center text-sm text-(--fg-muted)">
-                  {emptyMessage}
+                  {resolvedEmpty}
                 </td>
               </tr>
             ) : (
@@ -297,10 +304,27 @@ export function DataGrid<T extends WithId>({
 
                     if (col.type === "readonly" || !col.editable) {
                       const isNumeric = col.type === "numeric";
+                      // Numeric readonly: format both number and Drizzle `numeric()` strings.
+                      // For strings preserve trailing zeros by splitting on "." (P0-1).
+                      let numericDisplay: string | null = null;
+                      if (isNumeric && (typeof val === "number" || typeof val === "string")) {
+                        const raw = typeof val === "string" ? val.trim() : String(val);
+                        if (raw !== "") {
+                          const negative = raw.startsWith("-");
+                          const body = negative ? raw.slice(1) : raw;
+                          const [intPart, fracPart] = body.split(".");
+                          const intNumber = Number(intPart);
+                          if (Number.isFinite(intNumber)) {
+                            const intFmt = intNumber.toLocaleString("ko-KR");
+                            const out = fracPart !== undefined ? `${intFmt}.${fracPart}` : intFmt;
+                            numericDisplay = negative ? `-${out}` : out;
+                          }
+                        }
+                      }
                       const display = col.render
                         ? col.render(r.data)
-                        : isNumeric && typeof val === "number"
-                          ? val.toLocaleString("ko-KR")
+                        : numericDisplay !== null
+                          ? numericDisplay
                           : String(val ?? "");
                       return (
                         <td
@@ -359,15 +383,32 @@ export function DataGrid<T extends WithId>({
                             onCommit={commit}
                           />
                         )}
-                        {col.type === "numeric" && (
+                        {col.type === "numeric" && col.integer === true && (
                           <EditableNumericCell
+                            mode="integer"
                             value={
                               val === null || val === undefined || val === ""
                                 ? null
                                 : Number(val)
                             }
                             onChange={(next) =>
-                              commit(next === null ? null : String(next))
+                              // integer columns commit as `number` for Zod `.int()`.
+                              commit(next === null ? null : next)
+                            }
+                          />
+                        )}
+                        {col.type === "numeric" && col.integer !== true && (
+                          <EditableNumericCell
+                            mode="decimal"
+                            value={
+                              val === null || val === undefined || val === ""
+                                ? null
+                                : String(val)
+                            }
+                            onChange={(next) =>
+                              // decimal commits raw string — preserve precision +
+                              // trailing zeros for Drizzle `numeric()` SoT.
+                              commit(next)
                             }
                           />
                         )}
@@ -392,7 +433,7 @@ export function DataGrid<T extends WithId>({
           disabled={page <= 1 || saving}
           onClick={() => guarded(() => onPageChange(page - 1))}
         >
-          이전
+          {t("prev")}
         </Button>
         <span>
           {page} / {totalPages}
@@ -403,7 +444,7 @@ export function DataGrid<T extends WithId>({
           disabled={page >= totalPages || saving}
           onClick={() => guarded(() => onPageChange(page + 1))}
         >
-          다음
+          {t("next")}
         </Button>
       </div>
 

@@ -3,27 +3,41 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { MaskedDateInput, type MaskedDateInputHandle } from "./MaskedDateInput";
-import { CalendarPopup } from "./CalendarPopup";
+import { MaskedMonthInput, type MaskedMonthInputHandle } from "./MaskedMonthInput";
+import { MonthGridPopup } from "./MonthGridPopup";
 
-export type DatePickerProps = {
+export type MonthPickerProps = {
+  /** ISO yyyy-mm or null */
   value: string | null;
   onChange: (next: string | null) => void;
   disabled?: boolean;
+  /** ISO yyyy-mm */
   min?: string;
+  /** ISO yyyy-mm */
   max?: string;
   placeholder?: string;
   className?: string;
   ariaLabel?: string;
 };
 
-export function DatePicker({
+/**
+ * Month input following the Jarvis standard input component policy.
+ *
+ * Sister of {@link DatePicker} that emits `yyyy-mm` (no day component).
+ * Replaces native `<input type="month">` which is forbidden by harness rules
+ * (한국 IME 자릿수 분할 깨짐 + 키보드 네비게이션 불가).
+ *
+ * Value semantics:
+ * - `value`: ISO `yyyy-mm` string (e.g. `"2026-05"`) or `null`
+ * - Pasting `yyyymm` (6 digits) or `yyyy-mm` is auto-normalized
+ */
+export function MonthPicker({
   value, onChange, disabled, min, max, placeholder, className, ariaLabel,
-}: DatePickerProps) {
+}: MonthPickerProps) {
   const t = useTranslations("Common.Calendar");
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<MaskedDateInputHandle>(null);
+  const inputRef = useRef<MaskedMonthInputHandle>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -36,7 +50,7 @@ export function DatePicker({
 
   return (
     <div ref={wrapRef} className={cn("relative inline-flex h-8 items-center rounded-md border border-warm-200 bg-white", className)}>
-      <MaskedDateInput
+      <MaskedMonthInput
         ref={inputRef}
         value={value}
         onCommit={onChange}
@@ -56,7 +70,7 @@ export function DatePicker({
       </button>
       {open && (
         <div className="absolute left-0 top-full z-50 mt-1">
-          <CalendarPopup
+          <MonthGridPopup
             value={value}
             min={min}
             max={max}

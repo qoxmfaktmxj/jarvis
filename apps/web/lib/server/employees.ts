@@ -17,9 +17,10 @@ const searchEmployeesInput = z.object({
 // activities, …) need this to populate uuid columns like `insUserId` /
 // `attendeeUserId` — without it the picker only exposes sabun (a varchar
 // employee number) which would fail uuid validation server-side.
-// `email` returns '' for callers that interpolate; null contract is cleaner
-// but requires a separate EmployeePicker refactor — deferred.
-export type EmployeeHit = { userId: string; sabun: string; name: string; email: string };
+// `email` is `string | null` mirroring `user.email` (Drizzle nullable).
+// UI must guard before interpolating — empty string fallback previously hid
+// missing emails behind misleading "()" suffixes.
+export type EmployeeHit = { userId: string; sabun: string; name: string; email: string | null };
 
 export async function searchEmployees(
   rawInput: z.input<typeof searchEmployeesInput>,
@@ -67,6 +68,6 @@ export async function searchEmployees(
     userId: r.id,
     sabun: r.employeeId,
     name: r.name,
-    email: r.email ?? "",
+    email: r.email ?? null,
   }));
 }

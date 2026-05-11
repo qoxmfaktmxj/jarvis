@@ -4,7 +4,9 @@ import { Picker } from "./Picker";
 // `userId` is the user table PK (uuid). Sales edit forms need it to populate
 // uuid columns like `insUserId` / `attendeeUserId`. Without it the picker
 // would only expose sabun (varchar) which would fail server-side uuid parsing.
-export type EmployeeHit = { userId: string; sabun: string; name: string; email: string };
+// `email` mirrors `user.email` nullability — guard before rendering so rows
+// without an email don't surface as misleading "()" suffixes.
+export type EmployeeHit = { userId: string; sabun: string; name: string; email: string | null };
 
 type Props = {
   value: string;
@@ -29,8 +31,12 @@ export function EmployeePicker({ value, onSelect, search, placeholder }: Props) 
           <span className="font-mono">{h.sabun}</span>
           {" · "}
           <span>{h.name}</span>
-          {" "}
-          <span className="text-(--fg-muted)">({h.email})</span>
+          {h.email ? (
+            <>
+              {" "}
+              <span className="text-(--fg-muted)">({h.email})</span>
+            </>
+          ) : null}
         </>
       )}
     />

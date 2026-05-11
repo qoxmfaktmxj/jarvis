@@ -10,6 +10,17 @@ export type UseUrlFiltersOptions<T extends Record<string, string>> = {
 export type UseUrlFiltersResult<T extends Record<string, string>> = {
   values: T;
   setValue: <K extends keyof T>(key: K, value: T[K]) => void;
+  /**
+   * Batch update multiple keys with a single `router.replace` call.
+   *
+   * Use this instead of calling `setValue` multiple times in sequence — multi-
+   * `router.replace` fires multiple RSC re-renders and can cancel in-flight
+   * server actions registered via `useTransition` (Next.js 15 RSC behavior).
+   * `setValues({ a: "x", b: "y" })` issues exactly one URL navigation.
+   *
+   * Empty strings or `null` clear the param (same semantics as `setValue`).
+   */
+  setValues: (partial: Partial<T>) => void;
   reset: () => void;
 };
 
@@ -51,6 +62,28 @@ export function useUrlFilters<T extends Record<string, string>>(
     [pathname, router, searchParams],
   );
 
+  const setValues = useCallback(
+    (partial: Partial<T>) => {
+      // Defensive early-return: callers should not pass `{}`, but if they do
+      // we skip the unnecessary `router.replace` (which would still trigger an
+      // RSC re-render with identical URL).
+      if (Object.keys(partial).length === 0) return;
+      // Single router.replace for N keys — avoids the multi-`replace` RSC race
+      // that can cancel in-flight server actions registered via useTransition.
+      const base = pendingRef.current ?? searchParams.toString();
+      const params = new URLSearchParams(base);
+      for (const key of Object.keys(partial) as (keyof T)[]) {
+        const value = partial[key];
+        if (value === "" || value == null) params.delete(String(key));
+        else params.set(String(key), String(value));
+      }
+      const qs = params.toString();
+      pendingRef.current = qs;
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
   const reset = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     for (const key of Object.keys(options.defaults) as (keyof T)[]) {
@@ -63,5 +96,5 @@ export function useUrlFilters<T extends Record<string, string>>(
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [options.defaults, pathname, router, searchParams]);
 
-  return { values, setValue, reset };
+  return { values, setValue, setValues, reset };
 }

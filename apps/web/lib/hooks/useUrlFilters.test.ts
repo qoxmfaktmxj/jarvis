@@ -84,4 +84,46 @@ describe("useUrlFilters", () => {
     expect(lastUrl).toContain("a=x");
     expect(lastUrl).toContain("b=y");
   });
+
+  it("setValues writes multiple keys with a single router.replace (regression A1-F1)", () => {
+    // Multi-`setValue` triggers multiple RSC re-renders and can cancel
+    // in-flight server actions registered via useTransition. `setValues`
+    // batches the writes into one navigation.
+    currentSearch = "";
+    const { result } = renderHook(() =>
+      useUrlFilters({ defaults: { a: "", b: "", c: "" } }),
+    );
+    act(() => {
+      result.current.setValues({ a: "x", b: "y", c: "z" });
+    });
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const url = replaceMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain("a=x");
+    expect(url).toContain("b=y");
+    expect(url).toContain("c=z");
+  });
+
+  it("setValues with empty string removes the param from URL", () => {
+    currentSearch = "a=keep&b=drop";
+    const { result } = renderHook(() =>
+      useUrlFilters({ defaults: { a: "", b: "" } }),
+    );
+    act(() => {
+      result.current.setValues({ b: "" });
+    });
+    const url = replaceMock.mock.calls[0]?.[0] as string;
+    expect(url).toContain("a=keep");
+    expect(url).not.toContain("b=");
+  });
+
+  it("setValues with empty object is a no-op (no router.replace)", () => {
+    currentSearch = "a=keep";
+    const { result } = renderHook(() =>
+      useUrlFilters({ defaults: { a: "", b: "" } }),
+    );
+    act(() => {
+      result.current.setValues({});
+    });
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
 });

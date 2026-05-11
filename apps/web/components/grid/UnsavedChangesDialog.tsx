@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -15,11 +16,15 @@ import { Button } from "@/components/ui/button";
  * Two usage modes:
  *
  * 1. Legacy grid mode (existing callers): pass `count` + `onSaveAndContinue` +
- *    `onDiscardAndContinue` + `onCancel`. Korean strings used by default.
+ *    `onDiscardAndContinue` + `onCancel`. Default strings come from
+ *    `Common.Grid.Unsaved.*` via next-intl.
  *
  * 2. Tab-close mode (new): pass `title` + `body` + label props + `onSave` +
  *    `onDiscard` + `onCancel`. Use `showSave={false}` for batch close where
  *    save isn't supported.
+ *
+ * Callers may still override any string by passing the corresponding prop —
+ * defaults only kick in when the prop is `undefined`.
  */
 type Props = {
   open: boolean;
@@ -57,20 +62,22 @@ export function UnsavedChangesDialog({
   onDiscard,
   onCancel,
 }: Props) {
+  const t = useTranslations("Common.Grid.Unsaved");
+
   // Resolve which save/discard handler to use (new preferred, legacy fallback).
   const handleSave = onSave ?? onSaveAndContinue;
   const handleDiscard = onDiscard ?? onDiscardAndContinue;
 
-  // Default strings preserve legacy behavior when count is provided.
-  const resolvedTitle = title ?? "저장되지 않은 변경사항";
+  // Default strings come from i18n; explicit prop overrides win.
+  const resolvedTitle = title ?? t("title");
   const resolvedBody =
     body ??
     (typeof count === "number"
-      ? `저장되지 않은 변경사항이 ${count}건 있습니다. 계속하시겠습니까?`
-      : "저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?");
-  const resolvedDiscardLabel = discardLabel ?? "변경사항 무시하고 계속";
-  const resolvedSaveLabel = saveLabel ?? "저장 후 계속";
-  const resolvedCancelLabel = cancelLabel ?? "취소";
+      ? t("bodyWithCount", { count })
+      : t("bodyNoCount"));
+  const resolvedDiscardLabel = discardLabel ?? t("discard");
+  const resolvedSaveLabel = saveLabel ?? t("save");
+  const resolvedCancelLabel = cancelLabel ?? t("cancel");
 
   // Show save button unless explicitly disabled (default true).
   const renderSave = showSave !== false && handleSave;

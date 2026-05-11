@@ -33,6 +33,7 @@ import { useTabContext } from "./tabs/TabContext";
 import { MAX_TABS } from "./tabs/tab-types";
 import { NavGroup } from "./NavGroup";
 import { useNavTreeOpen } from "./useNavTreeOpen";
+import { isSafeInternalPath } from "@/lib/url";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 // Hrefs that must match exactly to prevent parent from lighting up when a
@@ -58,28 +59,15 @@ type RenderItem = {
 };
 
 /**
- * Defense-in-depth: only accept paths that are unambiguously same-origin
- * absolute paths. Rejects:
- * - empty / null
- * - `javascript:` / `data:` / other non-path schemes
- * - protocol-relative `//evil.com`
- * - relative `foo` (would resolve against current page — surprising)
- *
- * Anyone with write access to `menu_item.routePath` (seed scripts today,
- * future admin/menus UI) MUST NOT be able to inject scripted hrefs.
- */
-function isSafeInternalPath(path: string | null | undefined): path is string {
-  if (!path) return false;
-  if (path.length === 0 || path.length > 300) return false;
-  if (!path.startsWith("/")) return false;
-  if (path.startsWith("//")) return false;
-  return true;
-}
-
-/**
  * Adapt a `MenuTreeNode` into the shape NavButton consumes. Returns null for
  * nodes without a `routePath` (group-only rows) and for nodes whose route is
  * not a safe internal path.
+ *
+ * Path safety is enforced by `isSafeInternalPath` from `@/lib/url` — the
+ * single source of truth for defense-in-depth against `javascript:` / `data:`
+ * URI injection via `menu_item.routePath`. Anyone with write access to that
+ * column (seed scripts today, future admin/menus UI) MUST NOT be able to
+ * inject scripted hrefs.
  */
 function toRenderItem(node: MenuTreeNode): RenderItem | null {
   if (!isSafeInternalPath(node.routePath)) {

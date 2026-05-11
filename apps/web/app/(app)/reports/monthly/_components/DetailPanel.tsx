@@ -6,6 +6,7 @@ import { MasterOptionsSection } from "./MasterOptionsSection";
 import { DetailMonthSection } from "./DetailMonthSection";
 import { DetailOtherSection } from "./DetailOtherSection";
 import { ExportPdfButton } from "./ExportPdfButton";
+import { MonthPicker } from "@/components/ui/MonthPicker";
 import type {
   MonthReportMasterRow,
   MonthReportDetailMonthRow,
@@ -59,11 +60,13 @@ export function DetailPanel({ selected, ym, onYmChange }: Props) {
           <span className="text-xs text-slate-500">{selected.companyCd}</span>
         </div>
         <div className="flex items-center gap-3">
-          <input
-            type="month"
-            value={`${ym.substring(0, 4)}-${ym.substring(4)}`}
-            onChange={e => onYmChange(e.target.value.replace("-", ""))}
-            className="rounded border border-slate-300 px-2 py-1 text-sm"
+          <MonthPicker
+            value={ym && /^\d{6}$/.test(ym) ? `${ym.substring(0, 4)}-${ym.substring(4)}` : null}
+            onChange={(next) => {
+              if (!next) return;
+              onYmChange(next.replace("-", ""));
+            }}
+            ariaLabel={t("month")}
           />
           <ExportPdfButton companyCd={selected.companyCd} ym={ym} disabled={!master} />
         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import type { RowStatus } from "./types";
 
@@ -9,15 +10,16 @@ const STYLES: Record<RowStatus, string> = {
   deleted: "bg-rose-100 text-rose-700",
 };
 
-// 라벨은 항상 한글 2자로 통일 — 좁은 상태 컬럼에서 세로 줄바꿈 방지 + 시각적 일관성.
-const LABELS: Record<RowStatus, string> = {
-  clean: "",
-  new: "입력",
-  dirty: "수정",
-  deleted: "삭제",
+// 라벨 키는 항상 한글 2자 폭으로 통일 — 좁은 상태 컬럼에서 세로 줄바꿈 방지 + 시각적 일관성.
+// 실제 문자열은 `Common.Grid.RowStatus.{new,dirty,deleted}`에서 가져온다.
+const LABEL_KEYS: Record<Exclude<RowStatus, "clean">, "new" | "dirty" | "deleted"> = {
+  new: "new",
+  dirty: "dirty",
+  deleted: "deleted",
 };
 
 export function RowStatusBadge({ state }: { state: RowStatus }) {
+  const t = useTranslations("Common.Grid.RowStatus");
   if (state === "clean") return null;
   return (
     <span
@@ -27,7 +29,7 @@ export function RowStatusBadge({ state }: { state: RowStatus }) {
         STYLES[state],
       )}
     >
-      {LABELS[state]}
+      {t(LABEL_KEYS[state])}
     </span>
   );
 }

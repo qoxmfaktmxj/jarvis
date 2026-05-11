@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { resolveIcon } from "./icon-map";
 import { useTabContext } from "./tabs/TabContext";
 import { MAX_TABS } from "./tabs/tab-types";
+import { isSafeInternalPath } from "@/lib/url";
 import type { MenuTreeNode } from "@/lib/server/menu-tree";
 
 type PaletteItem = {
@@ -36,17 +37,9 @@ type PaletteItem = {
   searchHaystack: string;
 };
 
-/**
- * Same scheme allowlist as Sidebar.toRenderItem — defense-in-depth against
- * `javascript:` / `data:` URI injection via `menu_item.routePath`.
- */
-function isSafeInternalPath(path: string | null | undefined): path is string {
-  if (!path) return false;
-  if (path.length === 0 || path.length > 300) return false;
-  if (!path.startsWith("/")) return false;
-  if (path.startsWith("//")) return false;
-  return true;
-}
+// `isSafeInternalPath` is imported from `@/lib/url` — the single source of
+// truth for path safety, mirroring Sidebar.toRenderItem. Defense-in-depth
+// against `javascript:` / `data:` URI injection via `menu_item.routePath`.
 
 function toPaletteItem(node: MenuTreeNode, section: "navigate" | "actions"): PaletteItem | null {
   if (!isSafeInternalPath(node.routePath)) {

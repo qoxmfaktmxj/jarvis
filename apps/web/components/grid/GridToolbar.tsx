@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 type Props = {
@@ -21,22 +22,32 @@ type Props = {
 export function GridToolbar({
   dirtyCount,
   saving,
-  insertLabel = "입력",
-  copyLabel = "복사",
-  saveLabel = "저장",
-  savingLabel = "저장 중…",
+  insertLabel,
+  copyLabel,
+  saveLabel,
+  savingLabel,
   onInsert,
   onCopy,
   onSave,
   onExport,
   isExporting = false,
-  exportLabel = "다운로드",
-  exportingLabel = "다운로드 중…",
+  exportLabel,
+  exportingLabel,
 }: Props) {
+  // Defaults pulled from `Common.Grid.*`. Any caller can still pass the prop
+  // to override (e.g. domain-specific verb), but baseline grids no longer
+  // surface raw Korean fallbacks.
+  const t = useTranslations("Common.Grid");
+  const resolvedInsert = insertLabel ?? t("insert");
+  const resolvedCopy = copyLabel ?? t("copy");
+  const resolvedSave = saveLabel ?? t("save");
+  const resolvedSaving = savingLabel ?? t("saving");
+  const resolvedExport = exportLabel ?? t("export");
+  const resolvedExporting = exportingLabel ?? t("exporting");
   return (
     <div className="ml-auto flex items-center gap-2">
       <Button size="sm" variant="outline" onClick={onInsert} disabled={saving}>
-        {insertLabel}
+        {resolvedInsert}
       </Button>
       <Button
         size="sm"
@@ -44,10 +55,10 @@ export function GridToolbar({
         onClick={onCopy}
         disabled={saving || !onCopy}
       >
-        {copyLabel}
+        {resolvedCopy}
       </Button>
       <Button size="sm" disabled={dirtyCount === 0 || saving} onClick={onSave}>
-        {saving ? savingLabel : dirtyCount > 0 ? `${saveLabel} (${dirtyCount})` : saveLabel}
+        {saving ? resolvedSaving : dirtyCount > 0 ? `${resolvedSave} (${dirtyCount})` : resolvedSave}
       </Button>
       {onExport && (
         <Button
@@ -56,7 +67,7 @@ export function GridToolbar({
           onClick={() => void onExport()}
           disabled={isExporting || saving}
         >
-          {isExporting ? exportingLabel : exportLabel}
+          {isExporting ? resolvedExporting : resolvedExport}
         </Button>
       )}
     </div>

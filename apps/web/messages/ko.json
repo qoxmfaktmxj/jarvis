@@ -216,7 +216,9 @@
         "title": "메뉴 목록",
         "filter": {
           "code": "코드",
+          "codePlaceholder": "코드(영문, 예: nav.ask)",
           "label": "라벨",
+          "labelPlaceholder": "라벨(한국어)",
           "kind": "종류",
           "kindAll": "전체",
           "parent": "부모",
@@ -776,8 +778,12 @@
     "searchKnowledge": "지식 검색...",
     "Calendar": {
       "monthLabel": "{year}년 {month}월",
+      "yearLabel": "{year}년",
+      "openCalendar": "달력 열기",
       "prev": "이전 달",
       "next": "다음 달",
+      "prevYear": "이전 해",
+      "nextYear": "다음 해",
       "weekdays": {
         "sun": "일",
         "mon": "월",
@@ -786,6 +792,49 @@
         "thu": "목",
         "fri": "금",
         "sat": "토"
+      },
+      "months": {
+        "jan": "1월",
+        "feb": "2월",
+        "mar": "3월",
+        "apr": "4월",
+        "may": "5월",
+        "jun": "6월",
+        "jul": "7월",
+        "aug": "8월",
+        "sep": "9월",
+        "oct": "10월",
+        "nov": "11월",
+        "dec": "12월"
+      }
+    },
+    "Grid": {
+      "insert": "입력",
+      "copy": "복사",
+      "save": "저장",
+      "saving": "저장 중…",
+      "export": "다운로드",
+      "exporting": "다운로드 중…",
+      "empty": "데이터가 없습니다.",
+      "saveFailed": "저장 실패",
+      "total": "전체 {count, number}건",
+      "prev": "이전",
+      "next": "다음",
+      "no": "No",
+      "delete": "삭제",
+      "status": "상태",
+      "RowStatus": {
+        "new": "입력",
+        "dirty": "수정",
+        "deleted": "삭제"
+      },
+      "Unsaved": {
+        "title": "저장되지 않은 변경사항",
+        "bodyWithCount": "저장되지 않은 변경사항이 {count}건 있습니다. 계속하시겠습니까?",
+        "bodyNoCount": "저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?",
+        "discard": "변경사항 무시하고 계속",
+        "save": "저장 후 계속",
+        "cancel": "취소"
       }
     }
   },
@@ -1231,10 +1280,12 @@
       "periodLabel": "기간",
       "singleDayLabel": "일자",
       "rangeLabel": "신청 범위",
+      "statusLabel": "상태",
       "typeLabel": "근태 종류",
       "timeLabel": "시간",
       "timeFromLabel": "시작 시간",
       "timeToLabel": "종료 시간",
+      "timeZoneNote": "시간은 KST(한국 표준시) 기준으로 저장됩니다.",
       "reasonLabel": "사유",
       "reasonPlaceholder": "선택 입력 — 사유나 비고를 적어주세요.",
       "summaryLabel": "차감",
@@ -1244,11 +1295,16 @@
       "close": "닫기",
       "cancelRequest": "신청 취소",
       "deleteRequest": "삭제",
+      "deleteRequestConfirm": "정말 삭제하시겠습니까?",
       "confirmCancel": "이 근태 신청을 취소하시겠습니까? 취소된 신청은 복구할 수 없습니다.",
       "confirmDelete": "이 신청을 영구 삭제하시겠습니까? 관리자만 가능한 작업이며 되돌릴 수 없습니다.",
       "alreadyCancelled": "이미 취소된 신청입니다.",
       "switchToHourly": "시간차로 전환",
-      "applyToSingleDay": "{date} 하루"
+      "applyToSingleDay": "{date} 하루",
+      "toast": {
+        "saveFailed": "저장에 실패했습니다. 다시 시도해주세요.",
+        "deleteFailed": "삭제에 실패했습니다. 다시 시도해주세요."
+      }
     },
     "validation": {
       "hourlyMustBeSingleDay": "시간차는 같은 날짜 안에서만 신청할 수 있습니다. 첫 일자({date})로 자동 조정합니다.",
@@ -1340,6 +1396,49 @@
         "dateRange": "시작일은 종료일보다 빠르거나 같아야 합니다.",
         "duplicate": "동일 담당자·고객사·시작일 조합이 이미 존재합니다.",
         "noPermission": "해당 작업 권한이 없습니다."
+      }
+    },
+    "Stats": {
+      "title": "유지보수 통계",
+      "description": "월별 유지보수 처리 건수·작업시간·랭킹 현황을 회사별·담당자별로 집계합니다.",
+      "search": "조회",
+      "searching": "조회 중…",
+      "tabs": {
+        "company": "회사별",
+        "manager": "담당자별",
+        "combined": "회사·담당자별"
+      },
+      "toolbar": {
+        "from": "시작월",
+        "to": "종료월",
+        "categories": "카테고리",
+        "cntRatio": "건수 가중치 {value}%"
+      },
+      "categories": {
+        "h008": "장애",
+        "h028": "변경",
+        "h030": "요청",
+        "h010": "문의",
+        "h027": "이관",
+        "h038": "기타"
+      },
+      "columns": {
+        "companyName": "회사",
+        "managerName": "담당자",
+        "cnt": "건수",
+        "workTime": "작업시간",
+        "rankingTime": "시간 랭킹",
+        "rankingCnt": "건수 랭킹",
+        "finalRank": "최종 랭킹",
+        "total": "합계",
+        "empty": "데이터가 없습니다.",
+        "subtotal": "소계"
+      },
+      "import": {
+        "button": "{ym} 인시던트 가져오기",
+        "importing": "{ym} 인시던트 가져오는 중…",
+        "success": "{inserted}건 가져왔습니다.",
+        "error": "가져오기 실패: {message}"
       }
     }
   },
@@ -1539,17 +1638,42 @@
         "bizOpNm": "영업기회명",
         "customerName": "고객사명",
         "productType": "제품군",
+        "productTypeCode": "제품군",
         "bizStep": "영업기회단계",
+        "bizStepCode": "영업기회단계",
         "bizStepYmd": "단계 변경일",
         "orgNm": "담당부서",
         "insName": "영업담당",
+        "insUserName": "영업담당",
         "bizOpSource": "영업기회출처",
+        "bizOpSourceCode": "영업기회출처",
         "focusMgrYn": "집중관리",
         "insdate": "등록일자",
+        "insDate": "등록일자",
         "memo": "메모"
       },
       "filters": {
-        "focusOnly": "집중관리"
+        "focusOnly": "집중관리",
+        "focusOnlyYes": "집중",
+        "focusOnlyNo": "일반",
+        "bizStep": "영업기회단계",
+        "productType": "제품군",
+        "q": "영업기회명"
+      },
+      "placeholders": {
+        "q": "영업기회명"
+      },
+      "Memo": {
+        "title": "영업기회 의견",
+        "createMaster": "의견 등록",
+        "createReply": "댓글",
+        "delete": "삭제",
+        "deleteMasterConfirm": "의견 삭제 시 댓글도 모두 삭제됩니다. 삭제하시겠습니까?",
+        "deleteReplyConfirm": "댓글을 삭제하시겠습니까?",
+        "empty": "등록된 의견이 없습니다.",
+        "memoLabel": "의견",
+        "memoPlaceholder": "의견을 입력하세요",
+        "memoButton": "메모"
       }
     },
     "Activities": {
@@ -1558,15 +1682,43 @@
       "columns": {
         "bizActNm": "활동명",
         "opportunity": "영업기회",
+        "opportunityId": "영업기회",
         "customerName": "고객사",
         "actYmd": "활동일",
         "actType": "활동유형",
+        "actTypeCode": "활동유형",
         "accessRoute": "접근경로",
+        "accessRouteCode": "접근경로",
         "attendee": "참석자",
+        "attendeeUserName": "참석자",
         "bizStep": "단계",
+        "bizStepCode": "단계",
         "productType": "제품군",
+        "productTypeCode": "제품군",
         "insdate": "등록일자",
+        "insDate": "등록일자",
         "memo": "메모"
+      },
+      "filters": {
+        "actType": "활동유형",
+        "bizStep": "영업기회단계",
+        "opportunity": "영업기회",
+        "q": "활동명"
+      },
+      "placeholders": {
+        "q": "활동명"
+      },
+      "Memo": {
+        "title": "영업활동 의견",
+        "createMaster": "의견 등록",
+        "createReply": "댓글",
+        "delete": "삭제",
+        "deleteMasterConfirm": "의견 삭제 시 댓글도 모두 삭제됩니다. 삭제하시겠습니까?",
+        "deleteReplyConfirm": "댓글을 삭제하시겠습니까?",
+        "empty": "등록된 의견이 없습니다.",
+        "memoLabel": "의견",
+        "memoPlaceholder": "의견을 입력하세요",
+        "memoButton": "메모"
       }
     },
     "Dashboard": {
@@ -2173,7 +2325,8 @@
       "detail": {
         "placeholder": "좌측 목록에서 회사를 선택하세요.",
         "loading": "불러오는 중…",
-        "noData": "해당 월의 데이터가 없습니다."
+        "noData": "해당 월의 데이터가 없습니다.",
+        "month": "보고월"
       },
       "master": {
         "title": "보고 항목 설정",

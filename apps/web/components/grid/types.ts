@@ -17,6 +17,16 @@ export type ColumnDef<T> = {
   required?: boolean;
   options?: { value: string; label: string }[];
   render?: (row: T) => ReactNode; // type=readonly 커스텀 렌더링
+  /**
+   * For type="numeric": column stores integer (Zod `.int()`).
+   *
+   *  - true  → commits as `number` (e.g. legacySeq, personCnt, sortOrder).
+   *  - false / undefined → commits as `string` (Drizzle `numeric()` SoT —
+   *    preserves precision + trailing zeros for KRW/rate/decimal amounts).
+   *
+   * Ignored for non-numeric column types. (A5 audit P0-1 / P0-2, 2026-05-11.)
+   */
+  integer?: boolean;
 };
 
 /**

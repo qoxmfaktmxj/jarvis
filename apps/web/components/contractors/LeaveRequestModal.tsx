@@ -14,6 +14,25 @@ import { breakdownDayOff } from "@jarvis/shared/leave-compute";
 
 type LeaveType = "day_off" | "half_am" | "half_pm" | "hourly" | "sick" | "public";
 
+/**
+ * Korea Standard Time offset (UTC+09:00). Korea has no DST, so this is a
+ * stable constant. Explicit constant prevents accidental drift to client local
+ * time when constructing ISO timestamps for the API.
+ */
+const KST_OFFSET = "+09:00";
+
+/**
+ * Compose an ISO-8601 timestamp interpreting `dateIso` (YYYY-MM-DD) + `timeHm`
+ * (HH:MM) as a KST wall-clock instant, then converting to UTC ISO for
+ * transmission. The output is timezone-unambiguous and round-trips correctly
+ * regardless of the browser's local timezone.
+ */
+function kstWallToUtcIso(dateIso: string, timeHm: string): string {
+  // `${YYYY-MM-DD}T${HH:MM}:00+09:00` is parsed by Date as the exact KST
+  // instant. `.toISOString()` then emits the equivalent UTC timestamp.
+  return new Date(`${dateIso}T${timeHm}:00${KST_OFFSET}`).toISOString();
+}
+
 const TYPE_OPTIONS: ReadonlyArray<{ value: LeaveType; tone: string }> = [
   { value: "day_off", tone: "emerald" },
   { value: "half_am", tone: "amber" },
@@ -130,8 +149,11 @@ export function LeaveRequestModal({
       reason: reason.trim() || undefined,
     };
     if (type === "hourly") {
-      body.timeFrom = new Date(`${start}T${timeFrom}:00+09:00`).toISOString();
-      body.timeTo = new Date(`${start}T${timeTo}:00+09:00`).toISOString();
+      // The user-entered times are interpreted as KST wall-clock (per the
+      // `modal.timeZoneNote` hint shown in the UI) and converted to UTC ISO
+      // for storage in `leave_request.time_from`/`time_to` (timestamptz).
+      body.timeFrom = kstWallToUtcIso(start, timeFrom);
+      body.timeTo = kstWallToUtcIso(start, timeTo);
     }
 
     try {
@@ -251,6 +273,9 @@ export function LeaveRequestModal({
                 className="w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 py-1.5 text-[13px] text-(--fg-primary)"
               />
             </label>
+            <div className="col-span-2 text-[11px] text-(--fg-muted)">
+              {t("modal.timeZoneNote")}
+            </div>
             {isMultiDay ? (
               <div className="col-span-2 rounded-md bg-(--status-warn-bg) px-3 py-2 text-[12px] text-(--status-warn-fg)">
                 {t("validation.hourlyMustBeSingleDay", { date: start })}

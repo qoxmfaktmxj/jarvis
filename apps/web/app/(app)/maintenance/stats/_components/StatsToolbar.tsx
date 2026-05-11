@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { MonthPicker } from "@/components/ui/MonthPicker";
 
 const CATEGORIES = [
   { value: "H008", labelKey: "categories.h008" },
@@ -17,12 +18,14 @@ export interface ToolbarFilters {
   cntRatio: number;
 }
 
-function fmtMonthInput(yyyymm: string): string {
+function toIso(yyyymm: string): string | null {
+  if (!/^\d{6}$/.test(yyyymm)) return null;
   return `${yyyymm.substring(0, 4)}-${yyyymm.substring(4)}`;
 }
 
-function parseMonthInput(v: string): string {
-  return v.replace("-", "");
+function fromIso(iso: string | null, fallback: string): string {
+  if (!iso) return fallback;
+  return iso.replace("-", "");
 }
 
 interface Props {
@@ -38,20 +41,22 @@ export function StatsToolbar({ value, onChange }: Props) {
     <div className="flex flex-wrap items-center gap-3 rounded border border-slate-200 bg-slate-50 p-3 text-sm">
       <label className="flex items-center gap-2">
         <span>{t("from")}</span>
-        <input
-          type="month"
-          value={fmtMonthInput(value.yyyymmFrom)}
-          onChange={(e) => onChange({ ...value, yyyymmFrom: parseMonthInput(e.target.value) })}
-          className="rounded border border-slate-300 px-2 py-1"
+        <MonthPicker
+          value={toIso(value.yyyymmFrom)}
+          onChange={(next) =>
+            onChange({ ...value, yyyymmFrom: fromIso(next, value.yyyymmFrom) })
+          }
+          ariaLabel={t("from")}
         />
       </label>
       <label className="flex items-center gap-2">
         <span>{t("to")}</span>
-        <input
-          type="month"
-          value={fmtMonthInput(value.yyyymmTo)}
-          onChange={(e) => onChange({ ...value, yyyymmTo: parseMonthInput(e.target.value) })}
-          className="rounded border border-slate-300 px-2 py-1"
+        <MonthPicker
+          value={toIso(value.yyyymmTo)}
+          onChange={(next) =>
+            onChange({ ...value, yyyymmTo: fromIso(next, value.yyyymmTo) })
+          }
+          ariaLabel={t("to")}
         />
       </label>
       <fieldset className="flex items-center gap-1.5">

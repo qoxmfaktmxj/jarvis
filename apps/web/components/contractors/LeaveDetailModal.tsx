@@ -44,10 +44,16 @@ export function LeaveDetailModal({
   const t = useTranslations("Contractors");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && leave) setReason(leave.reason ?? "");
-    if (!open) setBusy(false);
+    if (!open) {
+      setBusy(false);
+      setConfirmDelete(false);
+      setInlineError(null);
+    }
   }, [open, leave]);
 
   if (!leave) return null;
@@ -69,6 +75,7 @@ export function LeaveDetailModal({
 
   async function handleSave() {
     setBusy(true);
+    setInlineError(null);
     try {
       const res = await fetch(`/api/leave-requests/${leave!.id}`, {
         method: "PATCH",
@@ -76,7 +83,9 @@ export function LeaveDetailModal({
         body: JSON.stringify({ reason: reason.trim() || undefined }),
       });
       if (!res.ok) {
-        onError("저장 실패");
+        const msg = t("modal.toast.saveFailed");
+        setInlineError(msg);
+        onError(msg);
         return;
       }
       onChanged("saved");
@@ -86,20 +95,32 @@ export function LeaveDetailModal({
     }
   }
 
-  async function handleDelete() {
-    if (!confirm(t("modal.confirmDelete"))) return;
+  async function performDelete() {
     setBusy(true);
+    setInlineError(null);
     try {
       const res = await fetch(`/api/leave-requests/${leave!.id}?hard=1`, { method: "DELETE" });
       if (!res.ok) {
-        onError("삭제 실패");
+        const msg = t("modal.toast.deleteFailed");
+        setInlineError(msg);
+        onError(msg);
         return;
       }
       onChanged("deleted");
       onOpenChange(false);
     } finally {
       setBusy(false);
+      setConfirmDelete(false);
     }
+  }
+
+  function handleDeleteClick() {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setInlineError(null);
+      return;
+    }
+    void performDelete();
   }
 
   return (
@@ -134,7 +155,7 @@ export function LeaveDetailModal({
 
           {isCancelled ? (
             <>
-              <div className="text-(--fg-secondary)">상태</div>
+              <div className="text-(--fg-secondary)">{t("modal.statusLabel")}</div>
               <div className="text-(--status-danger-fg)">{t("status.cancelled")}</div>
             </>
           ) : null}
@@ -152,16 +173,34 @@ export function LeaveDetailModal({
           />
         </label>
 
+        {confirmDelete && !isCancelled ? (
+          <div
+            role="alert"
+            className="rounded-md bg-(--status-danger-bg) px-3 py-2 text-[12px] text-(--status-danger-fg)"
+          >
+            {t("modal.confirmDelete")}
+          </div>
+        ) : null}
+
+        {inlineError ? (
+          <div
+            role="alert"
+            className="rounded-md bg-(--status-danger-bg) px-3 py-2 text-[12px] text-(--status-danger-fg)"
+          >
+            {inlineError}
+          </div>
+        ) : null}
+
         <DialogFooter className="!justify-between">
           <div className="flex gap-2">
             {canEdit && !isCancelled ? (
               <Button
                 variant="outline"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
                 disabled={busy}
                 className="!text-(--status-danger-fg) !border-(--status-danger-fg)/30 hover:!bg-(--status-danger-bg)"
               >
-                {t("modal.deleteRequest")}
+                {confirmDelete ? t("modal.deleteRequestConfirm") : t("modal.deleteRequest")}
               </Button>
             ) : null}
           </div>
