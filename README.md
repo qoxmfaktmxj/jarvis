@@ -242,12 +242,13 @@ node scripts/check-llm-models.mjs --precommit # pre-commit 모드
 ├─ packages/
 │  ├─ ai/                          # LLM 프롬프트·답변 생성·citation stream
 │  ├─ auth/                        # 세션, RBAC
-│  ├─ db/                          # Drizzle schema (projection 테이블), migrations
+│  ├─ db/                          # Drizzle schema (projection 테이블) + client
+│  ├─ external-signals/            # 외부 신호 어댑터 (공휴일·환율 등)
 │  ├─ search/                      # page-first lexical + pg_trgm + 1-hop link expansion
 │  ├─ secret/                      # secret reference abstraction
-│  ├─ shared/                      # constants / types / validation
-│  ├─ wiki-fs/                     # (Phase-W1) 디스크 write + git commit + frontmatter parser
-│  └─ wiki-agent/                  # (Phase-W1) Analysis/Generation 프롬프트 + ingest 오케스트레이터
+│  ├─ shared/                      # constants / types / validation / audit-log helper
+│  ├─ wiki-fs/                     # 디스크 write + git commit + frontmatter parser + wikilink
+│  └─ wiki-agent/                  # Analysis/Generation 프롬프트 + ingest 오케스트레이터
 ├─ wiki/
 │  └─ {workspaceId}/               # workspace당 독립 git repo
 │     ├─ .git/

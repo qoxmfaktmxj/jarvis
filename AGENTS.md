@@ -132,7 +132,7 @@ export async function pinPage(
 
 ## Ask AI 워크플로우 (Harness-first)
 
-> 전환 상세: [`docs/superpowers/plans/2026-04-23-ask-harness-transition.md`](docs/superpowers/plans/2026-04-23-ask-harness-transition.md)
+> 전환 상세: `git log --grep='harness-first'` 또는 `CLAUDE.md` 변경 이력 2026-04-24 entry 참조 (plan 본문은 disposable 정책에 따라 머지 후 삭제됨).
 > 관련 스킬: [graphify 스킬](~/.claude/skills/graphify/SKILL.md) (`/graphify` 명령)
 
 Ask AI는 embedding RAG 대신 **tool-use agent**로 동작합니다 (Phase A–G, 2026-04 완료). 사용자 질문을 받으면 LLM이 아래 4개 도구를 호출하며 위키를 직접 탐색합니다.
