@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@jarvis/db/client";
+import { auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import { createAdditionalDevSchema } from "@jarvis/shared/validation/additional-dev";
 import { z } from "zod";
 import { createAdditionalDev, listAdditionalDev } from "@/lib/queries/additional-dev";
 import { requireApiSession } from "@/lib/server/api-auth";
+import { extractRequestAudit } from "@/lib/server/request-audit";
 
 const listQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -50,6 +54,18 @@ export async function POST(request: NextRequest) {
   const created = await createAdditionalDev({
     workspaceId: auth.session.workspaceId,
     input: parsed.data,
+  });
+
+  const { ipAddress, userAgent } = extractRequestAudit(request);
+  await writeAuditLog(db, auditLog, {
+    workspaceId: auth.session.workspaceId,
+    userId: auth.session.userId,
+    action: "additional_development.create",
+    resourceType: "additional_development",
+    resourceId: created.id,
+    ipAddress,
+    userAgent,
+    details: { after: parsed.data },
   });
 
   return NextResponse.json({ data: created }, { status: 201 });

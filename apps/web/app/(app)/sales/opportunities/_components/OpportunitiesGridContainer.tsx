@@ -4,6 +4,12 @@
  *
  * sales/opportunities DataGrid container — ibSheet 9 visible columns
  * (TBIZ110 ground truth). schema는 35 컬럼이지만 grid에는 9개만 노출.
+ *
+ * 2026-05-11 (A2 P0-3/P0-4/P0-5):
+ *   - isAdmin prop을 page에서 받아 MemoModal에 전달 (서버 ownership check와 UI hint sync).
+ *   - 컬럼 라벨·필터 라벨·placeholder·버튼 텍스트 모두 t() 통과.
+ *   - useUrlFilters로 필터/페이지 URL state 동기화 (cross-tab leak 차단).
+ *   - customerName 컬럼 editable: false — list/detail 모두 salesCustomer.custNm via JOIN.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -14,6 +20,7 @@ import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
@@ -32,6 +39,7 @@ type Props = {
   page: number;
   limit: number;
   initialFilters: Record<string, string | undefined>;
+  isAdmin?: boolean;
   codeOptions: {
     productType: Option[];
     bizStep: Option[];
@@ -63,10 +71,30 @@ export function OpportunitiesGridContainer({
   page: initialPage,
   limit,
   initialFilters,
+  isAdmin = false,
   codeOptions,
 }: Props) {
   const router = useRouter();
   const t = useTranslations("Sales.Opportunities");
+  const tCommon = useTranslations("Sales.Common");
+
+  // URL state — single source of truth for filters/page across tab switches.
+  const { values, setValues } = useUrlFilters<{
+    page: string;
+    q: string;
+    bizStepCode: string;
+    productTypeCode: string;
+    focusOnly: string;
+  }>({
+    defaults: {
+      page: String(initialPage),
+      q: initialFilters.q ?? "",
+      bizStepCode: initialFilters.bizStepCode ?? "",
+      productTypeCode: initialFilters.productTypeCode ?? "",
+      focusOnly: initialFilters.focusOnly ?? "",
+    },
+  });
+
   const initialFilterMap = useMemo(() => {
     const v: Record<string, string> = {};
     for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
@@ -75,11 +103,6 @@ export function OpportunitiesGridContainer({
 
   const [rows, setRows] = useState<Opportunity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useTabState<number>("sales.opportunities.page", initialPage);
-  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
-    "sales.opportunities.filters",
-    initialFilterMap,
-  );
   const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
     "sales.opportunities.pendingFilters",
     initialFilterMap,
@@ -97,6 +120,8 @@ export function OpportunitiesGridContainer({
 
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const currentPage = Math.max(1, Number(values.page) || 1);
 
   const tabKeyRef = useRef<string | null>(null);
   const pathname = usePathname() ?? "/sales/opportunities";
@@ -131,7 +156,7 @@ export function OpportunitiesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextFilters: { q: string; bizStepCode: string; productTypeCode: string; focusOnly: string }) => {
       startTransition(async () => {
         const focusOnly =
           nextFilters.focusOnly === "Y"
@@ -150,29 +175,46 @@ export function OpportunitiesGridContainer({
         if ("ok" in res && res.ok) {
           setRows(res.rows as Opportunity[]);
           setTotalCount(res.total as number);
-          setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
     [limit],
   );
 
+  const handleSearch = useCallback(() => {
+    setValues({
+      page: "1",
+      q: pendingFilters.q ?? "",
+      bizStepCode: pendingFilters.bizStepCode ?? "",
+      productTypeCode: pendingFilters.productTypeCode ?? "",
+      focusOnly: pendingFilters.focusOnly ?? "",
+    });
+    reload(1, {
+      q: pendingFilters.q ?? "",
+      bizStepCode: pendingFilters.bizStepCode ?? "",
+      productTypeCode: pendingFilters.productTypeCode ?? "",
+      focusOnly: pendingFilters.focusOnly ?? "",
+    });
+  }, [pendingFilters, setValues, reload]);
+
   const COLUMNS: ColumnDef<Opportunity>[] = useMemo(
     () => [
-      { key: "bizOpNm", label: "영업기회명", type: "text", width: 250, editable: true, required: true },
-      { key: "customerName", label: "고객사명", type: "text", width: 100, editable: true },
-      { key: "productTypeCode", label: "제품군", type: "select", width: 120, editable: true, options: codeOptions.productType },
-      { key: "bizStepCode", label: "영업기회단계", type: "select", width: 80, editable: true, options: codeOptions.bizStep },
-      { key: "bizStepYmd", label: "단계 변경일", type: "date", width: 100, editable: true },
-      { key: "orgNm", label: "담당부서", type: "text", width: 100, editable: true },
-      { key: "insUserName", label: "영업담당", type: "text", width: 60, editable: false },
-      { key: "bizOpSourceCode", label: "영업기회출처", type: "select", width: 200, editable: true, options: codeOptions.bizOpSource },
+      { key: "bizOpNm", label: t("columns.bizOpNm"), type: "text", width: 250, editable: true, required: true },
+      // A2 P0-2: customerName is JOIN-sourced (salesCustomer.custNm) — readonly.
+      // The denorm column `sales_opportunity.customer_name` is still in schema
+      // but server-side saveOpportunities strips it (see opportunities/actions.ts).
+      { key: "customerName", label: t("columns.customerName"), type: "text", width: 100, editable: false },
+      { key: "productTypeCode", label: t("columns.productType"), type: "select", width: 120, editable: true, options: codeOptions.productType },
+      { key: "bizStepCode", label: t("columns.bizStep"), type: "select", width: 80, editable: true, options: codeOptions.bizStep },
+      { key: "bizStepYmd", label: t("columns.bizStepYmd"), type: "date", width: 100, editable: true },
+      { key: "orgNm", label: t("columns.orgNm"), type: "text", width: 100, editable: true },
+      { key: "insUserName", label: t("columns.insName"), type: "text", width: 60, editable: false },
+      { key: "bizOpSourceCode", label: t("columns.bizOpSource"), type: "select", width: 200, editable: true, options: codeOptions.bizOpSource },
       { key: "focusMgrYn", label: t("columns.focusMgrYn"), type: "boolean", width: 80, editable: true },
-      { key: "insDate", label: "등록일자", type: "date", width: 100, editable: false },
+      { key: "insDate", label: t("columns.insdate"), type: "date", width: 100, editable: false },
       {
         key: "id" as keyof Opportunity & string,
-        label: "메모",
+        label: t("columns.memo"),
         type: "readonly",
         width: 70,
         render: (row) =>
@@ -184,7 +226,7 @@ export function OpportunitiesGridContainer({
               }}
               className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-200"
             >
-              메모
+              {t("Memo.memoButton")}
             </button>
           ) : (
             <span className="text-slate-300">—</span>
@@ -197,13 +239,13 @@ export function OpportunitiesGridContainer({
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
-      const exportColumns = COLUMNS.filter((c) => c.label !== "메모").map((c) => ({ key: c.key as string, header: c.label }));
+      const exportColumns = COLUMNS.filter((c) => c.label !== t("columns.memo")).map((c) => ({ key: c.key as string, header: c.label }));
       const productTypeMap = new Map(codeOptions.productType.map((o) => [o.value, o.label]));
       const bizStepMap = new Map(codeOptions.bizStep.map((o) => [o.value, o.label]));
       const bizOpSourceMap = new Map(codeOptions.bizOpSource.map((o) => [o.value, o.label]));
       await exportToExcel({
-        filename: "영업기회",
-        sheetName: "영업기회",
+        filename: t("title"),
+        sheetName: t("title"),
         columns: exportColumns,
         rows,
         cellFormatter: (row, col) => {
@@ -220,33 +262,33 @@ export function OpportunitiesGridContainer({
     } finally {
       setIsExporting(false);
     }
-  }, [COLUMNS, rows, codeOptions.productType, codeOptions.bizStep, codeOptions.bizOpSource]);
+  }, [COLUMNS, rows, codeOptions.productType, codeOptions.bizStep, codeOptions.bizOpSource, t]);
 
   return (
     <div className="space-y-3">
       <GridSearchForm
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={handleSearch}
         isSearching={isSearching}
       >
-        <GridFilterField label="영업기회단계" className="w-[140px]">
+        <GridFilterField label={t("filters.bizStep")} className="w-[140px]">
           <select
             value={pendingFilters.bizStepCode ?? ""}
             onChange={(e) => setPending("bizStepCode", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.bizStep.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="제품군" className="w-[140px]">
+        <GridFilterField label={t("filters.productType")} className="w-[140px]">
           <select
             value={pendingFilters.productTypeCode ?? ""}
             onChange={(e) => setPending("productTypeCode", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.productType.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -258,17 +300,17 @@ export function OpportunitiesGridContainer({
             onChange={(e) => setPending("focusOnly", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
-            <option value="Y">집중</option>
-            <option value="N">일반</option>
+            <option value="">{tCommon("selectAll")}</option>
+            <option value="Y">{t("filters.focusOnlyYes")}</option>
+            <option value="N">{t("filters.focusOnlyNo")}</option>
           </select>
         </GridFilterField>
-        <GridFilterField label="영업기회명" className="w-[210px]">
+        <GridFilterField label={t("filters.q")} className="w-[210px]">
           <Input
             type="text"
             value={pendingFilters.q ?? ""}
             onChange={(e) => setPending("q", e.target.value)}
-            placeholder="영업기회명"
+            placeholder={t("placeholders.q")}
             className="h-8"
           />
         </GridFilterField>
@@ -279,18 +321,28 @@ export function OpportunitiesGridContainer({
         total={totalCount}
         columns={COLUMNS}
         filters={[]}
-        page={page}
+        page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
-        filterValues={filterValues}
+        filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/opportunities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        onPageChange={(p) => {
+          setValues({ page: String(p) });
+          reload(p, {
+            q: values.q,
+            bizStepCode: values.bizStepCode,
+            productTypeCode: values.productTypeCode,
+            focusOnly: values.focusOnly,
+          });
+        }}
+        onFilterChange={() => {
+          // Filters are handled by GridSearchForm above
+        }}
         onSave={async (changes) => {
           const result = await saveOpportunities({
             creates: changes.creates,
@@ -298,7 +350,12 @@ export function OpportunitiesGridContainer({
             deletes: changes.deletes,
           });
           if (result.ok) {
-            await reload(page, filterValues);
+            await reload(currentPage, {
+              q: values.q,
+              bizStepCode: values.bizStepCode,
+              productTypeCode: values.productTypeCode,
+              focusOnly: values.focusOnly,
+            });
             return { ok: true, errors: [] };
           }
           const errs =
@@ -313,6 +370,7 @@ export function OpportunitiesGridContainer({
       <MemoModal
         opportunityId={memoTarget?.id ?? null}
         opportunityName={memoTarget?.name}
+        isAdmin={isAdmin}
         onClose={() => setMemoTarget(null)}
       />
     </div>

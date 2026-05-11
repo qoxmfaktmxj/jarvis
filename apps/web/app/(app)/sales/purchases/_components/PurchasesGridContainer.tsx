@@ -64,8 +64,8 @@ export function PurchasesGridContainer(props: Props) {
   const columns: ColumnDef<SalesPurchaseRow>[] = [
     { key: "legacyContNo", label: t("columns.contNo"), type: "text", width: 110, editable: true },
     { key: "contNm", label: t("columns.contNm"), type: "readonly", width: 180 },
-    { key: "legacySeq", label: t("columns.seq"), type: "numeric", width: 70, editable: true },
-    { key: "legacyPurSeq", label: t("columns.purSeq"), type: "numeric", width: 70, editable: true },
+    { key: "legacySeq", label: t("columns.seq"), type: "numeric", width: 70, editable: true, integer: true },
+    { key: "legacyPurSeq", label: t("columns.purSeq"), type: "numeric", width: 70, editable: true, integer: true },
     { key: "purNm", label: t("columns.purNm"), type: "text", width: 180, editable: true },
     { key: "purType", label: t("columns.purType"), type: "text", width: 90, editable: true },
     { key: "amt", label: t("columns.amt"), type: "numeric", width: 110, editable: true },

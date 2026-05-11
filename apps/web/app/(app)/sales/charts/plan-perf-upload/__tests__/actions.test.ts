@@ -39,6 +39,7 @@ vi.mock("@jarvis/auth/session", () => ({
 
 vi.mock("@jarvis/auth", () => ({
   hasPermission: vi.fn().mockReturnValue(true),
+  isAdmin: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("next/headers", () => ({

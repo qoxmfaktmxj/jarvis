@@ -61,10 +61,21 @@ vi.mock("@jarvis/db/schema/wiki-page-link", () => ({
   },
 }));
 
+// projectManualPage 가 wiki_commit_log 에 INSERT 하므로 schema 모킹을 추가한다.
+// 실제 schema 모듈은 다른 schema 들의 relations 까지 끌어와서 무거우므로 stub 만 노출.
+vi.mock("@jarvis/db/schema/wiki-commit-log", () => ({
+  wikiCommitLog: { id: "id" },
+}));
+
 vi.mock("drizzle-orm", () => ({
   and: vi.fn((...args: unknown[]) => ({ type: "and", args })),
   eq: vi.fn((col: unknown, val: unknown) => ({ type: "eq", col, val })),
   inArray: vi.fn((col: unknown, vals: unknown) => ({ type: "inArray", col, vals })),
+  // drizzle-orm 의 relations() 는 schema 모듈들이 module-load 시점에 호출.
+  // 본 테스트는 schema 를 직접 import 하지 않지만, wiki-commit-log mock 가 stub
+  // 으로 대체되므로 사실상 사용되지 않는다. 그래도 다른 schema 가 transitively
+  // 로드되는 경우를 대비해 노출.
+  relations: vi.fn(() => ({})),
 }));
 
 // ── Mock @jarvis/wiki-fs ──────────────────────────────────────────────────

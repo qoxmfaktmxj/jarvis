@@ -2,11 +2,16 @@
 
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, gte, ilike, inArray, isNull, lte, or, sql } from "drizzle-orm";
 import { hasPermission } from "@jarvis/auth";
 import { getSession } from "@jarvis/auth/session";
 import { db } from "@jarvis/db/client";
-import { auditLog, salesCloudPeopleCalc } from "@jarvis/db/schema";
+import {
+  auditLog,
+  salesCloudPeopleBase,
+  salesCloudPeopleCalc,
+  salesContract,
+} from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   listCloudPeopleCalcInput,
@@ -47,7 +52,33 @@ function normalizeUpdate(row: SalesCloudPeopleCalcUpdate) {
   };
 }
 
-function serializeCalc(r: typeof salesCloudPeopleCalc.$inferSelect): SalesCloudPeopleCalcRow {
+type ContractLookup = { contNm: string | null };
+type BaseLookup = {
+  pjtCode: string | null;
+  companyCd: string | null;
+  monthAmt: string | null;
+};
+
+function serializeCalc(
+  r: typeof salesCloudPeopleCalc.$inferSelect,
+  base?: BaseLookup,
+  contract?: ContractLookup,
+): SalesCloudPeopleCalcRow {
+  // P0-3 (A5 audit 2026-05-11): monthAmt now derived from sales_cloud_people_base
+  // via composite-key LEFT JOIN (legacyEnterCd + contNo + contYear + seq +
+  // personType + calcType, sdate <= calc.ym* <= edate). totalAmt fallback:
+  // stored value preferred (reflYn='Y' rows are frozen snapshots) — only when
+  // stored is null do we synthesize monthAmt × personCnt for display.
+  const monthAmt = base?.monthAmt ?? null;
+  let totalAmt = r.totalAmt ?? null;
+  if (totalAmt === null && monthAmt !== null && r.personCnt !== null) {
+    const m = Number(monthAmt);
+    const c = r.personCnt;
+    if (Number.isFinite(m) && Number.isFinite(c)) {
+      // Display-only derivation. Stored totalAmt is the SoT once persisted.
+      totalAmt = String(m * c);
+    }
+  }
   return {
     id: r.id,
     workspaceId: r.workspaceId,
@@ -55,18 +86,18 @@ function serializeCalc(r: typeof salesCloudPeopleCalc.$inferSelect): SalesCloudP
     contNo: r.contNo,
     contYear: r.contYear,
     seq: r.seq,
-    contNm: null,
-    pjtCode: null,
+    contNm: contract?.contNm ?? null,
+    pjtCode: base?.pjtCode ?? null,
     pjtNm: null,
-    companyCd: null,
+    companyCd: base?.companyCd ?? null,
     companyNm: null,
     ym: r.ym,
     reflYn: r.reflYn ?? null,
     personType: r.personType,
     calcType: r.calcType,
-    monthAmt: null,
+    monthAmt,
     personCnt: r.personCnt ?? null,
-    totalAmt: r.totalAmt ?? null,
+    totalAmt,
     note: r.note ?? null,
     reflId: r.reflId ?? null,
     reflDate: r.reflDate ? r.reflDate.toISOString() : null,
@@ -100,14 +131,64 @@ export async function listCloudPeopleCalc(rawInput: unknown) {
 
   const where = and(...conditions);
   const offset = (input.page - 1) * input.limit;
+
+  // P0-3: Window-match each calc row to a base row whose [sdate, edate] covers
+  // calc.ym (treated as ym + '01'/'31' so single-month YYYYMM falls inside an
+  // ETL-formatted YYYYMMDD window). edate IS NULL means open-ended.
+  //
+  //   base.sdate <= ym + '31'
+  //   AND (base.edate >= ym + '01' OR base.edate IS NULL)
+  //
+  // 6-key match: legacyEnterCd, contNo, contYear, seq, personType, calcType.
+  // Pagination order adds the calc PK as the ultimate tie-break (P1-4).
   const [rows, countRows] = await Promise.all([
-    db.select().from(salesCloudPeopleCalc).where(where).orderBy(desc(salesCloudPeopleCalc.ym), salesCloudPeopleCalc.contNo).limit(input.limit).offset(offset),
+    db
+      .select({
+        calc: salesCloudPeopleCalc,
+        base: {
+          pjtCode: salesCloudPeopleBase.pjtCode,
+          companyCd: salesCloudPeopleBase.companyCd,
+          monthAmt: salesCloudPeopleBase.monthAmt,
+        },
+        contract: { contNm: salesContract.contNm },
+      })
+      .from(salesCloudPeopleCalc)
+      .leftJoin(
+        salesCloudPeopleBase,
+        and(
+          eq(salesCloudPeopleBase.workspaceId, salesCloudPeopleCalc.workspaceId),
+          eq(salesCloudPeopleBase.legacyEnterCd, salesCloudPeopleCalc.legacyEnterCd),
+          eq(salesCloudPeopleBase.contNo, salesCloudPeopleCalc.contNo),
+          eq(salesCloudPeopleBase.contYear, salesCloudPeopleCalc.contYear),
+          eq(salesCloudPeopleBase.seq, salesCloudPeopleCalc.seq),
+          eq(salesCloudPeopleBase.personType, salesCloudPeopleCalc.personType),
+          eq(salesCloudPeopleBase.calcType, salesCloudPeopleCalc.calcType),
+          lte(salesCloudPeopleBase.sdate, sql`${salesCloudPeopleCalc.ym} || '31'`),
+          or(
+            isNull(salesCloudPeopleBase.edate),
+            gte(salesCloudPeopleBase.edate, sql`${salesCloudPeopleCalc.ym} || '01'`),
+          ),
+        ),
+      )
+      .leftJoin(
+        salesContract,
+        and(
+          eq(salesContract.workspaceId, salesCloudPeopleCalc.workspaceId),
+          eq(salesContract.legacyEnterCd, salesCloudPeopleCalc.legacyEnterCd),
+          eq(salesContract.legacyContYear, salesCloudPeopleCalc.contYear),
+          eq(salesContract.legacyContNo, salesCloudPeopleCalc.contNo),
+        ),
+      )
+      .where(where)
+      .orderBy(desc(salesCloudPeopleCalc.ym), salesCloudPeopleCalc.contNo, salesCloudPeopleCalc.id)
+      .limit(input.limit)
+      .offset(offset),
     db.select({ count: count() }).from(salesCloudPeopleCalc).where(where),
   ]);
 
   return listCloudPeopleCalcOutput.parse({
     ok: true,
-    rows: rows.map(serializeCalc),
+    rows: rows.map((r) => serializeCalc(r.calc, r.base ?? undefined, r.contract ?? undefined)),
     total: Number(countRows[0]?.count ?? 0),
     page: input.page,
     limit: input.limit,
@@ -153,7 +234,20 @@ export async function saveCloudPeopleCalc(rawInput: unknown) {
           .update(salesCloudPeopleCalc)
           .set({ ...changes, updatedAt: new Date(), updatedBy: ctx.userId ?? undefined })
           .where(and(eq(salesCloudPeopleCalc.id, id), eq(salesCloudPeopleCalc.workspaceId, ctx.workspaceId)))
-          .returning({ id: salesCloudPeopleCalc.id });
+          .returning({
+            id: salesCloudPeopleCalc.id,
+            workspaceId: salesCloudPeopleCalc.workspaceId,
+            legacyEnterCd: salesCloudPeopleCalc.legacyEnterCd,
+            contNo: salesCloudPeopleCalc.contNo,
+            contYear: salesCloudPeopleCalc.contYear,
+            seq: salesCloudPeopleCalc.seq,
+            personType: salesCloudPeopleCalc.personType,
+            calcType: salesCloudPeopleCalc.calcType,
+            ym: salesCloudPeopleCalc.ym,
+            reflYn: salesCloudPeopleCalc.reflYn,
+            personCnt: salesCloudPeopleCalc.personCnt,
+            totalAmt: salesCloudPeopleCalc.totalAmt,
+          });
         if (row) {
           updated++;
           await tx.insert(auditLog).values({
@@ -165,6 +259,54 @@ export async function saveCloudPeopleCalc(rawInput: unknown) {
             details: changes,
             success: true,
           });
+
+          // P0-4 (A5 audit 2026-05-11): When personCnt changes on a non-frozen
+          // row, recompute totalAmt = base.monthAmt × personCnt. Frozen rows
+          // (reflYn = 'Y') are NOT recomputed — they're 전표 반영 snapshots.
+          // Client-supplied totalAmt in `changes` is also honored: only when
+          // personCnt is in the patch but totalAmt is NOT do we derive.
+          const personCntInPatch = Object.prototype.hasOwnProperty.call(changes, "personCnt");
+          const totalAmtInPatch = Object.prototype.hasOwnProperty.call(changes, "totalAmt");
+          const isFrozen = row.reflYn === "Y";
+          if (personCntInPatch && !totalAmtInPatch && !isFrozen) {
+            // Lookup matching base row whose window covers this ym.
+            const baseConditions = [
+              eq(salesCloudPeopleBase.workspaceId, row.workspaceId),
+              eq(salesCloudPeopleBase.contNo, row.contNo),
+              eq(salesCloudPeopleBase.contYear, row.contYear),
+              eq(salesCloudPeopleBase.seq, row.seq),
+              eq(salesCloudPeopleBase.personType, row.personType),
+              eq(salesCloudPeopleBase.calcType, row.calcType),
+              lte(salesCloudPeopleBase.sdate, sql`${row.ym} || '31'`),
+              or(
+                isNull(salesCloudPeopleBase.edate),
+                gte(salesCloudPeopleBase.edate, sql`${row.ym} || '01'`),
+              )!,
+            ];
+            if (row.legacyEnterCd === null) {
+              baseConditions.push(isNull(salesCloudPeopleBase.legacyEnterCd));
+            } else {
+              baseConditions.push(eq(salesCloudPeopleBase.legacyEnterCd, row.legacyEnterCd));
+            }
+            const [baseRow] = await tx
+              .select({ monthAmt: salesCloudPeopleBase.monthAmt })
+              .from(salesCloudPeopleBase)
+              .where(and(...baseConditions))
+              .limit(1);
+            if (baseRow && baseRow.monthAmt !== null && row.personCnt !== null) {
+              const m = Number(baseRow.monthAmt);
+              if (Number.isFinite(m)) {
+                await tx
+                  .update(salesCloudPeopleCalc)
+                  .set({
+                    totalAmt: String(m * row.personCnt),
+                    updatedAt: new Date(),
+                    updatedBy: ctx.userId ?? undefined,
+                  })
+                  .where(eq(salesCloudPeopleCalc.id, row.id));
+              }
+            }
+          }
         }
       }
 

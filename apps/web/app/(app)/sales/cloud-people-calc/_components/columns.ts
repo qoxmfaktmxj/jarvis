@@ -20,7 +20,7 @@ export function getCloudPeopleCalcColumns(labels: Labels): ColumnDef<SalesCloudP
     { key: "personType", label: label(labels, "personType"), type: "text", width: 90, editable: false, required: true },
     { key: "calcType", label: label(labels, "calcType"), type: "text", width: 90, editable: true, required: true },
     { key: "monthAmt", label: label(labels, "monthAmt"), type: "numeric", width: 110, editable: false },
-    { key: "personCnt", label: label(labels, "personCnt"), type: "numeric", width: 110, editable: true },
+    { key: "personCnt", label: label(labels, "personCnt"), type: "numeric", width: 110, editable: true, integer: true },
     { key: "totalAmt", label: label(labels, "totalAmt"), type: "numeric", width: 110, editable: true },
     { key: "note", label: label(labels, "note"), type: "textarea", width: 180, editable: true },
     { key: "seq", label: label(labels, "seq"), type: "readonly", width: 70 },

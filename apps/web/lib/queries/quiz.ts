@@ -235,12 +235,41 @@ export interface RecordAttemptResult {
  * uq_wiki_quiz_attempt_user_quiz 충돌 시 duplicate=true 반환 (이미 푼 문제).
  *
  * 시즌 첫 참여 시 BASELINE 3종 (basic/reading/zen) 자동 unlock.
+ *
+ * **Workspace 격리 (A10 audit F1):** `quiz_season_score` / `mascot_unlock` 테이블에는
+ * workspace_id 컬럼이 없다. 현재 호출 경로(`api/quiz/answer/route.ts`)는
+ * `getQuizById(workspaceId, quizId)`로 quizId의 workspace 일치를 강제하므로
+ * 정상 경로의 attack surface는 닫혀 있다. 그러나 `seasonId`가 다른 workspace의
+ * 시즌이라면 score upsert가 잘못된 워크스페이스로 누적될 수 있다.
+ *
+ * 단기 차단(A안): 트랜잭션 시작 시 `seasonId`가 `workspaceId`에 속하는지 확인하고
+ * 불일치면 mismatch error를 throw한다. 후속(B안)으로 score/unlock 테이블에
+ * workspace_id 컬럼 + 복합 unique 마이그레이션을 추적한다.
  */
 export async function recordAttempt(
   input: RecordAttemptInput,
   database: DbOrTx = db
 ): Promise<RecordAttemptResult> {
   return database.transaction(async (tx) => {
+    // A10 F1 — Defense in depth: verify the seasonId actually belongs to the
+    // caller's workspace before touching quiz_season_score / mascot_unlock,
+    // neither of which has a workspace_id column of its own (cross-workspace
+    // bleed risk). `getQuizById` already enforces this for `quizId`; this
+    // closes the same hole for `seasonId`.
+    if (input.seasonId) {
+      const seasonRows = await tx
+        .select({ workspaceId: quizSeason.workspaceId })
+        .from(quizSeason)
+        .where(eq(quizSeason.id, input.seasonId))
+        .limit(1);
+      const seasonWs = seasonRows[0]?.workspaceId;
+      if (!seasonWs || seasonWs !== input.workspaceId) {
+        throw new Error(
+          `recordAttempt: seasonId ${input.seasonId} does not belong to workspace ${input.workspaceId}`
+        );
+      }
+    }
+
     const insertRes = await tx
       .insert(wikiQuizAttempt)
       .values({

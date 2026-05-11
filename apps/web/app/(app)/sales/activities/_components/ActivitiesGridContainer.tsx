@@ -4,15 +4,22 @@
  *
  * sales/activities DataGrid container — ibSheet 10 visible columns
  * (TBIZ115 ground truth, plan estimate). schema는 더 많지만 grid에는 10개만 노출.
+ *
+ * 2026-05-11 (A2 P0-3/P0-4/P0-5):
+ *   - isAdmin prop을 page에서 받아 MemoModal에 전달 (서버 ownership check와 UI hint sync).
+ *   - 컬럼 라벨·필터 라벨·placeholder·버튼 텍스트 모두 t() 통과.
+ *   - useUrlFilters로 필터/페이지 URL state 동기화 (cross-tab leak 차단).
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type ActivityRow } from "@jarvis/shared/validation/sales/activity";
 import { listActivities, saveActivities } from "../actions";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
 import { Input } from "@/components/ui/input";
+import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
@@ -31,6 +38,7 @@ type Props = {
   page: number;
   limit: number;
   initialFilters: Record<string, string | undefined>;
+  isAdmin?: boolean;
   codeOptions: {
     actType: Option[];
     accessRoute: Option[];
@@ -65,10 +73,31 @@ export function ActivitiesGridContainer({
   page: initialPage,
   limit,
   initialFilters,
+  isAdmin = false,
   codeOptions,
   opportunityOptions,
 }: Props) {
   const router = useRouter();
+  const t = useTranslations("Sales.Activities");
+  const tCommon = useTranslations("Sales.Common");
+
+  // URL state — single source of truth for filters/page across tab switches.
+  const { values, setValues } = useUrlFilters<{
+    page: string;
+    q: string;
+    opportunityId: string;
+    actTypeCode: string;
+    bizStepCode: string;
+  }>({
+    defaults: {
+      page: String(initialPage),
+      q: initialFilters.q ?? "",
+      opportunityId: initialFilters.opportunityId ?? "",
+      actTypeCode: initialFilters.actTypeCode ?? "",
+      bizStepCode: initialFilters.bizStepCode ?? "",
+    },
+  });
+
   const initialFilterMap = useMemo(() => {
     const v: Record<string, string> = {};
     for (const [k, val] of Object.entries(initialFilters)) if (val) v[k] = val;
@@ -77,11 +106,6 @@ export function ActivitiesGridContainer({
 
   const [rows, setRows] = useState<Activity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
-  const [page, setPage] = useTabState<number>("sales.activities.page", initialPage);
-  const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
-    "sales.activities.filters",
-    initialFilterMap,
-  );
   const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
     "sales.activities.pendingFilters",
     initialFilterMap,
@@ -99,6 +123,8 @@ export function ActivitiesGridContainer({
 
   const setPending = (key: string, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
+
+  const currentPage = Math.max(1, Number(values.page) || 1);
 
   const tabKeyRef = useRef<string | null>(null);
   const pathname = usePathname() ?? "/sales/activities";
@@ -133,7 +159,7 @@ export function ActivitiesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextFilters: { q: string; opportunityId: string; actTypeCode: string; bizStepCode: string }) => {
       startTransition(async () => {
         const res = await listActivities({
           q: nextFilters.q || undefined,
@@ -146,29 +172,43 @@ export function ActivitiesGridContainer({
         if ("ok" in res && res.ok) {
           setRows(res.rows as Activity[]);
           setTotalCount(res.total as number);
-          setPage(nextPage);
-          setFilterValues(nextFilters);
         }
       });
     },
     [limit],
   );
 
+  const handleSearch = useCallback(() => {
+    setValues({
+      page: "1",
+      q: pendingFilters.q ?? "",
+      opportunityId: pendingFilters.opportunityId ?? "",
+      actTypeCode: pendingFilters.actTypeCode ?? "",
+      bizStepCode: pendingFilters.bizStepCode ?? "",
+    });
+    reload(1, {
+      q: pendingFilters.q ?? "",
+      opportunityId: pendingFilters.opportunityId ?? "",
+      actTypeCode: pendingFilters.actTypeCode ?? "",
+      bizStepCode: pendingFilters.bizStepCode ?? "",
+    });
+  }, [pendingFilters, setValues, reload]);
+
   const COLUMNS: ColumnDef<Activity>[] = useMemo(
     () => [
-      { key: "bizActNm", label: "활동명", type: "text", width: 250, editable: true, required: true },
-      { key: "opportunityId", label: "영업기회", type: "select", width: 150, editable: true, options: opportunityOptions },
-      { key: "customerName", label: "고객사", type: "text", width: 120, editable: false },
-      { key: "actYmd", label: "활동일", type: "date", width: 100, editable: true },
-      { key: "actTypeCode", label: "활동유형", type: "select", width: 100, editable: true, options: codeOptions.actType },
-      { key: "accessRouteCode", label: "접근경로", type: "select", width: 100, editable: true, options: codeOptions.accessRoute },
-      { key: "attendeeUserName", label: "참석자", type: "text", width: 100, editable: false },
-      { key: "bizStepCode", label: "단계", type: "select", width: 80, editable: true, options: codeOptions.bizStep },
-      { key: "productTypeCode", label: "제품군", type: "select", width: 100, editable: true, options: codeOptions.productType },
-      { key: "insDate", label: "등록일자", type: "date", width: 100, editable: false },
+      { key: "bizActNm", label: t("columns.bizActNm"), type: "text", width: 250, editable: true, required: true },
+      { key: "opportunityId", label: t("columns.opportunity"), type: "select", width: 150, editable: true, options: opportunityOptions },
+      { key: "customerName", label: t("columns.customerName"), type: "text", width: 120, editable: false },
+      { key: "actYmd", label: t("columns.actYmd"), type: "date", width: 100, editable: true },
+      { key: "actTypeCode", label: t("columns.actType"), type: "select", width: 100, editable: true, options: codeOptions.actType },
+      { key: "accessRouteCode", label: t("columns.accessRoute"), type: "select", width: 100, editable: true, options: codeOptions.accessRoute },
+      { key: "attendeeUserName", label: t("columns.attendee"), type: "text", width: 100, editable: false },
+      { key: "bizStepCode", label: t("columns.bizStep"), type: "select", width: 80, editable: true, options: codeOptions.bizStep },
+      { key: "productTypeCode", label: t("columns.productType"), type: "select", width: 100, editable: true, options: codeOptions.productType },
+      { key: "insDate", label: t("columns.insdate"), type: "date", width: 100, editable: false },
       {
         key: "id" as keyof Activity & string,
-        label: "메모",
+        label: t("columns.memo"),
         type: "readonly",
         width: 70,
         render: (row) =>
@@ -180,7 +220,7 @@ export function ActivitiesGridContainer({
               }}
               className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-200"
             >
-              메모
+              {t("Memo.memoButton")}
             </button>
           ) : (
             <span className="text-slate-300">—</span>
@@ -193,21 +233,22 @@ export function ActivitiesGridContainer({
       codeOptions.bizStep,
       codeOptions.productType,
       opportunityOptions,
+      t,
     ],
   );
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
     try {
-      const exportColumns = COLUMNS.filter((c) => c.label !== "메모").map((c) => ({ key: c.key as string, header: c.label }));
+      const exportColumns = COLUMNS.filter((c) => c.label !== t("columns.memo")).map((c) => ({ key: c.key as string, header: c.label }));
       const actTypeMap = new Map(codeOptions.actType.map((o) => [o.value, o.label]));
       const accessRouteMap = new Map(codeOptions.accessRoute.map((o) => [o.value, o.label]));
       const bizStepMap = new Map(codeOptions.bizStep.map((o) => [o.value, o.label]));
       const productTypeMap = new Map(codeOptions.productType.map((o) => [o.value, o.label]));
       const opportunityMap = new Map(opportunityOptions.map((o) => [o.value, o.label]));
       await exportToExcel({
-        filename: "영업활동",
-        sheetName: "영업활동",
+        filename: t("title"),
+        sheetName: t("title"),
         columns: exportColumns,
         rows,
         cellFormatter: (row, col) => {
@@ -234,56 +275,57 @@ export function ActivitiesGridContainer({
     codeOptions.bizStep,
     codeOptions.productType,
     opportunityOptions,
+    t,
   ]);
 
   return (
     <div className="space-y-3">
       <GridSearchForm
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={handleSearch}
         isSearching={isSearching}
       >
-        <GridFilterField label="활동유형" className="w-[140px]">
+        <GridFilterField label={t("filters.actType")} className="w-[140px]">
           <select
             value={pendingFilters.actTypeCode ?? ""}
             onChange={(e) => setPending("actTypeCode", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.actType.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="영업기회단계" className="w-[140px]">
+        <GridFilterField label={t("filters.bizStep")} className="w-[140px]">
           <select
             value={pendingFilters.bizStepCode ?? ""}
             onChange={(e) => setPending("bizStepCode", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {codeOptions.bizStep.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="영업기회" className="w-[140px]">
+        <GridFilterField label={t("filters.opportunity")} className="w-[140px]">
           <select
             value={pendingFilters.opportunityId ?? ""}
             onChange={(e) => setPending("opportunityId", e.target.value)}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           >
-            <option value="">전체</option>
+            <option value="">{tCommon("selectAll")}</option>
             {opportunityOptions.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </GridFilterField>
-        <GridFilterField label="활동명" className="w-[210px]">
+        <GridFilterField label={t("filters.q")} className="w-[210px]">
           <Input
             type="text"
             value={pendingFilters.q ?? ""}
             onChange={(e) => setPending("q", e.target.value)}
-            placeholder="활동명"
+            placeholder={t("placeholders.q")}
             className="h-8"
           />
         </GridFilterField>
@@ -294,18 +336,28 @@ export function ActivitiesGridContainer({
         total={totalCount}
         columns={COLUMNS}
         filters={[]}
-        page={page}
+        page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
-        filterValues={filterValues}
+        filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/activities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        onPageChange={(p) => {
+          setValues({ page: String(p) });
+          reload(p, {
+            q: values.q,
+            opportunityId: values.opportunityId,
+            actTypeCode: values.actTypeCode,
+            bizStepCode: values.bizStepCode,
+          });
+        }}
+        onFilterChange={() => {
+          // Filters are handled by GridSearchForm above
+        }}
         onSave={async (changes) => {
           const result = await saveActivities({
             creates: changes.creates,
@@ -313,7 +365,12 @@ export function ActivitiesGridContainer({
             deletes: changes.deletes,
           });
           if (result.ok) {
-            await reload(page, filterValues);
+            await reload(currentPage, {
+              q: values.q,
+              opportunityId: values.opportunityId,
+              actTypeCode: values.actTypeCode,
+              bizStepCode: values.bizStepCode,
+            });
             return { ok: true, errors: [] };
           }
           const errs =
@@ -328,6 +385,7 @@ export function ActivitiesGridContainer({
       <MemoModal
         activityId={memoTarget?.id ?? null}
         activityName={memoTarget?.name}
+        isAdmin={isAdmin}
         onClose={() => setMemoTarget(null)}
       />
     </div>

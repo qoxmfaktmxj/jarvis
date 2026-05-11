@@ -44,24 +44,25 @@ describe("buildMemoTree", () => {
 // CI sets DATABASE_URL; e2e (Task 9) covers the live-DB path end-to-end.
 const HAS_DB = !!process.env.DATABASE_URL;
 
-describe.skipIf(!HAS_DB)("getCustomerTabCounts (P2-BLOCKED, DB-required)", () => {
-  it("returns 0 for opCnt and actCnt while P2 schema is not yet merged", async () => {
-    // No DB fixture — this test verifies the P2-BLOCKED contract: op/act always 0
-    // until the P2 schema is wired up. Real customer/comt counts require DB setup,
-    // covered by e2e tests (Task 9).
+// 2026-05-11 (A2 P0-1): opCnt / actCnt are live (sales_opportunity / sales_activity
+// schemas are merged). With no fixture rows for the synthetic UUIDs the test
+// uses, all 4 count values are expected to be 0 — but the shape contract is
+// what's verified here (numeric, never undefined).
+describe.skipIf(!HAS_DB)("getCustomerTabCounts (DB-required)", () => {
+  it("returns numeric counts for all 4 tabs (customerCnt/opCnt/actCnt/comtCnt)", async () => {
     const counts = await getCustomerTabCounts("00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111");
-    expect(counts.opCnt).toBe(0);
-    expect(counts.actCnt).toBe(0);
     expect(typeof counts.customerCnt).toBe("number");
+    expect(typeof counts.opCnt).toBe("number");
+    expect(typeof counts.actCnt).toBe("number");
     expect(typeof counts.comtCnt).toBe("number");
   });
 });
 
-describe.skipIf(!HAS_DB)("getContactTabCounts (P2-BLOCKED, DB-required)", () => {
-  it("returns 0 for opCnt and actCnt; custCompanyCnt is 0 or 1", async () => {
+describe.skipIf(!HAS_DB)("getContactTabCounts (DB-required)", () => {
+  it("returns numeric counts and custCompanyCnt is 0 or 1", async () => {
     const counts = await getContactTabCounts("00000000-0000-0000-0000-000000000000", "22222222-2222-2222-2222-222222222222");
-    expect(counts.opCnt).toBe(0);
-    expect(counts.actCnt).toBe(0);
+    expect(typeof counts.opCnt).toBe("number");
+    expect(typeof counts.actCnt).toBe("number");
     expect([0, 1]).toContain(counts.custCompanyCnt);
     expect(typeof counts.comtCnt).toBe("number");
   });

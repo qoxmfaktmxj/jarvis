@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { Plus } from 'lucide-react';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { listNotices } from '@/lib/queries/notices';
+import { canViewInternalNotice, listNotices } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { NoticeList } from './_components/NoticeList';
@@ -26,6 +26,9 @@ export default async function NoticesPage() {
     workspaceId: session.workspaceId,
     actorId: session.userId,
     actorRole: pickActorRole(session.roles),
+    // A9 F1 fix — page ↔ API drift: API route already injects this,
+    // page must match or INTERNAL notices vanish from the UI for everyone.
+    canViewInternal: canViewInternalNotice(session.roles),
   });
 
   const canCreate = session.permissions.includes(PERMISSIONS.NOTICE_CREATE);

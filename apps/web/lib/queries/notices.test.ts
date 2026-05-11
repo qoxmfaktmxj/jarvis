@@ -82,11 +82,22 @@ vi.mock('@jarvis/db/schema/notice', () => ({
   },
 }));
 
+// P0 F4 — notices.ts 가 audit_log + writeAuditLog 를 import 하므로 모듈 로드 단계에서
+// 의존성 그래프를 끊어 둔다. 본 테스트는 read path(listNotices/getNoticeById) 만 검증
+// 하므로 audit 호출은 일어나지 않지만, import 자체는 실행되기 때문에 stub 필요.
+vi.mock('@jarvis/db/schema/audit', () => ({
+  auditLog: { id: 'id' },
+}));
+vi.mock('@jarvis/shared/audit-log', () => ({
+  writeAuditLog: vi.fn(),
+}));
+
 vi.mock('drizzle-orm', () => ({
   and: (...args: unknown[]) => ({ kind: 'and', args }),
   count: () => ({ kind: 'count' }),
   desc: (col: unknown) => ({ kind: 'desc', col }),
   eq: (col: unknown, val: unknown) => ({ kind: 'eq', col, val }),
+  gt: (col: unknown, val: unknown) => ({ kind: 'gt', col, val }),
   isNull: (col: unknown) => ({ kind: 'isNull', col }),
   lte: (col: unknown, val: unknown) => ({ kind: 'lte', col, val }),
   or: (...args: unknown[]) => ({ kind: 'or', args }),

@@ -8,9 +8,8 @@ import { rawSource, attachment } from '@jarvis/db/schema/file';
 import { auditLog } from '@jarvis/db/schema/audit';
 import { verifyMagicBytes } from '@/lib/upload/magic-bytes';
 import {
-  UPLOAD_XLSX_MIME,
-  validateUploadMime,
-  validateUploadSize,
+  getUploadPolicy,
+  validateUploadAgainstPolicy,
 } from '@/lib/server/validateUpload';
 import PgBoss from 'pg-boss';
 
@@ -101,19 +100,44 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'forbidden_object_key' }, { status: 400 });
   }
 
-  // ── Resource-specific size + MIME guard ───────────────────────────────────
-  // Sales contract uploads have a stricter 10 MB cap and an xlsx/csv allowlist
-  // (DoS + malformed-file-parse defense). Other resource types fall through
-  // to the broader 50 MB allowlist enforced at presign time.
-  if (resourceType === 'sales_contract_upload') {
-    const sizeCheck = validateUploadSize(sizeBytes);
-    if (!sizeCheck.ok) {
-      return NextResponse.json({ error: sizeCheck.error }, { status: 400 });
-    }
-    const mimeCheck = validateUploadMime(mimeType, UPLOAD_XLSX_MIME);
-    if (!mimeCheck.ok) {
-      return NextResponse.json({ error: mimeCheck.error }, { status: 400 });
-    }
+  // ── A3 P0-1 — Server-authoritative resourceType policy ────────────────────
+  // Re-derive resourceType from the server-allocated objectKey path segment
+  // (presign emits `<ws>/<user>/<resourceType>/<nanoid>-<file>` for policy
+  // resources). Falling back to the client-supplied body field only when no
+  // path segment is present — but we then verify the body claim matches an
+  // actual registered policy via getUploadPolicy(); claims for which there
+  // is NO server policy can't be used to escalate gating either way.
+  const restPath = objectKey.slice(allowedPrefix.length);
+  let derivedResourceType: string | null = null;
+  const firstSegment = restPath.split('/')[0];
+  if (firstSegment && getUploadPolicy(decodeURIComponent(firstSegment))) {
+    derivedResourceType = decodeURIComponent(firstSegment);
+  }
+  // If client claimed a policy-bearing resourceType but the objectKey was
+  // not allocated with that prefix, reject — the upload was not presigned
+  // under the stricter policy and cannot be retroactively classified.
+  const claimedPolicy = getUploadPolicy(resourceType);
+  if (claimedPolicy && derivedResourceType !== resourceType) {
+    return NextResponse.json(
+      { error: 'resource_type_mismatch_with_object_key' },
+      { status: 400 },
+    );
+  }
+
+  // Effective resourceType used for downstream attachment + policy gating —
+  // prefer the server-derived one (presign-issued); only fall back to the
+  // client claim when there is no policy resource at stake.
+  const effectiveResourceType = derivedResourceType ?? resourceType ?? null;
+
+  // Enforce the registered policy (size + MIME) for any resource that has
+  // one — independent of whether the client sent resourceType in the body.
+  const policyCheck = validateUploadAgainstPolicy(
+    effectiveResourceType,
+    sizeBytes,
+    mimeType,
+  );
+  if (!policyCheck.ok) {
+    return NextResponse.json({ error: policyCheck.error }, { status: 400 });
   }
 
   // ── Magic-byte verification (server-side, second line of defense) ─────────
@@ -173,12 +197,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const rawSourceId = insertedSource!.id;
 
-  // If resource context provided, create attachment record
-  if (resourceType && resourceId) {
+  // If resource context provided, create attachment record. Use the
+  // server-derived effectiveResourceType so the attachment row reflects what
+  // the policy was actually enforced as — not the client claim.
+  if (effectiveResourceType && resourceId) {
     await db.insert(attachment).values({
       rawSourceId,
       workspaceId: session.workspaceId,
-      resourceType,
+      resourceType: effectiveResourceType,
       resourceId,
     });
   }

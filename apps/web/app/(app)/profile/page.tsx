@@ -11,7 +11,7 @@ export default async function ProfilePage() {
   const t = await getTranslations("Profile");
   const session = await requirePageSession();
 
-  const quickLinks = await getQuickLinks(session.workspaceId, session.roles);
+  const quickLinks = await getQuickLinks(session);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">

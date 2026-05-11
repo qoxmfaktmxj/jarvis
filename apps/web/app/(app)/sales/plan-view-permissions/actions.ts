@@ -1,13 +1,10 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { and, count, desc, eq, ilike, inArray, notExists, or } from "drizzle-orm";
-import { getSession } from "@jarvis/auth/session";
-import { hasPermission, isAdmin } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
 import { auditLog, salesPlanAcl, salesPlanViewPerformance, salesPlanViewPerformanceMonth } from "@jarvis/db/schema";
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import {
   listPlanViewPermissionsInput,
   salesPlanViewPerformanceRowSchema,
@@ -15,41 +12,15 @@ import {
   savePlanViewPermissionsInput,
   type SalesPlanViewPerformanceRow,
 } from "@jarvis/shared/validation/sales-contract-extra";
+import { resolveSalesContext } from "../_lib/sales-context";
 import { evaluatePlanAcl } from "./acl-helpers";
 
-async function resolveSessionId(): Promise<string | null> {
-  const headerStore = await headers();
-  const cookieStore = await cookies();
-  return (
-    headerStore.get("x-session-id") ??
-    cookieStore.get("sessionId")?.value ??
-    cookieStore.get("jarvis_session")?.value ??
-    null
-  );
-}
-
-async function resolveSalesContext() {
-  const sessionId = await resolveSessionId();
-  if (!sessionId) return { ok: false as const, error: "Unauthorized" };
-
-  const session = await getSession(sessionId);
-  if (!session) return { ok: false as const, error: "Unauthorized" };
-
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
-    return { ok: false as const, error: "Forbidden" };
-  }
-
-  return {
-    ok: true as const,
-    userId: session.userId,
-    workspaceId: session.workspaceId,
-    // ADMIN_ALL bypasses sales_plan_acl row-level checks. SALES_ALL alone
-    // gates the domain; ACL further narrows per-(plan, user). Option B:
-    // missing ACL row = allow, only explicit `canRead=false` / `canWrite=false`
-    // deny — admins are exempt from both.
-    isAdmin: isAdmin(session),
-  };
-}
+// A4 P0-2 fix — 공유 `resolveSalesContext`(`../_lib/sales-context`)를 사용.
+// 이전에는 로컬에서 resolveSessionId + resolveSalesContext + isAdmin 묶음을
+// 재구현했으나, _lib 헬퍼가 `isAdmin` 필드를 반환하도록 확장되어 중복 제거.
+// ADMIN_ALL bypasses sales_plan_acl row-level checks. SALES_ALL alone gates
+// the domain; ACL further narrows per-(plan, user). Option B: 없는 ACL row =
+// allow, 명시적 `canRead=false` / `canWrite=false`만 deny — admin은 둘 다 면제.
 
 async function checkPlanAcl(
   ctx: { workspaceId: string; userId: string; isAdmin: boolean },
@@ -57,9 +28,19 @@ async function checkPlanAcl(
   mode: "read" | "write",
 ): Promise<boolean> {
   if (ctx.isAdmin) return true;
+  // A4 P0-1 fix — salesPlanAcl 자체에는 workspace_id 컬럼이 없어
+  // INNER JOIN으로 plan이 현재 workspace 소속인지 강제 검증한다.
+  // (다른 워크스페이스 사용자가 plan_id 알아내도 ACL 조회 차단)
   const [acl] = await db
     .select({ canRead: salesPlanAcl.canRead, canWrite: salesPlanAcl.canWrite })
     .from(salesPlanAcl)
+    .innerJoin(
+      salesPlanViewPerformance,
+      and(
+        eq(salesPlanAcl.planId, salesPlanViewPerformance.id),
+        eq(salesPlanViewPerformance.workspaceId, ctx.workspaceId),
+      ),
+    )
     .where(and(eq(salesPlanAcl.planId, planId), eq(salesPlanAcl.userId, ctx.userId)))
     .limit(1);
   return evaluatePlanAcl(acl, ctx.isAdmin, mode);
@@ -111,6 +92,10 @@ export async function listPlanViewPermissions(rawInput: unknown): Promise<{
   // or canRead = true/null = allow (fall back to permission). Without this
   // filter the LEFT JOIN below would still surface deny rows in the grid.
   // Admins bypass — they see every row regardless of ACL.
+  // A4 P0-1 — outer `conditions` already restricts to ctx.workspaceId via
+  // `eq(salesPlanViewPerformance.workspaceId, ctx.workspaceId)` (line 94),
+  // so the notExists correlation through salesPlanViewPerformance.id is
+  // already workspace-scoped. No cross-workspace leak from this subquery.
   if (!ctx.isAdmin) {
     conditions.push(
       notExists(
@@ -297,34 +282,58 @@ export async function savePlanAcl(rawInput: unknown): Promise<{
 
   if (!plan) return { ok: false, error: "Plan row not found" };
 
-  await db
-    .insert(salesPlanAcl)
-    .values({
-      planId: input.planId,
-      userId: input.userId,
-      canRead: input.canRead,
-      canWrite: input.canWrite,
-    })
-    .onConflictDoUpdate({
-      target: [salesPlanAcl.planId, salesPlanAcl.userId],
-      set: {
+  // A4 P0-3 fix — ACL upsert + audit_log을 같은 트랜잭션으로 묶고, `before`/
+  // `after` diff를 audit_log.details에 첨부한다. 이전에는 `db.insert(salesPlanAcl)`
+  // + 별도 `db.insert(auditLog)` 두 개의 독립 query라, ACL 변경은 성공하고
+  // audit_log insert가 실패하면 audit 누락 (감사 추적 깨짐).
+  //
+  // A4 P0-1 — salesPlanAcl 자체에는 workspace_id 컬럼이 없지만, 위 plan 존재
+  // 검증이 `eq(workspaceId, ctx.workspaceId)`로 게이트되므로 다른 워크스페이스
+  // plan_id로의 ACL 삽입은 도달 불가능 (cross-tenant write 차단).
+  await db.transaction(async (tx) => {
+    // 이전 상태(있다면) — diff 생성용. 같은 트랜잭션 안에서 upsert 전에 SELECT.
+    const [prior] = await tx
+      .select({
+        canRead: salesPlanAcl.canRead,
+        canWrite: salesPlanAcl.canWrite,
+      })
+      .from(salesPlanAcl)
+      .where(
+        and(eq(salesPlanAcl.planId, input.planId), eq(salesPlanAcl.userId, input.userId)),
+      )
+      .limit(1);
+
+    await tx
+      .insert(salesPlanAcl)
+      .values({
+        planId: input.planId,
+        userId: input.userId,
+        canRead: input.canRead,
+        canWrite: input.canWrite,
+      })
+      .onConflictDoUpdate({
+        target: [salesPlanAcl.planId, salesPlanAcl.userId],
+        set: {
+          canRead: input.canRead,
+          canWrite: input.canWrite,
+        },
+      });
+
+    await writeAuditLog(tx, auditLog, {
+      workspaceId: ctx.workspaceId,
+      userId: ctx.userId,
+      action: "sales.plan_acl.upsert",
+      resourceType: "sales_plan_acl",
+      resourceId: input.planId,
+      details: {
+        targetUserId: input.userId,
         canRead: input.canRead,
         canWrite: input.canWrite,
       },
+      before: prior ? { canRead: prior.canRead, canWrite: prior.canWrite } : {},
+      after: { canRead: input.canRead, canWrite: input.canWrite },
+      success: true,
     });
-
-  await db.insert(auditLog).values({
-    workspaceId: ctx.workspaceId,
-    userId: ctx.userId,
-    action: "sales.plan_acl.upsert",
-    resourceType: "sales_plan_acl",
-    resourceId: input.planId,
-    details: {
-      targetUserId: input.userId,
-      canRead: input.canRead,
-      canWrite: input.canWrite,
-    },
-    success: true,
   });
 
   revalidatePath("/sales/plan-view-permissions");

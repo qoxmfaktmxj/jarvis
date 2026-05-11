@@ -96,6 +96,7 @@ export function MailPersonsGridContainer({
   const t = useTranslations("Sales.MailPersons");
   const tCols = useTranslations("Sales.MailPersons.columns");
   const tFilters = useTranslations("Sales.MailPersons.filters");
+  const tGrid = useTranslations("Common.Grid");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
@@ -197,15 +198,19 @@ export function MailPersonsGridContainer({
    * internal state even though the container's `rows` has been updated.
    */
   const handleEmployeePick = useCallback(
-    (rowId: string, hit: { sabun: string; name: string; email: string }) => {
+    (rowId: string, hit: { sabun: string; name: string; email: string | null }) => {
       startTransition(async () => {
+        // sales_mail_person.mail_id is NOT NULL. If the picked employee has no
+        // email registered, fall back to "" so server-side Zod surfaces a
+        // clear error rather than the picker crashing on undefined.
+        const mailId = hit.email ?? "";
         const result = await saveMailPersons({
           creates: [
             {
               id: rowId,
               sabun: hit.sabun,
               name: hit.name,
-              mailId: hit.email,
+              mailId,
               salesYn: false,
               insaYn: false,
               memo: null,
@@ -227,13 +232,13 @@ export function MailPersonsGridContainer({
               : undefined;
           toast({
             variant: "destructive",
-            title: "저장 실패",
-            description: msg ?? "저장 실패",
+            title: tGrid("saveFailed"),
+            description: msg ?? tGrid("saveFailed"),
           });
         }
       });
     },
-    [currentPage, filterValues, reload],
+    [currentPage, filterValues, reload, tGrid],
   );
 
   const handleExport = useCallback(async () => {

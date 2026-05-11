@@ -208,6 +208,11 @@ export function ContractUploadsGridContainer({
           filename: selectedFile.name,
           mimeType: selectedFile.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           sizeBytes: selectedFile.size,
+          // A3 P0-1 — Declare resourceType at presign so the strict 10MB +
+          // xlsx-only policy is applied here (server-authoritative). The
+          // objectKey returned will be prefixed with the resourceType, which
+          // /api/upload re-derives independently of any body claim.
+          resourceType: "sales_contract_upload",
         }),
       });
       if (!presign.ok) throw new Error("presign failed");
@@ -330,7 +335,11 @@ export function ContractUploadsGridContainer({
             updates: changes.updates.map((update) => ({ id: update.id, ...update.patch })),
             deletes: changes.deletes,
           });
-          if (result.ok) reload(currentPage, urlFilters);
+          // A3 P0-2 — partial success: 일부 row가 UNIQUE 충돌로 skip되어도
+          // 실제 적용된 변경이 있다면 그리드를 재로드해 성공한 결과를 노출.
+          const hasAnyChange =
+            (result.created ?? 0) + (result.updated ?? 0) + (result.deleted ?? 0) > 0;
+          if (result.ok || hasAnyChange) reload(currentPage, urlFilters);
           return {
             ok: result.ok,
             errors: result.errors?.map((error) => ({ message: error.message })),

@@ -1,5 +1,11 @@
 "use client";
+/**
+ * A2 P0-3/P0-4: isAdmin prop wired from page (Sales.Activities.Memo i18n applied).
+ * - Delete buttons render for any memo when isAdmin is true; otherwise only m.isOwn.
+ * - Server `deleteActivityMemo` still verifies admin/owner — UI hint only.
+ */
 import { useEffect, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import {
   listActivityMemos,
   createActivityMemo,
@@ -23,6 +29,7 @@ export function MemoModal({
   onCountChange,
   isAdmin = false,
 }: Props) {
+  const t = useTranslations("Sales.Activities.Memo");
   const [tree, setTree] = useState<MemoTreeNode[]>([]);
   const [, startTransition] = useTransition();
   const [composing, setComposing] = useState<{ priorComtSeq: number } | null>(null);
@@ -59,9 +66,7 @@ export function MemoModal({
   };
 
   const remove = async (comtSeq: number, isMaster: boolean) => {
-    const msg = isMaster
-      ? "의견 삭제 시 댓글도 모두 삭제됩니다. 삭제하시겠습니까?"
-      : "댓글을 삭제하시겠습니까?";
+    const msg = isMaster ? t("deleteMasterConfirm") : t("deleteReplyConfirm");
     if (!confirm(msg)) return;
     await deleteActivityMemo({ activityId, comtSeq });
     reload();
@@ -78,7 +83,7 @@ export function MemoModal({
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">
-            영업활동 의견 — {activityName ?? ""}
+            {t("title")} — {activityName ?? ""}
           </h2>
           <button onClick={onClose} aria-label="close">
             ✕
@@ -92,13 +97,13 @@ export function MemoModal({
               onChange={(e) => setDraft(e.target.value)}
               className="w-full rounded border p-2 text-sm"
               rows={3}
-              placeholder="의견을 입력하세요"
+              placeholder={t("memoPlaceholder")}
             />
             <button
               onClick={submit}
               className="mt-2 rounded bg-slate-900 px-3 py-1 text-sm text-white"
             >
-              의견 등록
+              {t("createMaster")}
             </button>
           </div>
         ) : (
@@ -106,12 +111,12 @@ export function MemoModal({
             onClick={() => setComposing({ priorComtSeq: 0 })}
             className="mb-4 rounded bg-slate-900 px-3 py-1 text-sm text-white"
           >
-            의견 등록
+            {t("createMaster")}
           </button>
         )}
 
         {tree.length === 0 ? (
-          <p className="text-sm text-slate-500">등록된 의견이 없습니다.</p>
+          <p className="text-sm text-slate-500">{t("empty")}</p>
         ) : (
           <ul className="space-y-3">
             {tree.map((m) => (
@@ -128,7 +133,7 @@ export function MemoModal({
                       onClick={() => remove(m.comtSeq, true)}
                       className="text-xs text-rose-600"
                     >
-                      삭제
+                      {t("delete")}
                     </button>
                   )}
                 </div>
@@ -137,7 +142,7 @@ export function MemoModal({
                   onClick={() => setComposing({ priorComtSeq: m.comtSeq })}
                   className="mt-2 text-xs text-slate-700"
                 >
-                  댓글
+                  {t("createReply")}
                 </button>
 
                 {composing?.priorComtSeq === m.comtSeq && (
@@ -147,13 +152,13 @@ export function MemoModal({
                       onChange={(e) => setDraft(e.target.value)}
                       className="w-full rounded border p-2 text-sm"
                       rows={2}
-                      placeholder="의견을 입력하세요"
+                      placeholder={t("memoPlaceholder")}
                     />
                     <button
                       onClick={submit}
                       className="mt-1 rounded bg-slate-700 px-2 py-1 text-xs text-white"
                     >
-                      댓글
+                      {t("createReply")}
                     </button>
                   </div>
                 )}
@@ -174,7 +179,7 @@ export function MemoModal({
                               onClick={() => remove(r.comtSeq, false)}
                               className="text-xs text-rose-600"
                             >
-                              삭제
+                              {t("delete")}
                             </button>
                           )}
                         </div>

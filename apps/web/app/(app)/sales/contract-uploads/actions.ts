@@ -2,7 +2,8 @@
 
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { and, count, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { unionAll } from "drizzle-orm/pg-core";
 import { format } from "date-fns";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
@@ -14,6 +15,7 @@ import {
   salesContractUpload,
 } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import {
   listContractUploadsInput,
   saveContractUploadsInput,
@@ -145,48 +147,53 @@ export async function listUnifiedContractUploads(rawInput: unknown): Promise<{
     if (uploadSearch) uploadConditions.push(uploadSearch);
   }
 
-  const [monthRows, uploadRows] = await Promise.all([
-    db
-      .select({
-        id: salesContractMonth.id,
-        ym: salesContractMonth.ym,
-        companyCd: salesContract.companyCd,
-        companyNm: salesContract.companyNm,
-        pjtCode: salesContract.legacyContNo,
-        pjtNm: salesContract.contNm,
-        planServSaleAmt: salesContractMonth.planServSaleAmt,
-        viewServSaleAmt: salesContractMonth.viewServSaleAmt,
-        perfServSaleAmt: salesContractMonth.perfServSaleAmt,
-      })
-      .from(salesContractMonth)
-      .innerJoin(salesContract, eq(salesContractMonth.contractId, salesContract.id))
-      .where(and(...monthConditions))
-      .orderBy(desc(salesContractMonth.ym))
-      .limit(100),
-    db
-      .select({
-        id: salesContractUpload.id,
-        ym: salesContractUpload.ym,
-        companyCd: salesContractUpload.companyCd,
-        companyNm: salesContractUpload.companyNm,
-        pjtCode: salesContractUpload.pjtCode,
-        pjtNm: salesContractUpload.pjtNm,
-        planServSaleAmt: salesContractUpload.planServSaleAmt,
-        viewServSaleAmt: salesContractUpload.viewServSaleAmt,
-        perfServSaleAmt: salesContractUpload.perfServSaleAmt,
-      })
-      .from(salesContractUpload)
-      .where(and(...uploadConditions))
-      .orderBy(desc(salesContractUpload.ym))
-      .limit(100),
-  ]);
+  // A3 P0-4 — server-side UNION ALL + deterministic ORDER BY + LIMIT 100.
+  // 이전엔 두 쿼리를 각 limit(100)으로 가져온 뒤 array.concat 후 client-side
+  // slice(0, 100)으로 잘랐다. 정렬 키가 없어 어떤 절반이 잘릴지 비결정적이었고
+  // 다음 페이지 진입 시 같은 view가 다른 결과를 보여줄 수 있었다.
+  // 해결: 양쪽 SELECT에 sourceTable 리터럴을 포함해 동일 컬럼 shape으로 맞춘
+  // 뒤 unionAll로 합치고, (ym DESC, sourceTable, id) 정렬 + LIMIT 100을 SQL
+  // 한 번에 적용해 결정적 100건을 반환한다.
+  const monthQuery = db
+    .select({
+      id: salesContractMonth.id,
+      sourceTable: sql<"031" | "037">`'031'`.as("source_table"),
+      ym: salesContractMonth.ym,
+      companyCd: salesContract.companyCd,
+      companyNm: salesContract.companyNm,
+      pjtCode: salesContract.legacyContNo,
+      pjtNm: salesContract.contNm,
+      planServSaleAmt: salesContractMonth.planServSaleAmt,
+      viewServSaleAmt: salesContractMonth.viewServSaleAmt,
+      perfServSaleAmt: salesContractMonth.perfServSaleAmt,
+    })
+    .from(salesContractMonth)
+    .innerJoin(salesContract, eq(salesContractMonth.contractId, salesContract.id))
+    .where(and(...monthConditions));
+
+  const uploadQuery = db
+    .select({
+      id: salesContractUpload.id,
+      sourceTable: sql<"031" | "037">`'037'`.as("source_table"),
+      ym: salesContractUpload.ym,
+      companyCd: salesContractUpload.companyCd,
+      companyNm: salesContractUpload.companyNm,
+      pjtCode: salesContractUpload.pjtCode,
+      pjtNm: salesContractUpload.pjtNm,
+      planServSaleAmt: salesContractUpload.planServSaleAmt,
+      viewServSaleAmt: salesContractUpload.viewServSaleAmt,
+      perfServSaleAmt: salesContractUpload.perfServSaleAmt,
+    })
+    .from(salesContractUpload)
+    .where(and(...uploadConditions));
+
+  const unifiedRows = await unionAll(monthQuery, uploadQuery)
+    .orderBy(sql`ym desc`, sql`source_table`, sql`id`)
+    .limit(100);
 
   return {
     ok: true,
-    rows: [
-      ...monthRows.map((row) => ({ ...row, sourceTable: "031" as const })),
-      ...uploadRows.map((row) => ({ ...row, sourceTable: "037" as const })),
-    ].slice(0, 100),
+    rows: unifiedRows,
   };
 }
 
@@ -216,58 +223,87 @@ export async function saveContractUploads(rawInput: unknown): Promise<{
 
   try {
     await db.transaction(async (tx) => {
+      // A3 P0-2 — UNIQUE conflict 시 batch 전체 rollback 방지.
+      // sales_contract_upload_legacy_uniq = (workspace_id, ym, cost_cd,
+      // company_cd, product_type, cont_type, pjt_code) UNIQUE 인덱스. 같은
+      // 키가 들어오면 단일 row만 skip되도록 ON CONFLICT DO NOTHING + 행 단위
+      // 결과 비교로 어떤 신규 행이 충돌했는지 errors[]에 보고한다. 99건이
+      // 성공하고 1건만 실패하는 시나리오에서 99건이 보존된다.
       if (input.creates.length > 0) {
-        const inserted = await tx
-          .insert(salesContractUpload)
-          .values(
-            input.creates.map((row) => ({
+        for (let i = 0; i < input.creates.length; i++) {
+          const row = input.creates[i]!;
+          const inserted = await tx
+            .insert(salesContractUpload)
+            .values({
               ...row,
               workspaceId: ctx.workspaceId,
               createdBy: ctx.userId ?? undefined,
               updatedBy: ctx.userId ?? undefined,
-            })),
-          )
-          .returning({ id: salesContractUpload.id });
-        created = inserted.length;
+            })
+            .onConflictDoNothing({
+              target: [
+                salesContractUpload.workspaceId,
+                salesContractUpload.ym,
+                salesContractUpload.costCd,
+                salesContractUpload.companyCd,
+                salesContractUpload.productType,
+                salesContractUpload.contType,
+                salesContractUpload.pjtCode,
+              ],
+            })
+            .returning({ id: salesContractUpload.id });
 
-        if (inserted.length > 0) {
-          await tx.insert(auditLog).values(
-            inserted.map((row) => ({
-              workspaceId: ctx.workspaceId,
-              userId: ctx.userId,
-              action: "sales.contract_upload.create",
-              resourceType: "sales_contract_upload",
-              resourceId: row.id,
-              details: {} as Record<string, unknown>,
-              success: true,
-            })),
-          );
+          if (inserted.length === 0) {
+            // UNIQUE 충돌 — 다른 행 영향 없이 이 행만 skip.
+            errors.push({
+              code: "UNIQUE_CONFLICT",
+              message: `중복된 업로드 키(ym|costCd|companyCd|productType|contType|pjtCode): ${row.ym ?? ""}|${row.costCd ?? ""}|${row.companyCd ?? ""}|${row.productType ?? ""}|${row.contType ?? ""}|${row.pjtCode ?? ""}`,
+            });
+            continue;
+          }
+
+          created++;
+          await tx.insert(auditLog).values({
+            workspaceId: ctx.workspaceId,
+            userId: ctx.userId,
+            action: "sales.contract_upload.create",
+            resourceType: "sales_contract_upload",
+            resourceId: inserted[0]!.id,
+            details: {} as Record<string, unknown>,
+            success: true,
+          });
         }
       }
 
       for (const update of input.updates) {
         const { id, ...patch } = update;
-        const [row] = await tx
-          .update(salesContractUpload)
-          .set({
-            ...patch,
-            updatedBy: ctx.userId ?? undefined,
-            updatedAt: new Date(),
-          })
-          .where(and(eq(salesContractUpload.id, id), eq(salesContractUpload.workspaceId, ctx.workspaceId)))
-          .returning({ id: salesContractUpload.id });
+        try {
+          const [row] = await tx
+            .update(salesContractUpload)
+            .set({
+              ...patch,
+              updatedBy: ctx.userId ?? undefined,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(salesContractUpload.id, id), eq(salesContractUpload.workspaceId, ctx.workspaceId)))
+            .returning({ id: salesContractUpload.id });
 
-        if (row) {
-          updated++;
-          await tx.insert(auditLog).values({
-            workspaceId: ctx.workspaceId,
-            userId: ctx.userId,
-            action: "sales.contract_upload.update",
-            resourceType: "sales_contract_upload",
-            resourceId: row.id,
-            details: patch as Record<string, unknown>,
-            success: true,
-          });
+          if (row) {
+            updated++;
+            await tx.insert(auditLog).values({
+              workspaceId: ctx.workspaceId,
+              userId: ctx.userId,
+              action: "sales.contract_upload.update",
+              resourceType: "sales_contract_upload",
+              resourceId: row.id,
+              details: patch as Record<string, unknown>,
+              success: true,
+            });
+          }
+        } catch (rowErr: unknown) {
+          // A3 P0-2 — UPDATE 행이 UNIQUE 위반 등으로 실패해도 batch 보존.
+          const msg = rowErr instanceof Error ? rowErr.message : "update failed";
+          errors.push({ code: "UPDATE_FAILED", message: `id=${id}: ${msg}` });
         }
       }
 
@@ -282,6 +318,21 @@ export async function saveContractUploads(rawInput: unknown): Promise<{
           )
           .returning({ id: salesContractUpload.id });
         deleted = removed.length;
+
+        // A3 P0-5 의 자매 fix(P2-4) — delete 결과를 audit_log에 기록.
+        if (removed.length > 0) {
+          await tx.insert(auditLog).values(
+            removed.map((row) => ({
+              workspaceId: ctx.workspaceId,
+              userId: ctx.userId,
+              action: "sales.contract_upload.delete",
+              resourceType: "sales_contract_upload",
+              resourceId: row.id,
+              details: {} as Record<string, unknown>,
+              success: true,
+            })),
+          );
+        }
       }
     });
   } catch (e: unknown) {
@@ -335,9 +386,23 @@ export async function downloadContractUploadTemplate(): Promise<
     sheetName: "계약 업로드 (template)",
   });
 
+  const filename = `contract_upload_template_${format(new Date(), "yyyy-MM-dd")}.xlsx`;
+
+  // A3 P0-5 — Template 다운로드 audit_log 기록. 다른 3개 sales 도메인의 export
+  // 패턴과 동일하게 누가/언제/어느 워크스페이스의 template을 받았는지 추적.
+  // SOC2 감사 + legacy planViewPerfUploadMgr.jsp의 DownTemplate audit 패리티.
+  await writeAuditLog(db, auditLog, {
+    workspaceId: ctx.workspaceId,
+    userId: ctx.userId,
+    action: "sales.contract_upload.template_download",
+    resourceType: "sales_contract_upload",
+    details: { filename },
+    success: true,
+  });
+
   return {
     ok: true as const,
-    filename: `contract_upload_template_${format(new Date(), "yyyy-MM-dd")}.xlsx`,
+    filename,
     bytes: new Uint8Array(buf),
   };
 }

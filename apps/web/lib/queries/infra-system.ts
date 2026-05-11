@@ -33,6 +33,14 @@ export type InfraSystemListItem = {
   wikiPageId: string | null;
   wikiPageRouteKey: string | null;
   wikiPageTitle: string | null;
+  /**
+   * B-P0-02: page-load ACL gating data for the linked wiki page (if any).
+   * Three columns from `wiki_page_index` needed by `canViewWikiPage` to decide
+   * whether the user may see the deep link / title. Null when no wiki link.
+   */
+  wikiPageSensitivity: string | null;
+  wikiPageRequiredPermission: string | null;
+  wikiPagePublishedStatus: string | null;
   note: string | null;
   sensitivity: "PUBLIC" | "INTERNAL" | "RESTRICTED" | "SECRET_REF_ONLY";
   createdAt: string;
@@ -95,6 +103,9 @@ export async function listInfraSystems(
         wikiPageId: infraSystem.wikiPageId,
         wikiPageRouteKey: wikiPageIndex.routeKey,
         wikiPageTitle: wikiPageIndex.title,
+        wikiPageSensitivity: wikiPageIndex.sensitivity,
+        wikiPageRequiredPermission: wikiPageIndex.requiredPermission,
+        wikiPagePublishedStatus: wikiPageIndex.publishedStatus,
         note: infraSystem.note,
         sensitivity: infraSystem.sensitivity,
         createdAt: infraSystem.createdAt,
@@ -137,6 +148,9 @@ export async function listInfraSystems(
       wikiPageId: r.wikiPageId,
       wikiPageRouteKey: r.wikiPageRouteKey ?? null,
       wikiPageTitle: r.wikiPageTitle ?? null,
+      wikiPageSensitivity: r.wikiPageSensitivity ?? null,
+      wikiPageRequiredPermission: r.wikiPageRequiredPermission ?? null,
+      wikiPagePublishedStatus: r.wikiPagePublishedStatus ?? null,
       note: r.note,
       sensitivity: r.sensitivity as InfraSystemListItem["sensitivity"],
       createdAt: r.createdAt.toISOString(),
@@ -173,6 +187,9 @@ export async function getInfraSystemById(
       wikiPageId: infraSystem.wikiPageId,
       wikiPageRouteKey: wikiPageIndex.routeKey,
       wikiPageTitle: wikiPageIndex.title,
+      wikiPageSensitivity: wikiPageIndex.sensitivity,
+      wikiPageRequiredPermission: wikiPageIndex.requiredPermission,
+      wikiPagePublishedStatus: wikiPageIndex.publishedStatus,
       note: infraSystem.note,
       sensitivity: infraSystem.sensitivity,
       createdAt: infraSystem.createdAt,
@@ -207,6 +224,9 @@ export async function getInfraSystemById(
     wikiPageId: row.wikiPageId,
     wikiPageRouteKey: row.wikiPageRouteKey ?? null,
     wikiPageTitle: row.wikiPageTitle ?? null,
+    wikiPageSensitivity: row.wikiPageSensitivity ?? null,
+    wikiPageRequiredPermission: row.wikiPageRequiredPermission ?? null,
+    wikiPagePublishedStatus: row.wikiPagePublishedStatus ?? null,
     note: row.note,
     sensitivity: row.sensitivity as InfraSystemListItem["sensitivity"],
     createdAt: row.createdAt.toISOString(),

@@ -5,10 +5,12 @@ import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
+import { auditLog } from "@jarvis/db/schema/audit";
 import { wikiPageIndex } from "@jarvis/db/schema/wiki-page-index";
 import { and, eq } from "drizzle-orm";
 import { PERMISSIONS } from "@jarvis/shared/constants";
 import { wikiSavePayloadSchema } from "@jarvis/shared/validation";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import {
   GitRepo,
   defaultBotAuthor,
@@ -17,7 +19,7 @@ import {
   type WikiSensitivity,
 } from "@jarvis/wiki-fs";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
-import { projectLinks } from "@jarvis/wiki-agent/projection";
+import { projectManualPage } from "@jarvis/wiki-agent/projection";
 import * as path from "node:path";
 
 export type SaveWikiPageError =
@@ -159,51 +161,39 @@ export async function saveWikiPage(
     return { ok: false, error: "git_failed" };
   }
 
-  // wikiPageIndex projection upsert + wiki_page_link projection (body 미포함 — body-column-guard 준수)
+  // Karpathy SSoT compliance: the server action no longer hand-rolls the
+  // projection. Instead `projectManualPage` (shared with the worker ingest
+  // lane) is invoked inside a single tx so wiki_page_index + wiki_commit_log
+  // + wiki_page_link land atomically with the git commit just produced. The
+  // helper enforces the `type` whitelist and centralizes the projection
+  // contract — UI server actions don't reach into projection columns directly.
+  //
+  // The same tx also writes the audit_log row (wiki.manual.save) so manual
+  // mutations are traceable alongside the projection write.
   try {
     const { data: fmData } = parseFrontmatter(fileContent);
-    // Code review HIGH E — frontmatter 에서 파생되는 컬럼들은 insert/update 양쪽에 동일하게
-    // 적용되어야 한다. 이전엔 set 에 type/requiredPermission/publishedStatus 가 누락돼 있어
-    // 사용자가 frontmatter 의 requiredPermission 을 강화해도 projection 은 약한 권한을 유지 →
-    // 검색·page-first·Ask AI 에서 ACL 우회 발생.
-    const projectionColumns = {
-      title: typeof fmData.title === "string" && fmData.title ? fmData.title : pageSlugClean,
-      slug: pageSlugClean,
-      type: (fmData.type ?? "concept") as string,
-      authority: "manual" as const,
-      sensitivity: (fmData.sensitivity ?? "INTERNAL") as string,
-      requiredPermission:
-        typeof fmData.requiredPermission === "string"
-          ? fmData.requiredPermission
-          : "knowledge:read",
-      frontmatter: fmData as Record<string, unknown>,
-      gitSha: sha,
-      stale: false,
-      publishedStatus: "published" as const,
-      freshnessSlaDays: typeof fmData.freshnessSlaDays === "number" ? fmData.freshnessSlaDays : null,
-    };
     await db.transaction(async (tx) => {
-      await tx
-        .insert(wikiPageIndex)
-        .values({
-          workspaceId: parsed.data.workspaceId,
-          path: repoRelPath,
-          ...projectionColumns,
-        })
-        .onConflictDoUpdate({
-          target: [wikiPageIndex.workspaceId, wikiPageIndex.path],
-          set: {
-            ...projectionColumns,
-            updatedAt: new Date(),
-          },
-        });
-
-      // wiki_page_link projection: index upsert 이후 동일 tx에서 실행하므로
-      // projectLinks가 fromPageId를 조회할 수 있다.
-      await projectLinks(tx, {
+      const pageId = await projectManualPage(tx, {
         workspaceId: parsed.data.workspaceId,
         sourcePath: repoRelPath,
+        slug: pageSlugClean,
         body: incomingBody,
+        frontmatter: fmData as Record<string, unknown>,
+        commitSha: sha,
+        userId: session.userId,
+      });
+      await writeAuditLog(tx, auditLog, {
+        workspaceId: parsed.data.workspaceId,
+        userId: session.userId,
+        action: "wiki.manual.save",
+        resourceType: "wiki_page",
+        resourceId: pageId,
+        details: {
+          sourcePath: repoRelPath,
+          slug: pageSlugClean,
+          commitSha: sha,
+        },
+        success: true,
       });
     });
   } catch (err) {

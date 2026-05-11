@@ -29,11 +29,11 @@ export async function GET(
 
   const { id } = await ctx.params;
   // P1 #10 — INTERNAL 공지는 내부 직원 role 보유자만 열람. 미보유자에겐 404 동등.
-  const found = await getNoticeById(
-    id,
-    session.workspaceId,
-    canViewInternalNotice(session.roles),
-  );
+  // A9 F3 — non-admin 에게 만료/미발행 공지 노출 차단 (ADMIN 은 통과).
+  const found = await getNoticeById(id, session.workspaceId, {
+    canViewInternal: canViewInternalNotice(session.roles),
+    actorRole: pickActorRole(session.roles),
+  });
   if (!found) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }

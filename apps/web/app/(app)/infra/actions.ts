@@ -21,6 +21,7 @@ import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
 import { auditLog, infraSystem, wikiPageIndex } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import {
   listInfraSystemsInput,
   listInfraSystemsOutput,
@@ -168,7 +169,7 @@ export async function saveInfraSystems(
           .returning({ id: infraSystem.id });
         if (row) {
           created.push(row.id);
-          await tx.insert(auditLog).values({
+          await writeAuditLog(tx, auditLog, {
             workspaceId: ctx.workspaceId,
             userId: ctx.userId,
             action: "infra.system.create",
@@ -178,7 +179,7 @@ export async function saveInfraSystems(
               companyId: c.companyId,
               systemName: c.systemName,
               envType: c.envType,
-            } as Record<string, unknown>,
+            },
             success: true,
           });
         }
@@ -189,6 +190,39 @@ export async function saveInfraSystems(
         // patch는 이미 infraSystemUpdateInput에서 audit fields(id/createdAt/
         // updatedAt/createdBy/updatedBy)가 omit된 partial이므로 추가 분해 불필요.
         const patch = u.patch;
+
+        // Pre-update snapshot for audit `before` (only fields present in patch
+        // are needed for a meaningful diff). writeAuditLog applies maskSensitive
+        // to both before/after recursively and builds details.diff.
+        const [before] = await tx
+          .select({
+            companyId: infraSystem.companyId,
+            systemName: infraSystem.systemName,
+            envType: infraSystem.envType,
+            domainAddr: infraSystem.domainAddr,
+            port: infraSystem.port,
+            dbType: infraSystem.dbType,
+            dbVersion: infraSystem.dbVersion,
+            osType: infraSystem.osType,
+            osVersion: infraSystem.osVersion,
+            connectMethod: infraSystem.connectMethod,
+            deployMethod: infraSystem.deployMethod,
+            deployFolder: infraSystem.deployFolder,
+            ownerName: infraSystem.ownerName,
+            ownerContact: infraSystem.ownerContact,
+            wikiPageId: infraSystem.wikiPageId,
+            note: infraSystem.note,
+            sensitivity: infraSystem.sensitivity,
+          })
+          .from(infraSystem)
+          .where(
+            and(
+              eq(infraSystem.id, u.id),
+              eq(infraSystem.workspaceId, ctx.workspaceId),
+            ),
+          )
+          .limit(1);
+
         await tx
           .update(infraSystem)
           .set({
@@ -202,13 +236,20 @@ export async function saveInfraSystems(
               eq(infraSystem.workspaceId, ctx.workspaceId),
             ),
           );
-        await tx.insert(auditLog).values({
+
+        // C-P0-01 fix: avoid storing patch values directly under details;
+        // writeAuditLog masks SENSITIVE_KEY_PATTERNS in both before/after and
+        // emits a standardized `details.diff` shape. The `changed` array
+        // ({changed: [...]}) gives downstream `AUDIT_READ` consumers the
+        // changed column names without forcing plaintext value exposure.
+        await writeAuditLog(tx, auditLog, {
           workspaceId: ctx.workspaceId,
           userId: ctx.userId,
           action: "infra.system.update",
           resourceType: "infra_system",
           resourceId: u.id,
-          details: patch as Record<string, unknown>,
+          before: before ?? undefined,
+          after: patch,
           success: true,
         });
         updated.push(u.id);
@@ -245,19 +286,19 @@ export async function saveInfraSystems(
         );
         for (const id of input.deletes) {
           const row = detailsById.get(id);
-          await tx.insert(auditLog).values({
+          await writeAuditLog(tx, auditLog, {
             workspaceId: ctx.workspaceId,
             userId: ctx.userId,
             action: "infra.system.delete",
             resourceType: "infra_system",
             resourceId: id,
             details: row
-              ? ({
+              ? {
                   companyId: row.companyId,
                   systemName: row.systemName,
                   envType: row.envType,
-                } as Record<string, unknown>)
-              : ({} as Record<string, unknown>),
+                }
+              : {},
             success: true,
           });
         }
@@ -323,13 +364,13 @@ export async function linkRunbook(
           eq(infraSystem.workspaceId, ctx.workspaceId),
         ),
       );
-    await tx.insert(auditLog).values({
+    await writeAuditLog(tx, auditLog, {
       workspaceId: ctx.workspaceId,
       userId: ctx.userId,
       action: "infra.system.linkRunbook",
       resourceType: "infra_system",
       resourceId: input.id,
-      details: { wikiPageId: input.wikiPageId } as Record<string, unknown>,
+      details: { wikiPageId: input.wikiPageId },
       success: true,
     });
   });

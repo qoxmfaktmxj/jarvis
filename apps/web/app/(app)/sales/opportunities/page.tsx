@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { isAdmin } from "@jarvis/auth";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { OpportunitiesGridContainer } from "./_components/OpportunitiesGridContainer";
@@ -59,6 +60,7 @@ export default async function SalesOpportunitiesPage({
         page={page}
         limit={limit}
         initialFilters={filters}
+        isAdmin={isAdmin(session)}
         codeOptions={{
           productType: productTypeOptions,
           bizStep: bizStepOptions,

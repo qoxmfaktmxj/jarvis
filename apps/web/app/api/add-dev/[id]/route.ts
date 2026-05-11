@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@jarvis/db/client";
+import { auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import { updateAdditionalDevSchema } from "@jarvis/shared/validation/additional-dev";
 import {
   deleteAdditionalDev,
@@ -7,6 +10,7 @@ import {
   updateAdditionalDev,
 } from "@/lib/queries/additional-dev";
 import { requireApiSession } from "@/lib/server/api-auth";
+import { extractRequestAudit } from "@/lib/server/request-audit";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -44,6 +48,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const { id } = await context.params;
+  const before = await getAdditionalDev({
+    workspaceId: auth.session.workspaceId,
+    id,
+  });
   const updated = await updateAdditionalDev({
     workspaceId: auth.session.workspaceId,
     id,
@@ -53,6 +61,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   if (!updated) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const { ipAddress, userAgent } = extractRequestAudit(request);
+  await writeAuditLog(db, auditLog, {
+    workspaceId: auth.session.workspaceId,
+    userId: auth.session.userId,
+    action: "additional_development.update",
+    resourceType: "additional_development",
+    resourceId: id,
+    ipAddress,
+    userAgent,
+    before: before ?? undefined,
+    after: parsed.data,
+  });
 
   return NextResponse.json({ data: updated });
 }
@@ -72,6 +93,17 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
   if (!deleted) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
+
+  const { ipAddress, userAgent } = extractRequestAudit(request);
+  await writeAuditLog(db, auditLog, {
+    workspaceId: auth.session.workspaceId,
+    userId: auth.session.userId,
+    action: "additional_development.delete",
+    resourceType: "additional_development",
+    resourceId: id,
+    ipAddress,
+    userAgent,
+  });
 
   return new NextResponse(null, { status: 204 });
 }

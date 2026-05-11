@@ -1,6 +1,5 @@
 import { db } from "@jarvis/db/client";
 import {
-  menuItem,
   wikiPageIndex
 } from "@jarvis/db/schema";
 import {
@@ -16,6 +15,11 @@ import {
 } from "drizzle-orm";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { getAllowedWikiSensitivityValues } from "@jarvis/auth/rbac";
+import type { JarvisSession } from "@jarvis/auth/types";
+import {
+  getVisibleMenuTree,
+  type MenuTreeNode
+} from "@/lib/server/menu-tree";
 
 export interface MenuItem {
   id: string;
@@ -69,46 +73,58 @@ export function isKnowledgePageStale(
   return staleAfter.getTime() < now.getTime();
 }
 
+/**
+ * Returns the user's "quick menu" links for the profile page, sourced from the
+ * same RBAC menu tree that powers the sidebar (`getVisibleMenuTree`).
+ *
+ * Historically this function did its own `menuItem.requiredRole` filter, which
+ * diverged from the `menu_permission ⨯ role_permission ⨯ user_role` UNION model
+ * used by the sidebar (see A10 audit F2). That allowed two failure modes:
+ *  - sidebar shows a route that QuickMenu does not (and vice versa)
+ *  - QuickMenu surfaces a link whose page redirects to `/dashboard?error=forbidden`
+ *
+ * Fix: delegate to `getVisibleMenuTree(session, "menu")` so both surfaces share
+ * one permission decision. Then flatten leaf nodes (those with `routePath`),
+ * sort by `sortOrder`, and cap the list.
+ */
 export async function getQuickLinks(
-  workspaceId: string,
-  userRoles: string[],
-  database: DashboardDb = db
+  session: JarvisSession,
+  resolveMenuTree: (
+    s: JarvisSession
+  ) => Promise<MenuTreeNode[]> = (s) => getVisibleMenuTree(s, "menu")
 ): Promise<MenuItem[]> {
-  const rows = await database
-    .select({
-      id: menuItem.id,
-      label: menuItem.label,
-      routePath: menuItem.routePath,
-      icon: menuItem.icon,
-      sortOrder: menuItem.sortOrder,
-      requiredRole: menuItem.requiredRole,
-      isVisible: menuItem.isVisible
-    })
-    .from(menuItem)
-    .where(
-      and(
-        eq(menuItem.workspaceId, workspaceId),
-        isNull(menuItem.parentId),
-        eq(menuItem.isVisible, true)
-      )
-    )
-    .orderBy(asc(menuItem.sortOrder));
+  const tree = await resolveMenuTree(session);
+  const leaves = flattenLeafRoutes(tree);
+  return leaves
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .slice(0, 8)
+    .map((node) => ({
+      id: node.id,
+      label: node.label,
+      path: node.routePath,
+      icon: node.icon,
+      sortOrder: node.sortOrder
+    }));
+}
 
-  return rows
-    .filter(
-      (row) =>
-        row.isVisible &&
-        Boolean(row.routePath) &&
-        (row.requiredRole == null || userRoles.includes(row.requiredRole))
-    )
-    .map((row) => ({
-      id: row.id,
-      label: row.label,
-      path: row.routePath,
-      icon: row.icon,
-      sortOrder: row.sortOrder
-    }))
-    .slice(0, 8);
+/**
+ * Depth-first flatten of the menu tree to leaf nodes that have a non-empty
+ * `routePath` (clickable links). Group headers (no routePath) are skipped but
+ * their children are still traversed.
+ */
+function flattenLeafRoutes(
+  nodes: MenuTreeNode[]
+): Array<MenuTreeNode & { routePath: string }> {
+  const result: Array<MenuTreeNode & { routePath: string }> = [];
+  for (const node of nodes) {
+    if (node.routePath && node.routePath.length > 0) {
+      result.push({ ...node, routePath: node.routePath });
+    }
+    if (node.children.length > 0) {
+      result.push(...flattenLeafRoutes(node.children));
+    }
+  }
+  return result;
 }
 
 // Alias for spec compatibility
@@ -178,10 +194,7 @@ export async function getStalePages(
 }
 
 export async function getDashboardData(
-  workspaceId: string,
-  _userId: string,
-  userRoles: string[],
-  userPermissions: string[],
+  session: JarvisSession,
   loaders: Partial<{
     getQuickLinks: typeof getQuickLinks;
     getStalePages: typeof getStalePages;
@@ -209,11 +222,11 @@ export async function getDashboardData(
     myTasks,
     searchTrends
   ] = await Promise.all([
-    resolvedGetQuickLinks(workspaceId, userRoles),
-    resolvedGetStalePages(workspaceId, userPermissions),
-    resolvedGetRecentActivity(workspaceId),
-    resolvedGetMyTasks(workspaceId, _userId),
-    resolvedGetSearchTrends(workspaceId)
+    resolvedGetQuickLinks(session),
+    resolvedGetStalePages(session.workspaceId, session.permissions),
+    resolvedGetRecentActivity(session.workspaceId),
+    resolvedGetMyTasks(session.workspaceId, session.userId),
+    resolvedGetSearchTrends(session.workspaceId)
   ]);
 
   return {

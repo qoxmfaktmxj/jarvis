@@ -1,9 +1,10 @@
 // apps/web/app/(app)/wiki/manual/[workspaceId]/edit/[...path]/actions.test.ts
 //
 // Integration tests for saveWikiPage() — verifies that:
-//   1. db.transaction() is called (index + link projection are atomic).
-//   2. wiki_page_link projection (projectLinks) is called inside the tx.
-//   3. body with [[foo]] → projectLinks receives body containing [[foo]].
+//   1. db.transaction() is called so projection + audit_log land atomically.
+//   2. projectManualPage helper (shared with worker ingest lane) is invoked
+//      with the correct frontmatter/body/commit/user args.
+//   3. audit_log row is written inside the same tx (F4 fix).
 //   4. projection_failed is returned when tx throws.
 
 import { beforeEach, describe, expect, it, vi, type Mock } from "vitest";
@@ -18,13 +19,15 @@ const {
   hasPermissionMock,
   dbSelectMock,
   dbTransactionMock,
-  projectLinksMock,
+  projectManualPageMock,
+  writeAuditLogMock,
   gitWriteAndCommitMock,
   parseFrontmatterMock,
   serializeFrontmatterMock,
   getWikiRepoRootMock,
 } = vi.hoisted(() => {
-  const projectLinksMock = vi.fn().mockResolvedValue(undefined);
+  const projectManualPageMock = vi.fn().mockResolvedValue("page-uuid-mock");
+  const writeAuditLogMock = vi.fn().mockResolvedValue(undefined);
   const dbTransactionMock = vi.fn();
 
   // select chain: .select().from().where().limit()
@@ -42,7 +45,8 @@ const {
     hasPermissionMock: vi.fn(),
     dbSelectMock,
     dbTransactionMock,
-    projectLinksMock,
+    projectManualPageMock,
+    writeAuditLogMock,
     gitWriteAndCommitMock,
     parseFrontmatterMock,
     serializeFrontmatterMock,
@@ -115,7 +119,16 @@ vi.mock("@/lib/server/repo-root", () => ({
 }));
 
 vi.mock("@jarvis/wiki-agent/projection", () => ({
-  projectLinks: projectLinksMock,
+  projectManualPage: projectManualPageMock,
+}));
+
+// audit_log 스키마 / writeAuditLog 헬퍼: F2/F4 fix 이후 actions.ts 가 임포트한다.
+vi.mock("@jarvis/db/schema/audit", () => ({
+  auditLog: { id: "id" },
+}));
+
+vi.mock("@jarvis/shared/audit-log", () => ({
+  writeAuditLog: writeAuditLogMock,
 }));
 
 // ---------------------------------------------------------------------------
@@ -191,17 +204,36 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
     expect(dbTransactionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("calls projectLinks inside the transaction with correct args", async () => {
+  it("calls projectManualPage inside the transaction with correct args", async () => {
     await saveWikiPage(VALID_PAYLOAD);
 
-    expect(projectLinksMock).toHaveBeenCalledTimes(1);
-    const [_tx, opts] = projectLinksMock.mock.calls[0] as [unknown, { workspaceId: string; sourcePath: string; body: string }];
+    expect(projectManualPageMock).toHaveBeenCalledTimes(1);
+    const [_tx, opts] = projectManualPageMock.mock.calls[0] as [unknown, { workspaceId: string; sourcePath: string; body: string; commitSha: string; userId: string; slug: string }];
     expect(opts.workspaceId).toBe("ws1");
     expect(opts.sourcePath).toBe("wiki/ws1/manual/manual/foo.md");
     expect(opts.body).toContain("[[bar]]");
+    expect(opts.commitSha).toBe("abc123");
+    expect(opts.userId).toBe("user-1");
+    expect(opts.slug).toBe("manual/foo");
   });
 
-  it("body with [[foo]] → projectLinks body contains [[foo]]", async () => {
+  it("writes audit_log inside the same transaction (F4 fix)", async () => {
+    await saveWikiPage(VALID_PAYLOAD);
+
+    expect(writeAuditLogMock).toHaveBeenCalledTimes(1);
+    const [_tx, _auditTable, input] = writeAuditLogMock.mock.calls[0] as [
+      unknown,
+      unknown,
+      { action: string; resourceType: string; workspaceId: string; userId: string; details: { commitSha: string } },
+    ];
+    expect(input.action).toBe("wiki.manual.save");
+    expect(input.resourceType).toBe("wiki_page");
+    expect(input.workspaceId).toBe("ws1");
+    expect(input.userId).toBe("user-1");
+    expect(input.details.commitSha).toBe("abc123");
+  });
+
+  it("body with [[foo]] → projectManualPage body contains [[foo]]", async () => {
     parseFrontmatterMock
       .mockReset()
       .mockReturnValueOnce({ body: "See [[foo]] here", data: { title: "Foo" } })
@@ -209,7 +241,7 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
 
     await saveWikiPage({ ...VALID_PAYLOAD, markdown: "---\ntitle: Foo\n---\nSee [[foo]] here" });
 
-    const [, opts] = projectLinksMock.mock.calls[0] as [unknown, { body: string }];
+    const [, opts] = projectManualPageMock.mock.calls[0] as [unknown, { body: string }];
     expect(opts.body).toContain("[[foo]]");
   });
 
@@ -224,8 +256,8 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
     }
   });
 
-  it("projection_failed when projectLinks throws inside transaction", async () => {
-    projectLinksMock.mockRejectedValueOnce(new Error("link projection error"));
+  it("projection_failed when projectManualPage throws inside transaction", async () => {
+    projectManualPageMock.mockRejectedValueOnce(new Error("manual page projection error"));
     // transaction re-throws the inner error
     dbTransactionMock.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
       const tx = {
@@ -259,13 +291,14 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toBe("git_failed");
     expect(dbTransactionMock).not.toHaveBeenCalled();
-    expect(projectLinksMock).not.toHaveBeenCalled();
+    expect(projectManualPageMock).not.toHaveBeenCalled();
   });
 
-  // Code review HIGH E — onConflictDoUpdate.set 가 frontmatter 파생 컬럼들을 모두
-  // 갱신해야 ACL/projection 정합성이 유지된다. 누락 시 frontmatter 의 권한 강화가
-  // DB projection 에 반영되지 않아 검색·page-first·Ask AI 에서 약한 권한이 그대로 사용됨.
-  it("onConflictDoUpdate.set includes type/requiredPermission/publishedStatus/sensitivity (HIGH E)", async () => {
+  // Code review HIGH E — frontmatter 의 type/requiredPermission/sensitivity 가
+  // projection 으로 전달되어야 ACL/projection 정합성이 유지된다. F2 fix 이후로 이 검증은
+  // projectManualPage 헬퍼 (packages/wiki-agent) 가 책임지지만, server action 이 헬퍼에
+  // 정확한 frontmatter 를 넘기는지는 여전히 보장해야 한다.
+  it("projectManualPage receives frontmatter with type/requiredPermission/sensitivity (HIGH E)", async () => {
     parseFrontmatterMock
       .mockReset()
       .mockReturnValueOnce({
@@ -287,32 +320,22 @@ describe("saveWikiPage() — wiki_page_link projection", () => {
         },
       });
 
-    let capturedSet: Record<string, unknown> | null = null;
-    dbTransactionMock.mockImplementation(async (fn: (tx: unknown) => Promise<void>) => {
-      const tx = {
-        insert: vi.fn().mockReturnValue({
-          values: vi.fn().mockReturnValue({
-            onConflictDoUpdate: vi.fn((cfg: { set: Record<string, unknown> }) => {
-              capturedSet = cfg.set;
-              return Promise.resolve(undefined);
-            }),
-          }),
-        }),
-      };
-      await fn(tx);
-    });
-
     await saveWikiPage(VALID_PAYLOAD);
 
-    expect(capturedSet).not.toBeNull();
-    const set = capturedSet as unknown as Record<string, unknown>;
-    expect(set.type).toBe("runbook");
-    expect(set.sensitivity).toBe("RESTRICTED");
-    expect(set.requiredPermission).toBe("project.access:secret");
-    expect(set.publishedStatus).toBe("published");
-    expect(set.authority).toBe("manual");
-    expect(set.gitSha).toBe("abc123");
-    expect(set.frontmatter).toBeDefined();
-    expect(set.updatedAt).toBeInstanceOf(Date);
+    expect(projectManualPageMock).toHaveBeenCalledTimes(1);
+    const [, opts] = projectManualPageMock.mock.calls[0] as [
+      unknown,
+      {
+        frontmatter: Record<string, unknown>;
+        commitSha: string;
+        sourcePath: string;
+      },
+    ];
+    expect(opts.frontmatter.type).toBe("runbook");
+    expect(opts.frontmatter.sensitivity).toBe("RESTRICTED");
+    expect(opts.frontmatter.requiredPermission).toBe("project.access:secret");
+    expect(opts.frontmatter.title).toBe("Sensitive Page");
+    expect(opts.commitSha).toBe("abc123");
+    expect(opts.sourcePath).toBe("wiki/ws1/manual/manual/foo.md");
   });
 });

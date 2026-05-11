@@ -90,7 +90,11 @@ export async function listOpportunities(rawInput: z.input<typeof listOpportuniti
         id: salesOpportunity.id,
         bizOpNm: salesOpportunity.bizOpNm,
         customerId: salesOpportunity.customerId,
-        customerName: salesOpportunity.customerName,
+        // A2 P0-1: customerName comes from FK-joined salesCustomer.custNm
+        // (single source). The denormalized salesOpportunity.customer_name
+        // column is still in the schema but no longer surfaced — see
+        // saveOpportunities below for the corresponding strip-on-write.
+        customerName: salesCustomer.custNm,
         productTypeCode: salesOpportunity.productTypeCode,
         bizStepCode: salesOpportunity.bizStepCode,
         bizStepYmd: salesOpportunity.bizStepYmd,
@@ -103,6 +107,7 @@ export async function listOpportunities(rawInput: z.input<typeof listOpportuniti
       })
       .from(salesOpportunity)
       .leftJoin(user, eq(user.id, salesOpportunity.insUserId))
+      .leftJoin(salesCustomer, eq(salesCustomer.id, salesOpportunity.customerId))
       .where(where)
       .orderBy(desc(salesOpportunity.insDate))
       .limit(input.limit)
@@ -153,10 +158,18 @@ export async function saveOpportunities(rawInput: z.input<typeof saveOpportuniti
       // ---- CREATE ----
       for (const c of input.creates) {
         // insDate / insUserName are read-only; server fills via defaultNow + ctx.userId.
-        const { insDate: _omitInsDate, insUserName: _omitInsUserName, insUserId: _omitInsUserId, ...createPayload } = c;
+        // customerName (denorm) is stripped — single source is salesCustomer.custNm via JOIN.
+        const {
+          insDate: _omitInsDate,
+          insUserName: _omitInsUserName,
+          insUserId: _omitInsUserId,
+          customerName: _omitCustomerName,
+          ...createPayload
+        } = c;
         void _omitInsDate;
         void _omitInsUserName;
         void _omitInsUserId;
+        void _omitCustomerName;
         await tx.insert(salesOpportunity).values({
           ...createPayload,
           workspaceId: ctx.workspaceId,
@@ -177,15 +190,18 @@ export async function saveOpportunities(rawInput: z.input<typeof saveOpportuniti
       // ---- UPDATE ----
       for (const u of input.updates) {
         // insDate / insUserName / insUserId are read-only on update.
+        // customerName (denorm) is stripped — list/detail use salesCustomer.custNm via JOIN.
         const {
           insDate: _omitInsDate,
           insUserName: _omitInsUserName,
           insUserId: _omitInsUserId,
+          customerName: _omitCustomerName,
           ...updatablePatch
         } = u.patch;
         void _omitInsDate;
         void _omitInsUserName;
         void _omitInsUserId;
+        void _omitCustomerName;
         await tx
           .update(salesOpportunity)
           .set({ ...updatablePatch, chkUserId: ctx.userId ?? undefined, chkDate: new Date() })

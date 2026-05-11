@@ -237,25 +237,28 @@ export function PlanDivCostDetailsModal({ parentId, onClose }: Props) {
                     </td>
                     <td className="h-8 p-0 align-middle">
                       <EditableNumericCell
-                        value={r.planRate === null || r.planRate === undefined || r.planRate === "" ? null : Number(r.planRate)}
+                        mode="decimal"
+                        value={r.planRate === null || r.planRate === undefined || r.planRate === "" ? null : String(r.planRate)}
                         onChange={(next) =>
-                          updateField(r.id, "planRate", next === null ? null : String(next))
+                          updateField(r.id, "planRate", next)
                         }
                       />
                     </td>
                     <td className="h-8 p-0 align-middle">
                       <EditableNumericCell
-                        value={r.prdtRate === null || r.prdtRate === undefined || r.prdtRate === "" ? null : Number(r.prdtRate)}
+                        mode="decimal"
+                        value={r.prdtRate === null || r.prdtRate === undefined || r.prdtRate === "" ? null : String(r.prdtRate)}
                         onChange={(next) =>
-                          updateField(r.id, "prdtRate", next === null ? null : String(next))
+                          updateField(r.id, "prdtRate", next)
                         }
                       />
                     </td>
                     <td className="h-8 p-0 align-middle">
                       <EditableNumericCell
-                        value={r.performRate === null || r.performRate === undefined || r.performRate === "" ? null : Number(r.performRate)}
+                        mode="decimal"
+                        value={r.performRate === null || r.performRate === undefined || r.performRate === "" ? null : String(r.performRate)}
                         onChange={(next) =>
-                          updateField(r.id, "performRate", next === null ? null : String(next))
+                          updateField(r.id, "performRate", next)
                         }
                       />
                     </td>

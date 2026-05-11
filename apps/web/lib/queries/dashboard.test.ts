@@ -14,17 +14,6 @@ vi.mock("@jarvis/db/client", () => ({
 }));
 
 vi.mock("@jarvis/db/schema", () => ({
-  menuItem: {
-    id: "menu.id",
-    label: "menu.label",
-    routePath: "menu.routePath",
-    icon: "menu.icon",
-    sortOrder: "menu.sortOrder",
-    requiredRole: "menu.requiredRole",
-    workspaceId: "menu.workspaceId",
-    parentId: "menu.parentId",
-    isVisible: "menu.isVisible"
-  },
   auditLog: {
     id: "audit.id",
     action: "audit.action",
@@ -66,10 +55,18 @@ vi.mock("drizzle-orm", () => ({
   lt: vi.fn((column: unknown, value: unknown) => ({ column, op: "lt", value })),
   ne: vi.fn((column: unknown, value: unknown) => ({ column, value })),
   or: vi.fn((...args: unknown[]) => ({ op: "or", args })),
+  relations: vi.fn(() => ({})),
   sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
     strings: Array.from(strings),
     values
   }))
+}));
+
+// menu-tree dependency: getQuickLinks delegates to getVisibleMenuTree but the
+// test injects its own resolver via the optional 2nd arg, so this mock just
+// has to exist to prevent the import from blowing up.
+vi.mock("@/lib/server/menu-tree", () => ({
+  getVisibleMenuTree: vi.fn(async () => [])
 }));
 
 import { db } from "@jarvis/db/client";
@@ -99,49 +96,61 @@ describe("dashboard queries", () => {
     vi.clearAllMocks();
   });
 
-  it("filters quick links by role, visibility, and route presence", async () => {
-    const selectMock = db.select as unknown as Mock;
-    const chain = createChain([
+  it("delegates to getVisibleMenuTree and flattens leaf routes", async () => {
+    const session = {
+      id: "s-1",
+      userId: "u-1",
+      workspaceId: "ws-1",
+      employeeId: "E-1",
+      name: "Kim",
+      roles: ["employee"],
+      permissions: ["KNOWLEDGE_READ"],
+      createdAt: 0,
+      expiresAt: 0
+    } as unknown as Parameters<typeof getQuickLinks>[0];
+
+    const tree = [
       {
         id: "dashboard",
+        parentId: null,
+        code: "nav.dashboard",
+        kind: "menu",
         label: "Dashboard",
-        routePath: "/dashboard",
         icon: "home",
-        sortOrder: 0,
-        requiredRole: null,
-        isVisible: true
-      },
-      {
-        id: "admin",
-        label: "Admin",
-        routePath: "/admin",
-        icon: "shield",
-        sortOrder: 1,
-        requiredRole: "admin",
-        isVisible: true
-      },
-      {
-        id: "hidden",
-        label: "Hidden",
-        routePath: "/hidden",
-        icon: null,
-        sortOrder: 2,
-        requiredRole: null,
-        isVisible: false
+        routePath: "/dashboard",
+        sortOrder: 10,
+        children: []
       },
       {
         id: "group",
+        parentId: null,
+        code: "nav.group",
+        kind: "menu",
         label: "Group",
-        routePath: null,
         icon: null,
-        sortOrder: 3,
-        requiredRole: null,
-        isVisible: true
+        routePath: null,
+        sortOrder: 20,
+        children: [
+          {
+            id: "child",
+            parentId: "group",
+            code: "nav.child",
+            kind: "menu",
+            label: "Child",
+            icon: null,
+            routePath: "/child",
+            sortOrder: 21,
+            children: []
+          }
+        ]
       }
-    ]);
-    selectMock.mockReturnValue(chain);
+    ];
 
-    const result = await getQuickLinks("ws-1", ["employee"]);
+    const result = await getQuickLinks(
+      session,
+      // resolveMenuTree dependency-inject — no DB hit
+      async () => tree as never
+    );
 
     expect(result).toEqual([
       {
@@ -149,10 +158,47 @@ describe("dashboard queries", () => {
         label: "Dashboard",
         path: "/dashboard",
         icon: "home",
-        sortOrder: 0
+        sortOrder: 10
+      },
+      {
+        id: "child",
+        label: "Child",
+        path: "/child",
+        icon: null,
+        sortOrder: 21
       }
     ]);
-    expect(chain.limit).not.toHaveBeenCalled();
+  });
+
+  it("caps quick links at 8 results, sorted by sortOrder", async () => {
+    const session = {
+      id: "s-1",
+      userId: "u-1",
+      workspaceId: "ws-1",
+      employeeId: "E-1",
+      name: "Kim",
+      roles: ["employee"],
+      permissions: [],
+      createdAt: 0,
+      expiresAt: 0
+    } as unknown as Parameters<typeof getQuickLinks>[0];
+
+    const tree = Array.from({ length: 12 }, (_, i) => ({
+      id: `n-${i}`,
+      parentId: null,
+      code: `nav.n${i}`,
+      kind: "menu" as const,
+      label: `N${i}`,
+      icon: null,
+      routePath: `/n/${i}`,
+      // reverse order so the resolver does the sort
+      sortOrder: 100 - i,
+      children: []
+    }));
+
+    const result = await getQuickLinks(session, async () => tree as never);
+    expect(result.length).toBe(8);
+    expect(result[0]!.id).toBe("n-11"); // sortOrder 89 (lowest)
   });
 
   it("calculates the current search period start as a monday", () => {
@@ -267,7 +313,19 @@ describe("dashboard queries", () => {
 
   it("aggregates dashboard data in parallel", async () => {
     const stalePagesLoader = vi.fn().mockResolvedValue([]);
-    const result = await getDashboardData("ws-1", "user-1", ["employee"], ["knowledge:read"], {
+    const session = {
+      id: "s-1",
+      userId: "user-1",
+      workspaceId: "ws-1",
+      employeeId: "E-1",
+      name: "Kim",
+      roles: ["employee"],
+      permissions: ["knowledge:read"],
+      createdAt: 0,
+      expiresAt: 0
+    } as unknown as Parameters<typeof getDashboardData>[0];
+
+    const result = await getDashboardData(session, {
       getQuickLinks: vi.fn().mockResolvedValue([]),
       getRecentActivity: vi.fn().mockResolvedValue([]),
       getMyTasks: vi.fn().mockResolvedValue([]),

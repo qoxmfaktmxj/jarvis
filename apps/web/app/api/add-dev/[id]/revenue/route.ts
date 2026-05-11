@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { db } from "@jarvis/db/client";
+import { auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { writeAuditLog } from "@jarvis/shared/audit-log";
 import { upsertRevenueSchema } from "@jarvis/shared/validation/additional-dev";
 import { listRevenues, upsertRevenue } from "@/lib/queries/additional-dev";
 import { requireApiSession } from "@/lib/server/api-auth";
+import { extractRequestAudit } from "@/lib/server/request-audit";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -38,6 +42,18 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     workspaceId: auth.session.workspaceId,
     yearMonth: parsed.data.yearMonth,
     amount: parsed.data.amount,
+  });
+
+  const { ipAddress, userAgent } = extractRequestAudit(request);
+  await writeAuditLog(db, auditLog, {
+    workspaceId: auth.session.workspaceId,
+    userId: auth.session.userId,
+    action: "additional_development.revenue.upsert",
+    resourceType: "additional_development_revenue",
+    resourceId: id,
+    ipAddress,
+    userAgent,
+    details: { yearMonth: parsed.data.yearMonth, amount: parsed.data.amount },
   });
 
   return new NextResponse(null, { status: 204 });

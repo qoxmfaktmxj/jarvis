@@ -173,12 +173,10 @@ export function ContractMonthsGridContainer({
       const liveRows = gridRowsCacheRef.current
         .filter((r) => r.state !== "deleted")
         .map((r) => r.data);
-      const dups = findDuplicateKeys(liveRows, [
-        "legacyContYear",
-        "legacyContNo",
-        "legacySeq",
-        "legacyYm",
-      ]);
+      // A3 P0-3 — dedup 키는 (contractId, ym). legacy 4-tuple은 모두 nullable이라
+      // 신규(Jarvis-native) 행에서 전부 null로 묶여 "중복" 오판이 발생했다.
+      // 의미적 unique 키는 한 계약(contractId)당 한 월(ym) 1행이다.
+      const dups = findDuplicateKeys(liveRows, ["contractId", "ym"]);
       if (dups.length > 0) {
         return { ok: false };
       }
@@ -292,7 +290,10 @@ export function ContractMonthsGridContainer({
           // Filters managed by GridSearchForm above
         }}
         onSave={async (changes) => {
-          // Composite-key dedup: (contractId + ym) should be unique per month row.
+          // A3 P0-3 — Composite-key dedup: (contractId + ym) is unique per month row.
+          // 이전엔 nullable legacy 4-tuple (contYear|contNo|seq|ym)로 묶었지만
+          // Jarvis-native 신규 행은 legacy 컬럼이 전부 null이라 정상 행 2개가
+          // 모두 "null|null|null|null" 키로 중복 판정되어 저장 차단되었다.
           const allRows = [
             ...changes.creates,
             ...rows
@@ -302,17 +303,12 @@ export function ContractMonthsGridContainer({
                 return upd ? { ...r, ...upd.patch } : r;
               }),
           ];
-          const dupes = findDuplicateKeys(allRows, [
-            "legacyContYear",
-            "legacyContNo",
-            "legacySeq",
-            "legacyYm",
-          ]);
+          const dupes = findDuplicateKeys(allRows, ["contractId", "ym"]);
           if (dupes.length > 0) {
             return {
               ok: false as const,
               errors: dupes.map((k) => ({
-                message: `중복된 월별계약키(contYear|contNo|seq|ym)가 있습니다: ${k}`,
+                message: `중복된 월별계약 키(contractId|ym)가 있습니다: ${k}`,
               })),
             };
           }
