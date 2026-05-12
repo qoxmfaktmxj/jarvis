@@ -27,6 +27,7 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-react";
 import { Capy } from "./Capy";
+import { SidebarCapy } from "./SidebarCapy";
 import { setSidebar, useSidebar } from "./uiPrefs";
 import { resolveIcon } from "./icon-map";
 import { useTabContext } from "./tabs/TabContext";
@@ -304,6 +305,9 @@ export function Sidebar({ menus }: { menus: MenuTreeNode[] }) {
           renderTreeNode(node, 0, { pathname, expanded, isOpen, toggle }),
         )}
       </nav>
+
+      {/* Footer easter egg — expanded 모드 한정 capybara 마스코트 */}
+      {expanded ? <SidebarCapy /> : null}
     </aside>
   );
 }
