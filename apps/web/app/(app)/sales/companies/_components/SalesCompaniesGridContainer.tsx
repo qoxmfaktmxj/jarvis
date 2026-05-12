@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import { listSalesCompanies, saveSalesCompanies } from "../actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
 
 type Option = { value: string; label: string };
 
@@ -22,7 +23,7 @@ type Props = {
   industryOptions: Option[];
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): CompanyRow {
   const now = new Date().toISOString();
@@ -54,6 +55,7 @@ export function SalesCompaniesGridContainer({
   industryOptions,
 }: Props) {
   const [rows, setRows] = useState<CompanyRow[]>(initial);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useTabState<number>("sales-companies.page", 1);
   const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
@@ -130,7 +132,7 @@ export function SalesCompaniesGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={() => reload(1, pendingFilters)} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={() => reload(1, pendingFilters)} isSearching={isSearching}>
         <GridFilterField label="대상구분" className="w-[140px]">
           <select
             value={pendingFilters.objectDiv ?? ""}
@@ -175,6 +177,7 @@ export function SalesCompaniesGridContainer({
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}

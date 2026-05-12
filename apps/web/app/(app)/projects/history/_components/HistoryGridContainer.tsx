@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
@@ -94,6 +94,7 @@ export function HistoryGridContainer({
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
 
   const [rows, setRows] = useState<ProjectHistoryRow[]>(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
@@ -163,7 +164,7 @@ export function HistoryGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[220px]">
           <Input
             value={pendingFilters.q}
@@ -214,6 +215,7 @@ export function HistoryGridContainer({
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onRowDoubleClick={(row) => router.push(`/projects/history?selected=${row.id}`)}
         onExport={handleExport}

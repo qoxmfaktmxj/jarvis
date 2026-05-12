@@ -90,6 +90,18 @@ export type DataGridProps<T extends WithId> = {
   exportLabel?: string;
   /** 다운로드 진행 중 라벨 (미지정 시 `Common.Grid.exporting`). */
   exportingLabel?: string;
+  /**
+   * 그리드가 mount된 뒤 한 번 호출. 컨테이너가 그리드 외부에서 `discardChanges`를
+   * 트리거할 수 있도록 API를 노출한다 (GridSearchForm.onResetGrid wiring용).
+   *
+   * 사용 예:
+   * ```tsx
+   * const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
+   * <DataGrid onGridReady={(api) => { gridApiRef.current = api; }} ... />
+   * <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} ... />
+   * ```
+   */
+  onGridReady?: (api: { discardChanges: () => void }) => void;
 };
 
 export function DataGrid<T extends WithId>({
@@ -114,6 +126,7 @@ export function DataGrid<T extends WithId>({
   isExporting,
   exportLabel,
   exportingLabel,
+  onGridReady,
 }: DataGridProps<T>) {
   // Baseline strings come from `Common.Grid.*`. Callers may still override
   // `emptyMessage` per domain (e.g. "검색 결과 없음"), but DataGrid no longer
@@ -140,6 +153,11 @@ export function DataGrid<T extends WithId>({
   const [localFilterValues, setLocalFilterValues] = useState<Record<string, string>>({});
 
   const filterValues = externalFilterValues ?? localFilterValues;
+
+  // Expose discardChanges to parent container (GridSearchForm.onResetGrid wiring).
+  useEffect(() => {
+    onGridReady?.({ discardChanges: grid.discardChanges });
+  }, [onGridReady, grid.discardChanges]);
 
   // Notify parent when dirty count changes (e.g. for tab dirty marker).
   useEffect(() => {

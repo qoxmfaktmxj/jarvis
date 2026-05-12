@@ -144,6 +144,7 @@ export function CustomerContactsGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -263,7 +264,7 @@ export function CustomerContactsGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={t("Search.chargerNm")} className="w-[210px]">
           <Input
             type="text"
@@ -318,6 +319,7 @@ export function CustomerContactsGridContainer({
         filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/customer-contacts/" + row.id + "/edit")}
         onExport={handleExport}

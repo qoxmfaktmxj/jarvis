@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { ScheduleEventRow } from "@jarvis/shared/validation/schedule";
 import { listSchedulesAction, saveSchedulesAction } from "../actions";
@@ -13,6 +13,7 @@ import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { NewEventInlineForm } from "./NewEventInlineForm";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
 
 type Row = ScheduleEventRow;
 
@@ -22,7 +23,7 @@ type Props = {
   canWrite: boolean;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Row {
   const now = new Date().toISOString();
@@ -47,6 +48,7 @@ function makeBlankRow(): Row {
 export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
   const t = useTranslations("Schedule.Page");
   const [rows, setRows] = useState<Row[]>(initial);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useTabState<number>("schedule.list.page", 1);
   const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
@@ -136,6 +138,7 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
       ) : null}
 
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
@@ -175,6 +178,7 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
         page={page}
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={filterValues}
         onExport={handleExport}
         isExporting={isExporting}

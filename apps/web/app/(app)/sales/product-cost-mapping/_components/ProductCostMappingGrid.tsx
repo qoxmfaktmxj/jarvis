@@ -301,6 +301,7 @@ export function ProductCostMappingGrid({
 
       {/* GridSearchForm: filter panel with [조회] button */}
       <GridSearchForm
+        onResetGrid={grid.discardChanges}
         onSearch={() => {
           setFilterValue("q", pendingFilters.q);
           setFilterValue("productTypeId", pendingFilters.productTypeId);

@@ -72,6 +72,7 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -97,6 +98,7 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
@@ -125,6 +127,7 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
         page={page} limit={limit} makeBlankRow={makeBlankRow} filterValues={filterValues}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}

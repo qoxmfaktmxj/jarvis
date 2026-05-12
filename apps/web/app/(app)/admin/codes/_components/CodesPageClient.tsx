@@ -463,6 +463,7 @@ export function CodesPageClient({
           onDraftFilterChange={setMasterDraft}
           onApplyFilters={applyMasterFilters}
           onResetFilters={resetMasterFilters}
+          onResetGrid={masterGrid.discardChanges}
           saving={savingMaster}
           onInsert={handleMasterInsert}
           onCopy={handleMasterCopy}
@@ -480,6 +481,7 @@ export function CodesPageClient({
           onDraftFilterChange={setDetailDraft}
           onApplyFilters={applyDetailFilters}
           onResetFilters={resetDetailFilters}
+          onResetGrid={detailGrid.discardChanges}
           saving={savingDetail}
           onInsert={handleDetailInsert}
           onCopy={handleDetailCopy}

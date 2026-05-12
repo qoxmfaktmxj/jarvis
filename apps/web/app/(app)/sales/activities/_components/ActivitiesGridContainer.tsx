@@ -139,6 +139,7 @@ export function ActivitiesGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -281,6 +282,7 @@ export function ActivitiesGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={handleSearch}
         isSearching={isSearching}
       >
@@ -342,6 +344,7 @@ export function ActivitiesGridContainer({
         filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/activities/" + row.id + "/edit")}
         onExport={handleExport}

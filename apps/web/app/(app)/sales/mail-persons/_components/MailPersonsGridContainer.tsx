@@ -134,6 +134,7 @@ export function MailPersonsGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -321,7 +322,7 @@ export function MailPersonsGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={tCols("mailId")} className="w-[210px]">
           <Input
             type="text"
@@ -364,6 +365,7 @@ export function MailPersonsGridContainer({
         filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}

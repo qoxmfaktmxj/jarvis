@@ -136,6 +136,7 @@ export function OpportunitiesGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -267,6 +268,7 @@ export function OpportunitiesGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={handleSearch}
         isSearching={isSearching}
       >
@@ -327,6 +329,7 @@ export function OpportunitiesGridContainer({
         filterValues={{}}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onRowDoubleClick={(row) => router.push("/sales/opportunities/" + row.id + "/edit")}
         onExport={handleExport}

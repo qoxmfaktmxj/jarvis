@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -75,6 +75,7 @@ export function CloudPeopleCalcGridContainer({ rows: initialRows, total: initial
 
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
   const [rows, setRows] = useState(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
@@ -166,7 +167,7 @@ export function CloudPeopleCalcGridContainer({ rows: initialRows, total: initial
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={t("filters.q")} className="w-[220px]">
           <Input className="h-8" value={pendingFilters.q} onChange={(e) => setPending("q", e.target.value)} placeholder={t("filters.qPlaceholder")} />
         </GridFilterField>
@@ -192,6 +193,7 @@ export function CloudPeopleCalcGridContainer({ rows: initialRows, total: initial
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onExport={handleExport}
         isExporting={isExporting}

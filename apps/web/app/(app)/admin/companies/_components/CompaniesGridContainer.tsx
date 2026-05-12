@@ -21,6 +21,7 @@ import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import { useTabContext } from "@/components/layout/tabs/TabContext";
 import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
 
 type Company = CompanyRow;
 type Option = { value: string; label: string };
@@ -33,7 +34,7 @@ type Props = {
   industryOptions: Option[];
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Company {
   const now = new Date().toISOString();
@@ -108,6 +109,7 @@ export function CompaniesGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -208,6 +210,7 @@ export function CompaniesGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
@@ -276,6 +279,7 @@ export function CompaniesGridContainer({
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

@@ -171,6 +171,7 @@ function InfraLicensesGridInner({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -390,6 +391,7 @@ function InfraLicensesGridInner({
     <div className="space-y-3">
       {/* GridSearchForm: q + searchDevGbCd filter panel with [조회] button */}
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => {
           setFilterValue("q", pendingFilters.q);
           setFilterValue("searchDevGbCd", pendingFilters.searchDevGbCd);
@@ -459,6 +461,7 @@ function InfraLicensesGridInner({
         makeBlankRow={makeBlankInfraLicense}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={exporting}

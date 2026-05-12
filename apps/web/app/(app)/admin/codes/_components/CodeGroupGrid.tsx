@@ -60,6 +60,8 @@ type Props = {
   onDraftFilterChange: (next: FilterValues) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
+  /** 조회 클릭 시 미저장 변경분 폐기 콜백 — 부모가 `masterGrid.discardChanges` 전달. */
+  onResetGrid: () => void;
   saving: boolean;
   onInsert: () => void;
   onCopy: () => void;
@@ -77,6 +79,7 @@ export function CodeGroupGrid({
   onDraftFilterChange,
   onApplyFilters,
   onResetFilters,
+  onResetGrid,
   saving,
   onInsert,
   onCopy,
@@ -182,6 +185,7 @@ export function CodeGroupGrid({
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
+        onResetGrid={onResetGrid}
         isSearching={saving}
         searchLabel={t("filter.search")}
       >

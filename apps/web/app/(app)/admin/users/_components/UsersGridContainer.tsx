@@ -22,6 +22,7 @@ import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import { useTabContext } from "@/components/layout/tabs/TabContext";
 import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef } from "@/components/grid/types";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
 
 type User = UserRow;
 type Option = { value: string; label: string };
@@ -36,7 +37,7 @@ type Props = {
   jobTitleOptions: Option[];
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 const STATUS_OPTIONS: Option[] = [
   { value: "active", label: "active" },
@@ -122,6 +123,7 @@ export function UsersGridContainer({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -321,6 +323,7 @@ export function UsersGridContainer({
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
@@ -371,6 +374,7 @@ export function UsersGridContainer({
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onExport={handleExport}
         isExporting={isExporting}
         onPageChange={(p) => reload(p, filterValues)}

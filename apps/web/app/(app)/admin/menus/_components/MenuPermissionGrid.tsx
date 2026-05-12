@@ -40,6 +40,8 @@ type Props = {
   onDraftFilterChange: (next: FilterValues) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
+  /** 조회 클릭 시 미저장 변경분 폐기 콜백 — 부모가 `detailGrid.discardChanges` 전달. */
+  onResetGrid: () => void;
   saving: boolean;
   onSave: () => void;
   onExport: () => void;
@@ -55,6 +57,7 @@ export function MenuPermissionGrid({
   onDraftFilterChange,
   onApplyFilters,
   onResetFilters,
+  onResetGrid,
   saving,
   onSave,
   onExport,
@@ -103,6 +106,7 @@ export function MenuPermissionGrid({
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
+        onResetGrid={onResetGrid}
         isSearching={saving || disabled}
         searchLabel={t("filter.search")}
       >

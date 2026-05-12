@@ -525,6 +525,7 @@ export function MenusPageClient({
           onDraftFilterChange={setMasterDraft}
           onApplyFilters={applyMasterFilters}
           onResetFilters={resetMasterFilters}
+          onResetGrid={masterGrid.discardChanges}
           saving={savingMaster}
           onInsert={handleMasterInsert}
           onCopy={handleMasterCopy}
@@ -543,6 +544,7 @@ export function MenusPageClient({
           onDraftFilterChange={setDetailDraft}
           onApplyFilters={applyDetailFilters}
           onResetFilters={resetDetailFilters}
+          onResetGrid={detailGrid.discardChanges}
           saving={savingDetail}
           onSave={handleDetailSave}
           onExport={handleDetailExport}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
@@ -67,6 +67,7 @@ export function ModulesGridContainer({
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
 
   const [rows, setRows] = useState<ProjectModuleRow[]>(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
@@ -130,7 +131,7 @@ export function ModulesGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[240px]">
           <Input
             value={pendingFilters.q}
@@ -173,6 +174,7 @@ export function ModulesGridContainer({
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onRowDoubleClick={(row) => router.push(`/projects/modules?selected=${row.id}`)}
         onExport={handleExport}

@@ -148,6 +148,7 @@ function InfraSystemsGridInner({
   const ctx = useTabContext();
   const gridRowsCacheRef = useRef(gridRowsCache);
   gridRowsCacheRef.current = gridRowsCache;
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   useEffect(() => {
     return ctx.registerSaveHandler(tabKey, async () => {
       const changes = rowsToBatch(gridRowsCacheRef.current);
@@ -375,6 +376,7 @@ function InfraSystemsGridInner({
   return (
     <div className="space-y-3">
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => {
           setFilterValue("q", pendingFilters.q);
           setFilterValue("companyId", pendingFilters.companyId);
@@ -484,6 +486,7 @@ function InfraSystemsGridInner({
         makeBlankRow={makeBlankInfraSystem}
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={exporting}

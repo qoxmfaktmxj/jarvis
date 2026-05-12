@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
@@ -71,6 +71,7 @@ export function BeaconsGridContainer({
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
 
   const [rows, setRows] = useState<ProjectBeaconRow[]>(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
@@ -134,7 +135,7 @@ export function BeaconsGridContainer({
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[240px]">
           <Input
             value={pendingFilters.q}
@@ -178,6 +179,7 @@ export function BeaconsGridContainer({
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onRowDoubleClick={(row) => router.push(`/projects/beacons?selected=${row.id}`)}
         onExport={handleExport}

@@ -68,6 +68,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
 
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
   const [rows, setRows] = useState(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -179,7 +180,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch}>
         <GridFilterField label={t("filters.q")} className="w-[220px]">
           <Input className="h-8" value={pendingFilters.q} onChange={(e) => setPending("q", e.target.value)} placeholder={t("filters.qPlaceholder")} />
         </GridFilterField>
@@ -224,6 +225,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onExport={handleExport}
         isExporting={isExporting}

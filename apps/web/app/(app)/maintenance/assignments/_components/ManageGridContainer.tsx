@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { MaintenanceAssignmentRow } from "@jarvis/shared/validation/maintenance";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
 import {
   listMaintenanceAction,
   saveMaintenanceAction,
@@ -28,7 +29,7 @@ type Props = {
   canAdmin: boolean;
 };
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Row {
   const now = new Date().toISOString();
@@ -58,6 +59,7 @@ export function ManageGridContainer({
 }: Props) {
   const t = useTranslations("Maintenance.Assignments");
   const [rows, setRows] = useState<Row[]>(initial);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [totalCount, setTotalCount] = useState(total);
   const [page, setPage] = useTabState<number>("maintenance.page", 1);
   const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
@@ -157,6 +159,7 @@ export function ManageGridContainer({
       ) : null}
 
       <GridSearchForm
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
         isSearching={isSearching}
       >
@@ -200,6 +203,7 @@ export function ManageGridContainer({
         page={page}
         limit={PAGE_SIZE}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={filterValues}
         onExport={handleExport}
         isExporting={isExporting}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -64,6 +64,7 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
 
   const currentPage = Math.max(1, parseInt(urlFilters.page || "1", 10) || 1);
   const [rows, setRows] = useState<T[]>(initialRows);
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
   const [pendingFilters, setPendingFilters] = useState<F>(initialFilters);
   const [isExporting, setIsExporting] = useState(false);
@@ -132,7 +133,7 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
 
   return (
     <div className="space-y-3">
-      <GridSearchForm onSearch={handleSearch} isSearching={isSearching}>
+      <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         {filterFields.map((field) => (
           <GridFilterField key={field.key} label={field.label} className="w-[180px]">
             <Input
@@ -154,6 +155,7 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
         page={currentPage}
         limit={limit}
         makeBlankRow={makeBlankRow}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onExport={handleExport}
         isExporting={isExporting}
