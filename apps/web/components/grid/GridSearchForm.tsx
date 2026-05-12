@@ -33,9 +33,12 @@ type Props = {
  * 도메인 GridContainer는 children에 <GridFilterField>로 감싼 input/select를 전달.
  *
  * **공통 그리드 규칙 — 조회 시 미저장 변경 폐기 (2026-05-12 자동화):**
- * `onResetGrid` prop(required)을 통해 [조회] 클릭 즉시 dirty/new/deleted 행을
- * 사용자 확인 없이 폐기한다. 이후 `onSearch`가 서버에서 새 데이터를 fetch하고
- * `grid.reset(serverRows)` / `DataGrid` 내부 reset이 최종 상태를 덮어쓴다.
+ * `onResetGrid` prop(optional, 권장)을 통해 [조회] 클릭 즉시 dirty/new/deleted
+ * 행을 사용자 확인 없이 폐기한다. 컨테이너가 grid 상태를 외부에서 보유하면
+ * `grid.discardChanges`를 그대로 전달. 외부 모델 없이 서버 reload만 의존하는
+ * 컨테이너는 생략 가능하나, 이 경우 dirty 행은 [조회] 후에도 잔존한다. 이후
+ * `onSearch`가 서버에서 새 데이터를 fetch하고 `grid.reset(serverRows)` /
+ * `DataGrid` 내부 reset이 최종 상태를 덮어쓴다.
  *
  * 컨테이너 wire 패턴:
  * - useGridState 직접 보유: `onResetGrid={grid.discardChanges}`

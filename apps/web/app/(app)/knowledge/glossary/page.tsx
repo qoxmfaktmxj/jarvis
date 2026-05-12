@@ -30,10 +30,8 @@ export default async function GlossaryPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge · Glossary"
-        title="Glossary"
-        description="Company-wide terminology reference"
-      />
+               title="Glossary"
+             />
 
       {/* Alphabet quick-nav */}
       {letters.length > 0 && (

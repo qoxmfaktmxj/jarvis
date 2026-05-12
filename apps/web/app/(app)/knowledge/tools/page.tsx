@@ -8,6 +8,7 @@ import { PageHeader } from '@/components/patterns/PageHeader';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { Wrench } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export const dynamic = 'force-dynamic';
 
@@ -17,16 +18,14 @@ export default async function ToolsHubPage() {
   const { data: pages } = await getKnowledgePages(session.workspaceId, session.permissions ?? [], {
     pageType: 'tool-guide',
     publishStatus: 'published',
-    limit: 50,
+    limit: DEFAULT_PAGE_SIZE,
   });
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge · Tools"
-        title="Tool Guides"
-        description="How-to guides for company tools"
-      />
+               title="Tool Guides"
+             />
 
       {pages.length === 0 ? (
         <EmptyState

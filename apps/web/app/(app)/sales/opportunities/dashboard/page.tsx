@@ -43,10 +43,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Opportunities"
-        title="영업기회현황"
-        description="단계 분포 + 월별 신규 영업기회."
-      />
+               title="영업기회현황"
+             />
       <KPICards kpis={data.kpis} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <StepDistributionChart data={byStepWithNames} />

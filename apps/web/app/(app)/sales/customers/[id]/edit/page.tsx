@@ -25,10 +25,8 @@ export default async function CustomerEditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Customers"
-        title={customer.custNm}
-        description="고객사 정보를 수정합니다."
-      />
+               title={customer.custNm}
+             />
       <div className="grid grid-cols-[1fr_320px] gap-6">
         <CustomerEditForm customer={customer} />
         <CustomerDetailSidebar customerId={customer.id} customerName={customer.custNm} />

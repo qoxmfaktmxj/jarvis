@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { CustomerContactsGridContainer } from "./_components/CustomerContactsGridContainer";
 import { listCustomerContacts } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -25,7 +26,7 @@ export default async function SalesCustomerContactsPage({
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listCustomerContacts({
     page,
@@ -43,10 +44,8 @@ export default async function SalesCustomerContactsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Customer Contacts"
-        title="고객담당자"
-        description="고객사 측 담당자(컨택) 마스터를 관리합니다."
-      />
+               title="고객담당자"
+             />
       <CustomerContactsGridContainer
         rows={initialRows}
         total={initialTotal}

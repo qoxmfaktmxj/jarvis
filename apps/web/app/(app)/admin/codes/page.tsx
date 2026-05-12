@@ -36,10 +36,8 @@ export default async function AdminCodesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Codes"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <CodesPageClient
         initialGroups={initialGroups}
         initialGroupTotal={initialGroupTotal}

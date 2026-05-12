@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listMonthExpSga } from "../_lib/finance-actions";
 import { MonthExpSgaGridContainer } from "./_components/MonthExpSgaGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -21,7 +22,7 @@ export default async function SalesMonthExpSgaPage({
   const t = await getTranslations("Sales.MonthExpSga");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const listResult = await listMonthExpSga({
     page,
     limit,
@@ -31,7 +32,7 @@ export default async function SalesMonthExpSgaPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales / Finance" title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")}/>
       <MonthExpSgaGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

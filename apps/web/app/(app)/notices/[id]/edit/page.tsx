@@ -39,10 +39,8 @@ export default async function EditNoticePage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-        eyebrow="Notice · Edit"
-        title={t('edit')}
-        description={notice.title}
-      />
+               title={t('edit')}
+             />
       <EditNoticeClientShell
         noticeId={notice.id}
         initialData={{

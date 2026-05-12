@@ -51,8 +51,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   return (
     <main className="p-6">
       <PageHeader
-        eyebrow="Architecture"
-        title={t('title')}
+               title={t('title')}
         meta={
           serializedSnapshots.length > 0 ? (
             <SnapshotSelector

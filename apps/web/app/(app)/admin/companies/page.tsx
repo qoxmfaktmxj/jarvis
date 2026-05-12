@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { CompaniesGridContainer } from "./_components/CompaniesGridContainer";
 import { listCompanies } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -24,7 +25,7 @@ export default async function AdminCompaniesPage() {
   const session = await requirePageSession(PERMISSIONS.ADMIN_ALL, "/dashboard?error=forbidden");
 
   const [initialResult, objectDivOptions, groupOptions, industryOptions] = await Promise.all([
-    listCompanies({ page: 1, limit: 50 }),
+    listCompanies({ page: 1, limit: DEFAULT_PAGE_SIZE }),
     loadCodeOptions(session.workspaceId, "C10100"),
     loadCodeOptions(session.workspaceId, "C10002"),
     loadCodeOptions(session.workspaceId, "C10005"),
@@ -37,10 +38,8 @@ export default async function AdminCompaniesPage() {
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Companies"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <CompaniesGridContainer
         initial={initialRows}
         total={initialTotal}

@@ -26,10 +26,8 @@ export default async function FAQHubPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge · FAQ"
-        title="FAQ"
-        description="Frequently asked questions"
-      />
+               title="FAQ"
+             />
 
       {pages.length === 0 ? (
         <EmptyState

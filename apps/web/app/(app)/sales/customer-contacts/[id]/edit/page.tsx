@@ -25,10 +25,8 @@ export default async function CustomerContactEditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Customer Contacts"
-        title={contact.custName ?? contact.custMcd}
-        description="담당자 정보를 수정합니다."
-      />
+               title={contact.custName ?? contact.custMcd}
+             />
       <div className="grid grid-cols-[1fr_320px] gap-6">
         <ContactEditForm contact={contact} />
         <ContactDetailSidebar

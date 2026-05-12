@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listProjectBeacons } from "./actions";
 import { BeaconsGridContainer } from "./_components/BeaconsGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -23,7 +24,7 @@ export default async function ProjectBeaconsPage({
   const t = await getTranslations("Projects.Beacons");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listProjectBeacons({
     page,
@@ -36,7 +37,7 @@ export default async function ProjectBeaconsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker="Projects" title={t("title")} subtitle={t("description")} />
+      <PageHeader title={t("title")}/>
       <BeaconsGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

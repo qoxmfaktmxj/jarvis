@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { OpportunitiesGridContainer } from "./_components/OpportunitiesGridContainer";
 import { listOpportunities } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -27,7 +28,7 @@ export default async function SalesOpportunitiesPage({
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const filters = {
     q: sp.q,
     bizStepCode: sp.bizStepCode,
@@ -50,10 +51,8 @@ export default async function SalesOpportunitiesPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Opportunities"
-        title="영업기회"
-        description="영업기회(BizOp) 마스터를 관리합니다."
-      />
+               title="영업기회"
+             />
       <OpportunitiesGridContainer
         initial={initialRows}
         total={initialTotal}

@@ -60,7 +60,6 @@
     "Infra": {
       "Licenses": {
         "title": "인프라 라이센스",
-        "description": "회사별 환경별 모듈 라이센스를 관리합니다.",
         "columns": {
           "company": "회사",
           "symd": "시작일",
@@ -106,7 +105,6 @@
     },
     "Users": {
       "title": "사용자 관리",
-      "description": "사내 사용자와 권한을 관리합니다.",
       "searchPlaceholder": "사번·이름·이메일 검색",
       "addUser": "추가",
       "columns": {
@@ -180,7 +178,6 @@
     },
     "Audit": {
       "title": "감사 로그",
-      "description": "모든 관리자 및 데이터 변경 작업의 불변 기록.",
       "filters": {
         "action": "작업",
         "actionPlaceholder": "CREATE / UPDATE / DELETE",
@@ -207,7 +204,6 @@
     },
     "Menus": {
       "title": "메뉴 설정",
-      "description": "사이드바·CommandPalette에 표시되는 메뉴와 권한 매핑을 관리합니다.",
       "duplicates": "중복된 메뉴 코드가 있습니다: {codes}",
       "saveSuccess": "저장되었습니다.",
       "saveError": "저장 중 오류가 발생했습니다.",
@@ -292,7 +288,6 @@
     },
     "Organizations": {
       "title": "조직",
-      "description": "조직 계층 구조를 관리합니다.",
       "addRoot": "+ 최상위 조직 추가",
       "save": "저장",
       "cancel": "취소",
@@ -300,7 +295,6 @@
     },
     "Codes": {
       "title": "공통코드관리",
-      "description": "그룹코드와 세부코드를 관리합니다.",
       "groupSection": {
         "title": "그룹코드 관리",
         "filter": {
@@ -323,7 +317,7 @@
           "status": "상태",
           "code": "그룹코드",
           "name": "코드명",
-          "description": "코드설명",
+          "description": "설명",
           "descriptionHint": "(개행: Enter)",
           "businessDiv": "업무구분",
           "kind": "구분",
@@ -380,7 +374,6 @@
     },
     "Companies": {
       "title": "회사관리",
-      "description": "고객사·외부 파트너·인프라를 포함한 회사 마스터를 관리합니다.",
       "searchPlaceholder": "회사명 또는 코드 검색",
       "total": "전체 {count}건",
       "actions": {
@@ -476,7 +469,6 @@
     },
     "WikiReviewQueue": {
       "title": "위키 리뷰 큐",
-      "description": "위키 자동·수동 이벤트 검토 대기열 — {count}건.",
       "empty": "표시할 리뷰 항목이 없습니다.",
       "approve": "승인",
       "reject": "거절",
@@ -518,7 +510,6 @@
     },
     "SearchAnalytics": {
       "title": "검색 분석",
-      "description": "쿼리 수, 무결과 비율, 인기 검색어를 분석합니다.",
       "searchesToday": "오늘 검색 수",
       "zeroResultRate": "무결과 비율",
       "zeroResultDesc": "결과 없는 쿼리 비율",
@@ -536,7 +527,6 @@
     },
     "Settings": {
       "title": "설정",
-      "description": "워크스페이스 수준의 설정.",
       "workspaceCode": "워크스페이스 코드",
       "workspaceCodeNote": "코드는 생성 후 변경할 수 없습니다.",
       "workspaceName": "워크스페이스 이름",
@@ -616,7 +606,6 @@
   },
   "Profile": {
     "title": "프로필",
-    "description": "계정 정보 및 개인 빠른 메뉴 순서를 관리합니다.",
     "UserInfo": {
       "title": "사용자 정보",
       "name": "이름",
@@ -639,7 +628,6 @@
   },
   "Projects": {
     "title": "프로젝트",
-    "description": "인프라 기록 및 접속 메타데이터를 관리합니다 (전체 {total}개)",
     "registerProject": "프로젝트 등록",
     "searchPlaceholder": "프로젝트 이름으로 검색",
     "allConnectTypes": "전체 접속 방식",
@@ -647,9 +635,23 @@
     "hasDev": "개발 환경 있음",
     "applyFilters": "필터 적용",
     "empty": "프로젝트가 없습니다.",
+    "columns": {
+      "company": "회사",
+      "name": "프로젝트명",
+      "status": "상태",
+      "owner": "담당자",
+      "prodConnectType": "운영 접속",
+      "prodDomainUrl": "운영 도메인",
+      "devConnectType": "개발 접속",
+      "devDomainUrl": "개발 도메인",
+      "description": "설명",
+      "updatedAt": "수정일"
+    },
+    "filters": {
+      "reset": "초기화"
+    },
     "create": {
-      "title": "프로젝트 등록",
-      "description": "운영 컨텍스트, 소유권, 보안 접속 참조 정보를 입력하세요."
+      "title": "프로젝트 등록"
     },
     "detail": {
       "deployGuide": "배포 가이드",
@@ -689,7 +691,6 @@
     },
     "Beacons": {
       "title": "비콘관리",
-      "description": "프로젝트 반출 비콘과 담당자 이력을 관리합니다.",
       "searchPlaceholder": "비콘번호·프로젝트명 검색",
       "filters": {
         "projectCode": "프로젝트코드",
@@ -699,7 +700,6 @@
     },
     "History": {
       "title": "프로젝트수행이력관리",
-      "description": "프로젝트 수행 인력, 기간, 역할과 근무 이력을 관리합니다.",
       "searchPlaceholder": "사번·프로젝트·고객사 검색",
       "filters": {
         "periodFrom": "근무시작",
@@ -710,7 +710,6 @@
     },
     "Modules": {
       "title": "프로젝트모듈관리",
-      "description": "프로젝트별 담당 모듈 배정을 관리합니다.",
       "searchPlaceholder": "사번·프로젝트·모듈 검색",
       "filters": {
         "employee": "사번",
@@ -911,7 +910,6 @@
       "environment": "환경",
       "sensitivity": "민감도",
       "status": "상태",
-      "description": "설명",
       "descriptionPlaceholder": "시스템 목적, 비즈니스 오너, 운영 노트를 기술하세요.",
       "techStack": "기술 스택",
       "techStackPlaceholder": "Next.js, PostgreSQL, Redis",
@@ -1051,7 +1049,6 @@
   "WikiIngest": {
     "manual": {
       "title": "수동 입력",
-      "description": "파일 업로드 대신 텍스트를 직접 붙여넣어 위키 수집 파이프라인에 전달합니다.",
       "sensitivity": {
         "PUBLIC": "전체 공개",
         "INTERNAL": "내부 전용",
@@ -1301,7 +1298,7 @@
       }
     },
     "validation": {
-      "hourlyMustBeSingleDay": "시간차는 같은 날짜 안에서만 신청할 수 있습니다. 첫 일자({date})로 자동 조정합니다.",
+      "singleDayOnly": "{label}는 같은 날짜 안에서만 신청할 수 있습니다. 첫 일자({date})로 자동 조정합니다.",
       "timeOrderInvalid": "종료 시간이 시작 시간보다 빠를 수 없습니다.",
       "timeRangeMin": "최소 1시간 이상 신청해야 합니다.",
       "timeRangeMax": "한 번에 최대 8시간까지 신청할 수 있습니다.",
@@ -1627,7 +1624,6 @@
     },
     "Opportunities": {
       "title": "영업기회",
-      "description": "영업기회를 관리하고 단계별로 추적합니다.",
       "columns": {
         "bizOpNm": "영업기회명",
         "customerName": "고객사명",
@@ -1672,7 +1668,6 @@
     },
     "Activities": {
       "title": "영업활동",
-      "description": "고객 접촉 및 활동을 기록합니다.",
       "columns": {
         "bizActNm": "활동명",
         "opportunity": "영업기회",
@@ -1717,7 +1712,6 @@
     },
     "Dashboard": {
       "title": "영업기회현황",
-      "description": "단계 분포 + 월별 신규 영업기회.",
       "salesTrend": "매출 트렌드 (다년 비교)",
       "noSalesData": "매출 트렌드 데이터 없음",
       "noOpIncomeData": "영업이익 데이터 없음",
@@ -1735,7 +1729,6 @@
     },
     "Customers": {
       "title": "고객사관리",
-      "description": "고객사 마스터 정보를 관리합니다.",
       "columns": {
         "custCd": "고객코드",
         "custNm": "고객명",
@@ -1790,7 +1783,6 @@
     },
     "CustomerContacts": {
       "title": "담당자관리",
-      "description": "고객사별 담당자 연락처를 관리합니다.",
       "columns": {
         "custMcd": "마스터코드",
         "custName": "이름",
@@ -1841,7 +1833,6 @@
     },
     "ProductTypes": {
       "title": "제품군관리",
-      "description": "영업 제품 유형 마스터를 관리합니다.",
       "columns": {
         "productCd": "제품코드",
         "productNm": "제품명",
@@ -1852,7 +1843,6 @@
     },
     "ProductCostMapping": {
       "title": "제품-코스트 매핑",
-      "description": "제품군별 코스트 단가와 적용 기간을 관리합니다.",
       "filters": {
         "productType": "제품군",
         "productTypeAll": "전체",
@@ -1873,7 +1863,6 @@
     },
     "MailPersons": {
       "title": "메일담당자",
-      "description": "영업·인사 메일 수신 담당자를 관리합니다.",
       "columns": {
         "sabun": "사번",
         "name": "이름",
@@ -1892,21 +1881,17 @@
       }
     },
     "Companies": {
-      "title": "영업 회사 관리",
-      "description": "영업 모듈에서 사용하는 회사 마스터를 관리합니다."
+      "title": "영업 회사 관리"
     },
     "PlanViewPermissions": {
-      "title": "계획 권한 관리",
-      "description": "계획 데이터의 사용자별 R/W 권한을 관리합니다."
+      "title": "계획 권한 관리"
     },
     "ContractUploads": {
       "title": "계약 업로드",
-      "description": "계약 관련 파일을 업로드하고 이력을 관리합니다.",
       "downloadTemplate": "템플릿 다운로드"
     },
     "Contracts": {
       "title": "계약 관리",
-      "description": "영업 계약 마스터를 관리합니다.",
       "columns": {
         "contNm": "계약명",
         "custNm": "고객사명",
@@ -1928,7 +1913,6 @@
     },
     "ContractMonths": {
       "title": "계약 월별",
-      "description": "계약별 월별 계획·예상·실적 데이터를 관리합니다.",
       "columns": {
         "contractId": "계약ID",
         "ym": "년월",
@@ -1947,7 +1931,6 @@
     },
     "ContractServices": {
       "title": "서비스 인력",
-      "description": "계약별 배치된 서비스 인력을 관리합니다.",
       "columns": {
         "contractId": "계약ID",
         "pjtCd": "프로젝트코드",
@@ -1967,7 +1950,6 @@
     },
     "Freelancers": {
       "title": "프리랜서투입현황",
-      "description": "프리랜서 투입 기간, 귀속년월, 업종별 지급총액을 관리합니다.",
       "filters": {
         "q": "사번/성명",
         "qPlaceholder": "사번·성명·프로젝트",
@@ -1998,7 +1980,6 @@
     },
     "CloudPeopleBase": {
       "title": "인원단가 기준관리",
-      "description": "계약별 인원구분과 계산구분의 월단가 기준을 관리합니다.",
       "filters": {
         "q": "검색어",
         "qPlaceholder": "계약·프로젝트·고객코드",
@@ -2032,7 +2013,6 @@
     },
     "CloudPeopleCalc": {
       "title": "인원단가현황",
-      "description": "계약별 월 인원수와 인원단가 산출 금액을 관리합니다.",
       "filters": {
         "q": "검색어",
         "qPlaceholder": "계약코드·비고",
@@ -2071,7 +2051,6 @@
     "Charts": {
       "Marketing": {
         "title": "영업 마케팅 차트",
-        "description": "기준월의 영업활동 유형별 건수와 상품 유형별 계약예상금액을 집계합니다.",
         "activityByType": "활동 유형별 건수",
         "productMix": "제품군별 분포",
         "filters": {
@@ -2082,7 +2061,6 @@
       },
       "AdminPerf": {
         "title": "관리자 실적 차트",
-        "description": "조직별 PLAN/ACTUAL/FORECAST를 연(월별) 또는 분기 단위로 비교합니다.",
         "stackedTitle": "조직별 PLAN / ACTUAL / FORECAST",
         "filters": {
           "year": "회계연도",
@@ -2092,7 +2070,6 @@
       },
       "PlanPerf": {
         "title": "계획대비 실적 차트",
-        "description": "단년도 월별 계획·실적·전망 비교 (조합형 차트).",
         "filters": {
           "year": "회계연도",
           "org": "조직",
@@ -2101,7 +2078,6 @@
       },
       "Trend": {
         "title": "매출/이익 추이 차트",
-        "description": "다년도 월별 추이 — 탭으로 매출과 영업이익을 전환합니다.",
         "tabs": {
           "SALES": "매출",
           "GROSS_PROFIT": "총이익",
@@ -2109,12 +2085,10 @@
         }
       },
       "Dashboard": {
-        "title": "영업본부 대시보드",
-        "description": "매출 트렌드 · 영업단계 분포 · 영업이익 PLAN/ACTUAL/FORECAST · BA 통합 보드."
+        "title": "영업본부 대시보드"
       },
       "PlanPerfUpload": {
         "title": "계획/실적전망 업로드",
-        "description": "차트(관리자 실적·계획대비 실적·추이·대시보드)가 사용하는 sales_plan_perf raw 데이터를 입력합니다. 인라인 편집 또는 Excel 업로드.",
         "downloadTemplate": "템플릿 다운로드",
         "templateBtn": "템플릿 다운로드",
         "uploadBtn": "Excel 업로드",
@@ -2171,7 +2145,6 @@
     },
     "Purchases": {
       "title": "매입관리",
-      "description": "계약별 매입 내역과 프로젝트 배부 금액을 관리합니다.",
       "filters": {
         "q": "검색어",
         "qPlaceholder": "계약번호/계약명/매입처",
@@ -2217,7 +2190,6 @@
     },
     "TaxBills": {
       "title": "세금계산서",
-      "description": "계약 매출 세금계산서와 전표 대상 및 결과를 관리합니다.",
       "filters": {
         "q": "검색어",
         "qPlaceholder": "계약번호/계약명/거래처",
@@ -2248,7 +2220,6 @@
     },
     "MonthExpSga": {
       "title": "월별 경비/판관비",
-      "description": "월별 코스트코드 기준 경비와 판관비를 관리합니다.",
       "filters": {
         "ym": "기준월",
         "costCd": "코스트코드"
@@ -2265,7 +2236,6 @@
     },
     "PlanDivCosts": {
       "title": "계획배부비",
-      "description": "코스트코드별 계획/실적/수행 배부 금액을 관리합니다.",
       "filters": {
         "q": "코스트코드",
         "qPlaceholder": "코스트코드 검색",
@@ -2366,7 +2336,6 @@
   },
   "Infra": {
     "title": "인프라 구성",
-    "description": "회사 · 시스템 · 환경별 자산 구성을 관리합니다. 배포·운영 절차는 Runbook(위키)에서 작성하세요.",
     "tabs": {
       "grid": "자산 목록",
       "runbooks": "Runbook 문서"

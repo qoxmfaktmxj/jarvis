@@ -38,10 +38,8 @@ export default function AdminOrgsPage() {
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Organizations"
-        title={t('title')}
-        description={t('description')}
-        meta={<Button onClick={handleAddRoot}>{t('addRoot')}</Button>}
+               title={t('title')}
+               meta={<Button onClick={handleAddRoot}>{t('addRoot')}</Button>}
       />
       {loading ? (
         <p className="text-sm text-surface-500">Loading...</p>

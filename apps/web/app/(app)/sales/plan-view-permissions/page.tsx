@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { PlanViewPermissionsGridContainer } from "./_components/PlanViewPermissionsGridContainer";
 import { listPlanViewPermissions } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -22,7 +23,7 @@ export default async function SalesPlanViewPermissionsPage({
   const t = await getTranslations("Sales.PlanViewPermissions");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const filters = {
     q: params.q ?? "",
     contYear: params.contYear ?? "",
@@ -40,10 +41,8 @@ export default async function SalesPlanViewPermissionsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Plan View Permissions"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <PlanViewPermissionsGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}

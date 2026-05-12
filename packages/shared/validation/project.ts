@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE } from "../constants/pagination.js";
 
 export const projectAccessTypeSchema = z.enum(["db", "ssh", "vpn", "web", "api"]);
 export const projectEnvTypeSchema = z.enum(["prod", "dev"]);
 export const projectRoleSchema = z.enum(["VIEWER", "DEVELOPER", "MANAGER", "ADMIN"]);
+export const projectStatusSchema = z.enum(["active", "deprecated", "decommissioned"]);
+export const projectConnectTypeSchema = z.enum(["IP", "VPN", "VDI", "RE"]);
 
 export const createProjectAccessSchema = z.object({
   envType: projectEnvTypeSchema,
@@ -31,7 +34,7 @@ const auditFields = {
 
 const pageInput = {
   page: z.number().int().min(1).default(1),
-  limit: z.number().int().min(1).max(200).default(50)
+  limit: z.number().int().min(1).max(MAX_PAGE_SIZE).default(DEFAULT_PAGE_SIZE)
 };
 
 const saveOutputSchema = z.object({
@@ -239,3 +242,96 @@ export type ListProjectModulesInput = z.infer<typeof listProjectModulesInput>;
 export type ListProjectModulesOutput = z.infer<typeof listProjectModulesOutput>;
 export type SaveProjectModulesInput = z.infer<typeof saveProjectModulesInput>;
 export type SaveProjectModulesOutput = z.infer<typeof saveProjectModulesOutput>;
+
+// ===========================================================================
+// project — main DataGrid (2026-05-12)
+// ===========================================================================
+
+/**
+ * Row shape returned by list/save for the `/projects` DataGrid.
+ *
+ * **Intentional subset of `packages/db/schema/project.ts`.** Only the 10
+ * columns editable from the grid (companyId/name/status/ownerId/description/
+ * prod{Connect,Domain}/dev{Connect,Domain}) are modelled here. The fuller
+ * project record — `*RepositoryUrl/*DbDsn/*SrcPath/*ClassPath/*Memo` for prod
+ * & dev, `knowledgePageId` — is edited via `/projects/[id]/edit` and
+ * `/projects/new` only. `saveProjects` inserts grid creates with those columns
+ * left at SQL default / NULL, which is intentional: the grid is for at-a-glance
+ * metadata, not full project provisioning.
+ */
+export const projectRow = z.object({
+  id: uuidString,
+  companyId: uuidString,
+  name: z.string().min(1).max(300),
+  status: projectStatusSchema.default("active"),
+  ownerId: uuidString.nullable(),
+  description: z.string().nullable(),
+  prodConnectType: projectConnectTypeSchema.nullable(),
+  prodDomainUrl: z.string().max(500).nullable(),
+  devConnectType: projectConnectTypeSchema.nullable(),
+  devDomainUrl: z.string().max(500).nullable(),
+  // audit (output-only timestamps)
+  createdAt: z.string().optional(),
+  updatedAt: z.string().nullable().optional(),
+});
+
+/** Row + join columns (companyName/ownerName) returned by list. */
+export const projectListRow = projectRow.extend({
+  companyName: z.string().nullable().optional(),
+  companyCode: z.string().nullable().optional(),
+  ownerName: z.string().nullable().optional(),
+});
+
+export const listProjectsInput = z.object({
+  q: z.string().trim().optional(),
+  status: projectStatusSchema.optional(),
+  connectType: projectConnectTypeSchema.optional(),
+  hasDev: z.boolean().optional(),
+  ...pageInput,
+});
+
+export const exportProjectsInput = listProjectsInput.omit({ page: true, limit: true });
+
+export const listProjectsOutput = z.object({
+  rows: z.array(projectListRow),
+  total: z.number().int().min(0),
+});
+
+export const projectCreateInput = projectRow.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const projectUpdateInput = z.object({
+  id: uuidString,
+  patch: projectRow
+    .omit({ id: true, createdAt: true, updatedAt: true })
+    .partial(),
+});
+
+export const saveProjectsInput = z.object({
+  creates: z.array(projectCreateInput).default([]),
+  updates: z.array(projectUpdateInput).default([]),
+  deletes: z.array(uuidString).default([]),
+});
+
+export const saveProjectsOutput = z.object({
+  ok: z.boolean(),
+  created: z.array(uuidString).optional(),
+  updated: z.array(uuidString).optional(),
+  deleted: z.array(uuidString).optional(),
+  errors: z
+    .array(z.object({ id: z.string().optional(), message: z.string() }))
+    .optional(),
+});
+
+export type ProjectRow = z.infer<typeof projectRow>;
+export type ProjectListRow = z.infer<typeof projectListRow>;
+export type ListProjectsInput = z.infer<typeof listProjectsInput>;
+export type ListProjectsOutput = z.infer<typeof listProjectsOutput>;
+export type ExportProjectsInput = z.infer<typeof exportProjectsInput>;
+export type ProjectCreateInput = z.infer<typeof projectCreateInput>;
+export type ProjectUpdateInput = z.infer<typeof projectUpdateInput>;
+export type SaveProjectsInput = z.infer<typeof saveProjectsInput>;
+export type SaveProjectsOutput = z.infer<typeof saveProjectsOutput>;

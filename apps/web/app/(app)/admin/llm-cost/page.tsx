@@ -40,10 +40,8 @@ export default async function LlmCostPage() {
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · LLM Cost"
-        title="LLM Cost — 최근 7일"
-        description="workspace × model 기준 집계. blocked = 예산 차단으로 기록된 호출 수."
-      />
+               title="LLM Cost — 최근 7일"
+             />
       <DataTableShell
         rowCount={rows.length}
         empty={

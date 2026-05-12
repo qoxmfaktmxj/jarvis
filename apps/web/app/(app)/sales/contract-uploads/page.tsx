@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractUploadsGridContainer } from "./_components/ContractUploadsGridContainer";
 import { listContractUploads, listUnifiedContractUploads } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -20,7 +21,7 @@ export default async function SalesContractUploadsPage({
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const filters = {
     q: params.q ?? "",
     ym: params.ym ?? "",
@@ -46,10 +47,8 @@ export default async function SalesContractUploadsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Contract Uploads"
-        title="계약 업로드 관리"
-        description="계약 계획/전망/실적 업로드 자료와 통합 검색 결과를 관리합니다."
-      />
+               title="계약 업로드 관리"
+             />
       <ContractUploadsGridContainer
         rows={uploads.ok ? uploads.rows : []}
         total={uploads.ok ? uploads.total : 0}

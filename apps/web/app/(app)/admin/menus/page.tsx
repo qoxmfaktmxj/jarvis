@@ -61,10 +61,8 @@ export default async function AdminMenusPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Menus"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <MenusPageClient
         initialMenus={initialMenus}
         initialMenuTotal={initialMenuTotal}

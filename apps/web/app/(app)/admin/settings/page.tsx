@@ -22,10 +22,8 @@ export default async function AdminSettingsPage() {
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Settings"
-        title={t('title')}
-        description={t('description')}
-      />
+               title={t('title')}
+             />
       {ws && <SettingsForm workspace={ws} />}
     </div>
   );

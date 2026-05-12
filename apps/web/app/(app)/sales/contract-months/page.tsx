@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractMonthsGridContainer } from "./_components/ContractMonthsGridContainer";
 import { listContractMonths } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -20,7 +21,7 @@ export default async function SalesContractMonthsPage({
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listContractMonths({
     page,
@@ -35,10 +36,8 @@ export default async function SalesContractMonthsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Contract Months"
-        title="계약 월별"
-        description="계약별 월별 계획·예상·실적 데이터를 관리합니다."
-      />
+               title="계약 월별"
+             />
       <ContractMonthsGridContainer
         rows={initialRows}
         total={initialTotal}

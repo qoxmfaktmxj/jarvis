@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listMaintenanceAction } from "./actions";
 import { MaintenanceTabsClient } from "./_components/MaintenanceTabsClient";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -34,7 +35,7 @@ export default async function MaintenanceAssignmentsPage() {
     hasPermission(session, PERMISSIONS.ADMIN_ALL);
 
   const [initialResult, contractTypeOptions] = await Promise.all([
-    listMaintenanceAction({ page: 1, limit: 50 }),
+    listMaintenanceAction({ page: 1, limit: DEFAULT_PAGE_SIZE }),
     loadCodeOptions(session.workspaceId, "C10020"),
   ]);
 
@@ -44,10 +45,8 @@ export default async function MaintenanceAssignmentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations · Maintenance"
-        title={t("title")}
-        description={t("subtitle")}
-      />
+               title={t("title")}
+             />
       <MaintenanceTabsClient
         initialRows={initialRows}
         initialTotal={initialTotal}

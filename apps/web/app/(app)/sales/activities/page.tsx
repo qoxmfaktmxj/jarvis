@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ActivitiesGridContainer } from "./_components/ActivitiesGridContainer";
 import { listActivities } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -37,7 +38,7 @@ export default async function SalesActivitiesPage({
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const filters = {
     q: sp.q,
     opportunityId: sp.opportunityId,
@@ -67,10 +68,8 @@ export default async function SalesActivitiesPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Activities"
-        title="영업활동"
-        description="영업활동(BizAct) 마스터를 관리합니다."
-      />
+               title="영업활동"
+             />
       <ActivitiesGridContainer
         initial={initialRows}
         total={initialTotal}

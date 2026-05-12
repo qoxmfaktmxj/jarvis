@@ -5,6 +5,7 @@ import {
   isSecretRef,
   type SecretResolver
 } from "@jarvis/secret";
+import type { ProjectListRow } from "@jarvis/shared/validation/project";
 import { and, count, desc, eq, ilike, isNotNull, or } from "drizzle-orm";
 
 type ProjectsDb = typeof db;
@@ -63,6 +64,106 @@ type ListProjectsParams = {
   pageSize?: number;
   database?: ProjectsDb;
 };
+
+type ListProjectsForGridParams = {
+  workspaceId: string;
+  status?: "active" | "deprecated" | "decommissioned";
+  connectType?: "IP" | "VPN" | "VDI" | "RE";
+  q?: string;
+  page: number;
+  limit: number;
+  database?: ProjectsDb;
+};
+
+/**
+ * Grid-shaped list query for the `/projects` DataGrid.
+ * Returns `{ rows, total }` matching `ProjectListRow` (project columns + join
+ * companyName/code/ownerName). Separate from `listProjects` which returns a
+ * narrower `ProjectTableRow` used by legacy `<ProjectTable>` callers.
+ */
+export async function listProjectsForGrid({
+  workspaceId,
+  status,
+  connectType,
+  q,
+  page,
+  limit,
+  database = db,
+}: ListProjectsForGridParams): Promise<{ rows: ProjectListRow[]; total: number }> {
+  const safePage = Math.max(1, page);
+  const safeLimit = Math.min(100, Math.max(1, limit));
+  const conditions = [eq(project.workspaceId, workspaceId)];
+  if (status) conditions.push(eq(project.status, status));
+  if (connectType) {
+    conditions.push(
+      or(
+        eq(project.prodConnectType, connectType),
+        eq(project.devConnectType, connectType)
+      )!
+    );
+  }
+  if (q) {
+    conditions.push(
+      or(
+        ilike(project.name, `%${q}%`),
+        ilike(project.description, `%${q}%`)
+      )!
+    );
+  }
+  const where = and(...conditions);
+
+  const [rows, totalRows] = await Promise.all([
+    database
+      .select({
+        id: project.id,
+        companyId: project.companyId,
+        companyCode: company.code,
+        companyName: company.name,
+        name: project.name,
+        status: project.status,
+        ownerId: project.ownerId,
+        ownerName: user.name,
+        description: project.description,
+        prodConnectType: project.prodConnectType,
+        prodDomainUrl: project.prodDomainUrl,
+        devConnectType: project.devConnectType,
+        devDomainUrl: project.devDomainUrl,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+      })
+      .from(project)
+      .leftJoin(company, eq(project.companyId, company.id))
+      .leftJoin(user, eq(project.ownerId, user.id))
+      .where(where)
+      .orderBy(desc(project.updatedAt))
+      .limit(safeLimit)
+      .offset((safePage - 1) * safeLimit),
+    database.select({ total: count() }).from(project).where(where),
+  ]);
+
+  const total = Number(totalRows[0]?.total ?? 0);
+
+  return {
+    rows: rows.map((r) => ({
+      id: r.id,
+      companyId: r.companyId,
+      companyCode: r.companyCode ?? null,
+      companyName: r.companyName ?? null,
+      name: r.name,
+      status: (r.status as "active" | "deprecated" | "decommissioned") ?? "active",
+      ownerId: r.ownerId ?? null,
+      ownerName: r.ownerName ?? null,
+      description: r.description ?? null,
+      prodConnectType: (r.prodConnectType as "IP" | "VPN" | "VDI" | "RE" | null) ?? null,
+      prodDomainUrl: r.prodDomainUrl ?? null,
+      devConnectType: (r.devConnectType as "IP" | "VPN" | "VDI" | "RE" | null) ?? null,
+      devDomainUrl: r.devDomainUrl ?? null,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt ? r.updatedAt.toISOString() : null,
+    })),
+    total,
+  };
+}
 
 type CreateProjectInput = {
   companyId: string;

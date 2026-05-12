@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listCloudPeopleCalc } from "./actions";
 import { CloudPeopleCalcGridContainer } from "./_components/CloudPeopleCalcGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -20,7 +21,7 @@ export default async function SalesCloudPeopleCalcPage({ searchParams }: { searc
   const t = await getTranslations("Sales.CloudPeopleCalc");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const result = await listCloudPeopleCalc({
     page,
     limit,
@@ -33,7 +34,7 @@ export default async function SalesCloudPeopleCalcPage({ searchParams }: { searc
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales · People" title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")}/>
       <CloudPeopleCalcGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}

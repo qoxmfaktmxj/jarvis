@@ -14,12 +14,13 @@ import { Pagination } from './_components/Pagination';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { DataTableShell } from '@/components/patterns/DataTableShell';
 import { EmptyState } from '@/components/patterns/EmptyState';
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 const STATUS_VALUES = ['pending', 'approved', 'rejected', 'deferred', 'all'] as const;
 type StatusValue = (typeof STATUS_VALUES)[number];
 type KindValue = ReviewKind | 'all';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 interface ReviewQueuePageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -92,10 +93,8 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Review Queue"
-        title={t('title')}
-        description={t('descriptionPending', { count: total })}
-      />
+               title={t('title')}
+             />
 
       <DataTableShell
         rowCount={items.length}

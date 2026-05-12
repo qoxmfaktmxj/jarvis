@@ -5,6 +5,7 @@ import { getOrgTree, getCodesByGroup } from "@/lib/queries/admin";
 import { listUsers } from "./actions";
 import { UsersGridContainer } from "./_components/UsersGridContainer";
 import { PageHeader } from "@/components/patterns/PageHeader";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 function flattenTree(
   nodes: Array<{ id: string; name: string; children: typeof nodes }>,
@@ -38,7 +39,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
       q: initialFilters.q || undefined,
       orgId: initialFilters.orgId || undefined,
       page: 1,
-      limit: 50,
+      limit: DEFAULT_PAGE_SIZE,
     }),
     getOrgTree(session.workspaceId),
     getCodesByGroup(session.workspaceId, "POSITION"),
@@ -48,10 +49,8 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Users"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <UsersGridContainer
         initialRows={users.ok ? users.rows : []}
         initialTotal={users.ok ? users.total : 0}

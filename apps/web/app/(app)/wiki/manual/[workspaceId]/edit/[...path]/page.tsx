@@ -105,10 +105,8 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
       </Alert>
 
       <PageHeader
-        eyebrow="Wiki · Manual"
-        title={`wiki/manual/${slugNoExt}.md`}
-        description={`workspace: ${workspaceId}`}
-      />
+               title={`wiki/manual/${slugNoExt}.md`}
+             />
 
       <EditPageClientShell
         initialContent={initialContent}

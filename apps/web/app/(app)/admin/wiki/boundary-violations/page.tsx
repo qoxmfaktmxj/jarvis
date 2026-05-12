@@ -15,8 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { DataTableShell } from "@/components/patterns/DataTableShell";
 import { EmptyState } from "@/components/patterns/EmptyState";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 interface BoundaryViolationPayload {
   kind?: "llm_wrote_manual" | "human_wrote_auto" | string;
@@ -71,10 +72,8 @@ export default async function BoundaryViolationsPage() {
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Wiki Boundary"
-        title="Wiki 경계 위반"
-        description={`LLM이 wiki/manual/**을, 사람이 wiki/auto/**을 건드린 커밋 기록. 최근 ${PAGE_SIZE}건.`}
-      />
+               title="Wiki 경계 위반"
+             />
 
       <DataTableShell
         rowCount={rows.length}

@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import type { MaintenanceAssignmentRow } from "@jarvis/shared/validation/maintenance";
-import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 import {
   listMaintenanceAction,
   saveMaintenanceAction,

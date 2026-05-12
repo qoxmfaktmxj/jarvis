@@ -13,10 +13,8 @@ export default async function ManualIngestPage() {
   return (
     <div className="container mx-auto max-w-3xl py-8">
       <PageHeader
-        eyebrow="Wiki · Ingest"
-        title={t('title')}
-        description={t('description')}
-      />
+               title={t('title')}
+             />
       <ManualIngestForm />
     </div>
   );

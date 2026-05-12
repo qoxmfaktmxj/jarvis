@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { CustomersGridContainer } from "./_components/CustomersGridContainer";
 import { listCustomers } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -26,7 +27,7 @@ export default async function SalesCustomersPage({
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const filters = {
     custNm: sp.custNm,
     custKindCd: sp.custKindCd,
@@ -49,10 +50,8 @@ export default async function SalesCustomersPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Customers"
-        title="고객사관리"
-        description="외부 거래처(고객사) 마스터를 관리합니다."
-      />
+               title="고객사관리"
+             />
       <CustomersGridContainer
         rows={initialRows}
         total={initialTotal}

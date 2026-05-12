@@ -74,10 +74,8 @@ export default async function NoticeDetailPage({ params }: Props) {
       )}
 
       <PageHeader
-        eyebrow="Notice"
-        title={notice.title}
-        description={undefined}
-        meta={
+               title={notice.title}
+               meta={
           <div className="flex items-center gap-2">
             {canEdit && (
               <Button asChild variant="outline">

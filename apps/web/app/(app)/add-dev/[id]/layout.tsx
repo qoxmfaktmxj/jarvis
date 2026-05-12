@@ -31,8 +31,7 @@ export default async function AddDevDetailLayout({
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Add-Dev"
-        title={title}
+               title={title}
       />
       <AddDevTabs id={id} />
       <div>{children}</div>

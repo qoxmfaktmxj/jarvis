@@ -37,10 +37,8 @@ export default async function KnowledgePageView({ params }: Props) {
       </div>
 
       <PageHeader
-        eyebrow="Knowledge"
-        title={page.title}
-        description={page.summary ?? undefined}
-      />
+               title={page.title}
+             />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
         <article className="min-w-0">

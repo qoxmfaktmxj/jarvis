@@ -22,8 +22,9 @@ import { DataTableShell } from "@/components/patterns/DataTableShell";
 import { EmptyState } from "@/components/patterns/EmptyState";
 
 import { ApprovalDialog } from "./_components/ApprovalDialog";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 const KIND_VALUES = [
   "all",
@@ -238,10 +239,8 @@ export default async function WikiReviewQueuePage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Wiki Review Queue"
-        title={t("title")}
-        description={t("description", { count: total })}
-      />
+               title={t("title")}
+             />
 
       <DataTableShell
         rowCount={rows.length}

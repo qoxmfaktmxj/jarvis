@@ -29,7 +29,7 @@ export default async function SalesChartsAdminPerfPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales · Charts" title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")}/>
       <AdminPerfFilters defaults={{ year, view, metric }} />
       {result.ok ? (
         <AdminPerfChart buckets={result.buckets} rows={result.rows} />

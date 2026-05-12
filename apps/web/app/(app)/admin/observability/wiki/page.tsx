@@ -291,10 +291,8 @@ export default async function WikiObservabilityPage() {
       <div className="space-y-6">
         <PageHeader
 
-          eyebrow="Admin · Wiki Observability"
-          title="Wiki 운영 모니터링"
-          description={`ingest 처리량, page-first 쿼리, commit 무결성, lint 결과 등 위키 파이프라인 건강 상태. Workspace: ${data.workspaceId}`}
-        />
+                   title="Wiki 운영 모니터링"
+                 />
 
         {/* Top KPIs */}
         <section className="grid grid-cols-1 gap-3 md:grid-cols-3">

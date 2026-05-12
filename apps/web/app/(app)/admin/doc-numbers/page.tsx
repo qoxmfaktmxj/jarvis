@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { DocNumbersGridContainer } from "./_components/DocNumbersGridContainer";
 import { listDocumentNumbersAction, listDocumentYearsAction } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export default async function DocNumbersPage() {
   const t = await getTranslations("DocNumbers.Page");
@@ -21,7 +22,7 @@ export default async function DocNumbersPage() {
     hasPermission(session, PERMISSIONS.ADMIN_ALL);
 
   const [initialResult, yearsResult] = await Promise.all([
-    listDocumentNumbersAction({ page: 1, limit: 50 }),
+    listDocumentNumbersAction({ page: 1, limit: DEFAULT_PAGE_SIZE }),
     listDocumentYearsAction(),
   ]);
 
@@ -32,10 +33,8 @@ export default async function DocNumbersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Document Numbers"
-        title={t("title")}
-        description={t("subtitle")}
-      />
+               title={t("title")}
+             />
       <DocNumbersGridContainer
         initial={initialRows}
         total={initialTotal}

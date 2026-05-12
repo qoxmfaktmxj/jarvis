@@ -4,6 +4,7 @@ import { getSession } from '@jarvis/auth/session';
 import { getAuditLogs } from '@/lib/queries/admin';
 import { AuditTable } from '@/components/admin/AuditTable';
 import { PageHeader } from '@/components/patterns/PageHeader';
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export default async function AdminAuditPage({
   searchParams,
@@ -22,17 +23,15 @@ export default async function AdminAuditPage({
     dateFrom:     params.dateFrom,
     dateTo:       params.dateTo,
     page:         params.page ? Number(params.page) : 1,
-    limit:        50,
+    limit:        DEFAULT_PAGE_SIZE,
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
 
-        eyebrow="Admin · Audit"
-        title={t('title')}
-        description={t('description')}
-      />
+               title={t('title')}
+             />
       <AuditTable initialData={data} meta={{ ...meta, limit: meta.limit ?? 50 }} />
     </div>
   );

@@ -51,10 +51,8 @@ export default async function ActivityEditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Activities"
-        title={result.activity.bizActNm}
-        description="영업활동 상세 내용을 수정합니다."
-      />
+               title={result.activity.bizActNm}
+             />
       <ActivityEditForm
         activity={result.activity}
         codeOptions={{

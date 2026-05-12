@@ -50,10 +50,8 @@ export default async function AddDevListPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker="Add-Dev"
-        title={t("title")}
-        subtitle={t("subtitle", { total: result.pagination.total })}
-        actions={
+               title={t("title")}
+               actions={
           canCreate ? (
             <Button asChild>
               <Link href="/add-dev/new">{t("newAddDev")}</Link>

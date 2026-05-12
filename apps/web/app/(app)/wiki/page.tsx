@@ -8,10 +8,11 @@ import type { WikiPageMeta } from '@/components/WikiPageView';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { WikiIndexSearch } from './_components/WikiIndexSearch';
 import { WikiIndexShell } from './_components/WikiIndexShell';
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export const dynamic = 'force-dynamic';
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 export default async function WikiHomePage({
   searchParams,
@@ -78,8 +79,7 @@ export default async function WikiHomePage({
     <WikiIndexShell workspaceId={workspaceId}>
       <div className="mx-auto max-w-6xl px-4 py-8">
         <PageHeader
-          kicker="Wiki"
-          title={t('title')}
+                   title={t('title')}
         />
 
         <WikiIndexSearch

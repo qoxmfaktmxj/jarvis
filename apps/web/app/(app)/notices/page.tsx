@@ -33,8 +33,7 @@ export default async function NoticesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
       <PageHeader
-        eyebrow="Notices"
-        title={t('title')}
+               title={t('title')}
         meta={
           canCreate ? (
             <Button asChild>

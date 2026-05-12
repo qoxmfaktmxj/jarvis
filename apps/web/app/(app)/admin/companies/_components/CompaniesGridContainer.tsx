@@ -21,7 +21,7 @@ import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import { useTabContext } from "@/components/layout/tabs/TabContext";
 import { pathnameToTabKey } from "@/components/layout/tabs/tab-key";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
-import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type Company = CompanyRow;
 type Option = { value: string; label: string };

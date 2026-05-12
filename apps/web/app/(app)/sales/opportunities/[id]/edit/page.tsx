@@ -39,10 +39,8 @@ export default async function OpportunityEditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Opportunities"
-        title={result.opportunity.bizOpNm}
-        description="영업기회 상세 내용을 수정합니다."
-      />
+               title={result.opportunity.bizOpNm}
+             />
       <OpportunityEditForm
         opportunity={result.opportunity}
         codeOptions={{

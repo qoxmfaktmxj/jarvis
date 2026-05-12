@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listProjectModules } from "./actions";
 import { ModulesGridContainer } from "./_components/ModulesGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -23,7 +24,7 @@ export default async function ProjectModulesPage({
   const t = await getTranslations("Projects.Modules");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listProjectModules({
     page,
@@ -36,7 +37,7 @@ export default async function ProjectModulesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker="Projects" title={t("title")} subtitle={t("description")} />
+      <PageHeader title={t("title")}/>
       <ModulesGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

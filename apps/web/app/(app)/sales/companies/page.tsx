@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { SalesCompaniesGridContainer } from "./_components/SalesCompaniesGridContainer";
 import { listSalesCompanies } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 async function loadCodeOptions(workspaceId: string, groupCode: string) {
   const rows = await db
@@ -26,7 +27,7 @@ export default async function SalesCompaniesPage() {
 
   const [initialResult, objectDivOptions, groupOptions, industryOptions] =
     await Promise.all([
-      listSalesCompanies({ page: 1, limit: 50 }),
+      listSalesCompanies({ page: 1, limit: DEFAULT_PAGE_SIZE }),
       loadCodeOptions(session.workspaceId, "C10100"),
       loadCodeOptions(session.workspaceId, "C10002"),
       loadCodeOptions(session.workspaceId, "C10005"),
@@ -40,10 +41,8 @@ export default async function SalesCompaniesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Companies"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <SalesCompaniesGridContainer
         initial={initialRows}
         total={initialTotal}

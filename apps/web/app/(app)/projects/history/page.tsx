@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listProjectHistory } from "./actions";
 import { HistoryGridContainer } from "./_components/HistoryGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -27,7 +28,7 @@ export default async function ProjectHistoryPage({
   const t = await getTranslations("Projects.History");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listProjectHistory({
     page,
@@ -44,7 +45,7 @@ export default async function ProjectHistoryPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker="Projects" title={t("title")} subtitle={t("description")} />
+      <PageHeader title={t("title")}/>
       <HistoryGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

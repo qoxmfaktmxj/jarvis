@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractServicesGridContainer } from "./_components/ContractServicesGridContainer";
 import { listContractServices } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -20,7 +21,7 @@ export default async function SalesContractServicesPage({
 
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const listResult = await listContractServices({
     page,
@@ -35,10 +36,8 @@ export default async function SalesContractServicesPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Contract Services"
-        title="서비스 인력"
-        description="계약 용역 인원 마스터를 관리합니다."
-      />
+               title="서비스 인력"
+             />
       <ContractServicesGridContainer
         rows={initialRows}
         total={initialTotal}

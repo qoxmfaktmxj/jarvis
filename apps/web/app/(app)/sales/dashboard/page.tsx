@@ -58,7 +58,7 @@ export default async function SalesDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales · Dashboard" title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")}/>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {trendRes.ok ? (
           <SalesTrendCard months={trendRes.months} series={trendRes.series} />

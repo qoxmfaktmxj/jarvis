@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ScheduleTabsClient } from "./_components/ScheduleTabsClient";
 import { listSchedulesAction } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export default async function SchedulePage() {
   const t = await getTranslations("Schedule.Page");
@@ -19,7 +20,7 @@ export default async function SchedulePage() {
 
   const initialResult = await listSchedulesAction({
     page: 1,
-    limit: 50,
+    limit: DEFAULT_PAGE_SIZE,
     ownOnly: true,
   });
 
@@ -29,10 +30,8 @@ export default async function SchedulePage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Operations · Schedule"
-        title={t("title")}
-        description={t("subtitle")}
-      />
+               title={t("title")}
+             />
       <ScheduleTabsClient
         initialRows={initialRows}
         initialTotal={initialTotal}

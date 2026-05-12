@@ -17,6 +17,7 @@ import { requirePageSession } from "@/lib/server/page-auth";
 import { listInfraSystems } from "@/lib/queries/infra-system";
 import { listCompanyOptions } from "@/lib/queries/infra-license";
 import { InfraSystemsGridContainer } from "./_components/InfraSystemsGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -35,7 +36,7 @@ export default async function InfraPage(props: {
   const dbType = typeof sp.dbType === "string" ? sp.dbType : "";
   const page =
     typeof sp.page === "string" ? Math.max(1, parseInt(sp.page, 10) || 1) : 1;
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
 
   const [listResult, companyOptions] = await Promise.all([
     listInfraSystems(session.workspaceId, {
@@ -52,10 +53,8 @@ export default async function InfraPage(props: {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Infra"
-        title={t("title")}
-        description={t("description")}
-      />
+               title={t("title")}
+             />
       <InfraSystemsGridContainer
         initialRows={listResult.rows}
         initialTotal={listResult.total}

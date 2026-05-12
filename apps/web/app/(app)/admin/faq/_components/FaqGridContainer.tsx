@@ -12,7 +12,7 @@ import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import type { ColumnDef, FilterDef } from "@/components/grid/types";
 import { NewFaqInlineForm } from "./NewFaqInlineForm";
-import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type Row = FaqEntryRow;
 type Option = { value: string; label: string };

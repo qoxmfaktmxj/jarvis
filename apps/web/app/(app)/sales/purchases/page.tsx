@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listPurchases } from "../_lib/finance-actions";
 import { PurchasesGridContainer } from "./_components/PurchasesGridContainer";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -22,7 +23,7 @@ export default async function SalesPurchasesPage({
   const t = await getTranslations("Sales.Purchases");
   const params = await searchParams;
   const page = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const listResult = await listPurchases({
     page,
     limit,
@@ -33,7 +34,7 @@ export default async function SalesPurchasesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales / Finance" title={t("title")} description={t("description")} />
+      <PageHeader title={t("title")}/>
       <PurchasesGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

@@ -27,7 +27,7 @@ export default async function WikiGraphPage() {
     console.error('[wiki/graph] loadWikiGraphData failed:', err);
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader eyebrow="Wiki · Graph" title={t('title')} />
+        <PageHeader title={t('title')} />
         <p className="text-sm text-destructive">{t('loadFailed')}</p>
       </div>
     );
@@ -36,7 +36,7 @@ export default async function WikiGraphPage() {
   if (loaded.nodes.length === 0) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader eyebrow="Wiki · Graph" title={t('title')} />
+        <PageHeader title={t('title')} />
         <p className="text-sm text-muted-foreground">
           {loaded.totalPublishedCount === 0
             ? t('emptyNoPages')
@@ -49,10 +49,8 @@ export default async function WikiGraphPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-        eyebrow="Wiki · Graph"
-        title={t('title')}
-        description={t('clickToNavigate')}
-      />
+               title={t('title')}
+             />
       {loaded.filteredOutCount > 0 ? (
         <p className="-mt-4 mb-4 text-xs text-muted-foreground">
           {t('filteredHint', { count: loaded.filteredOutCount })}

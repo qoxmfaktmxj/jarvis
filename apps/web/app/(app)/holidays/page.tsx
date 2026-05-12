@@ -15,10 +15,8 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
     <div className="mx-auto max-w-[1000px] px-9 py-7">
       <PageHeader
         stamp="Holidays"
-        kicker="Calendar"
-        title="공휴일 관리"
-        subtitle="토/일은 자동 처리되며, 법정 공휴일·대체휴일만 등록하세요."
-      />
+               title="공휴일 관리"
+             />
       <HolidaysGridContainer
         initialYear={year}
         initial={rows.map((r) => ({ id: r.id, date: r.date, name: r.name, note: r.note ?? null }))}

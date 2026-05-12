@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { MailPersonsGridContainer } from "./_components/MailPersonsGridContainer";
 import { listMailPersons } from "./actions";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type SearchParams = {
   page?: string;
@@ -19,7 +20,7 @@ export default async function SalesMailPersonsPage({
   await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const params = await searchParams;
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const page = Math.max(1, Number(params.page ?? 1));
 
   const listResult = await listMailPersons({
@@ -34,7 +35,7 @@ export default async function SalesMailPersonsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Sales · Mail Persons" title="메일담당자" description="영업·인사 메일 수신 담당자를 관리합니다." />
+      <PageHeader title="메일담당자"/>
       <MailPersonsGridContainer
         rows={initialRows}
         total={initialTotal}

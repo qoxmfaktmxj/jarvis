@@ -34,10 +34,8 @@ export default async function InfraSystemDetailPage(props: { params: Params }) {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Infra"
-        title={t("Detail.title", { systemName: row.systemName })}
-        description={row.companyName ?? ""}
-      />
+               title={t("Detail.title", { systemName: row.systemName })}
+             />
       <InfraSystemDetail row={row} />
       <RunbookEmbed
         wikiPageId={row.wikiPageId}

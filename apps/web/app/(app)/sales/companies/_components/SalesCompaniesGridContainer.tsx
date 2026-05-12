@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import { listSalesCompanies, saveSalesCompanies } from "../actions";
-import { DEFAULT_PAGE_SIZE } from "@jarvis/shared";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 type Option = { value: string; label: string };
 

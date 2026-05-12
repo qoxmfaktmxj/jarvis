@@ -23,10 +23,8 @@ export default async function PlanViewPerformanceDetailPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Plan View"
-        title={result.master.pjtNm ?? result.master.title ?? result.master.pjtCode}
-        description="전망/실적 월별 상세 데이터를 조회합니다."
-      />
+               title={result.master.pjtNm ?? result.master.title ?? result.master.pjtCode}
+             />
       <PlanViewPerfDetailView
         master={result.master}
         months={result.months}

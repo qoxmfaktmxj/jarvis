@@ -28,10 +28,8 @@ export default async function ContractEditPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Contracts"
-        title={contract.contNm ?? contract.legacyContNo ?? "(이름없음)"}
-        description={`계약번호: ${contract.legacyContNo ?? "-"}`}
-      />
+               title={contract.contNm ?? contract.legacyContNo ?? "(이름없음)"}
+             />
       <ContractEditForm contract={contract} />
     </div>
   );

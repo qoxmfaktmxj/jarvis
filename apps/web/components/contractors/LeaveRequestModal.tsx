@@ -96,8 +96,9 @@ export function LeaveRequestModal({
   }, [open, start, end]);
 
   const isMultiDay = start !== end;
-  const effectiveStart = type === "hourly" ? start : start;
-  const effectiveEnd = type === "hourly" ? start : end;
+  const isSingleDayType = type === "hourly" || type === "half_am" || type === "half_pm";
+  const effectiveStart = start;
+  const effectiveEnd = isSingleDayType ? start : end;
 
   const holSet = useMemo(() => new Set(holidays.map((h) => h.date)), [holidays]);
   const breakdown = useMemo(
@@ -179,12 +180,11 @@ export function LeaveRequestModal({
     }
   }
 
-  const periodLabel =
-    type === "hourly"
-      ? `${start}${isMultiDay ? "  ·  " + t("modal.applyToSingleDay", { date: start }) : ""}`
-      : isMultiDay
-        ? `${start} ~ ${end}`
-        : start;
+  const periodLabel = isSingleDayType
+    ? `${start}${isMultiDay ? "  ·  " + t("modal.applyToSingleDay", { date: start }) : ""}`
+    : isMultiDay
+      ? `${start} ~ ${end}`
+      : start;
 
   return (
     <Dialog open={open} onOpenChange={(v) => (submitting ? void 0 : onOpenChange(v))}>
@@ -198,7 +198,7 @@ export function LeaveRequestModal({
           <div className="text-(--fg-secondary)">{t("modal.applicantLabel")}</div>
           <div className="font-medium text-(--fg-primary)">{applicantName}</div>
           <div className="text-(--fg-secondary)">
-            {type === "hourly" ? t("modal.singleDayLabel") : t("modal.periodLabel")}
+            {isSingleDayType ? t("modal.singleDayLabel") : t("modal.periodLabel")}
           </div>
           <div className="font-medium text-(--fg-primary)">{periodLabel}</div>
           {type === "day_off" && isMultiDay ? (
@@ -253,6 +253,15 @@ export function LeaveRequestModal({
           </div>
         </div>
 
+        {isSingleDayType && isMultiDay ? (
+          <div className="rounded-md bg-(--status-warn-bg) px-3 py-2 text-[12px] text-(--status-warn-fg)">
+            {t("validation.singleDayOnly", {
+              label: t(`types.${type}` as Parameters<typeof t>[0]),
+              date: start,
+            })}
+          </div>
+        ) : null}
+
         {type === "hourly" ? (
           <div className="grid grid-cols-2 gap-3">
             <label className="text-[12px] text-(--fg-secondary)">
@@ -276,11 +285,6 @@ export function LeaveRequestModal({
             <div className="col-span-2 text-[11px] text-(--fg-muted)">
               {t("modal.timeZoneNote")}
             </div>
-            {isMultiDay ? (
-              <div className="col-span-2 rounded-md bg-(--status-warn-bg) px-3 py-2 text-[12px] text-(--status-warn-fg)">
-                {t("validation.hourlyMustBeSingleDay", { date: start })}
-              </div>
-            ) : null}
           </div>
         ) : null}
 

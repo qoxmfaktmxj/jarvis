@@ -28,10 +28,8 @@ export default async function ProjectDetailLayout({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Project"
-        title={project.name}
-        description={project.description ?? undefined}
-      />
+               title={project.name}
+             />
 
       <ProjectTabs projectId={projectId} />
       <div>{children}</div>

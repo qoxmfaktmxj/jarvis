@@ -18,6 +18,7 @@ import { requirePageSession } from "@/lib/server/page-auth";
 import { listCompanyOptions } from "@/lib/queries/infra-license";
 import { listInfraLicenses } from "./actions";
 import { InfraLicensesGrid } from "./_components/InfraLicensesGrid";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 /** Task 10이 INFRA_DEV_GB code_group을 seed하기 전까지 사용할 fallback. */
 const DEV_GB_FALLBACK = [
@@ -48,7 +49,7 @@ export default async function AdminInfraLicensesPage(props: { searchParams?: Sea
   const q = typeof sp.q === "string" ? sp.q : "";
   const page = typeof sp.page === "string" ? Math.max(1, parseInt(sp.page, 10) || 1) : 1;
 
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const [listResult, companyOptions, devGbOptions] = await Promise.all([
     listInfraLicenses({
       page,
@@ -66,10 +67,8 @@ export default async function AdminInfraLicensesPage(props: { searchParams?: Sea
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin · Infra · Licenses"
-        title="인프라 라이선스"
-        description="회사 × 환경(개발/스테이징/운영) 단위로 22 모듈 라이선스 활성 여부를 관리합니다."
-      />
+               title="인프라 라이선스"
+             />
       <InfraLicensesGrid
         initialRows={initialRows}
         initialTotal={initialTotal}

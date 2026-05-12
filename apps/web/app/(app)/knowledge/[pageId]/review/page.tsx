@@ -33,10 +33,8 @@ export default async function ReviewPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge · Review"
-        title={page.title}
-        description={page.pageType}
-        meta={
+               title={page.title}
+               meta={
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/knowledge/${pageId}`}>
               <ArrowLeft className="mr-1 h-4 w-4" /> Back to page

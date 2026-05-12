@@ -28,10 +28,8 @@ export default async function VersionHistoryPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-        eyebrow="Knowledge · History"
-        title="Version History"
-        description={page.title}
-        meta={
+               title="Version History"
+               meta={
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/knowledge/${pageId}`}>
               <ArrowLeft className="mr-1 h-4 w-4" /> Back to page

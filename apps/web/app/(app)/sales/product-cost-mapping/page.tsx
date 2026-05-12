@@ -10,6 +10,7 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
+import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 import {
   listCostMasterOptions,
   listProductTypeOptions,
@@ -27,7 +28,7 @@ export default async function SalesProductCostMappingPage({
   const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
 
   const sp = await searchParams;
-  const limit = 50;
+  const limit = DEFAULT_PAGE_SIZE;
   const page = Math.max(1, Number(sp.page ?? 1));
   const searchYmd = typeof sp.searchYmd === "string" ? sp.searchYmd : undefined;
   const searchCostNm = typeof sp.searchCostNm === "string" ? sp.searchCostNm : undefined;
@@ -47,10 +48,8 @@ export default async function SalesProductCostMappingPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Sales · Product Cost Mapping"
-        title="제품-코스트 매핑"
-        description="영업 제품군과 코스트 마스터의 기간별 매핑(TBIZ024 row)을 관리합니다."
-      />
+               title="제품-코스트 매핑"
+             />
       <ProductCostMappingGrid
         initialRows={initialRows}
         initialTotal={initialTotal}

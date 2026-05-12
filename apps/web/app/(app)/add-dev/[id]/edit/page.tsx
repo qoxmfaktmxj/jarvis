@@ -28,7 +28,7 @@ export default async function AddDevEditPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker="Add-Dev" title={`${t("title")} 수정`} />
+      <PageHeader title={`${t("title")} 수정`} />
       <AddDevForm
         mode="edit"
         id={id}
