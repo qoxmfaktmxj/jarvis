@@ -157,7 +157,7 @@ function rollCapy(prev?: CapyName): CapyName {
   return pick;
 }
 
-const CARD_HEIGHT = 140;
+const CARD_HEIGHT = 126;
 
 export function SidebarCapy() {
   const [name, setName] = useState<CapyName | null>(null);
@@ -201,16 +201,15 @@ export function SidebarCapy() {
         {/* Layer 3: particles */}
         <span aria-hidden className={`absolute inset-0 capy-particle-${scene.particles}`} />
 
-        {/* Capybara — float animation */}
+        {/* Capybara — float animation, centered */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 flex items-end justify-center"
-          style={{ paddingBottom: 24 }}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center"
         >
           <span className="capy-float">
             <Capy
               name={name}
-              size={70}
+              size={64}
               className="drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
             />
           </span>
