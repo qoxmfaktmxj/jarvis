@@ -38,9 +38,7 @@ export default async function EditNoticePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader
-               title={t('edit')}
-             />
+      <PageHeader title={t('edit')} />
       <EditNoticeClientShell
         noticeId={notice.id}
         initialData={{

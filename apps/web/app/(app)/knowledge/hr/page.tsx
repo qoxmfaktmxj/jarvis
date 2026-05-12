@@ -23,9 +23,7 @@ export default async function HRHubPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader
-               title="HR Policies"
-             />
+      <PageHeader title="HR Policies" />
 
       {pages.length === 0 ? (
         <EmptyState

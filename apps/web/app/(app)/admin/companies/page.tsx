@@ -36,10 +36,7 @@ export default async function AdminCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <CompaniesGridContainer
         initial={initialRows}
         total={initialTotal}

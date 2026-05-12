@@ -104,9 +104,7 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
         </div>
       </Alert>
 
-      <PageHeader
-               title={`wiki/manual/${slugNoExt}.md`}
-             />
+      <PageHeader title={`wiki/manual/${slugNoExt}.md`} />
 
       <EditPageClientShell
         initialContent={initialContent}

@@ -47,9 +47,7 @@ export default async function SalesProductCostMappingPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="제품-코스트 매핑"
-             />
+      <PageHeader title="제품-코스트 매핑" />
       <ProductCostMappingGrid
         initialRows={initialRows}
         initialTotal={initialTotal}

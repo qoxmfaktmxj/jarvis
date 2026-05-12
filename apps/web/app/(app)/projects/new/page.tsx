@@ -10,9 +10,7 @@ export default async function NewProjectPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <ProjectForm mode="create" />
     </div>
   );

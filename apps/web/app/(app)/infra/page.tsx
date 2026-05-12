@@ -52,9 +52,7 @@ export default async function InfraPage(props: {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <InfraSystemsGridContainer
         initialRows={listResult.rows}
         initialTotal={listResult.total}

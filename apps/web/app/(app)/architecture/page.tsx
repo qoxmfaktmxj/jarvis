@@ -51,13 +51,14 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   return (
     <main className="p-6">
       <PageHeader
-               title={t('title')}
+        title={t('title')}
         meta={
           serializedSnapshots.length > 0 ? (
             <SnapshotSelector
               snapshots={serializedSnapshots}
               currentId={current?.id ?? serializedSnapshots[0]!.id}
-            />
+            
+      />
           ) : null
         }
       />

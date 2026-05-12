@@ -34,7 +34,7 @@ export default async function SalesCloudPeopleBasePage({ searchParams }: { searc
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <CloudPeopleBaseGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}

@@ -117,14 +117,20 @@ function ProjectsGridInner({
           page: nextPage,
           limit,
         });
-        if (!("error" in res)) {
-          setRows(res.rows);
-          setTotal(res.total);
-          setPage(nextPage);
+        if ("error" in res) {
+          toast({
+            variant: "destructive",
+            title: tCommon("error") ?? "오류",
+            description: res.error,
+          });
+          return;
         }
+        setRows(res.rows);
+        setTotal(res.total);
+        setPage(nextPage);
       });
     },
-    [limit],
+    [limit, tCommon],
   );
 
   const columns: ColumnDef<ProjectListRow>[] = useMemo(

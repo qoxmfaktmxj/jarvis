@@ -91,10 +91,7 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
 
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title={t('title')}
-             />
+      <PageHeader title={t('title')} />
 
       <DataTableShell
         rowCount={items.length}

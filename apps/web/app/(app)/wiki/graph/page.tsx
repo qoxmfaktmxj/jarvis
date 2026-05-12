@@ -48,9 +48,7 @@ export default async function WikiGraphPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader
-               title={t('title')}
-             />
+      <PageHeader title={t('title')} />
       {loaded.filteredOutCount > 0 ? (
         <p className="-mt-4 mb-4 text-xs text-muted-foreground">
           {t('filteredHint', { count: loaded.filteredOutCount })}

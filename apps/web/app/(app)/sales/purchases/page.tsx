@@ -34,7 +34,7 @@ export default async function SalesPurchasesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <PurchasesGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

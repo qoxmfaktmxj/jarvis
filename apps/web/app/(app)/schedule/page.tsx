@@ -29,9 +29,7 @@ export default async function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <ScheduleTabsClient
         initialRows={initialRows}
         initialTotal={initialTotal}

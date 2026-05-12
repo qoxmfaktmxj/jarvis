@@ -44,9 +44,7 @@ export default async function MaintenanceAssignmentsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <MaintenanceTabsClient
         initialRows={initialRows}
         initialTotal={initialTotal}

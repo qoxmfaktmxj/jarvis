@@ -50,9 +50,7 @@ export default async function ActivityEditPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={result.activity.bizActNm}
-             />
+      <PageHeader title={result.activity.bizActNm} />
       <ActivityEditForm
         activity={result.activity}
         codeOptions={{

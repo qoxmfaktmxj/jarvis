@@ -27,7 +27,7 @@ export default async function SalesChartsPlanPerfPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <PlanPerfFilters defaults={{ year, metric }} />
       {result.ok ? (
         <PlanPerfChart

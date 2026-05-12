@@ -60,9 +60,7 @@ export default async function AdminMenusPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <MenusPageClient
         initialMenus={initialMenus}
         initialMenuTotal={initialMenuTotal}

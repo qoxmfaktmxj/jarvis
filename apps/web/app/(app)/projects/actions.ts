@@ -13,7 +13,7 @@
  * per (workspaceId, companyId) — duplicate creates surface as DUPLICATE error.
  */
 import { cookies, headers } from "next/headers";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -177,6 +177,35 @@ export async function saveProjects(
             ),
           )
           .limit(1);
+
+        // Row-level pre-check for `project_workspace_company_unique`:
+        // when patch.companyId changes the FK, surface a DUPLICATE error
+        // pinned to this specific id rather than aborting the whole batch
+        // with an opaque catch-block error.
+        if (
+          patch.companyId !== undefined &&
+          before &&
+          patch.companyId !== before.companyId
+        ) {
+          const [clash] = await tx
+            .select({ id: project.id })
+            .from(project)
+            .where(
+              and(
+                eq(project.workspaceId, ctxRead.workspaceId),
+                eq(project.companyId, patch.companyId),
+                ne(project.id, u.id),
+              ),
+            )
+            .limit(1);
+          if (clash) {
+            errors.push({
+              id: u.id,
+              message: `DUPLICATE: company already has a project (workspace_company_unique)`,
+            });
+            continue;
+          }
+        }
 
         await tx
           .update(project)

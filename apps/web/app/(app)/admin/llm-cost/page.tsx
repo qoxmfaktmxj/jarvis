@@ -38,10 +38,7 @@ export default async function LlmCostPage() {
   const rows = await fetchRows();
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title="LLM Cost — 최근 7일"
-             />
+      <PageHeader title="LLM Cost — 최근 7일" />
       <DataTableShell
         rowCount={rows.length}
         empty={

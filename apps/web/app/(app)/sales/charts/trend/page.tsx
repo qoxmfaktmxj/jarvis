@@ -37,7 +37,7 @@ export default async function SalesChartsTrendPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <TrendTabs active={metric} />
       {result.ok ? (
         <TrendChart months={result.months} series={result.series} />

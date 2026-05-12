@@ -33,9 +33,7 @@ export default async function InfraSystemDetailPage(props: { params: Params }) {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("Detail.title", { systemName: row.systemName })}
-             />
+      <PageHeader title={t("Detail.title", { systemName: row.systemName })} />
       <InfraSystemDetail row={row} />
       <RunbookEmbed
         wikiPageId={row.wikiPageId}

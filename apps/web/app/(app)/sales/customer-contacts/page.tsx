@@ -43,9 +43,7 @@ export default async function SalesCustomerContactsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="고객담당자"
-             />
+      <PageHeader title="고객담당자" />
       <CustomerContactsGridContainer
         rows={initialRows}
         total={initialTotal}

@@ -50,8 +50,8 @@ export default async function AddDevListPage({
   return (
     <div className="space-y-6">
       <PageHeader
-               title={t("title")}
-               actions={
+        title={t("title")}
+        actions={
           canCreate ? (
             <Button asChild>
               <Link href="/add-dev/new">{t("newAddDev")}</Link>

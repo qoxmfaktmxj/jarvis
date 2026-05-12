@@ -78,9 +78,7 @@ export default async function WikiHomePage({
   return (
     <WikiIndexShell workspaceId={workspaceId}>
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader
-                   title={t('title')}
-        />
+        <PageHeader title={t('title')} />
 
         <WikiIndexSearch
           pages={pages}

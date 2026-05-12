@@ -238,9 +238,7 @@ export default async function WikiReviewQueuePage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
 
       <DataTableShell
         rowCount={rows.length}

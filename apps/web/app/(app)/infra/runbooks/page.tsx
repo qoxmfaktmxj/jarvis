@@ -79,9 +79,7 @@ export default async function InfraDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <PageHeader
-          title="인프라 Runbook"
-                 />
+        <PageHeader title="인프라 Runbook" />
         <Link
           href="/infra/import"
           className="mt-2 inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"

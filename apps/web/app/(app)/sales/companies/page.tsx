@@ -40,9 +40,7 @@ export default async function SalesCompaniesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <SalesCompaniesGridContainer
         initial={initialRows}
         total={initialTotal}

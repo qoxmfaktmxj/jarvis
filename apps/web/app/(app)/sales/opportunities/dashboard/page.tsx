@@ -42,9 +42,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="영업기회현황"
-             />
+      <PageHeader title="영업기회현황" />
       <KPICards kpis={data.kpis} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <StepDistributionChart data={byStepWithNames} />

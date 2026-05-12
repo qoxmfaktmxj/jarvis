@@ -70,10 +70,7 @@ export default async function BoundaryViolationsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title="Wiki 경계 위반"
-             />
+      <PageHeader title="Wiki 경계 위반" />
 
       <DataTableShell
         rowCount={rows.length}

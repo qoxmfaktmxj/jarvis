@@ -32,7 +32,7 @@ export default async function SalesMonthExpSgaPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <MonthExpSgaGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

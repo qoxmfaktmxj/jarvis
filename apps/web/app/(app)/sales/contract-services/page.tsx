@@ -35,9 +35,7 @@ export default async function SalesContractServicesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="서비스 인력"
-             />
+      <PageHeader title="서비스 인력" />
       <ContractServicesGridContainer
         rows={initialRows}
         total={initialTotal}

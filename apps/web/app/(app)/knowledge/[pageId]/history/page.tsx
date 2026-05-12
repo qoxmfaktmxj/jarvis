@@ -28,11 +28,12 @@ export default async function VersionHistoryPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <PageHeader
-               title="Version History"
-               meta={
+        title="Version History"
+        meta={
           <Button variant="ghost" size="sm" asChild>
             <Link href={`/knowledge/${pageId}`}>
-              <ArrowLeft className="mr-1 h-4 w-4" /> Back to page
+              <ArrowLeft className="mr-1 h-4 w-4" 
+      /> Back to page
             </Link>
           </Button>
         }

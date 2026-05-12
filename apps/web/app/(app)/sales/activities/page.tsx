@@ -67,9 +67,7 @@ export default async function SalesActivitiesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="영업활동"
-             />
+      <PageHeader title="영업활동" />
       <ActivitiesGridContainer
         initial={initialRows}
         total={initialTotal}

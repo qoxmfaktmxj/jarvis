@@ -38,9 +38,7 @@ export default async function OpportunityEditPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={result.opportunity.bizOpNm}
-             />
+      <PageHeader title={result.opportunity.bizOpNm} />
       <OpportunityEditForm
         opportunity={result.opportunity}
         codeOptions={{

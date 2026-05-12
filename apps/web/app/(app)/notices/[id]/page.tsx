@@ -74,15 +74,16 @@ export default async function NoticeDetailPage({ params }: Props) {
       )}
 
       <PageHeader
-               title={notice.title}
-               meta={
+        title={notice.title}
+        meta={
           <div className="flex items-center gap-2">
             {canEdit && (
               <Button asChild variant="outline">
                 <Link href={`/notices/${notice.id}/edit`}>{t('edit')}</Link>
               </Button>
             )}
-            {canDelete && <DeleteNoticeButton noticeId={notice.id} />}
+            {canDelete && <DeleteNoticeButton noticeId={notice.id} 
+      />}
           </div>
         }
       />

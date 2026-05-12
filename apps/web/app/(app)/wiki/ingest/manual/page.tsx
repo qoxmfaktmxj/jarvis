@@ -12,9 +12,7 @@ export default async function ManualIngestPage() {
 
   return (
     <div className="container mx-auto max-w-3xl py-8">
-      <PageHeader
-               title={t('title')}
-             />
+      <PageHeader title={t('title')} />
       <ManualIngestForm />
     </div>
   );

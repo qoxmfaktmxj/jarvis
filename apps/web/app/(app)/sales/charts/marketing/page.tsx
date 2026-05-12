@@ -66,7 +66,7 @@ export default async function SalesChartsMarketingPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <MarketingFilters defaultYm={ym} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <MarketingActivityChart data={activityRows} />

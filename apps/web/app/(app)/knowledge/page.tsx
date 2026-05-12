@@ -76,12 +76,13 @@ export default async function KnowledgeHomePage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader
-               title="Knowledge Base"
-               actions={
+        title="Knowledge Base"
+        actions={
           canCreate ? (
             <Button asChild>
               <Link href="/knowledge/new">
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4" 
+      />
                 새 페이지
               </Link>
             </Button>

@@ -23,9 +23,7 @@ export default async function ToolsHubPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader
-               title="Tool Guides"
-             />
+      <PageHeader title="Tool Guides" />
 
       {pages.length === 0 ? (
         <EmptyState

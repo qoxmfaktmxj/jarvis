@@ -50,9 +50,7 @@ export default async function SalesOpportunitiesPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="영업기회"
-             />
+      <PageHeader title="영업기회" />
       <OpportunitiesGridContainer
         initial={initialRows}
         total={initialTotal}

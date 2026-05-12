@@ -13,10 +13,7 @@ export default async function SearchAnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title={t('title')}
-             />
+      <PageHeader title={t('title')} />
       <SearchAnalyticsDashboard data={data} />
     </div>
   );

@@ -35,7 +35,7 @@ export default async function SalesMailPersonsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="메일담당자"/>
+      <PageHeader title="메일담당자" />
       <MailPersonsGridContainer
         rows={initialRows}
         total={initialTotal}

@@ -9,9 +9,7 @@ export default async function ContractorsLayout({ children }: { children: ReactN
 
   return (
     <div style={{ padding: "28px 36px", maxWidth: 1400, margin: "0 auto" }}>
-      <PageHeader
-               title="외주인력관리"
-             />
+      <PageHeader title="외주인력관리" />
       <ContractorTabs />
       {children}
     </div>

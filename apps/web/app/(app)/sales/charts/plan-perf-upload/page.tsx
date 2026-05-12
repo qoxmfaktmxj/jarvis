@@ -39,7 +39,7 @@ export default async function SalesPlanPerfUploadPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <PlanPerfUploadGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}

@@ -27,9 +27,7 @@ export default async function ContractEditPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={contract.contNm ?? contract.legacyContNo ?? "(이름없음)"}
-             />
+      <PageHeader title={contract.contNm ?? contract.legacyContNo ?? "(이름없음)"} />
       <ContractEditForm contract={contract} />
     </div>
   );

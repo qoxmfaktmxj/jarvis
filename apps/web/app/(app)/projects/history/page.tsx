@@ -45,7 +45,7 @@ export default async function ProjectHistoryPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <HistoryGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

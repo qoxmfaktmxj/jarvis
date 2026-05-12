@@ -37,9 +37,8 @@ export default function AdminOrgsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-
-               title={t('title')}
-               meta={<Button onClick={handleAddRoot}>{t('addRoot')}</Button>}
+        title={t('title')}
+        meta={<Button onClick={handleAddRoot}>{t('addRoot')}</Button>}
       />
       {loading ? (
         <p className="text-sm text-surface-500">Loading...</p>

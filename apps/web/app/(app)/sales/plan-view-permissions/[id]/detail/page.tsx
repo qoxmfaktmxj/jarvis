@@ -22,9 +22,7 @@ export default async function PlanViewPerformanceDetailPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={result.master.pjtNm ?? result.master.title ?? result.master.pjtCode}
-             />
+      <PageHeader title={result.master.pjtNm ?? result.master.title ?? result.master.pjtCode} />
       <PlanViewPerfDetailView
         master={result.master}
         months={result.months}

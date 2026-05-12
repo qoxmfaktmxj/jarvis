@@ -30,9 +30,7 @@ export default async function AddDevDetailLayout({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={title}
-      />
+      <PageHeader title={title} />
       <AddDevTabs id={id} />
       <div>{children}</div>
     </div>

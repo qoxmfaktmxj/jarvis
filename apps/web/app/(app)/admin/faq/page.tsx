@@ -44,9 +44,7 @@ export default async function FaqPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <FaqGridContainer
         initial={initialRows}
         total={initialTotal}

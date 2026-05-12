@@ -20,10 +20,7 @@ export default async function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-
-               title={t('title')}
-             />
+      <PageHeader title={t('title')} />
       {ws && <SettingsForm workspace={ws} />}
     </div>
   );

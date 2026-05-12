@@ -48,9 +48,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <UsersGridContainer
         initialRows={users.ok ? users.rows : []}
         initialTotal={users.ok ? users.total : 0}

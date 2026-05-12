@@ -35,9 +35,7 @@ export default async function SalesContractMonthsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title="계약 월별"
-             />
+      <PageHeader title="계약 월별" />
       <ContractMonthsGridContainer
         rows={initialRows}
         total={initialTotal}

@@ -109,9 +109,7 @@ export default async function InfraImportPage() {
   return (
     <div className="max-w-4xl mx-auto py-8 px-4 space-y-6">
       <div className="flex items-start justify-between gap-4">
-        <PageHeader
-          title="인프라 SQL 가져오기"
-                 />
+        <PageHeader title="인프라 SQL 가져오기" />
         <Link
           href="/infra"
           className="mt-2 inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"

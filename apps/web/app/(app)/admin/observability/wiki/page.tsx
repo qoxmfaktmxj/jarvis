@@ -289,10 +289,7 @@ export default async function WikiObservabilityPage() {
   return (
     <WikiObservabilityClient renderedAt={renderedAt}>
       <div className="space-y-6">
-        <PageHeader
-
-                   title="Wiki 운영 모니터링"
-                 />
+        <PageHeader title="Wiki 운영 모니터링" />
 
         {/* Top KPIs */}
         <section className="grid grid-cols-1 gap-3 md:grid-cols-3">

@@ -35,9 +35,7 @@ export default async function AdminCodesPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <CodesPageClient
         initialGroups={initialGroups}
         initialGroupTotal={initialGroupTotal}

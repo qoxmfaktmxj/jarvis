@@ -37,7 +37,7 @@ export default async function ProjectBeaconsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")}/>
+      <PageHeader title={t("title")} />
       <BeaconsGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}

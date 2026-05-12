@@ -79,7 +79,7 @@ type ListProjectsForGridParams = {
  * Grid-shaped list query for the `/projects` DataGrid.
  * Returns `{ rows, total }` matching `ProjectListRow` (project columns + join
  * companyName/code/ownerName). Separate from `listProjects` which returns a
- * narrower `ProjectTableRow` used by legacy `<ProjectTable>` callers.
+ * narrower `ProjectTableRow` used by the `/api/projects` REST endpoint.
  */
 export async function listProjectsForGrid({
   workspaceId,

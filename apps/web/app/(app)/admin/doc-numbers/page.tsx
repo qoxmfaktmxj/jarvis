@@ -32,9 +32,7 @@ export default async function DocNumbersPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-               title={t("title")}
-             />
+      <PageHeader title={t("title")} />
       <DocNumbersGridContainer
         initial={initialRows}
         total={initialTotal}
