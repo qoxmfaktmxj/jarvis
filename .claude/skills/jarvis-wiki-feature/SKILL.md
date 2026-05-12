@@ -135,7 +135,7 @@ raw_source 1건 → Two-Step CoT → 다수 페이지 갱신.
 
 - 페이지 목록/검색은 `workspaceId` 일치 + `KNOWLEDGE_READ` 권한 검증만 적용. 행 단위 sensitivity 필터는 폐기됨.
 - 권한 없는 사용자는 화면(route) 자체가 노출되지 않음 (RBAC 메뉴 트리 + page-auth 가드).
-- 디스크 frontmatter의 `sensitivity` 필드는 SoT 보호 차원에서 형식상 남아있을 수 있으나, DB projection 및 쿼리 필터에는 사용되지 않음.
+- 디스크 frontmatter에 `sensitivity` 필드 신규 작성 금지. 기존 페이지에 남아있어도 DB projection·쿼리 필터에는 사용되지 않음.
 
 ### 7.3 권한 상수
 
@@ -202,5 +202,5 @@ rg "knowledge_claim.*embedding|document_chunks" packages apps
 
 - [`jarvis-feature`](../jarvis-feature/SKILL.md) — 전체 오케스트레이터
 - [`jarvis-architecture`](../jarvis-architecture/SKILL.md) — 모노레포 구조, 6-lane 라우터, page-first 상세
-- [`jarvis-db-patterns`](../jarvis-db-patterns/SKILL.md) — projection 테이블 패턴, pg_trgm/FTS, sensitivity 필터
+- [`jarvis-db-patterns`](../jarvis-db-patterns/SKILL.md) — projection 테이블 패턴, pg_trgm/FTS, RBAC + workspaceId 격리
 - [`jarvis-i18n`](../jarvis-i18n/SKILL.md) — Wiki.* 네임스페이스 규칙
