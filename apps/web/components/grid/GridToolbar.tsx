@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
@@ -44,28 +45,42 @@ export function GridToolbar({
   const resolvedSaving = savingLabel ?? t("saving");
   const resolvedExport = exportLabel ?? t("export");
   const resolvedExporting = exportingLabel ?? t("exporting");
+
+  // Hydration gate. `dirtyCount` 와 `saving` 은 부모가 `useTabState` 등
+  // localStorage 기반 상태에서 client-only 값을 즉시 읽어오는 경우가 있어
+  // server-render(0/false) 와 client mount 직후 값이 어긋날 수 있다.
+  // mount 전에는 server-stable 값(0/false)을 사용해 hydration mismatch 회피.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const effectiveDirty = mounted ? dirtyCount : 0;
+  const effectiveSaving = mounted ? saving : false;
+
   return (
     <div className="ml-auto flex items-center gap-2">
-      <Button size="sm" variant="outline" onClick={onInsert} disabled={saving}>
+      <Button size="sm" variant="outline" onClick={onInsert} disabled={effectiveSaving}>
         {resolvedInsert}
       </Button>
       <Button
         size="sm"
         variant="outline"
         onClick={onCopy}
-        disabled={saving || !onCopy}
+        disabled={effectiveSaving || !onCopy}
       >
         {resolvedCopy}
       </Button>
-      <Button size="sm" disabled={dirtyCount === 0 || saving} onClick={onSave}>
-        {saving ? resolvedSaving : dirtyCount > 0 ? `${resolvedSave} (${dirtyCount})` : resolvedSave}
+      <Button size="sm" disabled={effectiveDirty === 0 || effectiveSaving} onClick={onSave}>
+        {effectiveSaving
+          ? resolvedSaving
+          : effectiveDirty > 0
+            ? `${resolvedSave} (${effectiveDirty})`
+            : resolvedSave}
       </Button>
       {onExport && (
         <Button
           size="sm"
           variant="outline"
           onClick={() => void onExport()}
-          disabled={isExporting || saving}
+          disabled={isExporting || effectiveSaving}
         >
           {isExporting ? resolvedExporting : resolvedExport}
         </Button>
