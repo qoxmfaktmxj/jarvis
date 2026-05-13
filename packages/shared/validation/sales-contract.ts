@@ -326,7 +326,7 @@ export const salesContractServiceRowSchema = z.object({
   legacyEnterCd: z.string().nullable(),
   legacySymd: z.string().nullable(),
   legacyServSabun: z.string().nullable(),
-  servSabun: z.string(),
+  servSabun: z.string().nullable(),
   servName: z.string().nullable(),
   birYmd: z.string().nullable(),
   symd: z.string().nullable(),
@@ -378,7 +378,8 @@ export const listContractServicesInput = z.object({
 
 export type ListContractServicesInput = z.infer<typeof listContractServicesInput>;
 
-// servSabun required on create
+// servSabun nullable (2026-05-13). 원본 SSMS TBIZ035 98%가 NULL — placeholder
+// 정리와 함께 nullable 전환. Create도 더 이상 required로 강제하지 않는다.
 const _serviceCols = salesContractServiceRowSchema.omit({
   id: true,
   workspaceId: true,
@@ -388,8 +389,7 @@ const _serviceCols = salesContractServiceRowSchema.omit({
   updatedBy: true,
 });
 
-export const salesContractServiceCreateSchema = _serviceCols.pick({ servSabun: true })
-  .merge(_serviceCols.omit({ servSabun: true }).partial());
+export const salesContractServiceCreateSchema = _serviceCols.partial();
 
 export const salesContractServiceUpdateSchema = _serviceCols.partial().extend({ id: z.string().uuid() });
 

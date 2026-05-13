@@ -293,7 +293,10 @@ export const salesContractService = pgTable(
 
     // ===== TBIZ010 columns from dump line 8-46 =====
     // Personnel master info (37 cols)
-    servSabun: varchar("serv_sabun", { length: 20 }).notNull(),
+    // serv_sabun: nullable (2026-05-13). 원본 SSMS TBIZ035의 98%가 SERV_SABUN
+    // NULL로 운영됐고, ETL은 NOT NULL을 만족시키려 "TX{hash}" placeholder를 생성
+    // 했었음. UI에 의미없는 토큰이 노출되어 nullable로 전환 + placeholder 정리.
+    servSabun: varchar("serv_sabun", { length: 20 }),
     servName: varchar("serv_name", { length: 100 }),
     birYmd: varchar("bir_ymd", { length: 8 }),
     symd: varchar("symd", { length: 8 }),
