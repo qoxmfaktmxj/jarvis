@@ -59,7 +59,7 @@ export const contractServicesColumns: ColumnDef<SalesContractServiceRow>[] = [
     key: "servSabun",
     label: "사번",             // JSP: servSabun → Text → Hidden:0
     type: "text",
-    width: 70,
+    width: 50,
     editable: true,
   },
   {
@@ -73,7 +73,7 @@ export const contractServicesColumns: ColumnDef<SalesContractServiceRow>[] = [
     key: "birYmd",
     label: "생년월일",         // JSP: birYmd → Date → Hidden:0
     type: "date",
-    width: 100,
+    width: 130,
     editable: true,
   },
   {
