@@ -18,11 +18,27 @@ export type ThemeMode = "light" | "dark";
 
 const SIDEBAR_KEY = "jv.sidebar";
 const THEME_KEY = "jv.theme";
+const THEME_COLOR_KEY = "jv.themeColor";
 const SIDEBAR_EVENT = "jv:sidebar-change";
 const THEME_EVENT = "jv:theme-change";
+const THEME_COLOR_EVENT = "jv:theme-color-change";
 
 export const DEFAULT_SIDEBAR: SidebarMode = "expanded";
 export const DEFAULT_THEME: ThemeMode = "light";
+
+export const THEME_COLOR_IDS = ["blue", "indigo", "teal", "forest", "graphite"] as const;
+export type ThemeColorId = (typeof THEME_COLOR_IDS)[number];
+export const DEFAULT_THEME_COLOR: ThemeColorId = "blue";
+
+function isThemeColorId(v: string | null): v is ThemeColorId {
+  return v !== null && (THEME_COLOR_IDS as readonly string[]).includes(v);
+}
+
+function readThemeColor(): ThemeColorId {
+  if (typeof window === "undefined") return DEFAULT_THEME_COLOR;
+  const v = window.localStorage.getItem(THEME_COLOR_KEY);
+  return isThemeColorId(v) ? v : DEFAULT_THEME_COLOR;
+}
 
 function readSidebar(): SidebarMode {
   if (typeof window === "undefined") return DEFAULT_SIDEBAR;
@@ -73,6 +89,13 @@ export function useSidebar(): SidebarMode {
   return mode;
 }
 
+export function setThemeColor(color: ThemeColorId) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(THEME_COLOR_KEY, color);
+  document.documentElement.setAttribute("data-theme-color", color);
+  window.dispatchEvent(new CustomEvent<ThemeColorId>(THEME_COLOR_EVENT, { detail: color }));
+}
+
 export function useTheme(): ThemeMode {
   const [theme, setThemeState] = useState<ThemeMode>(DEFAULT_THEME);
   useEffect(() => {
@@ -87,16 +110,35 @@ export function useTheme(): ThemeMode {
   return theme;
 }
 
+export function useThemeColor(): ThemeColorId {
+  const [color, setColorState] = useState<ThemeColorId>(DEFAULT_THEME_COLOR);
+  useEffect(() => {
+    const initial = readThemeColor();
+    setColorState(initial);
+    document.documentElement.setAttribute("data-theme-color", initial);
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<ThemeColorId>).detail;
+      if (isThemeColorId(detail)) setColorState(detail);
+    };
+    window.addEventListener(THEME_COLOR_EVENT, handler);
+    return () => window.removeEventListener(THEME_COLOR_EVENT, handler);
+  }, []);
+  return color;
+}
+
 /**
- * 하이드레이션 전 CSR 첫 페인트에 `<html data-sidebar data-theme>`을 세팅하기 위한 인라인 스크립트.
+ * 하이드레이션 전 CSR 첫 페인트에 `<html data-sidebar data-theme data-theme-color>`을 세팅하기 위한 인라인 스크립트.
  * AppShell의 서버 컴포넌트에서 <Script strategy="beforeInteractive">로 주입.
  */
 export const UI_PREFS_BOOTSTRAP = `
 (function(){try{
   var s=localStorage.getItem('${SIDEBAR_KEY}');
   var t=localStorage.getItem('${THEME_KEY}');
+  var c=localStorage.getItem('${THEME_COLOR_KEY}');
+  var validColors=${JSON.stringify(THEME_COLOR_IDS)};
   var root=document.documentElement;
   root.setAttribute('data-sidebar', s==='rail'?'rail':'expanded');
   root.setAttribute('data-theme', t==='dark'?'dark':'light');
+  root.setAttribute('data-theme-color', validColors.indexOf(c)>=0?c:'${DEFAULT_THEME_COLOR}');
 }catch(e){}})();
 `.trim();
