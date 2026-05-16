@@ -53,7 +53,8 @@ export default async function DashboardPage({
   return (
     // AppShellMain wrapper가 h-full viewport-fit 영역을 제공하므로 페이지는
     // 그 안에서 h-full만 받으면 됨 (별도 calc 불필요, 2026-05-16 전역 프레임 전환).
-    <div className="flex h-full flex-col gap-3">
+    // `overflow-hidden` — 페이지 자체 스크롤 차단, 내부 위젯만 스크롤.
+    <div className="flex h-full flex-col gap-3 overflow-hidden">
       {showForbidden ? <ForbiddenBanner /> : null}
       <HeroGreeting name={displayName} now={now} />
       {/*

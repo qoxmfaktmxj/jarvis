@@ -61,8 +61,11 @@ export default async function AdminMenusPage() {
   return (
     // viewport-fit: AppShellMain이 wrapper에 `h-full`을 제공하므로 페이지는
     // 그 안에서 `h-full flex-col`만 적용하면 빈틈없이 채워짐. 별도 calc 불필요.
-    // PageHeader는 자연 높이, MenusPageClient의 grid div가 flex-1로 남은 공간 fill.
-    <div className="flex h-full flex-col gap-3">
+    // `overflow-hidden` — 페이지 자체 스크롤 차단. AppShellMain wrapper의
+    // overflow-y-auto가 fallback이지만, viewport-fit 의도 페이지는 절대 페이지
+    // 스크롤 X (그리드 내부만 스크롤)이라 명시. PageHeader는 자연 높이,
+    // MenusPageClient의 grid div가 flex-1로 남은 공간 fill.
+    <div className="flex h-full flex-col gap-3 overflow-hidden">
       <PageHeader title={t("title")} />
       <MenusPageClient
         initialMenus={initialMenus}
