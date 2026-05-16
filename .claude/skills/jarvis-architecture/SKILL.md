@@ -288,6 +288,21 @@ pnpm eval:budget-test                             # LLM budget 검증
 
 ## 전역 레이아웃 표준 (2026-05-16 확정)
 
+**신규 화면 작업 / 기존 화면 수정 시 [`references/screen-design-guide.md`](references/screen-design-guide.md)를 반드시 Read.** 거기에 다음이 모두 정리됨 (progressive disclosure — 비-화면 작업에서는 로드 안 함):
+
+1. 페이지 anatomy 다이어그램 + AppShellMain SoT 패딩 (`pt-10 pb-5 px-10` = 40/20/40)
+2. 3가지 화면 종류 (그리드 / 본문 / 폼) 결정 트리
+3. 각 종류별 actionable skeleton 템플릿 (복붙 가능)
+4. 디자인 토큰 카탈로그 (외곽 / 입력 / 라벨 / 버튼 / 색상 / 타이포)
+5. 헤더 패턴 (PageShell title + actions)
+6. Filter form 패턴 (GridSearchForm + GridFilterField + 표준 select 토큰)
+7. 파일 구조 책임 분리 (page / actions / _components / lib/queries)
+8. layout.tsx 규칙 (가드만, `<main>`·padding 절대 금지)
+9. 금지 패턴 13종 (옛 shadcn 토큰 / raw 색상 / nested main / mx-auto wrapper 등)
+10. 자동 audit 회귀 차단 grep 명령 4종
+11. 신규 화면 PR 체크리스트 (공통 + 그리드/본문/폼별)
+12. 옛 화면 → 표준 마이그레이션 5단계
+
 **4원칙. 위반 시 PR 자동 reject.**
 
 1. **외곽 여백은 `AppShellMain` 한 곳에서만 관리.** `apps/web/components/layout/AppShellMain.tsx`가 padding(현재 `px-10 pt-10 pb-5` = 40/40/40/20)·`max-w`(sidebar-width 반응형 `calc(1700 + (220 - var(--sidebar-width)))`)·`mx-auto`의 **단일 진실(SoT)**. 페이지/layout/컴포넌트 어디서도 추가하지 않는다. 아래 50%는 위 여백의 절반(시각적 균형).
