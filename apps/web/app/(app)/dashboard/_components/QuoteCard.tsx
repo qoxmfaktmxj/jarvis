@@ -18,7 +18,7 @@ import { pickQuoteOfTheDay } from "@/lib/quotes";
 export function QuoteCard({ now }: { now: Date }) {
   const q = pickQuoteOfTheDay(now);
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
       <span className="text-[13px] font-medium text-(--fg-secondary)">
         오늘의 한 줄
       </span>

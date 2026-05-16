@@ -12,7 +12,7 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default:     "bg-(--bg-surface) border-(--border-default) text-(--fg-primary)",
+        default:     "bg-(--bg-page) border-(--border-default) text-(--fg-primary)",
         destructive: "bg-(--color-red-50) border-(--color-red-200) text-(--color-red-500)",
         warning:     "bg-(--status-warn-bg) border-[rgba(221,91,0,0.2)] text-(--status-warn-fg)",
         info:        "bg-(--status-active-bg) border-[rgba(0,117,222,0.15)] text-(--status-active-fg)",

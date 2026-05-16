@@ -36,7 +36,7 @@ export function TodayCard({
   const dateLabel = `${year}. ${month}. ${day} ${weekday}`;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
       <span className="text-[13px] font-medium text-(--fg-secondary) tabular-nums">
         {dateLabel}
         {weather ? (

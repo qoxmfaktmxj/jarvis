@@ -274,7 +274,7 @@ export function ScheduleCalendar({
               fontWeight: 600,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
-              background: "var(--bg-surface)",
+              background: "var(--bg-page)",
               borderBottom: "1px solid var(--border-default)",
               color:
                 i === 0
@@ -294,7 +294,7 @@ export function ScheduleCalendar({
                 key={idx}
                 style={{
                   minHeight: 110,
-                  background: "var(--bg-surface)",
+                  background: "var(--bg-page)",
                   borderRight:
                     (idx + 1) % 7 === 0 ? "none" : "1px solid var(--border-soft)",
                   borderBottom: "1px solid var(--border-soft)",
@@ -333,7 +333,7 @@ export function ScheduleCalendar({
                   : holidayName
                     ? "color-mix(in srgb, var(--status-danger-fg) 6%, transparent)"
                     : isWeekend
-                      ? "var(--bg-surface)"
+                      ? "var(--bg-page)"
                       : "var(--bg-page)",
                 userSelect: "none",
                 cursor: "pointer",

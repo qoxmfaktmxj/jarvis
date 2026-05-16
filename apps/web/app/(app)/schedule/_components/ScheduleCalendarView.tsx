@@ -133,7 +133,7 @@ export function ScheduleCalendarView() {
               type="button"
               onClick={goPrevMonth}
               aria-label={tCal("prev")}
-              className="rounded p-1 text-(--fg-secondary) hover:bg-(--bg-surface) hover:text-(--fg-primary)"
+              className="rounded p-1 text-(--fg-secondary) hover:bg-(--bg-page) hover:text-(--fg-primary)"
             >
               <ChevronLeft size={18} />
             </button>
@@ -144,7 +144,7 @@ export function ScheduleCalendarView() {
               type="button"
               onClick={goNextMonth}
               aria-label={tCal("next")}
-              className="rounded p-1 text-(--fg-secondary) hover:bg-(--bg-surface) hover:text-(--fg-primary)"
+              className="rounded p-1 text-(--fg-secondary) hover:bg-(--bg-page) hover:text-(--fg-primary)"
             >
               <ChevronRight size={18} />
             </button>
@@ -264,7 +264,7 @@ export function ScheduleCalendarView() {
                 <li
                   key={ev.id}
                   className={cn(
-                    "rounded border-l-4 bg-(--bg-surface) p-2 text-[12px]",
+                    "rounded border-l-4 bg-(--bg-page) p-2 text-[12px]",
                     ev.isOwn ? "border-blue-500" : "border-slate-400",
                   )}
                 >

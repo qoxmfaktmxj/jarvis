@@ -285,7 +285,7 @@ export function AskPanel({
                 <div key={`${entry.question}-${index}`} className="space-y-4">
                   {/* User turn — right-aligned monochrome bubble */}
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-(--bg-surface) px-3.5 py-2 text-sm leading-relaxed text-(--fg-primary)">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-(--bg-page) px-3.5 py-2 text-sm leading-relaxed text-(--fg-primary)">
                       {entry.question}
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export function AskPanel({
               {(isStreaming || answer) && (
                 <div className="space-y-4">
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-(--bg-surface) px-3.5 py-2 text-sm leading-relaxed text-(--fg-primary)">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-md bg-(--bg-page) px-3.5 py-2 text-sm leading-relaxed text-(--fg-primary)">
                       {question}
                     </div>
                   </div>
@@ -404,7 +404,7 @@ export function AskPanel({
                             className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'up'
                                 ? 'border-(--status-success-fg)/40 bg-(--status-success-bg) text-(--status-success-fg)'
-                                : 'border-(--border-default) text-(--fg-secondary) hover:bg-(--bg-surface) hover:text-(--fg-primary)'
+                                : 'border-(--border-default) text-(--fg-secondary) hover:bg-(--bg-page) hover:text-(--fg-primary)'
                             }`}
                             title="도움됨"
                           >
@@ -417,7 +417,7 @@ export function AskPanel({
                             className={`inline-flex h-6 w-6 items-center justify-center rounded-md border transition-colors duration-150 ${
                               feedbackSent === 'down'
                                 ? 'border-danger/40 bg-danger/10 text-danger'
-                                : 'border-(--border-default) text-(--fg-secondary) hover:bg-(--bg-surface) hover:text-(--fg-primary)'
+                                : 'border-(--border-default) text-(--fg-secondary) hover:bg-(--bg-page) hover:text-(--fg-primary)'
                             }`}
                             title="도움 안 됨"
                           >
@@ -499,7 +499,7 @@ export function AskPanel({
                       setInput(prompt);
                       handleAsk(prompt);
                     }}
-                    className="group flex items-start gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 hover:border-(--border-default) hover:bg-(--bg-surface)"
+                    className="group flex items-start gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors duration-150 hover:border-(--border-default) hover:bg-(--bg-page)"
                   >
                     <span className="text-display mt-0.5 w-6 shrink-0 text-[11px] font-semibold tabular-nums text-(--fg-muted) group-hover:text-(--brand-primary)">
                       {String(i + 1).padStart(2, '0')}

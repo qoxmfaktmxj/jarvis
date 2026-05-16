@@ -38,7 +38,7 @@ export function AskModelPopover({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-page) px-2 py-1 text-xs font-medium text-(--fg-primary) transition-colors duration-150 hover:border-(--border-default) hover:bg-(--bg-surface) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)",
+          "inline-flex items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-page) px-2 py-1 text-xs font-medium text-(--fg-primary) transition-colors duration-150 hover:border-(--border-default) hover:bg-(--bg-page) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)",
           className,
         )}
         aria-label={`모델: ${current.label}`}
@@ -73,7 +73,7 @@ export function AskModelPopover({
                     "flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-150",
                     selected
                       ? "bg-(--brand-primary-bg) text-(--brand-primary-text)"
-                      : "text-(--fg-primary) hover:bg-(--bg-surface)",
+                      : "text-(--fg-primary) hover:bg-(--bg-page)",
                   )}
                 >
                   <span className="flex min-w-0 items-center gap-2">

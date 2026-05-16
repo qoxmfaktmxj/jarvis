@@ -44,7 +44,7 @@ export function ChatComposer({
         onKeyDown={onKey}
         placeholder={t("composerPlaceholder", { name, role })}
         rows={1}
-        className="min-h-[36px] flex-1 resize-none rounded-md border border-(--border-default) bg-(--bg-surface) px-3 py-1.5 text-sm focus:border-(--brand-primary) focus:outline-none"
+        className="min-h-[36px] flex-1 resize-none rounded-md border border-(--border-default) bg-(--bg-page) px-3 py-1.5 text-sm focus:border-(--brand-primary) focus:outline-none"
       />
       <button
         type="button"

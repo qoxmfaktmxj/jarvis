@@ -89,7 +89,7 @@ export function WikiPanel({ workspaceId, slug, onClose }: WikiPanelProps) {
           onClick={onBack}
           disabled={!canGoBack}
           aria-label="뒤로"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-surface) hover:text-(--fg-primary) disabled:opacity-30 disabled:hover:bg-transparent"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-page) hover:text-(--fg-primary) disabled:opacity-30 disabled:hover:bg-transparent"
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
         </button>
@@ -100,7 +100,7 @@ export function WikiPanel({ workspaceId, slug, onClose }: WikiPanelProps) {
           type="button"
           onClick={onClose}
           aria-label="닫기"
-          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-surface) hover:text-(--fg-primary)"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-page) hover:text-(--fg-primary)"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>

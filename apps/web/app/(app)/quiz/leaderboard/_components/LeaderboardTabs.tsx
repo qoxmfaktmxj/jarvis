@@ -56,7 +56,7 @@ export function LeaderboardTabs({
       </nav>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-        <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+        <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
           <h2 className="mb-3 text-sm font-semibold text-(--fg-primary)">
             {t("individualTitle")}
           </h2>
@@ -95,7 +95,7 @@ export function LeaderboardTabs({
           )}
         </section>
 
-        <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+        <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
           <h2 className="mb-3 text-sm font-semibold text-(--fg-primary)">
             {t("orgTitle")}
           </h2>

@@ -27,7 +27,7 @@ const ENV_STYLES: Record<string, string> = {
   staging: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   qa: 'bg-amber-50 text-amber-800 ring-amber-600/25',
   dev: 'bg-(--brand-primary-bg) text-(--brand-primary-text) ring-(--brand-primary)/25',
-  local: 'bg-(--bg-surface) text-(--fg-primary) ring-(--border-default)',
+  local: 'bg-(--bg-page) text-(--fg-primary) ring-(--border-default)',
 };
 
 export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
@@ -53,7 +53,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
   if (rows.length === 0) return null;
 
   const envKey = meta.envType?.toLowerCase() ?? '';
-  const envChip = ENV_STYLES[envKey] ?? 'bg-(--bg-surface) text-(--fg-primary) ring-(--border-default)';
+  const envChip = ENV_STYLES[envKey] ?? 'bg-(--bg-page) text-(--fg-primary) ring-(--border-default)';
 
   return (
     <aside
@@ -61,7 +61,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
       aria-label="인프라 메타 정보"
     >
       {/* Header bar */}
-      <div className="flex items-center gap-2 border-b border-(--border-default) bg-(--bg-surface)/70 px-4 py-2.5">
+      <div className="flex items-center gap-2 border-b border-(--border-default) bg-(--bg-page)/70 px-4 py-2.5">
         <span className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-(--brand-primary-bg) text-(--brand-primary) ring-1 ring-inset ring-(--brand-primary-bg)">
           <Server className="h-3.5 w-3.5" />
         </span>
@@ -70,7 +70,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
         </span>
         <span className="ml-auto flex flex-wrap items-center gap-1.5">
           {meta.companyCd && (
-            <span className="inline-flex items-center rounded-full bg-(--bg-surface) px-2 py-0.5 text-[10px] font-semibold text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)">
+            <span className="inline-flex items-center rounded-full bg-(--bg-page) px-2 py-0.5 text-[10px] font-semibold text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)">
               company/{meta.companyCd.toLowerCase()}
             </span>
           )}
@@ -95,7 +95,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
       </dl>
 
       {/* Footer hint */}
-      <div className="flex items-center gap-1.5 border-t border-(--border-soft) bg-(--bg-surface)/50 px-4 py-2 text-[11px] text-(--fg-secondary)">
+      <div className="flex items-center gap-1.5 border-t border-(--border-soft) bg-(--bg-page)/50 px-4 py-2 text-[11px] text-(--fg-secondary)">
         <Terminal className="h-3 w-3 text-(--fg-muted)" />
         <span className="text-display">
           명령·값은 클릭하여 복사하세요. 민감 정보는 Vault를 먼저 확인.
@@ -133,7 +133,7 @@ function MetaRow({ row, isLast }: { row: Row; isLast: boolean }) {
                 void navigator.clipboard.writeText(row.value);
               }
             }}
-            className="ml-auto mt-0.5 shrink-0 rounded p-0.5 text-(--fg-muted) opacity-0 transition-all hover:bg-(--bg-surface) hover:text-(--brand-primary) group-hover:opacity-100"
+            className="ml-auto mt-0.5 shrink-0 rounded p-0.5 text-(--fg-muted) opacity-0 transition-all hover:bg-(--bg-page) hover:text-(--brand-primary) group-hover:opacity-100"
             aria-label={`${row.label} 복사`}
             title="복사"
           >

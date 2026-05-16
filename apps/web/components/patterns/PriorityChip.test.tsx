@@ -19,7 +19,7 @@ describe("PriorityChip", () => {
 
   it("P3 renders with neutral palette", () => {
     const html = renderToStaticMarkup(<PriorityChip priority="P3" />);
-    expect(html).toContain("bg-(--bg-surface)");
+    expect(html).toContain("bg-(--bg-page)");
     expect(html).toContain("text-(--fg-secondary)");
   });
 

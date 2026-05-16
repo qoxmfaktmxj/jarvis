@@ -135,7 +135,7 @@ export function NewDocNumberInlineForm({ onCreated }: Props) {
           <span className="text-[11px] font-medium uppercase tracking-wide text-(--fg-secondary)">
             {t("columns.docNo")}
           </span>
-          <span className="flex h-8 items-center rounded-md border border-(--border-default) bg-(--bg-surface) px-2 text-[12px] italic text-(--fg-secondary)">
+          <span className="flex h-8 items-center rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[12px] italic text-(--fg-secondary)">
             {t("dialog.autoDocNo")}
           </span>
         </label>

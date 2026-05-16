@@ -46,7 +46,7 @@ export function ResultCard({ hit }: ResultCardProps) {
     <article className="group relative rounded-md border border-(--border-default) bg-white p-4 transition-all hover:-translate-y-[1px] hover:ring-1 hover:ring-(--brand-primary)/20 hover:shadow-[0_6px_20px_-8px_rgba(28,77,167,0.18)]">
       <div className="flex items-start gap-3">
         {/* Type icon */}
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--bg-surface) text-(--fg-secondary) ring-1 ring-inset ring-(--border-default) group-hover:bg-(--brand-primary-bg) group-hover:text-(--brand-primary) group-hover:ring-(--brand-primary)/20">
+        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-(--bg-page) text-(--fg-secondary) ring-1 ring-inset ring-(--border-default) group-hover:bg-(--brand-primary-bg) group-hover:text-(--brand-primary) group-hover:ring-(--brand-primary)/20">
           <PageIcon className="h-4 w-4" />
         </span>
 
@@ -96,7 +96,7 @@ export function ResultCard({ hit }: ResultCardProps) {
 
         {/* Relevance score indicator */}
         <div
-          className="text-display shrink-0 rounded-md bg-(--bg-surface) px-2 py-1 text-[10px] font-semibold tabular-nums text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)"
+          className="text-display shrink-0 rounded-md bg-(--bg-page) px-2 py-1 text-[10px] font-semibold tabular-nums text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)"
           aria-hidden
           title="관련도 점수"
         >

@@ -28,7 +28,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-[13px] outline-none",
-      "hover:bg-(--bg-surface) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text) data-[state=open]:bg-(--brand-primary-bg) data-[state=open]:text-(--brand-primary-text)",
+      "hover:bg-(--bg-page) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text) data-[state=open]:bg-(--brand-primary-bg) data-[state=open]:text-(--brand-primary-text)",
       inset && "pl-8",
       className,
     )}
@@ -89,7 +89,7 @@ const DropdownMenuItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-[13px] outline-none",
-      "hover:bg-(--bg-surface) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
+      "hover:bg-(--bg-page) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       inset && "pl-8",
       className,
@@ -107,7 +107,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-[13px] outline-none",
-      "hover:bg-(--bg-surface) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
+      "hover:bg-(--bg-page) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}
@@ -133,7 +133,7 @@ const DropdownMenuRadioItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-8 pr-2 text-[13px] outline-none",
-      "hover:bg-(--bg-surface) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
+      "hover:bg-(--bg-page) focus:bg-(--brand-primary-bg) focus:text-(--brand-primary-text)",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,
     )}

@@ -30,7 +30,7 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
         onClick={() => setEditing(true)}
         className={cn(
           "flex h-full w-full items-center px-2 text-left text-[13px] text-(--fg-primary)",
-          "hover:bg-(--bg-surface)/60",
+          "hover:bg-(--bg-page)/60",
           invalid && "ring-1 ring-rose-500 ring-inset",
         )}
       >

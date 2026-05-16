@@ -124,7 +124,7 @@ export function DetailOtherSection({ rows: serverRows, companyCd, ym, onSaved }:
   );
 
   return (
-    <section className="rounded border border-(--border-default) bg-(--bg-surface) p-4">
+    <section className="rounded border border-(--border-default) bg-(--bg-page) p-4">
       <header className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h3>
       </header>

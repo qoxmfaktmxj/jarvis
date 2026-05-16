@@ -19,7 +19,7 @@ export function ColumnFilterRow<T extends { id: string }>({
   trailingCols = 0,
 }: Props<T>) {
   return (
-    <tr className="border-b border-(--border-default) bg-(--bg-surface) text-xs text-(--fg-secondary)">
+    <tr className="border-b border-(--border-default) bg-(--bg-page) text-xs text-(--fg-secondary)">
       {Array.from({ length: leadingCols }).map((_, i) => (
         <td key={`lead-${i}`} className="px-2 py-1" />
       ))}

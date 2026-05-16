@@ -138,7 +138,7 @@ export function WikiPageView({
             {page.tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-0.5 rounded-full bg-(--bg-surface) px-2 py-0.5 text-[11px] font-medium text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)"
+                className="inline-flex items-center gap-0.5 rounded-full bg-(--bg-page) px-2 py-0.5 text-[11px] font-medium text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)"
               >
                 <Hash className="h-2.5 w-2.5 text-(--fg-muted)" />
                 {tag}
@@ -213,7 +213,7 @@ export function WikiPageView({
               if (isInline) {
                 return (
                   <code
-                    className="rounded-[4px] bg-(--bg-surface) px-[0.35em] py-[0.15em] font-mono text-[0.88em] text-(--fg-primary) ring-1 ring-inset ring-(--border-soft)"
+                    className="rounded-[4px] bg-(--bg-page) px-[0.35em] py-[0.15em] font-mono text-[0.88em] text-(--fg-primary) ring-1 ring-inset ring-(--border-soft)"
                     {...props}
                   >
                     {children}
@@ -227,7 +227,7 @@ export function WikiPageView({
               );
             },
             pre: ({ children }) => (
-              <pre className="relative my-4 overflow-x-auto rounded-md bg-(--bg-surface) p-4 font-mono text-[13px] leading-[1.65] text-(--fg-primary) ring-1 ring-inset ring-(--border-default) shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]">
+              <pre className="relative my-4 overflow-x-auto rounded-md bg-(--bg-page) p-4 font-mono text-[13px] leading-[1.65] text-(--fg-primary) ring-1 ring-inset ring-(--border-default) shadow-[inset_0_1px_0_rgba(0,0,0,0.04)]">
                 {children}
               </pre>
             ),
@@ -237,7 +237,7 @@ export function WikiPageView({
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-(--bg-surface) text-left">{children}</thead>
+              <thead className="bg-(--bg-page) text-left">{children}</thead>
             ),
             th: ({ children }) => (
               <th className="text-display border-b border-(--border-default) px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">

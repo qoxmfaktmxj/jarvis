@@ -33,10 +33,10 @@ export function ChatMessage({
 
   return (
     <li
-      className="group relative flex gap-3 px-3 py-1.5 hover:bg-(--bg-surface)"
+      className="group relative flex gap-3 px-3 py-1.5 hover:bg-(--bg-page)"
       onMouseLeave={() => setPopoverOpen(false)}
     >
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--bg-surface) text-xs font-semibold text-(--fg-primary)">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--bg-page) text-xs font-semibold text-(--fg-primary)">
         {msg.userName.slice(0, 1)}
       </div>
       <div className="min-w-0 flex-1">
@@ -67,7 +67,7 @@ export function ChatMessage({
           <button
             type="button"
             onClick={() => setPopoverOpen((v) => !v)}
-            className="rounded bg-(--bg-surface) px-2 py-0.5 text-xs shadow-sm hover:bg-(--bg-surface)"
+            className="rounded bg-(--bg-page) px-2 py-0.5 text-xs shadow-sm hover:bg-(--bg-page)"
             aria-label={t("addReaction")}
           >
             ＋
@@ -76,7 +76,7 @@ export function ChatMessage({
             <button
               type="button"
               onClick={onDelete}
-              className="rounded bg-(--bg-surface) px-2 py-0.5 text-xs text-(--fg-secondary) shadow-sm hover:bg-(--bg-surface)"
+              className="rounded bg-(--bg-page) px-2 py-0.5 text-xs text-(--fg-secondary) shadow-sm hover:bg-(--bg-page)"
             >
               {t("delete")}
             </button>

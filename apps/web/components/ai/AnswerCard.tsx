@@ -138,7 +138,7 @@ function DocumentSection({ sources }: { sources: TextSourceRef[] }) {
           <li key={`${s.pageId}-${i}`}>
             <Link
               href={s.url}
-              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-surface) -mx-2 px-2 rounded-md"
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-page) -mx-2 px-2 rounded-md"
             >
               <span className="text-display w-5 shrink-0 text-center text-[11px] font-semibold tabular-nums text-(--fg-muted)">
                 {String(i + 1).padStart(2, '0')}
@@ -201,7 +201,7 @@ function DirectorySection({ sources }: { sources: DirectorySourceRef[] }) {
           return (
             <li
               key={`${s.entryId}-${i}`}
-              className="inline-flex items-center gap-2 rounded-md border border-(--border-default) bg-(--bg-surface) px-2.5 py-1 text-xs"
+              className="inline-flex items-center gap-2 rounded-md border border-(--border-default) bg-(--bg-page) px-2.5 py-1 text-xs"
             >
               {inner}
             </li>
@@ -299,7 +299,7 @@ function WikiPageSection({ sources, workspaceId }: { sources: WikiPageSourceRef[
             <WikiLink
               workspaceId={workspaceId}
               slug={s.slug}
-              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-surface) -mx-2 px-2 rounded-md"
+              className="group flex items-center gap-3 py-2 transition-colors duration-150 hover:bg-(--bg-page) -mx-2 px-2 rounded-md"
             >
               <span className="flex-1 min-w-0">
                 <span className="block truncate text-sm text-(--fg-primary) group-hover:text-(--brand-primary-text)">
@@ -367,7 +367,7 @@ function OwnerTeamSection({ sources }: { sources: SourceRef[] }) {
       {[...teams].map((team) => (
         <span
           key={team}
-          className="inline-flex items-center rounded-md bg-(--bg-surface) px-2 py-0.5 text-xs text-(--fg-primary)"
+          className="inline-flex items-center rounded-md bg-(--bg-page) px-2 py-0.5 text-xs text-(--fg-primary)"
         >
           {team}
         </span>

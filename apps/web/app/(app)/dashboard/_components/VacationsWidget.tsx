@@ -50,7 +50,7 @@ export async function VacationsWidget({
 }) {
   const t = await getTranslations("Dashboard.vacations");
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
       <header className="mb-3 flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h2>
         <Link href="/contractors" className="text-xs text-(--fg-secondary) hover:text-(--brand-primary)">
@@ -65,7 +65,7 @@ export async function VacationsWidget({
             const ret = nextBusinessDay(v.endDate);
             return (
               <li key={v.id} className="flex items-center gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--bg-surface) text-xs font-semibold text-(--fg-primary)">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-(--bg-page) text-xs font-semibold text-(--fg-primary)">
                   {v.userName.slice(0, 1)}
                 </div>
                 <div className="min-w-0 flex-1">

@@ -70,7 +70,7 @@ export function QuizPlayClient({
       0
     );
     return (
-      <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6">
+      <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-6">
         <h2 className="mb-2 text-lg font-semibold text-(--fg-primary)">
           {t("summaryTitle")}
         </h2>
@@ -110,7 +110,7 @@ export function QuizPlayClient({
         </span>
         <span>{t("difficulty." + current.difficulty)}</span>
       </div>
-      <article className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-5">
+      <article className="rounded-xl border border-(--border-default) bg-(--bg-page) p-5">
         <h2 className="mb-4 text-base font-semibold text-(--fg-primary)">
           {current.question}
         </h2>

@@ -35,7 +35,7 @@ export default async function QuizPlayPage() {
       }
     >
       {questions.length === 0 ? (
-        <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6 text-center">
+        <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-6 text-center">
           <p className="text-sm text-(--fg-secondary)">
             {remaining === 0 ? t("emptyAllDone") : t("emptyToday")}
           </p>

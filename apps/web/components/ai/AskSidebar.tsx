@@ -157,7 +157,7 @@ export function AskSidebar({
     return (
       <aside
         aria-label={t('asideLabelCollapsed')}
-        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-(--border-default) bg-(--bg-surface) py-3"
+        className="flex h-full w-10 shrink-0 flex-col items-center border-r border-(--border-default) bg-(--bg-page) py-3"
       >
         <button
           type="button"
@@ -175,7 +175,7 @@ export function AskSidebar({
   const isWarning = conversationCount >= 16;
 
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-(--border-default) bg-(--bg-surface)">
+    <aside className="flex h-full w-[280px] shrink-0 flex-col border-r border-(--border-default) bg-(--bg-page)">
       {/* Header — brand wordmark + new conversation */}
       <div className="flex items-center justify-between gap-2 px-4 pb-2 pt-4">
         <span className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-(--fg-secondary)">
@@ -184,7 +184,7 @@ export function AskSidebar({
         <div className="flex items-center gap-1">
           <Link
             href="/ask"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-surface) hover:text-(--fg-primary)"
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md text-(--fg-secondary) transition-colors duration-150 hover:bg-(--bg-page) hover:text-(--fg-primary)"
             title={t("newConversation")}
             aria-label={t("newConversation")}
           >

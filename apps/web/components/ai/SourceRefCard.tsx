@@ -90,7 +90,7 @@ function SourceRow({
     return (
       <Link
         href={href}
-        className={`${baseCls} hover:bg-(--bg-surface)`}
+        className={`${baseCls} hover:bg-(--bg-page)`}
         {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
       >
         {body}

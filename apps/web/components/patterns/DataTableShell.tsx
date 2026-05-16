@@ -21,7 +21,7 @@ export function DataTableShell({
   return (
     <section className="space-y-4">
       {filters ? (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-(--border-default) bg-(--bg-surface) p-3">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-(--border-default) bg-(--bg-page) p-3">
           {filters}
         </div>
       ) : null}

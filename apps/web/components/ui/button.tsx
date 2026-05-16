@@ -16,9 +16,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:   "bg-(--brand-primary) text-white shadow-[var(--shadow-flat)] hover:bg-(--brand-primary-hover) focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-offset-2",
-        secondary: "bg-(--bg-surface) text-(--fg-primary) border border-(--border-default) hover:bg-white hover:border-[rgba(0,0,0,0.16)]",
-        ghost:     "bg-transparent text-(--fg-primary) hover:bg-(--bg-surface)",
-        outline:   "bg-(--bg-page) border border-(--border-default) text-(--fg-primary) hover:bg-(--bg-surface)",
+        secondary: "bg-(--bg-page) text-(--fg-primary) border border-(--border-default) hover:bg-white hover:border-[rgba(0,0,0,0.16)]",
+        ghost:     "bg-transparent text-(--fg-primary) hover:bg-(--bg-page)",
+        outline:   "bg-(--bg-page) border border-(--border-default) text-(--fg-primary) hover:bg-(--bg-page)",
         danger:    "bg-transparent text-(--color-red-500) hover:bg-(--color-red-50)",
         link:      "text-(--brand-primary-text) underline-offset-2 hover:underline bg-transparent",
         destructive:

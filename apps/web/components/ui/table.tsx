@@ -18,7 +18,7 @@ const TableHeader = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
   ({ className, ...props }, ref) => (
     <thead
       ref={ref}
-      className={cn("bg-(--bg-surface)", className)}
+      className={cn("bg-(--bg-page)", className)}
       {...props}
     />
   ),
@@ -41,7 +41,7 @@ const TableFooter = React.forwardRef<HTMLTableSectionElement, React.HTMLAttribut
     <tfoot
       ref={ref}
       className={cn(
-        "bg-(--bg-surface) font-medium border-t border-(--border-default)",
+        "bg-(--bg-page) font-medium border-t border-(--border-default)",
         className,
       )}
       {...props}

@@ -38,7 +38,7 @@ export function WikiWidget({
   const now = new Date(nowIso);
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
       <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
         <div role="tablist" className="flex items-center gap-1 text-sm">
           <TabBtn active={tab === "latest"} onClick={() => setTab("latest")}>

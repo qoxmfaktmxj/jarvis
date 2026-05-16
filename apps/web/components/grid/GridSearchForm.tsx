@@ -59,7 +59,7 @@ export function GridSearchForm({
         onResetGrid?.(); // sync, immediate visual snap-to-clean
         onSearch();   // async fetch; subsequent grid.reset(serverRows)이 덮어씀
       }}
-      className="flex flex-wrap items-end gap-3 rounded-md border border-(--border-default) bg-(--bg-surface) px-4 py-3"
+      className="flex flex-wrap items-end gap-3 rounded-md border border-(--border-default) bg-(--bg-page) px-4 py-3"
     >
       <div className="flex flex-1 flex-wrap items-end gap-3">{children}</div>
       <Button type="submit" size="sm" disabled={isSearching}>
