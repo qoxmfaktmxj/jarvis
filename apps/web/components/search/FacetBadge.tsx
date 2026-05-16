@@ -25,7 +25,7 @@ export function FacetBadge({ label, count, active = false, onClick }: FacetBadge
       <span
         className={cn(
           'text-display inline-flex min-w-[1.25rem] justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums',
-          active ? 'bg-white/20 text-white' : 'bg-white text-surface-500 ring-1 ring-inset ring-surface-200',
+          active ? 'bg-white/20 text-white' : 'bg-(--bg-page) text-(--fg-secondary) ring-1 ring-inset ring-(--border-default)',
         )}
       >
         {count}

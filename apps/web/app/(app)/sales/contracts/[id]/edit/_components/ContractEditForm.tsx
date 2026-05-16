@@ -41,7 +41,7 @@ function NumericField({ label, value, required, onChange }: NumericFieldProps) {
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
       <input
-        className="rounded border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        className="rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         value={editing ? value : fmtNum(value)}
         inputMode="numeric"
         required={required}
@@ -157,7 +157,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
             ? "cursor-not-allowed bg-gray-100 text-gray-500"
-            : "border-gray-300 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            : "border-(--border-default) bg-(--bg-page) focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
         ].join(" ")}
         value={value ?? ""}
         readOnly={readOnly}
@@ -187,7 +187,7 @@ function TextareaField({ label, value, readOnly, onChange }: TextareaFieldProps)
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
             ? "cursor-not-allowed bg-gray-100 text-gray-500"
-            : "border-gray-300 bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            : "border-(--border-default) bg-(--bg-page) focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
         ].join(" ")}
         value={value ?? ""}
         readOnly={readOnly}
@@ -900,7 +900,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
           type="button"
           disabled={isPending}
           onClick={handleBack}
-          className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded border border-(--border-default) bg-(--bg-page) px-4 py-2 text-sm font-medium text-(--fg-secondary) hover:bg-(--bg-surface) disabled:opacity-50"
         >
           {t("back")}
         </button>

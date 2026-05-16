@@ -15,9 +15,9 @@ export function KPICards({ kpis }: { kpis: KPIs }) {
 
 function KPI({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
-      <div className="text-xs text-slate-600">{label}</div>
-      <div className="mt-1 text-xl font-semibold text-slate-900">{value}</div>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4">
+      <div className="text-xs text-(--fg-secondary)">{label}</div>
+      <div className="mt-1 text-xl font-semibold text-(--fg-primary)">{value}</div>
     </div>
   );
 }

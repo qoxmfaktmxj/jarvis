@@ -42,7 +42,7 @@ export function FilterPanel({ facets, baseQuery }: FilterPanelProps) {
   const hasAnyActive = activePageType || activeSensitivity;
 
   return (
-    <aside className="sticky top-6 space-y-5 rounded-md border border-surface-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+    <aside className="sticky top-6 space-y-5 rounded-md border border-(--border-default) bg-(--bg-surface) p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
       <div className="flex items-center justify-between">
         <p className="text-display text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-500">
           필터

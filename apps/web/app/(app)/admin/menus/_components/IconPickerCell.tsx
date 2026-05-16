@@ -59,16 +59,16 @@ export function IconPickerCell({ value, options, onCommit }: Props) {
           className="flex h-full w-full items-center gap-1.5 px-2 text-left text-[13px] text-(--fg-primary) outline-none transition-shadow duration-150 focus:bg-(--bg-page) focus:ring-2 focus:ring-(--border-focus) focus:ring-inset"
         >
           <SelectedIcon
-            className={`h-4 w-4 shrink-0 ${value ? "text-slate-700" : "text-slate-300"}`}
+            className={`h-4 w-4 shrink-0 ${value ? "text-(--fg-primary)" : "text-(--fg-muted)"}`}
             aria-hidden
           />
           <span
-            className={`truncate ${value ? "text-slate-900" : "text-slate-400"}`}
+            className={`truncate ${value ? "text-(--fg-primary)" : "text-(--fg-muted)"}`}
           >
             {value ?? t("empty")}
           </span>
           <ChevronDown
-            className="ml-auto h-3 w-3 shrink-0 text-slate-400"
+            className="ml-auto h-3 w-3 shrink-0 text-(--fg-muted)"
             aria-hidden
           />
         </button>
@@ -98,14 +98,14 @@ export function IconPickerCell({ value, options, onCommit }: Props) {
             onCommit(null);
             setOpen(false);
           }}
-          className="mb-1 flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] text-slate-600 transition-colors hover:bg-slate-100"
+          className="mb-1 flex w-full items-center gap-2 rounded px-2 py-1.5 text-[12px] text-(--fg-secondary) transition-colors hover:bg-(--bg-page)"
         >
-          <span className="text-slate-400">—</span>
+          <span className="text-(--fg-muted)">—</span>
           <span>{t("clear")}</span>
         </button>
         <div className="max-h-[260px] overflow-auto">
           {filtered.length === 0 ? (
-            <div className="px-2 py-4 text-center text-[12px] text-slate-500">
+            <div className="px-2 py-4 text-center text-[12px] text-(--fg-secondary)">
               {t("noResults")}
             </div>
           ) : (
@@ -121,10 +121,10 @@ export function IconPickerCell({ value, options, onCommit }: Props) {
                       onCommit(opt.value);
                       setOpen(false);
                     }}
-                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-slate-100 ${
+                    className={`flex items-center gap-2 rounded px-2 py-1.5 text-left text-[12px] transition-colors hover:bg-(--bg-page) ${
                       selected
-                        ? "bg-blue-50 text-blue-700 ring-1 ring-blue-300"
-                        : "text-slate-700"
+                        ? "bg-(--brand-primary-bg) text-(--brand-primary-text) ring-1 ring-(--border-focus)"
+                        : "text-(--fg-primary)"
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" aria-hidden />

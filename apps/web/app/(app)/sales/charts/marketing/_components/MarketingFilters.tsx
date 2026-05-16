@@ -37,20 +37,20 @@ export function MarketingFilters({ defaultYm }: { defaultYm: string }) {
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-white p-3">
-      <label className="flex flex-col text-xs text-slate-600">
+    <div className="flex flex-wrap items-end gap-3 rounded-md border border-(--border-default) bg-(--bg-page) p-3">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         기준년월 (YYYYMM)
         <input
-          className="mt-1 h-8 w-32 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-32 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={ym}
           onBlur={(e) => onChange(e.target.value)}
           placeholder="202604"
         />
       </label>
-      <label className="flex flex-col text-xs text-slate-600">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         {t("year")}
         <select
-          className="mt-1 h-8 w-24 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-24 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("year") ?? String(currentYear)}
           onChange={(e) => set("year", e.target.value)}
         >
@@ -61,10 +61,10 @@ export function MarketingFilters({ defaultYm }: { defaultYm: string }) {
           ))}
         </select>
       </label>
-      <label className="flex flex-col text-xs text-slate-600">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         {t("org")}
         <select
-          className="mt-1 h-8 w-40 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-40 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("orgCd") ?? ""}
           onChange={(e) => set("orgCd", e.target.value)}
         >
@@ -76,7 +76,7 @@ export function MarketingFilters({ defaultYm }: { defaultYm: string }) {
           ))}
         </select>
       </label>
-      {pending ? <span className="text-xs text-slate-500">로딩…</span> : null}
+      {pending ? <span className="text-xs text-(--fg-secondary)">로딩…</span> : null}
     </div>
   );
 }

@@ -82,7 +82,7 @@ export function WikiPanel({ workspaceId, slug, onClose }: WikiPanelProps) {
   const canGoBack = stack.length > 1;
 
   return (
-    <section aria-label="위키 페이지" className="flex h-full w-full flex-col bg-white">
+    <section aria-label="위키 페이지" className="flex h-full w-full flex-col bg-(--bg-surface)">
       <header className="flex shrink-0 items-center gap-2 border-b border-(--border-default) px-4 py-2.5">
         <button
           type="button"

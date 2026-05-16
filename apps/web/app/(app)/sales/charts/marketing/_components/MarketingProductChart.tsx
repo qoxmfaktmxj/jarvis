@@ -8,8 +8,8 @@ const PALETTE = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4
 
 export function MarketingProductChart({ data }: { data: Item[] }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="marketing-product-chart">
-      <h3 className="text-sm font-semibold text-slate-700">상품 유형별 계약예상금액</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="marketing-product-chart">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">상품 유형별 계약예상금액</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>

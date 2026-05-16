@@ -38,11 +38,11 @@ export function AdminPerfFilters({ defaults }: { defaults: { year: number; view:
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-md border border-slate-200 bg-white p-3">
-      <label className="flex flex-col text-xs text-slate-600">
+    <div className="flex flex-wrap items-end gap-3 rounded-md border border-(--border-default) bg-(--bg-page) p-3">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         {t("year")}
         <select
-          className="mt-1 h-8 w-24 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-24 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("year") ?? String(defaults.year)}
           onChange={(e) => set("year", e.target.value)}
         >
@@ -53,10 +53,10 @@ export function AdminPerfFilters({ defaults }: { defaults: { year: number; view:
           ))}
         </select>
       </label>
-      <label className="flex flex-col text-xs text-slate-600">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         {t("org")}
         <select
-          className="mt-1 h-8 w-40 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-40 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("orgCd") ?? ""}
           onChange={(e) => set("orgCd", e.target.value)}
         >
@@ -68,10 +68,10 @@ export function AdminPerfFilters({ defaults }: { defaults: { year: number; view:
           ))}
         </select>
       </label>
-      <label className="flex flex-col text-xs text-slate-600">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         보기
         <select
-          className="mt-1 h-8 w-24 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-24 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("view") ?? defaults.view}
           onChange={(e) => set("view", e.target.value)}
         >
@@ -79,10 +79,10 @@ export function AdminPerfFilters({ defaults }: { defaults: { year: number; view:
           <option value="quarter">분기</option>
         </select>
       </label>
-      <label className="flex flex-col text-xs text-slate-600">
+      <label className="flex flex-col text-xs text-(--fg-secondary)">
         지표
         <select
-          className="mt-1 h-8 w-32 rounded border border-slate-200 px-2 text-sm"
+          className="mt-1 h-8 w-32 rounded border border-(--border-default) bg-(--bg-page) px-2 text-sm"
           defaultValue={params.get("metric") ?? defaults.metric}
           onChange={(e) => set("metric", e.target.value)}
         >
@@ -93,7 +93,7 @@ export function AdminPerfFilters({ defaults }: { defaults: { year: number; view:
           ))}
         </select>
       </label>
-      {pending ? <span className="text-xs text-slate-500">로딩…</span> : null}
+      {pending ? <span className="text-xs text-(--fg-secondary)">로딩…</span> : null}
     </div>
   );
 }

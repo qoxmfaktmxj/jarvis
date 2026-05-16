@@ -40,9 +40,9 @@ export function MasterOptionsSection({ master, onSaved }: Props) {
   }
 
   return (
-    <section className="rounded border border-slate-200 bg-white p-4">
+    <section className="rounded border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">{t("title")}</h3>
+        <h3 className="text-sm font-semibold text-(--fg-secondary)">{t("title")}</h3>
         <button
           onClick={save}
           disabled={!dirty || saving}

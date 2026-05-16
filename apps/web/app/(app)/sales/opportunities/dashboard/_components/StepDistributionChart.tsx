@@ -5,8 +5,8 @@ type Item = { stepCode: string | null; stepName: string; cnt: number };
 
 export function StepDistributionChart({ data }: { data: Item[] }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-700">단계별 영업기회 분포</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">단계별 영업기회 분포</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data}>

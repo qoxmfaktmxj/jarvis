@@ -35,7 +35,7 @@ const NOTE_KEYS = [
 
 /** input / select 공통 className (baseline 표준) */
 const INPUT_CLS =
-  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
+  "h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)";
 
 type FilterValues = {
   q: string;
@@ -213,20 +213,20 @@ export function CodeItemGrid({
 
       {/* Detail title with group info */}
       <div className="flex items-center">
-        <span className="text-sm text-slate-600">
+        <span className="text-sm text-(--fg-secondary)">
           {t("title")}
           {selectedGroupId ? (
             <>
               {" — "}
-              <span className="font-mono text-slate-800">{selectedGroupCode}</span>
+              <span className="font-mono text-(--fg-primary)">{selectedGroupCode}</span>
               {selectedGroupName ? (
-                <span className="text-slate-500"> · {selectedGroupName}</span>
+                <span className="text-(--fg-secondary)"> · {selectedGroupName}</span>
               ) : null}
               {" — "}
               {total.toLocaleString()}
             </>
           ) : (
-            <span className="ml-1 text-slate-400">({t("emptyMaster")})</span>
+            <span className="ml-1 text-(--fg-muted)">({t("emptyMaster")})</span>
           )}
         </span>
       </div>

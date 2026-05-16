@@ -55,9 +55,9 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
   }
 
   return (
-    <section className="rounded border border-slate-200 bg-white p-4">
+    <section className="rounded border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">{t("title")}</h3>
+        <h3 className="text-sm font-semibold text-(--fg-secondary)">{t("title")}</h3>
         <button
           onClick={save}
           disabled={saving}
@@ -69,7 +69,7 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {(["aaCnt", "raCnt", "newCnt", "cpnCnt"] as const).map(f => (
           <label key={f} className="flex flex-col gap-1 text-xs">
-            <span className="text-slate-600">{t(f)}</span>
+            <span className="text-(--fg-secondary)">{t(f)}</span>
             <input
               type="number"
               value={draft[f] ?? ""}
@@ -79,7 +79,7 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
                   [f]: e.target.value === "" ? null : Number(e.target.value),
                 }))
               }
-              className="rounded border border-slate-300 px-2 py-1 text-right"
+              className="rounded border border-(--border-default) bg-(--bg-page) px-2 py-1 text-right"
             />
           </label>
         ))}
@@ -87,7 +87,7 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
       <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
         {(["attr1", "attr2"] as const).map(f => (
           <label key={f} className="flex flex-col gap-1 text-xs">
-            <span className="text-slate-600">{t(f)}</span>
+            <span className="text-(--fg-secondary)">{t(f)}</span>
             <textarea
               rows={3}
               value={draft[f] ?? ""}
@@ -97,7 +97,7 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
                   [f]: e.target.value || null,
                 }))
               }
-              className="rounded border border-slate-300 px-2 py-1"
+              className="rounded border border-(--border-default) bg-(--bg-page) px-2 py-1"
             />
           </label>
         ))}

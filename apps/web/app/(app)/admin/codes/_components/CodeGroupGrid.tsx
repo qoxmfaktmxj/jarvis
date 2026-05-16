@@ -24,7 +24,7 @@ const KIND_OPTION_VALUES = ["C", "N"] as const;
 
 /** input / select 공통 className (baseline 표준) */
 const INPUT_CLS =
-  "h-8 w-full rounded-md border border-slate-300 bg-white px-2 text-[13px] text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
+  "h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)";
 
 type FilterValues = {
   q: string;
@@ -206,7 +206,7 @@ export function CodeGroupGrid({
       </GridSearchForm>
 
       <div className="flex items-center">
-        <span className="text-sm text-slate-600">
+        <span className="text-sm text-(--fg-secondary)">
           {t("title")} — {total.toLocaleString()}
         </span>
       </div>

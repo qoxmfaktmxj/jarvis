@@ -63,7 +63,7 @@ export function StatsContainer() {
         </div>
       </div>
 
-      <div role="tablist" className="flex gap-1 border-b border-slate-200">
+      <div role="tablist" className="flex gap-1 border-b border-(--border-default)">
         {(["company", "manager", "combined"] as const).map((k) => (
           <button
             key={k}
@@ -73,8 +73,8 @@ export function StatsContainer() {
             className={
               "border-b-2 px-3 py-1.5 text-sm font-medium " +
               (tab === k
-                ? "border-blue-600 text-blue-700"
-                : "border-transparent text-slate-600")
+                ? "border-(--brand-primary) text-(--brand-primary-text)"
+                : "border-transparent text-(--fg-secondary)")
             }
           >
             {t(`tabs.${k}`)}

@@ -20,8 +20,8 @@ export function OpIncomeCard({
     FORECAST: forecast[i] ?? 0,
   }));
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="dash-op-income">
-      <h3 className="text-sm font-semibold text-slate-700">영업이익 (계획 / 실적 / 전망)</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="dash-op-income">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">영업이익 (계획 / 실적 / 전망)</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data}>

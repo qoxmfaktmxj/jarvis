@@ -102,7 +102,7 @@ export function SearchPage({
                         title={opt.desc}
                         className={
                           active
-                            ? 'rounded-[5px] bg-white px-3 py-1 text-[12px] font-semibold text-isu-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
+                            ? 'rounded-[5px] bg-(--bg-page) px-3 py-1 text-[12px] font-semibold text-isu-700 shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
                             : 'rounded-[5px] px-3 py-1 text-[12px] font-medium text-surface-600 hover:text-surface-900'
                         }
                       >
@@ -188,7 +188,7 @@ function EmptyState({ query, suggestions }: { query: string; suggestions: string
               <Link
                 key={s}
                 href={`/search?q=${encodeURIComponent(s)}`}
-                className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-isu-700 ring-1 ring-inset ring-isu-200 transition-colors hover:bg-isu-50"
+                className="rounded-full bg-(--bg-page) px-3 py-1 text-[12px] font-medium text-isu-700 ring-1 ring-inset ring-isu-200 transition-colors hover:bg-isu-50"
               >
                 {s}
               </Link>
@@ -213,7 +213,7 @@ function InitialState() {
           <Link
             key={q}
             href={`/search?q=${encodeURIComponent(q)}`}
-            className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-surface-700 ring-1 ring-inset ring-surface-200 hover:bg-isu-50 hover:text-isu-700 hover:ring-isu-200"
+            className="rounded-full bg-(--bg-page) px-3 py-1 text-[12px] font-medium text-(--fg-secondary) ring-1 ring-inset ring-(--border-default) hover:bg-isu-50 hover:text-isu-700 hover:ring-isu-200"
           >
             {q}
           </Link>

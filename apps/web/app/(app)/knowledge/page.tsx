@@ -101,7 +101,7 @@ export default async function KnowledgeHomePage() {
         {/* ── Reference: FAQ / Glossary / Tools ── */}
         <section>
           <SectionEyebrow label="Reference" count={reference.reduce((a, s) => a + s.pages.length, 0)} />
-          <div className="overflow-hidden rounded-md border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+          <div className="overflow-hidden rounded-md border border-(--border-default) bg-(--bg-surface) shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
             {reference.map((section, idx) => (
               <ReferenceRow
                 key={section.type}
@@ -153,7 +153,7 @@ type SectionWithPages = HubSection & {
 function HeroCard({ section }: { section: SectionWithPages }) {
   const { Icon } = section;
   return (
-    <article className="group relative overflow-hidden rounded-md border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:-translate-y-[1px] hover:border-isu-200 hover:shadow-[0_10px_28px_-14px_rgba(28,77,167,0.18)]">
+    <article className="group relative overflow-hidden rounded-md border border-(--border-default) bg-(--bg-surface) shadow-[0_1px_2px_rgba(15,23,42,0.03)] transition-all hover:-translate-y-[1px] hover:border-isu-200 hover:shadow-[0_10px_28px_-14px_rgba(28,77,167,0.18)]">
       {/* Accent stripe */}
       <span className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-isu-500/70 via-isu-500/40 to-transparent" aria-hidden />
 
@@ -255,7 +255,7 @@ function ReferenceRow({ section, isLast }: { section: SectionWithPages; isLast: 
 function OperationsCard({ section }: { section: SectionWithPages }) {
   const { Icon } = section;
   return (
-    <article className="flex flex-col rounded-md border border-surface-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+    <article className="flex flex-col rounded-md border border-(--border-default) bg-(--bg-surface) p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-surface-50 text-surface-600 ring-1 ring-inset ring-surface-200">

@@ -157,7 +157,7 @@ export function ScheduleCalendarView() {
               <span className="inline-block h-2 w-2 rounded-sm bg-blue-500" /> {tCal("legend.own")}
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-slate-400" /> {tCal("legend.shared")}
+              <span className="inline-block h-2 w-2 rounded-sm bg-(--fg-muted)" /> {tCal("legend.shared")}
             </span>
           </div>
         </header>
@@ -197,8 +197,8 @@ export function ScheduleCalendarView() {
                 aria-label={`${c.iso}${holiday ? ` (${holiday.name})` : ""}`}
                 aria-pressed={isSelected}
                 className={cn(
-                  "relative flex min-h-[88px] flex-col items-stretch gap-1 bg-(--bg-page) p-1 text-left text-[12px] transition-colors hover:bg-slate-50",
-                  !c.inMonth && "bg-slate-50/40 text-(--fg-muted)",
+                  "relative flex min-h-[88px] flex-col items-stretch gap-1 bg-(--bg-page) p-1 text-left text-[12px] transition-colors hover:bg-(--bg-surface)",
+                  !c.inMonth && "bg-(--bg-surface)/40 text-(--fg-muted)",
                   isSelected && "ring-2 ring-blue-500 ring-inset",
                 )}
               >
@@ -229,7 +229,7 @@ export function ScheduleCalendarView() {
                         "truncate rounded px-1 text-[10.5px] leading-4",
                         ev.isOwn
                           ? "bg-blue-100 text-blue-800"
-                          : "bg-slate-200 text-slate-700",
+                          : "bg-(--bg-surface) text-(--fg-secondary)",
                       )}
                       title={`${ev.title}${ev.userName ? ` · ${ev.userName}` : ""}`}
                     >
@@ -265,7 +265,7 @@ export function ScheduleCalendarView() {
                   key={ev.id}
                   className={cn(
                     "rounded border-l-4 bg-(--bg-page) p-2 text-[12px]",
-                    ev.isOwn ? "border-blue-500" : "border-slate-400",
+                    ev.isOwn ? "border-blue-500" : "border-(--border-default)",
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">

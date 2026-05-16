@@ -35,7 +35,7 @@ export function GraphViewerPage({ data }: GraphViewerPageProps) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-md border border-surface-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+      <div className="overflow-hidden rounded-md border border-(--border-default) bg-(--bg-surface) shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <VisNetwork data={data} onNodeClick={handleNodeClick} />
       </div>
 

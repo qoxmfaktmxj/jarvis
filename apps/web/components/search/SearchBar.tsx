@@ -34,6 +34,14 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
+  // SSR-safe platform detection for the keyboard hint (⌘ on Mac, Ctrl elsewhere).
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    if (typeof navigator === 'undefined') return;
+    const platform = navigator.platform || navigator.userAgent || '';
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(platform));
+  }, []);
+
   const debouncedQuery = useDebounce(query, 300);
 
   // Fetch suggestions when debounced query changes
@@ -124,7 +132,7 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           placeholder="위키, 런북, 회의록, 코드… 검색"
-          className="h-12 rounded-md border-surface-200 bg-white pl-11 pr-11 text-[15px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
+          className="h-12 rounded-md border-(--border-default) bg-(--bg-page) pl-11 pr-11 text-[15px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
           // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
           autoFocus={autoFocus}
           aria-label="검색"
@@ -146,8 +154,8 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
             <X className="h-4 w-4" />
           </button>
         ) : (
-          <kbd className="text-display absolute right-4 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-surface-200 bg-surface-50 px-1.5 py-0.5 text-[10px] font-medium text-surface-500 sm:inline-flex">
-            <span className="text-[11px]">⌘</span>K
+          <kbd className="text-display absolute right-4 top-1/2 hidden -translate-y-1/2 items-center gap-1 rounded border border-(--border-default) bg-(--bg-page) px-1.5 py-0.5 text-[10px] font-medium text-(--fg-muted) sm:inline-flex">
+            <span className="text-[11px]">{isMac ? '⌘' : 'Ctrl'}</span>K
           </kbd>
         )}
       </div>
@@ -157,7 +165,7 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           id="search-suggestions"
           role="listbox"
           aria-label="추천 검색어"
-          className="absolute top-full z-50 mt-2 w-full overflow-hidden rounded-md border border-surface-200 bg-white shadow-lg ring-1 ring-black/5"
+          className="absolute top-full z-50 mt-2 w-full overflow-hidden rounded-md border border-(--border-default) bg-(--bg-surface) shadow-lg ring-1 ring-black/5"
         >
           <div className="p-1.5">
             <p className="text-display px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-surface-400">

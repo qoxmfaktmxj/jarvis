@@ -15,20 +15,20 @@ export function BACard({
   byOrg: Item[];
 }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="dash-ba">
-      <h3 className="text-sm font-semibold text-slate-700">영업활동 vs 영업기회 (BA)</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="dash-ba">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">영업활동 vs 영업기회 (BA)</h3>
       <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-        <div className="rounded border border-slate-200 p-2">
-          <div className="text-xs text-slate-500">활동 건수</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">{activityCount.toLocaleString("ko-KR")}</div>
+        <div className="rounded border border-(--border-default) p-2">
+          <div className="text-xs text-(--fg-secondary)">활동 건수</div>
+          <div className="mt-1 text-lg font-semibold text-(--fg-primary)">{activityCount.toLocaleString("ko-KR")}</div>
         </div>
-        <div className="rounded border border-slate-200 p-2">
-          <div className="text-xs text-slate-500">기회 건수</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">{opportunityCount.toLocaleString("ko-KR")}</div>
+        <div className="rounded border border-(--border-default) p-2">
+          <div className="text-xs text-(--fg-secondary)">기회 건수</div>
+          <div className="mt-1 text-lg font-semibold text-(--fg-primary)">{opportunityCount.toLocaleString("ko-KR")}</div>
         </div>
-        <div className="rounded border border-slate-200 p-2">
-          <div className="text-xs text-slate-500">기회 금액</div>
-          <div className="mt-1 text-lg font-semibold text-slate-900">{opportunityAmt.toLocaleString("ko-KR")}</div>
+        <div className="rounded border border-(--border-default) p-2">
+          <div className="text-xs text-(--fg-secondary)">기회 금액</div>
+          <div className="mt-1 text-lg font-semibold text-(--fg-primary)">{opportunityAmt.toLocaleString("ko-KR")}</div>
         </div>
       </div>
       <div className="mt-3">

@@ -43,7 +43,7 @@ type Props = {
 function Field({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
   return (
     <div className={["flex flex-col gap-1", full ? "md:col-span-2" : ""].join(" ")}>
-      <label className="text-xs font-medium text-slate-600">{label}</label>
+      <label className="text-xs font-medium text-(--fg-secondary)">{label}</label>
       {children}
     </div>
   );
@@ -54,7 +54,7 @@ function CodeField({ value, label, options, onChange }: { value: string | null; 
   const display = matched ? `${matched.label} (${matched.code})` : (value ?? "");
   return (
     <div className="flex items-stretch gap-2">
-      <input type="text" readOnly value={display} className="h-9 flex-1 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" />
+      <input type="text" readOnly value={display} className="h-9 flex-1 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm text-(--fg-secondary)" />
       <CodeGroupPopupLauncher triggerLabel={label} items={options} searchable searchPlaceholder="코드/명칭 검색" onSelect={(it) => onChange(it.code)} />
       {value ? <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>지우기</Button> : null}
     </div>
@@ -101,41 +101,41 @@ function MemoSection({ activityId }: { activityId: string }) {
 
   return (
     <div className="space-y-3" data-testid="activity-memo-section">
-      <div className="rounded border border-slate-200 bg-slate-50 p-3">
+      <div className="rounded border border-(--border-default) bg-(--bg-page) p-3">
         {replyTo != null ? (
           <div className="mb-2 flex items-center justify-between text-xs text-blue-700">
             <span>댓글 작성 중 (#{replyTo})</span>
             <button type="button" onClick={() => setReplyTo(null)} className="text-blue-700 underline">취소</button>
           </div>
         ) : null}
-        <textarea className="w-full min-h-[80px] rounded border border-slate-300 px-3 py-2 text-sm" placeholder="새 메모..." value={draft} onChange={(e) => setDraft(e.target.value)} />
+        <textarea className="w-full min-h-[80px] rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm text-(--fg-primary)" placeholder="새 메모..." value={draft} onChange={(e) => setDraft(e.target.value)} />
         <div className="mt-2 flex justify-end">
           <Button type="button" size="sm" onClick={handleAdd} disabled={isPending || !draft.trim()}>등록</Button>
         </div>
       </div>
       {tree.length === 0 ? (
-        <div className="rounded border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">메모가 없습니다.</div>
+        <div className="rounded border border-dashed border-(--border-default) p-4 text-center text-sm text-(--fg-secondary)">메모가 없습니다.</div>
       ) : (
         <ul className="space-y-2">
           {tree.map((m) => (
-            <li key={m.comtSeq} className="rounded border border-slate-200 bg-white p-3">
-              <div className="flex items-start justify-between text-xs text-slate-500">
+            <li key={m.comtSeq} className="rounded border border-(--border-default) bg-(--bg-surface) p-3">
+              <div className="flex items-start justify-between text-xs text-(--fg-secondary)">
                 <span>#{m.comtSeq} · {m.authorName ?? "(작성자)"} · {m.insdate.slice(0, 16)}</span>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setReplyTo(m.comtSeq)} className="text-blue-600 hover:underline">답글</button>
                   {m.isOwn ? (<button type="button" onClick={() => handleDelete(m.comtSeq)} className="text-rose-600 hover:underline">삭제</button>) : null}
                 </div>
               </div>
-              <div className="mt-1 whitespace-pre-wrap text-sm text-slate-900">{m.memo}</div>
+              <div className="mt-1 whitespace-pre-wrap text-sm text-(--fg-primary)">{m.memo}</div>
               {m.replies && m.replies.length > 0 ? (
-                <ul className="mt-2 space-y-2 border-l-2 border-slate-200 pl-3">
+                <ul className="mt-2 space-y-2 border-l-2 border-(--border-default) pl-3">
                   {m.replies.map((r) => (
-                    <li key={r.comtSeq} className="rounded bg-slate-50 p-2">
-                      <div className="flex items-start justify-between text-xs text-slate-500">
+                    <li key={r.comtSeq} className="rounded bg-(--bg-page) p-2">
+                      <div className="flex items-start justify-between text-xs text-(--fg-secondary)">
                         <span>↳ #{r.comtSeq} · {r.authorName ?? "(작성자)"} · {r.insdate.slice(0, 16)}</span>
                         {r.isOwn ? (<button type="button" onClick={() => handleDelete(r.comtSeq)} className="text-rose-600 hover:underline">삭제</button>) : null}
                       </div>
-                      <div className="mt-1 whitespace-pre-wrap text-sm text-slate-900">{r.memo}</div>
+                      <div className="mt-1 whitespace-pre-wrap text-sm text-(--fg-primary)">{r.memo}</div>
                     </li>
                   ))}
                 </ul>
@@ -215,17 +215,17 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-1 border-b border-slate-200">
-        <button type="button" onClick={() => setTab("info")} className={tab === "info" ? "border-b-2 border-blue-500 px-4 py-2 text-sm font-semibold text-blue-700" : "px-4 py-2 text-sm text-slate-600 hover:text-slate-900"} data-testid="activity-tab-info">기본정보</button>
-        <button type="button" onClick={() => setTab("memo")} className={tab === "memo" ? "border-b-2 border-blue-500 px-4 py-2 text-sm font-semibold text-blue-700" : "px-4 py-2 text-sm text-slate-600 hover:text-slate-900"} data-testid="activity-tab-memo">메모</button>
+      <div className="flex items-center gap-1 border-b border-(--border-default)">
+        <button type="button" onClick={() => setTab("info")} className={tab === "info" ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary-text)" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="activity-tab-info">기본정보</button>
+        <button type="button" onClick={() => setTab("memo")} className={tab === "memo" ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary-text)" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="activity-tab-memo">메모</button>
       </div>
 
       {tab === "info" ? (
-        <div className="space-y-4 rounded-md border border-slate-200 bg-white p-6">
+        <div className="space-y-4 rounded-md border border-(--border-default) bg-(--bg-surface) p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="활동명" full><input type="text" className="h-9 rounded border border-slate-300 px-3 text-sm" value={draft.bizActNm} onChange={(e) => patch("bizActNm", e.target.value)} /></Field>
-            <Field label="활동일(YYYY-MM-DD)"><input type="text" className="h-9 rounded border border-slate-300 px-3 text-sm" value={draft.actYmd} onChange={(e) => patch("actYmd", e.target.value)} placeholder="2026-05-02" /></Field>
-            <Field label="고객사"><input type="text" className="h-9 rounded border border-slate-300 bg-slate-50 px-3 text-sm text-slate-700" value={activity.customerName ?? ""} readOnly /></Field>
+            <Field label="활동명" full><input type="text" className="h-9 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm" value={draft.bizActNm} onChange={(e) => patch("bizActNm", e.target.value)} /></Field>
+            <Field label="활동일(YYYY-MM-DD)"><input type="text" className="h-9 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm" value={draft.actYmd} onChange={(e) => patch("actYmd", e.target.value)} placeholder="2026-05-02" /></Field>
+            <Field label="고객사"><input type="text" className="h-9 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm text-(--fg-secondary)" value={activity.customerName ?? ""} readOnly /></Field>
             <Field label="영업기회"><CodeField value={draft.opportunityId} label="기회 선택" options={opportunityOptions} onChange={(v) => patch("opportunityId", v)} /></Field>
             <Field label="참석자(사번)">
               <EmployeePicker value={attendeeName} onSelect={(hit) => { patch("attendeeUserId", hit.userId); setAttendeeName(`${hit.name} (${hit.sabun})`); }} search={(q, lim) => searchEmployees({ q, limit: lim })} placeholder="사번/이름 검색" />
@@ -238,7 +238,7 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
             <Field label="고객 담당자(Contact ID)">
               <input
                 type="text"
-                className="h-9 rounded border border-slate-300 px-3 text-sm font-mono"
+                className="h-9 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm font-mono text-(--fg-primary)"
                 value={draft.contactId ?? ""}
                 onChange={(e) => patch("contactId", e.target.value || null)}
                 placeholder="UUID"
@@ -246,15 +246,15 @@ export function ActivityEditForm({ activity, codeOptions, opportunityOptions }: 
             </Field>
           </div>
           <Field label="활동 내용" full>
-            <textarea className="min-h-[120px] rounded border border-slate-300 px-3 py-2 text-sm" value={draft.actContent} onChange={(e) => patch("actContent", e.target.value)} />
+            <textarea className="min-h-[120px] rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm text-(--fg-primary)" value={draft.actContent} onChange={(e) => patch("actContent", e.target.value)} />
           </Field>
-          <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-(--border-default) pt-4">
             <Button variant="outline" onClick={() => router.push("/sales/activities")} disabled={isPending}>취소</Button>
             <Button onClick={handleSave} disabled={isPending} data-testid="activity-edit-save">{isPending ? "저장 중…" : "저장"}</Button>
           </div>
         </div>
       ) : (
-        <div className="rounded-md border border-slate-200 bg-white p-6">
+        <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-6">
           <MemoSection activityId={activity.id} />
         </div>
       )}

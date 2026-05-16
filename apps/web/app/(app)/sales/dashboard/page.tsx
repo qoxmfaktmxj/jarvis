@@ -63,7 +63,7 @@ export default async function SalesDashboardPage() {
         {trendRes.ok ? (
           <SalesTrendCard months={trendRes.months} series={trendRes.series} />
         ) : (
-          <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4 text-sm text-(--fg-secondary)">
             {tDash("noSalesData")}
           </div>
         )}
@@ -76,7 +76,7 @@ export default async function SalesDashboardPage() {
             forecast={opIncomeRes.forecast}
           />
         ) : (
-          <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+          <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4 text-sm text-(--fg-secondary)">
             {tDash("noOpIncomeData")}
           </div>
         )}
@@ -88,7 +88,7 @@ export default async function SalesDashboardPage() {
             byOrg={baRes.byOrg.map((b) => ({ orgNm: b.orgNm ?? "(미설정)", opportunityCount: b.opportunityCount }))}
           />
         ) : (
-          <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">{tDash("noBaData")}</div>
+          <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4 text-sm text-(--fg-secondary)">{tDash("noBaData")}</div>
         )}
       </div>
     </div>

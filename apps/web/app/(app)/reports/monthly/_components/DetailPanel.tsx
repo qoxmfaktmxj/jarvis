@@ -46,7 +46,7 @@ export function DetailPanel({ selected, ym, onYmChange }: Props) {
 
   if (!selected) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-sm text-slate-500">
+      <div className="flex h-full items-center justify-center p-6 text-sm text-(--fg-secondary)">
         {t("placeholder")}
       </div>
     );
@@ -54,10 +54,10 @@ export function DetailPanel({ selected, ym, onYmChange }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-3">
+      <div className="flex items-center justify-between gap-3 border-b border-(--border-default) p-3">
         <div className="flex flex-col">
-          <h2 className="text-base font-semibold text-slate-900">{selected.companyName}</h2>
-          <span className="text-xs text-slate-500">{selected.companyCd}</span>
+          <h2 className="text-base font-semibold text-(--fg-primary)">{selected.companyName}</h2>
+          <span className="text-xs text-(--fg-secondary)">{selected.companyCd}</span>
         </div>
         <div className="flex items-center gap-3">
           <MonthPicker
@@ -73,9 +73,9 @@ export function DetailPanel({ selected, ym, onYmChange }: Props) {
       </div>
       <div className="flex-1 overflow-auto p-4">
         {loading ? (
-          <p className="text-xs text-slate-500">{t("loading")}</p>
+          <p className="text-xs text-(--fg-secondary)">{t("loading")}</p>
         ) : !master ? (
-          <p className="text-xs text-slate-500">{t("noData")}</p>
+          <p className="text-xs text-(--fg-secondary)">{t("noData")}</p>
         ) : (
           <div className="flex flex-col gap-6">
             <MasterOptionsSection master={master} onSaved={setMaster} />

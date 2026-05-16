@@ -36,8 +36,8 @@ function TabButton({
       className={[
         "flex items-center justify-center rounded px-3 py-2 text-sm font-medium transition-colors",
         primary
-          ? "bg-slate-900 text-white hover:bg-slate-700 disabled:bg-slate-300"
-          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400",
+          ? "bg-(--fg-primary) text-white hover:bg-(--fg-secondary) disabled:opacity-40"
+          : "border border-(--border-default) bg-(--bg-page) text-(--fg-secondary) hover:bg-(--bg-surface) disabled:cursor-not-allowed disabled:text-(--fg-muted)",
       ]
         .filter(Boolean)
         .join(" ")}

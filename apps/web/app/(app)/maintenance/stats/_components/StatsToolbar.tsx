@@ -38,7 +38,7 @@ export function StatsToolbar({ value, onChange }: Props) {
   const tCat = useTranslations("Maintenance.Stats");
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded border border-slate-200 bg-slate-50 p-3 text-sm">
+    <div className="flex flex-wrap items-center gap-3 rounded border border-(--border-default) bg-(--bg-page) p-3 text-sm">
       <label className="flex items-center gap-2">
         <span>{t("from")}</span>
         <MonthPicker

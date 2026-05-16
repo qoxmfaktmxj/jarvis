@@ -13,7 +13,7 @@ export function ExportPdfButton({ companyCd, ym, disabled }: Props) {
 
   if (disabled) {
     return (
-      <span className="cursor-not-allowed rounded bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-400">
+      <span className="cursor-not-allowed rounded bg-(--bg-surface) px-3 py-1.5 text-sm font-medium text-(--fg-muted)">
         {t("button")}
       </span>
     );

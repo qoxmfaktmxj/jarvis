@@ -35,7 +35,7 @@ export function DatePicker({
   }, [open]);
 
   return (
-    <div ref={wrapRef} className={cn("relative inline-flex h-8 items-center rounded-md border border-warm-200 bg-white", className)}>
+    <div ref={wrapRef} className={cn("relative inline-flex h-8 items-center rounded-md border border-(--border-default) bg-(--bg-page)", className)}>
       <MaskedDateInput
         ref={inputRef}
         value={value}
@@ -50,7 +50,7 @@ export function DatePicker({
         aria-label={t("openCalendar")}
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className="flex h-full w-8 items-center justify-center text-warm-500 hover:text-warm-700 disabled:cursor-not-allowed"
+        className="flex h-full w-8 items-center justify-center text-(--fg-secondary) hover:text-(--fg-primary) disabled:cursor-not-allowed"
       >
         <Calendar size={14} />
       </button>

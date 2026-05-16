@@ -15,8 +15,8 @@ export function SalesTrendCard({ months, series }: { months: string[]; series: S
     return obj;
   });
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="dash-sales-trend">
-      <h3 className="text-sm font-semibold text-slate-700">{t("salesTrend")}</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="dash-sales-trend">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">{t("salesTrend")}</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={240}>
           <LineChart data={data}>

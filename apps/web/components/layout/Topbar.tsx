@@ -7,7 +7,7 @@
  * 좌측 라우트 라벨은 탭 기능 도입(2026-05) 시 TabBar로 대체됨.
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell, Moon, Search, Sun } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { CommandPalette } from "./CommandPalette";
@@ -27,9 +27,27 @@ export function Topbar({
   const theme = useTheme();
   const isDark = theme === "dark";
 
+  // SSR-safe platform detection: default false (Windows/Linux assumption),
+  // then upgrade on client mount. Avoids hydration mismatch on the kbd hint.
+  const [isMac, setIsMac] = useState(false);
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const platform = navigator.platform || navigator.userAgent || "";
+    setIsMac(/Mac|iPhone|iPad|iPod/.test(platform));
+  }, []);
+  const modKeyLabel = isMac ? "⌘" : "Ctrl";
+  const modKeyA11y = isMac ? "Command" : "Control";
+
   const openPalette = useCallback(() => {
-    // CommandPalette는 window keydown(⌘K)으로 트리거되는 기존 계약을 유지.
-    const evt = new KeyboardEvent("keydown", { key: "k", metaKey: true, bubbles: true });
+    // CommandPalette는 window keydown(⌘K/Ctrl+K)으로 트리거되는 기존 계약을 유지.
+    // metaKey와 ctrlKey 모두 dispatch해서 listener의 `metaKey || ctrlKey` 가드를
+    // 통과시킨다 (플랫폼 무관 단일 경로).
+    const evt = new KeyboardEvent("keydown", {
+      key: "k",
+      metaKey: true,
+      ctrlKey: true,
+      bubbles: true,
+    });
     window.dispatchEvent(evt);
   }, []);
 
@@ -60,6 +78,7 @@ export function Topbar({
         <button
           type="button"
           onClick={openPalette}
+          aria-label={`검색하거나 명령을 실행하세요 (${modKeyA11y} + K)`}
           className="hidden items-center rounded-lg border text-[13px] transition-colors xl:flex"
           style={{
             gap: 10,
@@ -73,6 +92,7 @@ export function Topbar({
           <Search className="h-4 w-4" aria-hidden />
           <span className="flex-1 text-left">검색하거나 명령을 실행하세요</span>
           <kbd
+            aria-hidden
             className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border px-1.5 text-[11px]"
             style={{
               background: "var(--panel)",
@@ -81,9 +101,10 @@ export function Topbar({
               fontFamily: "var(--font-mono)",
             }}
           >
-            ⌘
+            {modKeyLabel}
           </kbd>
           <kbd
+            aria-hidden
             className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border px-1.5 text-[11px]"
             style={{
               background: "var(--panel)",

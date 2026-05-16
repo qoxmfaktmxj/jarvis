@@ -14,7 +14,7 @@ export function TrendChart({ months, series }: { months: string[]; series: Serie
   });
 
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="trend-chart">
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="trend-chart">
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={360}>
           <LineChart data={data}>

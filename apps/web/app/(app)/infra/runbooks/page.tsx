@@ -82,7 +82,7 @@ export default async function InfraDashboardPage() {
       actions={
         <Link
           href="/infra/import"
-          className="inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
+          className="inline-flex shrink-0 items-center rounded-md border border-(--border-default) bg-(--bg-page) px-3 py-1.5 text-sm font-medium text-(--fg-secondary) hover:bg-(--bg-surface)"
         >
           SQL 가져오기
         </Link>
@@ -98,27 +98,27 @@ export default async function InfraDashboardPage() {
           {groups.map((g) => (
             <section
               key={g.companyCd}
-              className="rounded-lg border border-surface-200 bg-white"
+              className="rounded-lg border border-(--border-default) bg-(--bg-surface)"
               aria-labelledby={`company-${g.companyCd}`}
             >
-              <header className="flex items-baseline justify-between gap-3 border-b border-surface-200 px-4 py-3">
+              <header className="flex items-baseline justify-between gap-3 border-b border-(--border-default) px-4 py-3">
                 <h2
                   id={`company-${g.companyCd}`}
-                  className="text-lg font-semibold text-surface-900"
+                  className="text-lg font-semibold text-(--fg-primary)"
                 >
                   {g.companyCd}
                 </h2>
-                <span className="text-xs text-surface-500">{g.systems.length}개 시스템</span>
+                <span className="text-xs text-(--fg-secondary)">{g.systems.length}개 시스템</span>
               </header>
-              <ul className="divide-y divide-surface-200">
+              <ul className="divide-y divide-(--border-default)">
                 {g.systems.map((s) => (
                   <li key={s.id}>
                     <Link
                       href={`/wiki/${s.id ? '' : ''}${session.workspaceId}/${s.route_key ?? s.slug}`}
-                      className="block px-4 py-3 hover:bg-surface-50"
+                      className="block px-4 py-3 hover:bg-(--bg-page)"
                     >
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-surface-900">{s.title}</span>
+                        <span className="font-medium text-(--fg-primary)">{s.title}</span>
                         {s.env_type && (
                           <Badge variant="secondary">env/{s.env_type}</Badge>
                         )}
@@ -127,7 +127,7 @@ export default async function InfraDashboardPage() {
                         )}
                       </div>
                       {s.domain_addr && (
-                        <p className="mt-1 text-xs font-mono text-surface-600 break-all">
+                        <p className="mt-1 text-xs font-mono text-(--fg-secondary) break-all">
                           {s.domain_addr}
                         </p>
                       )}

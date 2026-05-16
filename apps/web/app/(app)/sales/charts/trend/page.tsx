@@ -42,7 +42,7 @@ export default async function SalesChartsTrendPage({
       {result.ok ? (
         <TrendChart months={result.months} series={result.series} />
       ) : (
-        <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4 text-sm text-(--fg-secondary)">
           데이터를 불러올 수 없습니다.
         </div>
       )}

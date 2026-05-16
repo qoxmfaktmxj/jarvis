@@ -61,8 +61,8 @@ const MONTH_COLS: Array<{ key: MonthKey; label: string }> = [
 function MasterField({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-slate-600">{label}</label>
-      <div className="h-9 rounded border border-slate-200 bg-slate-50 px-3 text-sm leading-9 text-slate-700">
+      <label className="text-xs font-medium text-(--fg-secondary)">{label}</label>
+      <div className="h-9 rounded border border-(--border-default) bg-(--bg-page) px-3 text-sm leading-9 text-(--fg-secondary)">
         {value === null || value === undefined || value === "" ? "—" : typeof value === "number" ? fmt(value) : String(value)}
       </div>
     </div>
@@ -142,8 +142,8 @@ export function PlanViewPerfDetailView({
 
   return (
     <div className="space-y-4" data-testid="pvp-detail-root">
-      <div className="rounded-md border border-slate-200 bg-white p-6">
-        <h3 className="mb-4 text-sm font-semibold text-slate-700">기본 정보</h3>
+      <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-6">
+        <h3 className="mb-4 text-sm font-semibold text-(--fg-secondary)">기본 정보</h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <MasterField label="데이터 구분" value={master.dataType} />
           <MasterField label="계약년도" value={master.contYear} />
@@ -166,19 +166,19 @@ export function PlanViewPerfDetailView({
         </div>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white p-6">
+      <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-6">
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">월별 상세 ({months.length}개월)</h3>
+          <h3 className="text-sm font-semibold text-(--fg-secondary)">월별 상세 ({months.length}개월)</h3>
           <div className="flex items-center gap-2">
             {!canWrite && (
               <span
-                className="rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600"
+                className="rounded-md border border-(--border-default) bg-(--bg-page) px-2 py-1 text-xs font-medium text-(--fg-secondary)"
                 data-testid="pvp-month-readonly-badge"
               >
                 읽기 전용
               </span>
             )}
-            <span className="text-xs text-slate-500" data-testid="pvp-month-dirty-count">{dirtyIds.length}건 변경</span>
+            <span className="text-xs text-(--fg-secondary)" data-testid="pvp-month-dirty-count">{dirtyIds.length}건 변경</span>
             <Button type="button" variant="outline" size="sm" onClick={handleReset} disabled={isPending || dirtyIds.length === 0 || !canWrite}>되돌리기</Button>
             <Button type="button" size="sm" onClick={handleSave} disabled={isPending || dirtyIds.length === 0 || !canWrite} data-testid="pvp-month-save">
               {isPending ? "저장 중…" : `저장 (${dirtyIds.length})`}
@@ -186,7 +186,7 @@ export function PlanViewPerfDetailView({
           </div>
         </div>
         {months.length === 0 ? (
-          <div className="text-sm text-slate-500">월별 데이터가 없습니다.</div>
+          <div className="text-sm text-(--fg-secondary)">월별 데이터가 없습니다.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs" data-testid="pvp-detail-month-table">
@@ -203,14 +203,14 @@ export function PlanViewPerfDetailView({
                   const row = draft.get(m.id) ?? m;
                   const isDirty = dirtyIds.includes(m.id);
                   return (
-                    <tr key={m.id} className={isDirty ? "bg-amber-50" : "hover:bg-slate-50"}>
-                      <td className="sticky left-0 border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-900">{m.ym}</td>
+                    <tr key={m.id} className={isDirty ? "bg-amber-50" : "hover:bg-(--bg-page)"}>
+                      <td className="sticky left-0 border border-(--border-default) bg-(--bg-surface) px-2 py-1.5 font-medium text-(--fg-primary)">{m.ym}</td>
                       {MONTH_COLS.map((c) => (
-                        <td key={c.key} className="border border-slate-200 p-0">
+                        <td key={c.key} className="border border-(--border-default) p-0">
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="h-7 w-full bg-transparent px-2 text-right tabular-nums text-slate-700 outline-none focus:bg-blue-50 focus:ring-1 focus:ring-inset focus:ring-blue-500"
+                            className="h-7 w-full bg-transparent px-2 text-right tabular-nums text-(--fg-secondary) outline-none focus:bg-blue-50 focus:ring-1 focus:ring-inset focus:ring-blue-500"
                             value={fmt(row[c.key])}
                             onChange={(e) => patchCell(m.id, c.key, e.target.value)}
                           />
@@ -221,7 +221,7 @@ export function PlanViewPerfDetailView({
                 })}
               </tbody>
             </table>
-            <p className="mt-2 text-xs text-slate-500">셀 클릭 → 숫자 입력 (콤마 자동 무시) · 변경 행은 노란색 강조 · 저장 버튼으로 일괄 반영.</p>
+            <p className="mt-2 text-xs text-(--fg-secondary)">셀 클릭 → 숫자 입력 (콤마 자동 무시) · 변경 행은 노란색 강조 · 저장 버튼으로 일괄 반영.</p>
           </div>
         )}
       </div>

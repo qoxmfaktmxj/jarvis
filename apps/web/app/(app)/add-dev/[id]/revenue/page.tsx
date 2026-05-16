@@ -40,7 +40,7 @@ export default async function AddDevRevenuePage({
           <select
             name="year"
             defaultValue={String(selectedYear)}
-            className="flex h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none"
+            className="flex h-9 rounded-md border border-(--border-default) bg-(--bg-page) px-3 py-1 text-sm shadow-sm focus:outline-none"
           >
             {years.map((y) => (
               <option key={y} value={String(y)}>
@@ -52,7 +52,7 @@ export default async function AddDevRevenuePage({
         </form>
       </SectionHeader>
 
-      <div className="overflow-x-auto rounded-md border border-surface-200 bg-white p-4">
+      <div className="overflow-x-auto rounded-md border border-(--border-default) bg-(--bg-page) p-4">
         <RevenueHeatmap data={data} year={selectedYear} />
       </div>
 

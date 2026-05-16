@@ -57,7 +57,7 @@ export function InfraRunbookHeader({ meta }: InfraRunbookHeaderProps) {
 
   return (
     <aside
-      className="overflow-hidden rounded-md border border-(--border-default) bg-white shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+      className="overflow-hidden rounded-md border border-(--border-default) bg-(--bg-surface) shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
       aria-label="인프라 메타 정보"
     >
       {/* Header bar */}

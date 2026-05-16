@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       disabled={isLoading}
                       placeholder="아이디 입력"
-                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -152,7 +152,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       disabled={isLoading}
                       placeholder="••••••••"
-                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -179,7 +179,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setNewPassword(e.target.value)}
                       disabled={isLoading}
                       placeholder="••••••••"
-                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex h-10 w-full rounded-md border border-(--border-default) bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -206,7 +206,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       disabled={isLoading}
                       placeholder="••••••••"
-                      className={`flex h-10 w-full rounded-md border bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) disabled:cursor-not-allowed disabled:opacity-50 ${
+                      className={`flex h-10 w-full rounded-md border bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) disabled:cursor-not-allowed disabled:opacity-50 ${
                         passwordMismatch
                           ? 'border-(--color-red-400) focus-visible:border-(--color-red-400)'
                           : 'border-(--border-default) focus-visible:border-(--brand-primary)'

@@ -123,7 +123,7 @@ function LoginContent() {
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}
                   disabled={isLoading}
-                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>
@@ -148,7 +148,7 @@ function LoginContent() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={isLoading}
-                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-white pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-(--border-default) bg-(--bg-page) pl-9 pr-3 text-sm text-(--fg-primary) placeholder:text-(--fg-muted) shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--brand-primary-bg) focus-visible:border-(--brand-primary) disabled:cursor-not-allowed disabled:opacity-50"
                 />
               </div>
             </div>

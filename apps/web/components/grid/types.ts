@@ -68,7 +68,7 @@ export type GroupHeader = {
   label: string;
   /** Number of columns this group spans (matches the order of `columns`) */
   span: number;
-  /** Optional className for the group cell (e.g., bg-slate-100) */
+  /** Optional className for the group cell (e.g., bg-(--bg-page)) */
   className?: string;
 };
 

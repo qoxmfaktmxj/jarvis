@@ -95,7 +95,7 @@ export function WikiIndexSearch({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('search')}
-            className="h-10 rounded-md border-surface-200 bg-white pl-10 pr-10 text-[14px] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
+            className="h-10 rounded-md border-surface-200 bg-(--bg-page) pl-10 pr-10 text-[14px] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
           />
           {isSearching ? (
             <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-surface-400" />
@@ -139,7 +139,7 @@ export function WikiIndexSearch({
         </div>
       ) : results.length === 0 ? (
         <div className="flex flex-col items-center rounded-md border border-dashed border-surface-200 bg-surface-50/60 px-6 py-14 text-center">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white ring-1 ring-surface-200">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--bg-page) ring-1 ring-surface-200">
             <FileText className="h-4 w-4 text-surface-500" />
           </div>
           <p className="mt-3 text-[14px] font-semibold text-surface-800">{t('noResults')}</p>
@@ -347,7 +347,7 @@ function WikiPageRow({
       aria-current={isActive ? 'page' : undefined}
       data-active={isActive ? 'true' : undefined}
       className={cn(
-        'group relative flex items-center gap-3 overflow-hidden rounded-md border bg-white px-4 py-2.5 transition-all',
+        'group relative flex items-center gap-3 overflow-hidden rounded-md border bg-(--bg-page) px-4 py-2.5 transition-all',
         isActive
           ? 'border-isu-400 bg-isu-50/40 shadow-[0_4px_14px_-8px_rgba(28,77,167,0.25)]'
           : 'border-surface-200 hover:border-isu-200 hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]',

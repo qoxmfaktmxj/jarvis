@@ -73,7 +73,7 @@ export function MemoModal({
       onClick={onClose}
     >
       <div
-        className="max-h-[80vh] w-[720px] overflow-y-auto rounded bg-white p-6"
+        className="max-h-[80vh] w-[720px] overflow-y-auto rounded bg-(--bg-surface) p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -86,7 +86,7 @@ export function MemoModal({
         </div>
 
         {composing?.priorComtSeq === 0 ? (
-          <div className="mb-4 rounded border bg-slate-50 p-3">
+          <div className="mb-4 rounded border border-(--border-default) bg-(--bg-page) p-3">
             <textarea
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -96,7 +96,7 @@ export function MemoModal({
             />
             <button
               onClick={submit}
-              className="mt-2 rounded bg-slate-900 px-3 py-1 text-sm text-white"
+              className="mt-2 rounded bg-(--fg-primary) px-3 py-1 text-sm text-white"
             >
               {t("createMaster")}
             </button>
@@ -104,20 +104,20 @@ export function MemoModal({
         ) : (
           <button
             onClick={() => setComposing({ priorComtSeq: 0 })}
-            className="mb-4 rounded bg-slate-900 px-3 py-1 text-sm text-white"
+            className="mb-4 rounded bg-(--fg-primary) px-3 py-1 text-sm text-white"
           >
             {t("createMaster")}
           </button>
         )}
 
         {tree.length === 0 ? (
-          <p className="text-sm text-slate-500">{t("empty")}</p>
+          <p className="text-sm text-(--fg-secondary)">{t("empty")}</p>
         ) : (
           <ul className="space-y-3">
             {tree.map((m) => (
               <li
                 key={m.comtSeq}
-                className="rounded border-l-4 border-slate-500 p-3"
+                className="rounded border-l-4 border-(--border-default) p-3"
               >
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">
@@ -135,13 +135,13 @@ export function MemoModal({
                 <p className="mt-1 whitespace-pre-wrap text-sm">{m.memo}</p>
                 <button
                   onClick={() => setComposing({ priorComtSeq: m.comtSeq })}
-                  className="mt-2 text-xs text-slate-700"
+                  className="mt-2 text-xs text-(--fg-secondary)"
                 >
                   {t("createReply")}
                 </button>
 
                 {composing?.priorComtSeq === m.comtSeq && (
-                  <div className="mt-2 rounded border bg-slate-50 p-2">
+                  <div className="mt-2 rounded border border-(--border-default) bg-(--bg-page) p-2">
                     <textarea
                       value={draft}
                       onChange={(e) => setDraft(e.target.value)}
@@ -151,7 +151,7 @@ export function MemoModal({
                     />
                     <button
                       onClick={submit}
-                      className="mt-1 rounded bg-slate-700 px-2 py-1 text-xs text-white"
+                      className="mt-1 rounded bg-(--fg-secondary) px-2 py-1 text-xs text-white"
                     >
                       {t("createReply")}
                     </button>
@@ -163,7 +163,7 @@ export function MemoModal({
                     {m.replies.map((r) => (
                       <li
                         key={r.comtSeq}
-                        className="ml-6 rounded border-l-2 border-slate-300 pl-3"
+                        className="ml-6 rounded border-l-2 border-(--border-default) pl-3"
                       >
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">

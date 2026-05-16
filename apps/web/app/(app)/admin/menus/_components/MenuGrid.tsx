@@ -143,7 +143,7 @@ export function MenuGrid({
         editable: true,
         editor: ({ value, commit, disabled }) =>
           disabled ? (
-            <div className="px-2 py-1 text-[13px] text-slate-900">
+            <div className="px-2 py-1 text-[13px] text-(--fg-primary)">
               {String(value ?? "")}
             </div>
           ) : (

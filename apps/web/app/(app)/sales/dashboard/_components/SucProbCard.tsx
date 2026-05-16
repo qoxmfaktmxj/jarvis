@@ -6,8 +6,8 @@ type Item = { stepName: string; count: number; totalAmt: number };
 
 export function SucProbCard({ data }: { data: Item[] }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4" data-testid="dash-suc-prob">
-      <h3 className="text-sm font-semibold text-slate-700">영업단계 분포 (성공확률)</h3>
+    <div className="rounded-md border border-(--border-default) bg-(--bg-surface) p-4" data-testid="dash-suc-prob">
+      <h3 className="text-sm font-semibold text-(--fg-secondary)">영업단계 분포 (성공확률)</h3>
       <div className="mt-3">
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={data}>

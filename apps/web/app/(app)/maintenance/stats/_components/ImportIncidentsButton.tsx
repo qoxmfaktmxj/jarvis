@@ -34,11 +34,11 @@ export function ImportIncidentsButton({ ym }: Props) {
       <button
         onClick={trigger}
         disabled={pending}
-        className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-50"
+        className="rounded border border-(--border-default) bg-(--bg-page) px-3 py-1.5 text-sm hover:bg-(--bg-surface) disabled:opacity-50"
       >
         {t(pending ? "importing" : "button", { ym })}
       </button>
-      {msg && <span className="text-xs text-slate-600">{msg}</span>}
+      {msg && <span className="text-xs text-(--fg-secondary)">{msg}</span>}
     </div>
   );
 }

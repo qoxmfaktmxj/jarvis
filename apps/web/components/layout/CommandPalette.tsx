@@ -247,12 +247,12 @@ export function CommandPalette({ menus, actions }: Props) {
         <div className="flex items-center justify-between border-t border-surface-200 bg-surface-50 px-4 py-2 text-mono-xs text-surface-500">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-surface-200 bg-white px-1.5 py-0.5">↑</kbd>
-              <kbd className="rounded border border-surface-200 bg-white px-1.5 py-0.5">↓</kbd>
+              <kbd className="rounded border border-(--border-default) bg-(--bg-page) px-1.5 py-0.5">↑</kbd>
+              <kbd className="rounded border border-(--border-default) bg-(--bg-page) px-1.5 py-0.5">↓</kbd>
               이동
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-surface-200 bg-white px-1.5 py-0.5">↵</kbd>
+              <kbd className="rounded border border-(--border-default) bg-(--bg-page) px-1.5 py-0.5">↵</kbd>
               선택
             </span>
           </div>

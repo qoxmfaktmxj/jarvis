@@ -12,10 +12,10 @@ export function MonthlyReportContainer() {
 
   return (
     <div className="flex flex-1 gap-3 overflow-hidden">
-      <div className="w-72 flex-shrink-0 overflow-hidden rounded border border-slate-200 bg-white">
+      <div className="w-72 flex-shrink-0 overflow-hidden rounded border border-(--border-default) bg-(--bg-surface)">
         <CompanyListPanel selected={selected} onSelect={setSelected} />
       </div>
-      <div className="flex flex-1 flex-col overflow-hidden rounded border border-slate-200 bg-white">
+      <div className="flex flex-1 flex-col overflow-hidden rounded border border-(--border-default) bg-(--bg-surface)">
         <DetailPanel selected={selected} ym={ym} onYmChange={setYm} />
       </div>
     </div>
