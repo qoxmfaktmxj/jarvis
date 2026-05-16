@@ -68,7 +68,7 @@ export default async function DashboardPage({
           <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">
             {t("greeting", { name: displayName })}
           </h1>
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-6 flex items-center gap-2">
             <Image
               src={`/capybara/${mood.id}.png`}
               alt=""
