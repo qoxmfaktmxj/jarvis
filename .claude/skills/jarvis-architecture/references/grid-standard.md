@@ -20,13 +20,13 @@
 
 **도메인 wrapping 규칙**: 도메인별로 `apps/web/app/(app)/{domain}/_components/{Domain}GridContainer.tsx` 1개. 컬럼/필터 정의 + reload + handleSave + handleExport만 책임지고 그리드 본체 로직은 무조건 baseline 호출.
 
-## 2. 필수 기능 (모든 그리드 7+1+1가지)
+## 2. 필수 기능 (모든 그리드 7+1+1+1가지)
 
 1. **인라인 편집** — 셀 클릭→편집, Enter/blur=commit, Esc=취소. 모달 폼 별도 사용 금지
 2. **행 단위 dirty tracking** — clean/new/dirty/deleted 4 상태, RowStatusBadge로 시각화
 3. **GridToolbar (DataGrid 내부)** — [입력] / [복사] / [저장 (N)] 3 버튼 고정
-4. **컬럼 헤더 아래 필터 row** — type별 셀렉트/텍스트
-5. **서버 페이징** — `page`/`limit`, default `limit=50`. 무한 스크롤 금지
+4. **컬럼 헤더 아래 필터 row** — type별 셀렉트/텍스트 (per-column 자동 적용)
+5. **서버 페이징** — `page`/`limit`, default `limit=50`. 무한 스크롤 금지. **DataGrid가 `total > limit`이면 자동 페이지 컨트롤 표시, 아니면 자동 hide** (10절 분기 패턴 참조)
 6. **미저장 변경 confirm dialog** — 페이지 이동/필터 변경/네비게이션 시 `UnsavedChangesDialog`
 7. **server action batch save** — `{ creates, updates, deletes }` 한 트랜잭션 + audit_log insert
 8. **DataGridToolbar (외부 toolbar)** — Excel 다운로드 버튼 + 도메인 검색 입력(필요 시)
@@ -34,6 +34,7 @@
    - **useGridState 직접 보유**: `<GridSearchForm onResetGrid={grid.discardChanges} ...>`
    - **DataGrid 캡슐화(GridContainer 패턴)**: `const gridApiRef = useRef<{ discardChanges: () => void } | null>(null)` 선언 → `<DataGrid onGridReady={(api) => { gridApiRef.current = api; }} ...>` → `<GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} ...>`
    - **sub-component 패턴**: 부모에서 `discardChanges`를 `onResetGrid: () => void` prop으로 내려받아 `GridSearchForm`에 전달
+10. **검색 form은 GridSearchForm + GridFilterField로만 (2026-05-16 강제)** — 자체 `<form>`/`<div>`/`<label>` 작성 금지. 카드형 입력 패널은 `GridSearchForm`이 표준 토큰(`border-(--border-default) bg-(--bg-surface) px-4 py-3 rounded-md`)으로 일관 렌더. 우측 끝 [조회] 버튼 자동.
 
 ## 3. 디자인 토큰 (변경 금지)
 
@@ -127,13 +128,46 @@ export async function save{Domain}(input: Save{Domain}Input):
 | 클라이언트 측 권한 필터 | 쿼리 WHERE의 workspaceId + server action 권한 가드에서 처리 (`jarvis-db-patterns` §4) |
 | 응답에 `passwordHash`/secret 컬럼 노출 | server action returning에 화이트리스트 강제 (admin/users 패턴 참고) |
 
+## 7-bis. 페이징 분기 패턴 (2026-05-16 신설)
+
+그리드는 두 케이스로 갈림. DataGrid가 `total > limit` 자동 hide 로직을 가지므로 consumer는 **page/limit/total을 항상 전달**하기만 하면 됨. explicit "페이징 끄기" prop 없음.
+
+### A. 페이징 필요 (대량 데이터 — admin/users, admin/companies, sales/*, projects 등)
+
+- `page` 상태: `useTabState<number>("...page", 1)` (탭 전환 시 유지)
+- `pendingFilters` 상태: `useTabState<Record<string, string>>("...pendingFilters", {})`
+- `filterValues` 상태: `useTabState<Record<string, string>>("...filters", {})` (마지막 조회 시점 snapshot)
+- reload 함수: `reload(nextPage, nextFilters)` → server action 호출 후 `setRows / setTotalCount / setPage / setFilterValues`
+- DataGrid props: `page={page}` `limit={PAGE_SIZE}` `total={totalCount}` `onPageChange={(p) => reload(p, filterValues)}`
+- → `total > limit`이면 페이지 컨트롤 자동 표시 (prev/N/M/next)
+
+reference: `apps/web/app/(app)/admin/companies/_components/CompaniesGridContainer.tsx`
+
+### B. 페이징 불필요 (소량 데이터 — holidays, code group, 기타 master)
+
+- `page` 상태 X. `page={1}` 고정 전달
+- `limit`은 예상 max보다 큰 값 (예: holidays는 16건 max, `PAGE_SIZE=100`)
+- `total={rows.length}` — server에서 받은 전체 row 수
+- `onPageChange={() => {}}` (no-op)
+- 필터(year 등)는 `pendingFilters` 한 개라도 동일 패턴: GridSearchForm + GridFilterField + `reload(nextFilter)`
+- → `total(=rows.length) <= limit(=PAGE_SIZE)` 자동 hide
+
+reference: `apps/web/app/(app)/holidays/_components/HolidaysGridContainer.tsx`
+
+### 공통 (둘 다 적용)
+
+- GridSearchForm + GridFilterField 무조건 사용 (룰 §2.10)
+- `onResetGrid` wiring 무조건 (룰 §2.9)
+- `discardChanges` API 노출 (`onGridReady` 콜백)
+- batch save / audit_log / workspaceId 필터 (룰 §6)
+
 ## 8. 신규 그리드 PR 체크리스트
 
 새 그리드 화면 PR 머지 전 모두 통과해야 함. spec-reviewer가 검증:
 
 - [ ] DataGrid baseline 사용 (TanStack Table / 자체 table 0건)
 - [ ] DomainGridContainer 1개 + DataGrid 본체 미수정
-- [ ] 필수 기능 7+1+1 모두 구현 (인라인 편집/dirty/툴바 3버튼/필터 row/페이징/confirm dialog/batch save/Excel export/조회 시 자동 reset)
+- [ ] 필수 기능 7+1+1+1 모두 구현 (인라인 편집/dirty/툴바 3버튼/필터 row/페이징/confirm dialog/batch save/Excel export/조회 시 자동 reset/GridSearchForm 사용)
 - [ ] 디자인 토큰 1:1 매칭 — admin/companies 옆에 두고 비교 시 차이 없음
 - [ ] 컬럼 정렬: PK 좌측 → 본문 → audit 우측 readonly
 - [ ] 모든 라벨 i18n 키 (하드코딩 한국어 grep 결과 0)
@@ -143,6 +177,8 @@ export async function save{Domain}(input: Save{Domain}Input):
 - [ ] type-check 0 errors / lint 0 new warnings / `audit:rsc` 0 errors
 - [ ] 기존 baseline 회귀 테스트(`useGridState.test.ts`/`DataGridToolbar.test.tsx` 등) 통과
 - [ ] GridSearchForm에 `onResetGrid` 연결 (useGridState 직접: `grid.discardChanges`; DataGrid 캡슐화: `gridApiRef.current?.discardChanges()`; sub-component: prop 전달)
+- [ ] 필터 입력 = GridSearchForm + GridFilterField (자체 form/div/label 작성 0건)
+- [ ] 페이징 분기 (§7-bis) — 대량 데이터면 page/pendingFilters/filterValues state + reload(page, filters), 소량이면 page={1} + total={rows.length} + 자동 hide
 
 ## 9. 참고
 

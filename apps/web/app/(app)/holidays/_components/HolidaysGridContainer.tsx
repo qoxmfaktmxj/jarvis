@@ -3,12 +3,19 @@
  * apps/web/app/(app)/holidays/_components/HolidaysGridContainer.tsx
  *
  * Holidays admin grid. Wraps DataGrid with year filter.
+ *
+ * 그리드 표준 (references/grid-standard.md):
+ * - 필터 입력은 GridSearchForm + GridFilterField 사용 (자체 form/div 작성 금지)
+ * - 페이징은 DataGrid가 `total <= limit`이면 자동 hide. holidays는 연 16건이라
+ *   자동으로 페이지 컨트롤 숨김.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { HolidayRow } from "@jarvis/shared/validation/holidays";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { GridSearchForm } from "@/components/grid/GridSearchForm";
+import { GridFilterField } from "@/components/grid/GridFilterField";
 import { type GridRow, overlayGridRows, rowsToBatch } from "@/components/grid/useGridState";
 import { useTabState } from "@/components/layout/tabs/useTabState";
 import { useTabDirty } from "@/components/layout/tabs/useTabDirty";
@@ -37,12 +44,18 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
   const t = useTranslations("Holidays");
   const [rows, setRows] = useState<HolidayRow[]>(initial);
   const [year, setYear] = useTabState<number>("holidays.year", initialYear);
+  // 사용자가 [조회] 누르기 전 pending 상태 — admin/companies, admin/users 패턴과 동일.
+  const [pendingYear, setPendingYear] = useTabState<number>(
+    "holidays.pendingYear",
+    initialYear,
+  );
   const [gridRowsCache, setGridRowsCache] = useTabState<GridRow<HolidayRow>[]>(
     "holidays.gridRows",
     [],
   );
   const [dirtyCount, setDirtyCount] = useState(0);
-  const [, startTransition] = useTransition();
+  const [isSearching, startTransition] = useTransition();
+  const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
 
   useTabDirty(dirtyCount > 0);
 
@@ -107,22 +120,27 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      {/* 표준 그리드 select 토큰 (admin/companies, sales/* 등과 동일):
-          h-8 border-(--border-default) bg-(--bg-page) px-2 text-[13px]. */}
-      <div className="flex items-center gap-2">
-        <label className="text-[12px] font-medium text-(--fg-primary)">
-          {t("filters.year")}
-        </label>
-        <select
-          value={year}
-          onChange={(e) => reload(Number(e.currentTarget.value))}
-          className="h-8 rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
-        >
-          {yearOptions.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-      </div>
+      {/* 그리드 표준: 모든 필터 입력은 GridSearchForm + GridFilterField로.
+          자체 form/div + label/select 직접 작성 금지. holidays는 페이징 불필요
+          (row 16건, limit 100) — DataGrid가 total <= limit이면 페이지 컨트롤
+          자동 hide. */}
+      <GridSearchForm
+        onSearch={() => reload(pendingYear)}
+        onResetGrid={() => gridApiRef.current?.discardChanges()}
+        isSearching={isSearching}
+      >
+        <GridFilterField label={t("filters.year")} className="w-[140px]">
+          <select
+            value={pendingYear}
+            onChange={(e) => setPendingYear(Number(e.currentTarget.value))}
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </GridFilterField>
+      </GridSearchForm>
       <DataGrid<HolidayRow>
         rows={rows}
         total={rows.length}
@@ -134,6 +152,7 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
         initialGridRows={initialGridRows}
         onGridRowsChange={setGridRowsCache}
         onDirtyChange={setDirtyCount}
+        onGridReady={(api) => { gridApiRef.current = api; }}
         onPageChange={() => {}}
         onFilterChange={() => {}}
         onSave={async (changes) => {

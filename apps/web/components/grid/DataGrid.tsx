@@ -466,28 +466,36 @@ export function DataGrid<T extends WithId>({
         </table>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-end gap-2 text-sm text-(--fg-secondary)">
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={page <= 1 || saving}
-          onClick={() => guarded(() => onPageChange(page - 1))}
-        >
-          {t("prev")}
-        </Button>
-        <span>
-          {page} / {totalPages}
-        </span>
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={page >= totalPages || saving}
-          onClick={() => guarded(() => onPageChange(page + 1))}
-        >
-          {t("next")}
-        </Button>
-      </div>
+      {/*
+        Pagination — total <= limit이면 자동 hide.
+        페이지 1개로 끝나는 그리드(holidays같이 row 수 적은 master)는 페이지
+        컨트롤 자체가 noise라 그리드 표준에서 자동 숨김. total > limit인
+        그리드만 prev/N/M/next 컨트롤 표시. explicit override prop 없음 —
+        rows 수가 limit을 넘는 순간 자동 표시되므로 consumer가 결정할 일 없음.
+      */}
+      {total > limit && (
+        <div className="flex items-center justify-end gap-2 text-sm text-(--fg-secondary)">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page <= 1 || saving}
+            onClick={() => guarded(() => onPageChange(page - 1))}
+          >
+            {t("prev")}
+          </Button>
+          <span>
+            {page} / {totalPages}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page >= totalPages || saving}
+            onClick={() => guarded(() => onPageChange(page + 1))}
+          >
+            {t("next")}
+          </Button>
+        </div>
+      )}
 
       <UnsavedChangesDialog
         open={pendingNav !== null}
