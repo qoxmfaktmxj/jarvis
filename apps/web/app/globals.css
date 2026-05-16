@@ -139,9 +139,8 @@
 
   /* Role aliases (primitive에서 직접 참조) */
   /* elevation 차원: 순백은 "올라온 것"(카드/chrome), warm은 "캔버스" */
-  --bg-page:                    #ffffff;               /* 카드 body, 폼 input, chrome 등 elevated */
-  --bg-surface:                 var(--color-warm-50);  /* code chip, 카드 header 등 subtle tint */
-  --bg-canvas:                  var(--color-warm-50);  /* 페이지 캔버스 (body background) */
+  --bg-page:                    #ffffff;               /* 페이지 + 카드 + chrome 통합 (v5) */
+  --bg-surface:                 var(--color-warm-50);  /* subtle tint (code chip / 테이블 head / hover) */
   --fg-primary:                 var(--color-notion-black);
   --fg-secondary:               var(--color-warm-500);
   --fg-muted:                   var(--color-warm-300);
@@ -263,8 +262,8 @@
     --topbar-height: 47px;
 
     /* ── Prototype token aliases ───────────────────────────── */
-    --bg:          var(--bg-canvas);   /* warm-50 캔버스 */
-    --panel:       var(--bg-page);     /* #fff elevated (카드 + chrome) */
+    --bg:          var(--bg-page);     /* #fff (v5 단순화 — canvas 폐기) */
+    --panel:       var(--bg-page);     /* #fff (chrome) */
     --line:        var(--border-default);
     --line2:       var(--border-soft);
     --ink:         var(--fg-primary);
@@ -302,7 +301,7 @@
   }
 
   body {
-    background: var(--bg-canvas);
+    background: var(--bg-page);   /* v5: 순백, 회색 톤 일소 */
     color: var(--color-surface-900);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -358,9 +357,8 @@
   --color-input:                rgba(255,255,255,0.094);
   --color-ring:                 var(--brand-primary);
 
-  --bg-page:                    #242322;               /* 카드/chrome elevated, dark */
-  --bg-surface:                 #2e2c2a;               /* subtle tint, dark */
-  --bg-canvas:                  #191918;               /* 페이지 캔버스, dark */
+  --bg-page:                    #191918;               /* v5: 페이지 + 카드 + chrome 통합 (dark) */
+  --bg-surface:                 #242322;               /* subtle tint (code chip / 테이블 head / hover) */
   --fg-primary:                 rgba(255,255,255,0.95);
   --fg-secondary:               #a8a4a0;
   --fg-muted:                   #7c7874;
@@ -417,7 +415,7 @@
   --color-lime-600:    #a8a4a0;
 
   /* Prototype tokens — warm-dark 팔레트 */
-  --bg:           var(--bg-canvas);
+  --bg:           var(--bg-page);
   --panel:        var(--bg-page);
   --line:         var(--border-default);
   --line2:        var(--border-soft);
