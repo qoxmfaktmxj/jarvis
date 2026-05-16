@@ -215,7 +215,9 @@ export function MenuGrid({
   );
 
   return (
-    <div className="space-y-2">
+    // `min-w-0` — grid 자식 default min-width:auto가 fr 계산을 무시해 테이블
+    // min-content 폭이 컬럼을 overflow시키는 것 방지 (lg 70:30 split 환경).
+    <div className="min-w-0 space-y-2">
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
@@ -297,8 +299,10 @@ export function MenuGrid({
 
       {/* viewport-relative height: 브라우저 창 크기에 따라 자동 조절. 헤더·필터
           ·툴바·페이지 여백 약 280px를 뺀 나머지를 그리드 본체에 할당해
-          한 화면에 들어오게 한다. 헤더는 sticky라 내부 스크롤 시에도 고정. */}
-      <div className="max-h-[calc(100vh-280px)] overflow-auto rounded border border-slate-200">
+          한 화면에 들어오게 한다. 헤더는 sticky라 내부 스크롤 시에도 고정.
+          viewport 매우 작거나 admin shell 헤더가 280px를 넘는 환경 대비
+          `max()`로 최소 240px 보장. */}
+      <div className="max-h-[max(240px,calc(100vh-280px))] overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">

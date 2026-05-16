@@ -102,7 +102,8 @@ export function MenuPermissionGrid({
   );
 
   return (
-    <div className="space-y-2">
+    // `min-w-0` — MenuGrid 동일 사유 (grid 70:30 자식 overflow 방지).
+    <div className="min-w-0 space-y-2">
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
@@ -162,7 +163,7 @@ export function MenuPermissionGrid({
       </div>
 
       {/* viewport-relative height — MenuGrid와 동일 헤더 주석 참조. */}
-      <div className="max-h-[calc(100vh-280px)] overflow-auto rounded border border-slate-200">
+      <div className="max-h-[max(240px,calc(100vh-280px))] overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
