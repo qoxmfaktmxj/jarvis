@@ -34,7 +34,7 @@ describe("fetchKrwRates", () => {
     expect(result).toBeNull();
   });
 
-  it("calls v6.exchangerate-api.com with KRW base", async () => {
+  it("calls v6.exchangerate-api.com with KRW base and returns inverted (KRW-per-X) rates", async () => {
     const fetchMock = mockFetchOnce({
       result: "success",
       base_code: "KRW",
@@ -51,9 +51,17 @@ describe("fetchKrwRates", () => {
     expect(url).toBe(
       "https://v6.exchangerate-api.com/v6/TESTKEY/latest/KRW"
     );
+    // exchangerate-api `latest/KRW` returns "1 KRW = N <target>" (e.g. USD: 0.00072).
+    // We invert at the adapter so downstream sees "1 <target> = N KRW" (USD: ~1388.89),
+    // which is what UI/worker semantically want. Display unit scaling (e.g. JPY×100)
+    // is the UI's responsibility, not the adapter's.
     expect(result).toEqual({
       base: "KRW",
-      rates: { USD: 0.00072, EUR: 0.00067, JPY: 0.108 },
+      rates: {
+        USD: 1 / 0.00072,
+        EUR: 1 / 0.00067,
+        JPY: 1 / 0.108
+      },
       fetchedAt: now
     });
   });
@@ -123,5 +131,18 @@ describe("fetchKrwRates", () => {
         process.env.EXCHANGERATE_API_KEY = original;
       }
     }
+  });
+
+  it("rejects zero raw rate (avoids 1/0 = Infinity)", async () => {
+    const fetchMock = mockFetchOnce({
+      result: "success",
+      base_code: "KRW",
+      conversion_rates: { USD: 0, EUR: 0.00067, JPY: 0.108 }
+    });
+    const result = await fetchKrwRates({
+      apiKey: "TESTKEY",
+      fetch: fetchMock
+    });
+    expect(result).toBeNull();
   });
 });

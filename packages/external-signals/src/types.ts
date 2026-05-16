@@ -6,6 +6,17 @@
  * (어댑터를 stateless하게 유지하려는 결정 — DB 의존을 어댑터 밖에 둔다.)
  */
 
+/**
+ * "1 <currency> = N KRW" — single-unit conversion.
+ *
+ * Example values (post-2026-05-16 adapter inversion):
+ *   USD: ~1492  (1 USD = 1492 KRW)
+ *   EUR: ~1744  (1 EUR = 1744 KRW)
+ *   JPY: ~9.44  (1 JPY = 9.44 KRW;  UI may display as `JPY · 100 → 944`)
+ *
+ * Display unit scaling (×100, ×1000, etc.) is the UI's responsibility — the
+ * adapter and DB always store the raw single-unit conversion.
+ */
 export interface FxRates {
   USD: number;
   EUR: number;

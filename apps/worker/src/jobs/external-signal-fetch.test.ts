@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   computeFxChange,
   externalSignalFetchHandler,
+  isLegacyFxRates,
   resolveWorkspaceWeatherRegion,
   type ExternalSignalDeps
 } from "./external-signal-fetch.js";
@@ -9,15 +10,15 @@ import {
 describe("computeFxChange", () => {
   it("returns 0s when prev is null (first fetch)", () => {
     expect(
-      computeFxChange(null, { USD: 0.001, EUR: 0.001, JPY: 0.1 })
+      computeFxChange(null, { USD: 1400, EUR: 1500, JPY: 9.5 })
     ).toEqual({ USD: 0, EUR: 0, JPY: 0 });
   });
 
   it("returns ratio (next - prev) / prev for each currency", () => {
     expect(
       computeFxChange(
-        { USD: 0.001, EUR: 0.001, JPY: 0.1 },
-        { USD: 0.0011, EUR: 0.001, JPY: 0.099 }
+        { USD: 1400, EUR: 1500, JPY: 10 },
+        { USD: 1540, EUR: 1500, JPY: 9.9 }
       )
     ).toEqual({
       USD: 0.1,
@@ -29,10 +30,33 @@ describe("computeFxChange", () => {
   it("treats prev=0 as no prior data (returns 0)", () => {
     expect(
       computeFxChange(
-        { USD: 0, EUR: 0.001, JPY: 0.1 },
-        { USD: 0.001, EUR: 0.0011, JPY: 0.1 }
+        { USD: 0, EUR: 1500, JPY: 9.5 },
+        { USD: 1400, EUR: 1650, JPY: 9.5 }
       )
     ).toEqual({ USD: 0, EUR: 0.1, JPY: 0 });
+  });
+});
+
+describe("isLegacyFxRates", () => {
+  // Pre-2026-05-16 adapter stored "1 KRW = N <currency>" (USD ~ 0.00067).
+  // Post-fix adapter inverts to "1 <currency> = N KRW" (USD ~ 1492).
+  // Detector returns true on any rate < 1 so first post-fix cron compares against
+  // null prev (change=0) rather than producing astronomic % drift.
+  it("returns false for null/undefined", () => {
+    expect(isLegacyFxRates(null)).toBe(false);
+    expect(isLegacyFxRates(undefined)).toBe(false);
+  });
+
+  it("returns true when any rate < 1 (legacy format)", () => {
+    expect(isLegacyFxRates({ USD: 0.00067, EUR: 1500, JPY: 9.5 })).toBe(true);
+    expect(isLegacyFxRates({ USD: 1400, EUR: 0.00057, JPY: 9.5 })).toBe(true);
+    expect(isLegacyFxRates({ USD: 1400, EUR: 1500, JPY: 0.1 })).toBe(true);
+  });
+
+  it("returns false when all rates >= 1 (post-fix format)", () => {
+    expect(isLegacyFxRates({ USD: 1388.89, EUR: 1492.54, JPY: 9.26 })).toBe(false);
+    // Edge case: JPY at exactly 1 (theoretically impossible but boundary check)
+    expect(isLegacyFxRates({ USD: 1400, EUR: 1500, JPY: 1 })).toBe(false);
   });
 });
 
@@ -106,7 +130,7 @@ function makeDeps(
     },
     fetchKrwRates: async () => ({
       base: "KRW",
-      rates: { USD: 0.001, EUR: 0.001, JPY: 0.1 },
+      rates: { USD: 1400, EUR: 1500, JPY: 9.5 },
       fetchedAt: new Date()
     }),
     fetchVilageFcst: async () => ({
@@ -144,10 +168,10 @@ describe("externalSignalFetchHandler", () => {
 
   it("upserts fx with computed change vs previous rates", async () => {
     const { deps, upsertCalls } = makeDeps({
-      getPreviousFxRates: async () => ({ USD: 0.001, EUR: 0.001, JPY: 0.1 }),
+      getPreviousFxRates: async () => ({ USD: 1400, EUR: 1500, JPY: 10 }),
       fetchKrwRates: async () => ({
         base: "KRW",
-        rates: { USD: 0.0011, EUR: 0.001, JPY: 0.099 },
+        rates: { USD: 1540, EUR: 1500, JPY: 9.9 },
         fetchedAt: new Date()
       })
     });
@@ -237,7 +261,7 @@ describe("externalSignalFetchHandler", () => {
         .mockRejectedValueOnce(new Error("boom"))
         .mockResolvedValueOnce({
           base: "KRW" as const,
-          rates: { USD: 0.001, EUR: 0.001, JPY: 0.1 },
+          rates: { USD: 1400, EUR: 1500, JPY: 9.5 },
           fetchedAt: new Date()
         })
     });

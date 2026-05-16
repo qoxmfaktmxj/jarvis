@@ -76,12 +76,13 @@ describe("buildFxSignal", () => {
   });
 
   it("normalizes a valid row", () => {
+    // Post-2026-05-16: payload rates are "1 <currency> = N KRW" (adapter-inverted).
     const fetched = new Date(now.getTime() - 10 * 60_000);
     const sig = buildFxSignal(
       {
         payload: {
           base: "KRW",
-          rates: { USD: 0.00072, EUR: 0.00067, JPY: 0.108 },
+          rates: { USD: 1388.89, EUR: 1492.54, JPY: 9.26 },
           change: { USD: 0.001, EUR: -0.002, JPY: 0.0 }
         },
         fetchedAt: fetched
@@ -90,7 +91,7 @@ describe("buildFxSignal", () => {
     );
     expect(sig).toEqual({
       base: "KRW",
-      rates: { USD: 0.00072, EUR: 0.00067, JPY: 0.108 },
+      rates: { USD: 1388.89, EUR: 1492.54, JPY: 9.26 },
       change: { USD: 0.001, EUR: -0.002, JPY: 0.0 },
       fetchedAt: fetched,
       stale: false
@@ -103,7 +104,7 @@ describe("buildFxSignal", () => {
       {
         payload: {
           base: "KRW",
-          rates: { USD: 0.001, EUR: 0.001, JPY: 0.1 },
+          rates: { USD: 1400, EUR: 1500, JPY: 9.5 },
           change: { USD: 0, EUR: 0, JPY: 0 }
         },
         fetchedAt: fetched
@@ -130,7 +131,7 @@ describe("buildFxSignal", () => {
       {
         payload: {
           base: "KRW",
-          rates: { USD: 0.001, EUR: 0.001, JPY: 0.1 }
+          rates: { USD: 1400, EUR: 1500, JPY: 9.5 }
         },
         fetchedAt: now
       },

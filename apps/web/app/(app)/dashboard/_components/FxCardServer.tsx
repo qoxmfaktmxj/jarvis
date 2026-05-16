@@ -13,6 +13,11 @@ import { formatFetchedAt } from "@/lib/utils/format-fetched-at";
  *  │ USD 1,342  EUR 1,458  JPY·100 892    │   ← 라벨 + 큰 숫자
  *  │ ▲0.3%     ▼0.1%      ▲0.5%           │   ← 변화율
  *  └──────────────────────────────────────┘
+ *
+ * Data semantics: `fx.rates` is "1 <currency> = N KRW" (adapter-inverted as of
+ * 2026-05-16). For currencies where the natural display unit > 1 (e.g. JPY shown
+ * per 100), this card multiplies the raw rate by `displayUnit` at render time —
+ * the DB payload stays unit-agnostic.
  */
 export function FxCardServer({ fx }: { fx: FxSignal | null }) {
   if (!fx) {
@@ -28,10 +33,25 @@ export function FxCardServer({ fx }: { fx: FxSignal | null }) {
     );
   }
 
-  const rates: { code: string; basis?: string; value: number; change: number }[] = [
-    { code: "USD", value: fx.rates.USD, change: fx.change.USD },
-    { code: "EUR", value: fx.rates.EUR, change: fx.change.EUR },
-    { code: "JPY", basis: "100", value: fx.rates.JPY, change: fx.change.JPY }
+  // displayUnit: how many units of the foreign currency the headline number
+  // represents. JPY is conventionally shown per 100 yen on KR financial UIs;
+  // USD/EUR per 1. Change % is unit-agnostic so it's not scaled.
+  const rates: {
+    code: string;
+    basis?: string;
+    value: number;
+    change: number;
+    displayUnit: number;
+  }[] = [
+    { code: "USD", value: fx.rates.USD, change: fx.change.USD, displayUnit: 1 },
+    { code: "EUR", value: fx.rates.EUR, change: fx.change.EUR, displayUnit: 1 },
+    {
+      code: "JPY",
+      basis: "100",
+      value: fx.rates.JPY,
+      change: fx.change.JPY,
+      displayUnit: 100
+    }
   ];
 
   return (
@@ -47,7 +67,7 @@ export function FxCardServer({ fx }: { fx: FxSignal | null }) {
               {r.basis ? <span className="ml-0.5">· {r.basis}</span> : null}
             </span>
             <span className="font-mono text-[20px] font-bold leading-none tabular-nums text-(--fg-primary)">
-              {Math.round(r.value).toLocaleString("ko-KR")}
+              {Math.round(r.value * r.displayUnit).toLocaleString("ko-KR")}
             </span>
             <ChangePill delta={r.change} />
           </li>

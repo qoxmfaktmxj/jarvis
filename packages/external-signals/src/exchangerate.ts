@@ -6,6 +6,13 @@
  * 근접 — 단일 워크스페이스 환경에서만 안전. 다중 워크스페이스는 향후 단일 캐시 공유 권장).
  *
  * Stateless: change(직전 대비 변화율)는 worker가 DB 직전 row와 비교해 계산.
+ *
+ * Semantic note (2026-05-16):
+ * `latest/KRW` API returns "1 KRW = N <target>" (e.g. USD: 0.00067). The adapter
+ * inverts this to "1 <target> = N KRW" (e.g. USD: ~1492) before returning, so all
+ * downstream consumers (worker, RSC, UI) work with the natural "KRW per X" form.
+ * UI display unit scaling (e.g. JPY × 100 or × 1000) is the UI's responsibility,
+ * not the adapter's — the adapter always returns the raw single-unit conversion.
  */
 
 import type { FxAdapterResult } from "./types.js";
@@ -77,7 +84,9 @@ export async function fetchKrwRates(
       );
       return null;
     }
-    rates[code] = value;
+    // Invert raw "1 KRW = N <currency>" to "1 <currency> = N KRW".
+    // Zero guard above protects against 1/0 = Infinity.
+    rates[code] = 1 / value;
   }
 
   return {

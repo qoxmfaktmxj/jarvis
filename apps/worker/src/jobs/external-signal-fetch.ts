@@ -90,6 +90,24 @@ function roundTo(n: number, digits: number): number {
   return Math.round(n * factor) / factor;
 }
 
+/**
+ * Detect legacy "1 KRW = N <currency>" payloads (USD ~ 0.00067, JPY ~ 0.1).
+ * Post-2026-05-16 the adapter inverts to "1 <currency> = N KRW" (USD ~ 1492,
+ * JPY ~ 9.44 — all >= 1). Any rate < 1 means the row was written by the legacy
+ * adapter, so we discard it when computing `change` to avoid producing a
+ * catastrophic % swing on the first post-deploy cron. The next cron will see a
+ * properly inverted prev row and resume normal change calculations.
+ *
+ * Burn-in: safe to delete this helper (and the call site) once all rows have
+ * been refreshed (one cron cycle, ~1 hour) and no legacy values can remain.
+ */
+export function isLegacyFxRates(
+  rates: FxRates | null | undefined
+): boolean {
+  if (!rates) return false;
+  return rates.USD < 1 || rates.EUR < 1 || rates.JPY < 1;
+}
+
 export function resolveWorkspaceWeatherRegion(
   settings: unknown
 ): { nx: number; ny: number; label?: string } | null {
@@ -277,7 +295,10 @@ export function defaultDeps(): ExternalSignalDeps {
         .limit(1);
       if (!row) return null;
       const payload = row.payload as { rates?: FxRates };
-      return payload?.rates ?? null;
+      const rates = payload?.rates ?? null;
+      // Filter legacy "1 KRW = N <currency>" rows so the first post-fix cron
+      // doesn't compute change against incompatible units. See isLegacyFxRates.
+      return isLegacyFxRates(rates) ? null : rates;
     },
     upsertSignal: async (input) => {
       await db
