@@ -58,24 +58,29 @@ export default async function DashboardPage({
 
   return (
     <PageShellFit
-      title={t("greeting", { name: displayName })}
-      actions={
-        // mascot + mood 한 줄을 우측 actions 슬롯으로 이동. dashboard만 inline
-        // header를 쓰면 전체 페이지와 위/좌/우/아래 여백 정합이 깨져 (`items-
-        // center` + 40px mascot이 row height을 키움), 메뉴 화면 기준 통일을 위해
-        // 표준 PageHeader title+actions 패턴으로 전환 (2026-05-16).
-        <div className="flex items-center gap-2">
-          <Image
-            src={`/capybara/${mood.id}.png`}
-            alt=""
-            width={32}
-            height={32}
-            priority
-            unoptimized
-            aria-hidden="true"
-            className="shrink-0 object-contain"
-          />
-          <span className="text-[13px] text-(--fg-secondary)">{mood.message}</span>
+      header={
+        // dashboard 한정 inline header — 인사 h1 옆에 mascot + mood (간격 6).
+        // PageHeader 표준 30px h1 + 우측 actions(justify-between)로 두면 mascot이
+        // 페이지 우측 끝으로 떨어져 의도(인사 옆)와 다름. PageShellFit `header`
+        // prop으로 override해서 같은 라인에 inline. items-baseline + 32px mascot
+        // 으로 row height을 표준 h1과 거의 동일(~37.5px)하게 유지.
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">
+            {t("greeting", { name: displayName })}
+          </h1>
+          <div className="flex items-center gap-2">
+            <Image
+              src={`/capybara/${mood.id}.png`}
+              alt=""
+              width={32}
+              height={32}
+              priority
+              unoptimized
+              aria-hidden="true"
+              className="shrink-0 object-contain"
+            />
+            <span className="text-[13px] text-(--fg-secondary)">{mood.message}</span>
+          </div>
         </div>
       }
     >
