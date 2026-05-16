@@ -521,11 +521,13 @@ export function MenusPageClient({
   return (
     <>
       {/* 70:30 master-detail horizontal split (lg+). 좁은 화면에서는 stack.
-          page.tsx wrapper가 viewport-fit height(`100vh - topbar - 4rem`)을
-          강제하므로 여기 grid div는 `flex-1 min-h-0`로 남은 공간을 받고,
-          자식(MenuGrid/MenuPermissionGrid)이 grid item default stretch +
-          내부 flex-col로 테이블 wrapper를 fill한다. */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[7fr_3fr]">
+          PageShellFit wrapper가 viewport-fit height을 강제하므로 여기 grid
+          div는 `flex-1 min-h-0`로 남은 공간을 받는다.
+          `grid-rows-[minmax(0,1fr)]` 명시 — grid-rows 미지정 시 auto가 되어
+          row height = max(자식 자연 height)으로 펴져 PageShellFit의
+          overflow-hidden이 잘라버려 그리드 내부 스크롤이 작동하지 않는다.
+          단일 row 1fr + min 0로 row 자체가 부모 height에 fit되도록 강제. */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 lg:grid-cols-[7fr_3fr]">
         <MenuGrid
           grid={masterGrid}
           total={masterTotal}
