@@ -85,7 +85,7 @@ function TabBtn({
       className={
         active
           ? "rounded-md bg-(--brand-primary-bg) px-2 py-1 text-[13px] font-semibold text-(--brand-primary-text)"
-          : "rounded-md px-2 py-1 text-[13px] font-medium text-(--fg-secondary) hover:bg-(--bg-page)"
+          : "rounded-md px-2 py-1 text-[13px] font-medium text-(--fg-secondary) hover:bg-(--bg-surface)"
       }
     >
       {children}

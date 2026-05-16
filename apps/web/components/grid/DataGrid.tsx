@@ -419,11 +419,11 @@ export function DataGrid<T extends WithId>({
         ].join(" ")}
       >
         <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-(--bg-page) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
+          <thead className="sticky top-0 z-10 bg-(--bg-surface) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
             {groupHeaders && groupHeaders.length > 0 ? (
               <tr
                 data-testid="group-header-row"
-                className="border-b border-(--border-default) bg-(--bg-page)"
+                className="border-b border-(--border-default) bg-(--bg-surface)"
               >
                 {/* No + 삭제 컬럼 leading. readOnly이면 No만 (삭제 컬럼 hide). */}
                 <th
