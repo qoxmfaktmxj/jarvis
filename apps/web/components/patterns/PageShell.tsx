@@ -57,12 +57,23 @@ export function PageShell(props: PageShellProps) {
   );
 }
 
-/** viewport-fit — 페이지 자체 스크롤 X, 내부 위젯만 스크롤. */
+/**
+ * viewport-fit — 페이지 자체 스크롤 X, 내부 위젯만 스크롤.
+ *
+ * children을 `flex min-h-0 flex-1 flex-col overflow-hidden` wrapper에
+ * 감싸 PageHeader 차감 후 남은 viewport height을 정확히 children에 전달.
+ * 이 wrapper가 없으면 children이 `h-full`로 부모 height의 100%를 차지
+ * 하려 해 PageHeader와 합쳐서 viewport overflow → 페이지네이션/footer가
+ * viewport 밖으로 밀려나는 시각 버그 발생. children의 자체 layout
+ * (flex/grid/h-full 등)은 이 wrapper 안에서 정상 작동.
+ */
 export function PageShellFit(props: PageShellProps) {
   return (
     <div className="flex h-full flex-col gap-3 overflow-hidden">
       {renderHeader(props)}
-      {props.children}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {props.children}
+      </div>
     </div>
   );
 }
