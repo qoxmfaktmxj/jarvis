@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listDashboardNotices } from "@/lib/queries/dashboard-notices";
 import { listWeekVacations } from "@/lib/queries/dashboard-vacations";
@@ -7,9 +9,10 @@ import { listRecentChatMessages } from "@/lib/queries/chat";
 import { getDailySignals } from "@/lib/queries/dashboard-signals";
 import { getNextHoliday } from "@/lib/queries/dashboard-dday";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+import { PageShellFit } from "@/components/patterns/PageShell";
+import { pickMascotMood } from "@/lib/mascot-mood";
 import { QuizCard } from "@/components/dashboard/QuizCard";
 import { ForbiddenBanner } from "./_components/ForbiddenBanner";
-import { HeroGreeting } from "./_components/HeroGreeting";
 import { InfoCardRow } from "./_components/InfoCardRow";
 import { LoungeChat } from "./_components/LoungeChat";
 import { NoticesWidget } from "./_components/NoticesWidget";
@@ -50,13 +53,29 @@ export default async function DashboardPage({
   const isAdmin = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
   const displayName = session.name || "사용자";
 
+  const t = await getTranslations("Dashboard");
+  const mood = pickMascotMood(now);
+
   return (
-    // AppShellMain wrapper가 h-full viewport-fit 영역을 제공하므로 페이지는
-    // 그 안에서 h-full만 받으면 됨 (별도 calc 불필요, 2026-05-16 전역 프레임 전환).
-    // `overflow-hidden` — 페이지 자체 스크롤 차단, 내부 위젯만 스크롤.
-    <div className="flex h-full flex-col gap-3 overflow-hidden">
+    <PageShellFit
+      title={t("greeting", { name: displayName })}
+      actions={
+        <>
+          <Image
+            src={`/capybara/${mood.id}.png`}
+            alt=""
+            width={40}
+            height={40}
+            priority
+            unoptimized
+            aria-hidden="true"
+            className="shrink-0 object-contain"
+          />
+          <span className="text-[13px] text-(--fg-secondary)">{mood.message}</span>
+        </>
+      }
+    >
       {showForbidden ? <ForbiddenBanner /> : null}
-      <HeroGreeting name={displayName} now={now} />
       {/*
         2x2 viewport-fit grid:
           row 1: InfoCardRow (3-up: Today/DDay/FX)  | VacationsWidget
@@ -88,6 +107,6 @@ export default async function DashboardPage({
           />
         </div>
       </div>
-    </div>
+    </PageShellFit>
   );
 }
