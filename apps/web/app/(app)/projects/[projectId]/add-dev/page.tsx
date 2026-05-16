@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -19,7 +19,7 @@ export default async function ProjectAddDevTabPage({
     projectId,
     pageSize: 50,
   });
-  const canCreate = hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_CREATE);
+  const canCreate = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
   const t = await getTranslations("AdditionalDev");
 
   return (

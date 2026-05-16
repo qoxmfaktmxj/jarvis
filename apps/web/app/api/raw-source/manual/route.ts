@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import PgBoss from 'pg-boss';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { db } from '@jarvis/db/client';
@@ -22,7 +22,7 @@ async function getBoss(): Promise<PgBoss> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, PERMISSIONS.FILES_WRITE);
+  const auth = await requireApiSession(req, PERMISSIONS.ADMIN_ALL);
   if (auth.response) return auth.response;
   const { session } = auth;
 

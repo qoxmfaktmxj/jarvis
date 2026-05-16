@@ -1,13 +1,6 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import type { JarvisSession } from "./types.js";
 
-const PROJECT_ROLE_ORDER = {
-  VIEWER: 0,
-  DEVELOPER: 1,
-  MANAGER: 2,
-  ADMIN: 3
-} as const;
-
 export function hasPermission(
   session: JarvisSession,
   permission: string
@@ -23,39 +16,27 @@ export function isAdmin(session: JarvisSession): boolean {
   return session.permissions.includes(PERMISSIONS.ADMIN_ALL);
 }
 
-export function canAccessProjectAccessEntry(
-  roles: string[],
-  requiredRole: string | null | undefined
-): boolean {
-  if (!requiredRole) {
-    return true;
-  }
-
-  const requiredRank =
-    PROJECT_ROLE_ORDER[requiredRole as keyof typeof PROJECT_ROLE_ORDER];
-  if (requiredRank === undefined) {
-    return false;
-  }
-
-  const highestRank = roles.reduce((maxRank, role) => {
-    const rank = PROJECT_ROLE_ORDER[role as keyof typeof PROJECT_ROLE_ORDER];
-    return rank === undefined ? maxRank : Math.max(maxRank, rank);
-  }, -1);
-
-  return highestRank >= requiredRank;
-}
-
+/**
+ * 외부 인력(contractor) 관리 권한.
+ *
+ * 2026-05-16 RBAC simplification: contractor 도메인이 user로 흡수됨.
+ * 헬퍼 이름은 호환을 위해 유지하나 내부적으로 USER_ADMIN 권한을 검사.
+ */
 export function canManageContractors(session: JarvisSession): boolean {
-  return hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
+  return hasPermission(session, PERMISSIONS.USER_ADMIN);
 }
 
+/**
+ * 외부 인력 데이터 접근.
+ * USER_ADMIN이면 모두 접근, USER_READ면 본인 데이터만.
+ */
 export function canAccessContractorData(
   session: JarvisSession,
   targetUserId: string
 ): boolean {
   if (canManageContractors(session)) return true;
   return (
-    hasPermission(session, PERMISSIONS.CONTRACTOR_READ) &&
+    hasPermission(session, PERMISSIONS.USER_READ) &&
     session.userId === targetUserId
   );
 }

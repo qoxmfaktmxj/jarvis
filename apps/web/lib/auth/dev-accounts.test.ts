@@ -35,6 +35,6 @@ describe("findTempDevAccount", () => {
   it("bob 계정 → 정상 반환", () => {
     const account = findTempDevAccount("bob", "bob123!");
     expect(account).not.toBeNull();
-    expect(account?.role).toBe("VIEWER");
+    expect(account?.role).toBe("MEMBER");
   });
 });

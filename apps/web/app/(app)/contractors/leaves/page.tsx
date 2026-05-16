@@ -1,4 +1,4 @@
-import { hasPermission } from "@jarvis/auth/rbac";
+﻿import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listLeaveSummary } from "@/lib/queries/contractors";
@@ -11,7 +11,7 @@ export default async function ContractorsLeavesPage({
   searchParams
 }: PageProps) {
   const session = await requirePageSession(
-    PERMISSIONS.CONTRACTOR_READ,
+    PERMISSIONS.USER_READ,
     "/dashboard"
   );
 
@@ -24,7 +24,7 @@ export default async function ContractorsLeavesPage({
       : todayStr;
   const nameLike = typeof sp?.name === "string" ? sp.name : "";
 
-  const isAdmin = hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
+  const isAdmin = hasPermission(session, PERMISSIONS.USER_ADMIN);
   const rows = await listLeaveSummary({
     workspaceId: session.workspaceId,
     referenceDate,

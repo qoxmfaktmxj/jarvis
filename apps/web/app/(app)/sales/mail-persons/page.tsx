@@ -1,4 +1,4 @@
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+﻿import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { MailPersonsGridContainer } from "./_components/MailPersonsGridContainer";
@@ -17,7 +17,7 @@ export default async function SalesMailPersonsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const params = await searchParams;
   const limit = DEFAULT_PAGE_SIZE;

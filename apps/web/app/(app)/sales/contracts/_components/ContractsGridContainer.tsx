@@ -117,7 +117,7 @@ function makeBlankRow(): SalesContractRow {
 export function ContractsGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -131,6 +131,7 @@ export function ContractsGridContainer({
 
   const [rows, setRows] = useState<SalesContractRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
 
@@ -194,14 +195,14 @@ export function ContractsGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listContracts({
           q: nextFilters.q || undefined,
           customerNo: nextFilters.customerNo || undefined,
           contGbCd: nextFilters.contGbCd || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows as SalesContractRow[]);
@@ -246,7 +247,7 @@ export function ContractsGridContainer({
   }, [pendingFilters, setUrlFilter, reload]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label="검색어" className="w-[240px]">
           <Input
@@ -293,6 +294,11 @@ export function ContractsGridContainer({
         onRowDoubleClick={(row) => router.push("/sales/contracts/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

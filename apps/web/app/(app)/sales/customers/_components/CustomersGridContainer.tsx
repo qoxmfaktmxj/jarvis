@@ -103,7 +103,7 @@ export function CustomersGridContainer({
   rows: initialRows,
   total: initialTotal,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   initialFilters = {},
   codeOptions,
 }: Props) {
@@ -133,6 +133,7 @@ export function CustomersGridContainer({
 
   const [rows, setRows] = useState<CustomerRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [isSearching, startTransition] = useTransition();
@@ -205,7 +206,7 @@ export function CustomersGridContainer({
   const currentPage = Math.max(1, Number(values.page) || 1);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Omit<typeof values, "page">) => {
+    (nextPage: number, nextFilters: Omit<typeof values, "page">, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listCustomers({
           custNm: nextFilters.custNm || undefined,
@@ -215,7 +216,7 @@ export function CustomersGridContainer({
           searchYmdFrom: nextFilters.searchYmdFrom || undefined,
           searchYmdTo: nextFilters.searchYmdTo || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (!("error" in res)) {
           setRows(res.rows as CustomerRow[]);
@@ -295,7 +296,7 @@ export function CustomersGridContainer({
   }, [pendingFilters, setValue, reload]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={t("Customers.columns.custKindCd")} className="w-[140px]">
           <select
@@ -371,6 +372,11 @@ export function CustomersGridContainer({
         onRowDoubleClick={(row) => router.push("/sales/customers/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, values, next);
+        }}
         onPageChange={(p) => {
           setValue("page", String(p));
           reload(p, values);

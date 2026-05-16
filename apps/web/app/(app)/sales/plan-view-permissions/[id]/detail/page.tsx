@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { requirePageSession } from "@/lib/server/page-auth";
@@ -10,7 +10,7 @@ export default async function PlanViewPerformanceDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const { id } = await params;
   const result = await getPlanViewPerformance({ id });

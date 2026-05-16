@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -60,7 +60,7 @@ export default async function ProjectsPage({
     listCompanyOptions(session.workspaceId),
   ]);
 
-  const canCreate = hasPermission(session, PERMISSIONS.PROJECT_CREATE);
+  const canCreate = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   return (
     <PageShellFit

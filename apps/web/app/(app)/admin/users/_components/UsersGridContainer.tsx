@@ -37,7 +37,6 @@ type Props = {
   jobTitleOptions: Option[];
 };
 
-const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 const STATUS_OPTIONS: Option[] = [
   { value: "active", label: "active" },
@@ -102,6 +101,7 @@ export function UsersGridContainer({
     "admin.users.gridRows",
     [],
   );
+  const [limit, setLimit] = useState<number>(DEFAULT_PAGE_SIZE);
   const [isExporting, setIsExporting] = useState(false);
   const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
@@ -155,7 +155,7 @@ export function UsersGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextLimit: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listUsers({
           q: nextFilters.q || undefined,
@@ -165,7 +165,7 @@ export function UsersGridContainer({
               : undefined,
           orgId: nextFilters.orgId || undefined,
           page: nextPage,
-          limit: PAGE_SIZE,
+          limit: nextLimit,
         });
         if (res.ok) {
           setRows(res.rows as User[]);
@@ -321,10 +321,10 @@ export function UsersGridContainer({
   }, [COLUMNS, rows, orgOptions, positionOptions, jobTitleOptions, statusOptionsTranslated]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={() => reload(1, limit, pendingFilters)}
         isSearching={isSearching}
       >
         <GridFilterField label="조직" className="w-[140px]">
@@ -368,7 +368,7 @@ export function UsersGridContainer({
         columns={COLUMNS}
         filters={[]}
         page={page}
-        limit={PAGE_SIZE}
+        limit={limit}
         makeBlankRow={() => makeBlankRow(workspaceId)}
         filterValues={filterValues}
         initialGridRows={initialGridRows}
@@ -377,8 +377,13 @@ export function UsersGridContainer({
         onGridReady={(api) => { gridApiRef.current = api; }}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, next, filterValues);
+        }}
+        onPageChange={(p) => reload(p, limit, filterValues)}
+        onFilterChange={(f) => reload(1, limit, f)}
         onSave={async (changes) => {
           const result = await saveUsers({
             creates: changes.creates.map((c) => ({
@@ -397,7 +402,7 @@ export function UsersGridContainer({
             deletes: changes.deletes,
           });
           if (result.ok) {
-            reload(page, filterValues);
+            reload(page, limit, filterValues);
           }
           return {
             ok: result.ok,

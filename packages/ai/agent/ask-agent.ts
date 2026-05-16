@@ -105,7 +105,14 @@ export type AskAgentEvent =
 const GRAPH_READ = "graph:read";
 const ADMIN_ALL = "admin:all";
 
+/**
+ * RBAC bypass flag (테스트 단계). 2026-05-16 도입 — Ask AI 결과를 권한 무관
+ * 전부 노출. prod 전환 전 false로 변경 필요.
+ */
+const RBAC_BYPASS = process.env.ASK_AI_RBAC_BYPASS === "true";
+
 function hasGraphAccess(permissions: readonly string[]): boolean {
+  if (RBAC_BYPASS) return true;
   return permissions.includes(GRAPH_READ) || permissions.includes(ADMIN_ALL);
 }
 

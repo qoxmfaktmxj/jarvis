@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
@@ -23,7 +23,7 @@ import {
 import { listMastersWithCompany, getDetail } from "@/lib/queries/month-report";
 
 export async function listMonthReportMasters(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const input = listMonthReportInput.parse(raw);
   const rows = await listMastersWithCompany(session.workspaceId, input.companyNameLike);
   return listMonthReportOutput.parse({
@@ -32,14 +32,14 @@ export async function listMonthReportMasters(raw: unknown) {
 }
 
 export async function getMonthReportDetail(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const input = getMonthReportDetailInput.parse(raw);
   const result = await getDetail(session.workspaceId, input.companyCd, input.ym);
   return getMonthReportDetailOutput.parse(result);
 }
 
 export async function saveMaster(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_WRITE);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_ADMIN);
   const input = saveMonthReportMasterInput.parse(raw);
 
   await db.transaction(async (tx) => {
@@ -86,7 +86,7 @@ export async function saveMaster(raw: unknown) {
 }
 
 export async function saveDetailMonth(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_WRITE);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_ADMIN);
   const input = saveMonthReportDetailMonthInput.parse(raw);
 
   await db.transaction(async (tx) => {
@@ -151,7 +151,7 @@ export async function saveDetailMonth(raw: unknown) {
 }
 
 export async function saveDetailOther(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_WRITE);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_ADMIN);
   const input = saveMonthReportDetailOtherInput.parse(raw);
 
   let inserted = 0,

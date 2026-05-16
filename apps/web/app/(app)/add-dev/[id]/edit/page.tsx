@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AddDevForm } from "@/components/add-dev/AddDevForm";
@@ -14,7 +14,7 @@ export default async function AddDevEditPage({
   params: Promise<{ id: string }>;
 }) {
   const t = await getTranslations("AdditionalDev");
-  const session = await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_UPDATE, "/add-dev");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_ADMIN, "/add-dev");
   const { id } = await params;
 
   const row = await getAdditionalDev({

@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AddDevForm } from "@/components/add-dev/AddDevForm";
 import { PageHeader } from "@/components/patterns/PageHeader";
@@ -12,7 +12,7 @@ export default async function AddDevNewPage({
   searchParams: Promise<{ projectId?: string }>;
 }) {
   const t = await getTranslations("AdditionalDev");
-  await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_CREATE, "/add-dev");
+  await requirePageSession(PERMISSIONS.PROJECT_ADMIN, "/add-dev");
   const sp = await searchParams;
 
   return (

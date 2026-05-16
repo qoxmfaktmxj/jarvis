@@ -81,7 +81,7 @@ function makeBlankRow(): ProjectHistoryRow {
 export function HistoryGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -96,6 +96,7 @@ export function HistoryGridContainer({
   const [rows, setRows] = useState<ProjectHistoryRow[]>(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
@@ -104,7 +105,7 @@ export function HistoryGridContainer({
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listProjectHistory({
           q: nextFilters.q || undefined,
@@ -116,7 +117,7 @@ export function HistoryGridContainer({
           baseSymd: nextFilters.baseSymd || undefined,
           baseEymd: nextFilters.baseEymd || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -163,7 +164,7 @@ export function HistoryGridContainer({
   }, [pendingFilters, reload, setUrlFilter]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[220px]">
           <Input
@@ -222,6 +223,11 @@ export function HistoryGridContainer({
         isExporting={isExporting}
         exportLabel={common("excel.button")}
         exportingLabel={common("excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

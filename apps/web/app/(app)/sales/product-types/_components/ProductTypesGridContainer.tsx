@@ -35,9 +35,10 @@ const COLUMNS: ColumnDef<ProductTypeRow>[] = [
 
 const FILTERS: FilterDef<ProductTypeRow>[] = [];
 
-export function ProductTypesGridContainer({ rows: initialRows, total: initialTotal, page: initialPage, limit }: Props) {
+export function ProductTypesGridContainer({ rows: initialRows, total: initialTotal, page: initialPage, limit: initialLimit }: Props) {
   const [rows, setRows] = useState<ProductTypeRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [page, setPage] = useTabState<number>("sales.productTypes.page", initialPage);
   const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
     "sales.productTypes.filters",
@@ -88,15 +89,15 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
     });
   }, [ctx, tabKey]);
 
-  const reload = useCallback((nextPage: number, nextFilters: Record<string, string>) => {
+  const reload = useCallback((nextPage: number, nextFilters: Record<string, string>, nextLimit?: number) => {
     startTransition(async () => {
-      const res = await listProductTypes({ productCd: nextFilters.productCd || undefined, productNm: nextFilters.productNm || undefined, page: nextPage, limit });
+      const res = await listProductTypes({ productCd: nextFilters.productCd || undefined, productNm: nextFilters.productNm || undefined, page: nextPage, limit: nextLimit ?? limit });
       if (!("error" in res)) { setRows(res.rows as ProductTypeRow[]); setTotal(res.total); setPage(nextPage); setFilterValues(nextFilters); }
     });
   }, [limit, setPage, setFilterValues]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
@@ -129,6 +130,8 @@ export function ProductTypesGridContainer({ rows: initialRows, total: initialTot
         onGridRowsChange={setGridRowsCache}
         onGridReady={(api) => { gridApiRef.current = api; }}
         onDirtyChange={setDirtyCount}
+        windowedPagination
+        onAutoLimitChange={(next) => { setLimit(next); reload(1, filterValues, next); }}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}
         onSave={async (changes) => { const result = await saveProductTypes(changes); if (result.ok) await reload(page, filterValues); return result; }}

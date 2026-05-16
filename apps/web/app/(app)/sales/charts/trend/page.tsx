@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { TrendGbEnum } from "@jarvis/shared/validation/sales-charts";
 import { PageHeader } from "@/components/patterns/PageHeader";
@@ -25,7 +25,7 @@ export default async function SalesChartsTrendPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.Charts.Trend");
   const params = await searchParams;

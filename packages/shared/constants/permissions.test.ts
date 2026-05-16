@@ -1,70 +1,70 @@
+/**
+ * Sanity tests for RBAC simplification (2026-05-16): 23 permissions × 4 roles.
+ */
 import { describe, expect, it } from "vitest";
-import { PERMISSIONS, ROLE_PERMISSIONS } from "./permissions.js";
+import { PERMISSIONS, ROLE_PERMISSIONS, ROLE_LABELS } from "./permissions.js";
 
-describe("permissions.ts graph additions", () => {
-  it("exposes graph:read and graph:build constants", () => {
-    expect(PERMISSIONS.GRAPH_READ).toBe("graph:read");
-    expect(PERMISSIONS.GRAPH_BUILD).toBe("graph:build");
+describe("PERMISSIONS const (23 permissions)", () => {
+  it("has exactly 23 entries", () => {
+    expect(Object.keys(PERMISSIONS).length).toBe(23);
   });
 
-  it("grants graph:read and graph:build to ADMIN, MANAGER, DEVELOPER", () => {
-    for (const role of ["ADMIN", "MANAGER", "DEVELOPER"] as const) {
-      expect(ROLE_PERMISSIONS[role]).toContain(PERMISSIONS.GRAPH_READ);
-      expect(ROLE_PERMISSIONS[role]).toContain(PERMISSIONS.GRAPH_BUILD);
+  it("uses {resource}:{action} format with colon", () => {
+    for (const value of Object.values(PERMISSIONS)) {
+      expect(value).toMatch(/^[a-z-]+:[a-z-]+$/);
     }
   });
 
-  it("grants graph:read to VIEWER but NOT graph:build", () => {
-    expect(ROLE_PERMISSIONS.VIEWER).toContain(PERMISSIONS.GRAPH_READ);
-    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.GRAPH_BUILD);
+  it("includes ADMIN_ALL master permission", () => {
+    expect(PERMISSIONS.ADMIN_ALL).toBe("admin:all");
   });
 
-  it("grants graph:read to HR (Phase-W2 C3 B안) but NOT graph:build", () => {
-    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.GRAPH_READ);
-    expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.GRAPH_BUILD);
+  it("includes core domain read/admin pairs", () => {
+    expect(PERMISSIONS.KNOWLEDGE_READ).toBe("knowledge:read");
+    expect(PERMISSIONS.KNOWLEDGE_ADMIN).toBe("knowledge:admin");
+    expect(PERMISSIONS.PROJECT_READ).toBe("project:read");
+    expect(PERMISSIONS.PROJECT_ADMIN).toBe("project:admin");
+    expect(PERMISSIONS.SCHEDULE_READ).toBe("schedule:read");
+    expect(PERMISSIONS.SCHEDULE_ADMIN).toBe("schedule:admin");
   });
 });
 
-describe("permissions.ts notice additions", () => {
-  it("exposes notice:* constants", () => {
-    expect(PERMISSIONS.NOTICE_READ).toBe("notice:read");
-    expect(PERMISSIONS.NOTICE_CREATE).toBe("notice:create");
-    expect(PERMISSIONS.NOTICE_UPDATE).toBe("notice:update");
-    expect(PERMISSIONS.NOTICE_DELETE).toBe("notice:delete");
+describe("ROLE_PERMISSIONS (4 roles)", () => {
+  it("defines exactly 4 roles", () => {
+    expect(Object.keys(ROLE_PERMISSIONS).sort()).toEqual([
+      "ADMIN",
+      "MANAGER",
+      "MEMBER",
+      "YEAREND"
+    ]);
   });
 
-  it("grants ADMIN every notice permission (full set)", () => {
-    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_READ);
-    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_CREATE);
-    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_UPDATE);
-    expect(ROLE_PERMISSIONS.ADMIN).toContain(PERMISSIONS.NOTICE_DELETE);
+  it("ADMIN holds all 23 permissions", () => {
+    expect(ROLE_PERMISSIONS.ADMIN.length).toBe(23);
   });
 
-  it("grants MANAGER read/create/update but NOT delete", () => {
-    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_READ);
-    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_CREATE);
-    expect(ROLE_PERMISSIONS.MANAGER).toContain(PERMISSIONS.NOTICE_UPDATE);
-    expect(ROLE_PERMISSIONS.MANAGER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  it("MANAGER holds 21 permissions (no user:admin, no admin:all)", () => {
+    expect(ROLE_PERMISSIONS.MANAGER.length).toBe(21);
+    expect(ROLE_PERMISSIONS.MANAGER).not.toContain(PERMISSIONS.USER_ADMIN);
+    expect(ROLE_PERMISSIONS.MANAGER).not.toContain(PERMISSIONS.ADMIN_ALL);
   });
 
-  it("grants HR read/create/update but NOT delete", () => {
-    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_READ);
-    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_CREATE);
-    expect(ROLE_PERMISSIONS.HR).toContain(PERMISSIONS.NOTICE_UPDATE);
-    expect(ROLE_PERMISSIONS.HR).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  it("MEMBER holds 10 permissions (reads + schedule:admin)", () => {
+    expect(ROLE_PERMISSIONS.MEMBER.length).toBe(10);
+    expect(ROLE_PERMISSIONS.MEMBER).toContain(PERMISSIONS.SCHEDULE_ADMIN);
+    expect(ROLE_PERMISSIONS.MEMBER).not.toContain(PERMISSIONS.KNOWLEDGE_ADMIN);
   });
 
-  it("grants DEVELOPER only notice:read", () => {
-    expect(ROLE_PERMISSIONS.DEVELOPER).toContain(PERMISSIONS.NOTICE_READ);
-    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_CREATE);
-    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_UPDATE);
-    expect(ROLE_PERMISSIONS.DEVELOPER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+  it("YEAREND holds 0 jarvis permissions", () => {
+    expect(ROLE_PERMISSIONS.YEAREND.length).toBe(0);
   });
+});
 
-  it("grants VIEWER only notice:read", () => {
-    expect(ROLE_PERMISSIONS.VIEWER).toContain(PERMISSIONS.NOTICE_READ);
-    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_CREATE);
-    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_UPDATE);
-    expect(ROLE_PERMISSIONS.VIEWER).not.toContain(PERMISSIONS.NOTICE_DELETE);
+describe("ROLE_LABELS (Korean UI labels)", () => {
+  it("maps each role to a Korean label", () => {
+    expect(ROLE_LABELS.ADMIN).toBe("관리자");
+    expect(ROLE_LABELS.MANAGER).toBe("매니저");
+    expect(ROLE_LABELS.MEMBER).toBe("일반");
+    expect(ROLE_LABELS.YEAREND).toBe("연말정산");
   });
 });

@@ -95,7 +95,7 @@ function makeBlankRow(): SalesPlanViewPerformanceRow {
 export function PlanViewPermissionsGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -106,6 +106,7 @@ export function PlanViewPermissionsGridContainer({
   const [rows, setRows] = useState(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
   const [aclForm, setAclForm] = useState({
     planId: "",
@@ -120,14 +121,14 @@ export function PlanViewPermissionsGridContainer({
     setPendingFilters((current) => ({ ...current, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, filters: FilterState) => {
+    (nextPage: number, filters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const result = await listPlanViewPermissions({
           q: filters.q || undefined,
           contYear: filters.contYear || undefined,
           companyCd: filters.companyCd || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (result.ok) {
           setRows(result.rows);
@@ -196,6 +197,11 @@ export function PlanViewPermissionsGridContainer({
         onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
         onRowDoubleClick={(row) => router.push("/sales/plan-view-permissions/" + row.id + "/detail")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(page) => {
           setUrlFilter("page", String(page));
           reload(page, { ...urlFilters, page: String(page) });

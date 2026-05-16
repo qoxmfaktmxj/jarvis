@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -25,7 +25,7 @@ export default async function ProjectOverviewPage({
     notFound();
   }
 
-  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   return (
     <div className="space-y-3">

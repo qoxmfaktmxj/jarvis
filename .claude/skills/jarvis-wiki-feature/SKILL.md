@@ -139,13 +139,12 @@ raw_source 1건 → Two-Step CoT → 다수 페이지 갱신.
 
 ### 7.3 권한 상수
 
-현재 wiki 전용 PERMISSION은 별도로 두지 않고 `KNOWLEDGE_*` 재사용:
-- 읽기: `KNOWLEDGE_READ`
-- 수정: `KNOWLEDGE_UPDATE` (manual 영역)
-- 리뷰 승인: `KNOWLEDGE_REVIEW` (DEVELOPER 역할에서 제외됨 — RESTRICTED 차단용)
-- 관리: `KNOWLEDGE_ADMIN`, `ADMIN_ALL`
+2026-05-16 RBAC simplification 후 wiki 전용 PERMISSION 없이 `KNOWLEDGE_*` 2-tier 재사용:
+- 읽기: `KNOWLEDGE_READ` (모든 역할 — ADMIN/MANAGER/MEMBER)
+- 수정/삭제/리뷰 제출 (manual 영역): `KNOWLEDGE_ADMIN` + owner check (본인 작성 `created_by` 또는 `knowledge_page_owner` row)
+- 슈퍼유저 우회 (남의 페이지 수정): `ADMIN_ALL`
 
-wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`에 추가하고 `ROLE_PERMISSIONS` 매핑 갱신.
+wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`에 추가하고 `ROLE_PERMISSIONS` 매핑 갱신 + `/admin/roles` 페이지에서 자동 노출 확인.
 
 ### 7.4 i18n 키
 
@@ -161,7 +160,7 @@ wiki 전용 권한이 필요해지면 `packages/shared/constants/permissions.ts`
 ### 7.6 review-queue 연결
 
 - `contradictions`, PII 감지 → `wiki_review_queue` row 생성
-- 승인/반려는 admin 전용 `ApprovalDialog`. server action에 `KNOWLEDGE_REVIEW` 또는 `ADMIN_ALL` 체크 필수
+- 승인/반려는 admin 전용 `ApprovalDialog`. server action에 `KNOWLEDGE_ADMIN` 또는 `ADMIN_ALL` 체크 필수 (2026-05-16: `KNOWLEDGE_REVIEW` 폐기, `KNOWLEDGE_ADMIN`로 흡수)
 - 승인 시 manual 영역에 반영하는 것은 사람이 editor에서 수동으로. 자동 반영 금지.
 
 ## 8. 자주 하는 실수 (past incident 기반)

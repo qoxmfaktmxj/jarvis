@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
@@ -41,7 +41,7 @@ async function resolveContext(): Promise<
   if (!session) return { ok: false, error: "Unauthorized" };
 
   if (
-    !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW) &&
+    !hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN) &&
     !hasPermission(session, PERMISSIONS.ADMIN_ALL)
   ) {
     return { ok: false, error: "forbidden" };

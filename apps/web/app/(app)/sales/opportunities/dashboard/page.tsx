@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
@@ -21,7 +21,7 @@ async function loadCodeOptions(workspaceId: string, groupCode: string) {
 }
 
 export default async function DashboardPage() {
-  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  const session = await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const [data, stepCodes] = await Promise.all([
     getOpportunityDashboard(),

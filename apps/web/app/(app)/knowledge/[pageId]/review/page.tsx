@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+﻿import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/patterns/PageShell';
@@ -21,8 +21,8 @@ export default async function ReviewPage({ params }: Props) {
   const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
 
-  const canReview = hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW);
-  const canEdit = hasPermission(session, PERMISSIONS.KNOWLEDGE_UPDATE);
+  const canReview = hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN);
+  const canEdit = hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN);
 
   // Only allow access if the page is in a reviewable state or user is a reviewer
   if (!canReview && !canEdit) notFound();

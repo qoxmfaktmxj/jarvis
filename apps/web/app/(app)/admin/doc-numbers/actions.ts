@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -93,7 +93,7 @@ export async function listDocumentYearsAction() {
 export async function saveDocumentNumbersAction(
   rawInput: unknown,
 ): Promise<SaveDocumentNumbersOutput> {
-  const ctx = await resolveContext(PERMISSIONS.DOC_NUM_WRITE);
+  const ctx = await resolveContext(PERMISSIONS.DOC_NUM_ADMIN);
   if (!ctx.ok) {
     return { ok: false, inserted: 0, updated: 0, deleted: 0, error: ctx.error };
   }

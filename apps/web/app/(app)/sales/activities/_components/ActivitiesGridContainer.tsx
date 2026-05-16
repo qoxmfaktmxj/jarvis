@@ -71,7 +71,7 @@ export function ActivitiesGridContainer({
   initial,
   total,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   initialFilters,
   isAdmin = false,
   codeOptions,
@@ -104,6 +104,7 @@ export function ActivitiesGridContainer({
     return v;
   }, [initialFilters]);
 
+  const [limit, setLimit] = useState(initialLimit);
   const [rows, setRows] = useState<Activity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
   const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
@@ -160,7 +161,7 @@ export function ActivitiesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: { q: string; opportunityId: string; actTypeCode: string; bizStepCode: string }) => {
+    (nextPage: number, nextFilters: { q: string; opportunityId: string; actTypeCode: string; bizStepCode: string }, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listActivities({
           q: nextFilters.q || undefined,
@@ -168,7 +169,7 @@ export function ActivitiesGridContainer({
           actTypeCode: nextFilters.actTypeCode || undefined,
           bizStepCode: nextFilters.bizStepCode || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if ("ok" in res && res.ok) {
           setRows(res.rows as Activity[]);
@@ -280,7 +281,7 @@ export function ActivitiesGridContainer({
   ]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={handleSearch}
@@ -349,6 +350,16 @@ export function ActivitiesGridContainer({
         onRowDoubleClick={(row) => router.push("/sales/activities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, {
+            q: values.q,
+            opportunityId: values.opportunityId,
+            actTypeCode: values.actTypeCode,
+            bizStepCode: values.bizStepCode,
+          }, next);
+        }}
         onPageChange={(p) => {
           setValues({ page: String(p) });
           reload(p, {

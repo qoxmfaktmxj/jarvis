@@ -1,4 +1,4 @@
-/**
+﻿/**
  * apps/web/app/(app)/sales/product-cost-mapping/page.tsx
  *
  * 영업 제품군 × 코스트 매핑 (sales_product_type_cost / TBIZ024 row mapping).
@@ -25,7 +25,7 @@ export default async function SalesProductCostMappingPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  const session = await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const sp = await searchParams;
   const limit = DEFAULT_PAGE_SIZE;

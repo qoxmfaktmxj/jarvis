@@ -83,6 +83,7 @@ export function AddDevGridContainer({ initial, total }: Props) {
 
   const [rows, setRows] = useState<AddDevRow[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
+  const [limit, setLimit] = useState<number>(PAGE_SIZE);
   const [page, setPage] = useTabState<number>("addDev.page", 1);
   const [filterValues, setFilterValues] = useTabState<Record<string, string>>(
     "addDev.filters",
@@ -98,14 +99,14 @@ export function AddDevGridContainer({ initial, total }: Props) {
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextFilters: Record<string, string>, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listAddDev({
           q: nextFilters.q || undefined,
           status: nextFilters.status || undefined,
           part: nextFilters.part || undefined,
           page: nextPage,
-          pageSize: PAGE_SIZE,
+          pageSize: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.data as AddDevRow[]);
@@ -115,7 +116,7 @@ export function AddDevGridContainer({ initial, total }: Props) {
         }
       });
     },
-    [setPage, setFilterValues],
+    [limit, setPage, setFilterValues],
   );
 
   const COLUMNS: ColumnDef<AddDevRow>[] = useMemo(
@@ -198,7 +199,7 @@ export function AddDevGridContainer({ initial, total }: Props) {
   const FILTERS: FilterDef<AddDevRow>[] = [];
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, pendingFilters)}
@@ -249,12 +250,17 @@ export function AddDevGridContainer({ initial, total }: Props) {
         columns={COLUMNS}
         filters={FILTERS}
         page={page}
-        limit={PAGE_SIZE}
+        limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
         readOnly
         onGridReady={(api) => {
           gridApiRef.current = api;
+        }}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, filterValues, next);
         }}
         onPageChange={(p) => reload(p, filterValues)}
         onFilterChange={(f) => reload(1, f)}

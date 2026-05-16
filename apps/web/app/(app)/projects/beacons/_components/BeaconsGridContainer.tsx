@@ -58,7 +58,7 @@ function makeBlankRow(): ProjectBeaconRow {
 export function BeaconsGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -73,6 +73,7 @@ export function BeaconsGridContainer({
   const [rows, setRows] = useState<ProjectBeaconRow[]>(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
@@ -81,7 +82,7 @@ export function BeaconsGridContainer({
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listProjectBeacons({
           q: nextFilters.q || undefined,
@@ -89,7 +90,7 @@ export function BeaconsGridContainer({
           sabun: nextFilters.sabun || undefined,
           outYn: nextFilters.outYn || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -134,7 +135,7 @@ export function BeaconsGridContainer({
   }, [pendingFilters, reload, setUrlFilter]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[240px]">
           <Input
@@ -186,6 +187,11 @@ export function BeaconsGridContainer({
         isExporting={isExporting}
         exportLabel={common("excel.button")}
         exportingLabel={common("excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

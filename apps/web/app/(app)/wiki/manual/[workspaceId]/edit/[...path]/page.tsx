@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -28,7 +28,7 @@ tags: []
 `;
 
 export default async function ManualWikiEditPage({ params }: EditPageProps) {
-  const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_UPDATE, "/dashboard");
+  const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_ADMIN, "/dashboard");
   const { workspaceId, path: pathSeg } = await params;
   const t = await getTranslations("WikiEditor");
   // Next.js 15 dynamic catch-all segments are URL-encoded; decode before joining.

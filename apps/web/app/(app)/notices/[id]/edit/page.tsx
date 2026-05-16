@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+﻿import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -14,7 +14,7 @@ interface Props {
 
 export default async function EditNoticePage({ params }: Props) {
   const session = await requirePageSession(
-    PERMISSIONS.NOTICE_UPDATE,
+    PERMISSIONS.NOTICE_ADMIN,
     '/notices',
   );
   const { id } = await params;

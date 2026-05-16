@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 /**
  * apps/web/app/(app)/admin/wiki/review-queue/actions.ts
@@ -66,7 +66,7 @@ async function resolveContext(): Promise<
 
   if (
     !isAdmin(session) &&
-    !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW)
+    !hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN)
   ) {
     return { ok: false, error: "forbidden" };
   }

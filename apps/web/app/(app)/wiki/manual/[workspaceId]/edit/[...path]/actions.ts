@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
@@ -67,7 +67,7 @@ export async function saveWikiPage(
   const session = await getSession(sessionId);
   if (!session) return { ok: false, error: "forbidden" };
 
-  if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_UPDATE)) {
+  if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN)) {
     return { ok: false, error: "forbidden" };
   }
 

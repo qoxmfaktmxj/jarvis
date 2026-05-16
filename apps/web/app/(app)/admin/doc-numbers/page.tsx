@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageShellFit } from "@/components/patterns/PageShell";
@@ -15,7 +15,7 @@ export default async function DocNumbersPage() {
   );
 
   const canWrite =
-    hasPermission(session, PERMISSIONS.DOC_NUM_WRITE) ||
+    hasPermission(session, PERMISSIONS.DOC_NUM_ADMIN) ||
     hasPermission(session, PERMISSIONS.ADMIN_ALL);
   const canAdmin =
     hasPermission(session, PERMISSIONS.DOC_NUM_ADMIN) ||

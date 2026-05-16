@@ -23,7 +23,6 @@ type Props = {
   canWrite: boolean;
 };
 
-const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Row {
   const now = new Date().toISOString();
@@ -59,6 +58,7 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
     "schedule.list.pendingFilters",
     {},
   );
+  const [limit, setLimit] = useState<number>(DEFAULT_PAGE_SIZE);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
 
@@ -66,14 +66,14 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextLimit: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listSchedulesAction({
           q: nextFilters.q || undefined,
           activeOn: nextFilters.activeOn || undefined,
           ownOnly: nextFilters.ownOnly === "false" ? false : true,
           page: nextPage,
-          limit: PAGE_SIZE,
+          limit: nextLimit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -132,14 +132,14 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
   }, [COLUMNS, rows, t]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {canWrite ? (
-        <NewEventInlineForm onCreated={() => reload(1, filterValues)} />
+        <NewEventInlineForm onCreated={() => reload(1, limit, filterValues)} />
       ) : null}
 
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={() => reload(1, limit, pendingFilters)}
         isSearching={isSearching}
       >
         <GridFilterField label={t("filters.search")} className="w-[220px]">
@@ -176,14 +176,19 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
         columns={COLUMNS}
         filters={FILTERS}
         page={page}
-        limit={PAGE_SIZE}
+        limit={limit}
         makeBlankRow={makeBlankRow}
         onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={filterValues}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, next, filterValues);
+        }}
+        onPageChange={(p) => reload(p, limit, filterValues)}
+        onFilterChange={(f) => reload(1, limit, f)}
         onSave={async (changes) => {
           if (!canWrite) {
             return { ok: false, errors: [{ message: t("errors.noPermission") }] };
@@ -219,7 +224,7 @@ export function ScheduleGridContainer({ initial, total, canWrite }: Props) {
             deletes: ownableDeletes,
           });
           if (result.ok) {
-            await reload(page, filterValues);
+            await reload(page, limit, filterValues);
           }
           return {
             ok: result.ok,

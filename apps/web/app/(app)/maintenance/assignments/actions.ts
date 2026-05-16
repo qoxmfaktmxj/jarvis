@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -115,7 +115,7 @@ export async function listUsersWithAssignmentCountsAction(rawInput: unknown) {
 export async function saveMaintenanceAction(
   rawInput: unknown,
 ): Promise<SaveMaintenanceOutput & { error?: string }> {
-  const ctx = await resolveContext(PERMISSIONS.MAINTENANCE_WRITE);
+  const ctx = await resolveContext(PERMISSIONS.MAINTENANCE_ADMIN);
   if (!ctx.ok) {
     return { ok: false, inserted: 0, updated: 0, deleted: 0, error: ctx.error };
   }

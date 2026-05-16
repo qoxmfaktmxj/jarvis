@@ -61,7 +61,8 @@ async function loginWithRole(page: Page, opts: LoginOptions): Promise<void> {
 }
 
 export async function loginAsTestUser(page: Page): Promise<void> {
-  await loginWithRole(page, { role: 'VIEWER' });
+  // 2026-05-16 RBAC simplification: VIEWER → MEMBER (DEVELOPER/HR도 MEMBER로 통합).
+  await loginWithRole(page, { role: 'MEMBER' });
 }
 
 export async function loginAsAdmin(page: Page): Promise<void> {
@@ -75,8 +76,10 @@ export async function loginAsAdmin(page: Page): Promise<void> {
 }
 
 export async function loginAsDeveloper(page: Page): Promise<void> {
+  // 2026-05-16 RBAC simplification: DEVELOPER 폐기 → MEMBER (개발자도 일반 사원 역할).
+  // 헬퍼 이름은 호출처 호환을 위해 유지하나 내부 role은 MEMBER.
   await loginWithRole(page, {
-    role: 'DEVELOPER',
+    role: 'MEMBER',
     userId: TEST_DEV_ID,
     employeeId: 'DEV001',
     name: '개발자',

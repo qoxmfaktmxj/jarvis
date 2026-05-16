@@ -7,32 +7,28 @@ import { userSession } from '@jarvis/db/schema/user-session';
 import { ROLE_PERMISSIONS } from '@jarvis/shared/constants/permissions';
 
 /**
- * apps/web/e2e/sidebar-rbac.spec.ts (Task 7 + Task 8 IA reorg)
+ * apps/web/e2e/sidebar-rbac.spec.ts
  *
- * Verifies the DB-driven RBAC sidebar with the new tree IA (sidebar-tree-ia
- * plan, 2026-05-05):
- * - admin@jarvis.local (ADMIN role) sees the admin-gated group buttons
- *   (인력, 설정 — both have ADMIN_ALL leaves) and can reach admin-only
- *   leaves once the group is expanded.
- * - admin@jarvis.local with synthetic VIEWER session sees a subset of
- *   group buttons but DOES
- *   NOT see groups whose every leaf is gated by ADMIN_ALL — most notably
- *   `group.settings` (all 8 children require ADMIN_ALL or CONTRACTOR_ADMIN,
- *   which VIEWER lacks → buildMenuTree empty-group prune removes the header).
+ * Verifies the DB-driven RBAC sidebar with the new 4-role structure
+ * (2026-05-16 RBAC simplification: 47 perms → 23, 5 roles → 4):
  *
- * Old "관리자" / "영업관리" flat headings are GONE — the IA collapsed admin
- * menus into domain groups (인력 / 설정 / 지식 / 프로젝트). NavGroup renders
- * each group as a `<button aria-expanded>`, so assertions use
- * `getByRole("button", { name })`.
+ * - admin@jarvis.local (ADMIN role) sees admin-gated group buttons
+ *   (인력, 설정 — both have ADMIN_ALL leaves) and reaches admin-only
+ *   leaves including the new /admin/roles page.
+ * - admin@jarvis.local with synthetic MEMBER session sees a subset of
+ *   group buttons but DOES NOT see groups whose every leaf is gated by
+ *   ADMIN_ALL — most notably `group.settings`.
+ * - admin@jarvis.local with synthetic MEMBER session hitting /admin/roles
+ *   directly gets redirected to /dashboard?error=forbidden (page guard).
  *
  * The sidebar reads from `getVisibleMenuTree(session, "menu")`, which JOINs
  * through `menu_permission ⨯ role_permission ⨯ user_role` and filters by
- * `role.workspace_id = session.workspaceId`. So the test creates a real
+ * `role.workspace_id = session.workspaceId`. The test creates a real
  * session referencing seeded users — TEST_USER_IDs from helpers/auth.ts won't
  * have user_role rows and would return zero menus regardless of role.
  *
- * The test depends on `pnpm db:seed` having run (admin/alice/bob in jarvis
- * workspace, role_permission populated from PERMISSIONS const).
+ * Depends on `pnpm db:seed` having run (admin user in jarvis workspace,
+ * role_permission populated from PERMISSIONS const).
  */
 
 const SESSION_COOKIE = 'sessionId';
@@ -90,26 +86,20 @@ async function loginAsSeededUser(page: Page, email: string, role: string): Promi
   ]);
 }
 
-test.describe('Sidebar RBAC (DB-driven)', () => {
+test.describe('Sidebar RBAC (DB-driven, 4 roles)', () => {
   test('admin sees admin-gated group buttons and reaches admin-only leaves', async ({ page }) => {
     await loginAsSeededUser(page, 'admin@jarvis.local', 'ADMIN');
     await page.goto('/dashboard');
 
-    // New IA: admin-only leaves are distributed across domain groups (인력,
-    // 설정, 지식). NavGroup renders the header as a `<button aria-expanded>`,
-    // so we assert on role=button. The flat "관리자" heading is gone.
+    // admin-only leaves are distributed across domain groups (인력, 설정, 지식).
+    // NavGroup renders the header as a `<button aria-expanded>`.
     await expect(page.getByRole('button', { name: '설정', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '인력', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '지식', exact: true })).toBeVisible();
 
-    // The old flat "관리자" / "영업관리" group labels must NEVER render.
+    // Old flat "관리자" / "영업관리" group labels must NEVER render.
     await expect(page.getByRole('button', { name: '관리자', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '영업관리', exact: true })).toHaveCount(0);
-
-    // Reach admin-only leaves by expanding their groups manually. Avoiding
-    // page.goto to /admin/* here because rapid back-to-back navigations to
-    // heavy admin pages can race with hydration; clicking the group header
-    // exercises the same NavGroup expand path without the navigation race.
 
     // Expand 인력 group → 사용자 leaf appears.
     const peopleBtn = page.getByRole('button', { name: '인력', exact: true });
@@ -118,71 +108,71 @@ test.describe('Sidebar RBAC (DB-driven)', () => {
     }
     await expect(page.getByRole('link', { name: '사용자', exact: true })).toBeVisible();
 
-    // Expand 설정 group → 회사 + 메뉴 leaves appear.
+    // Expand 설정 group → 회사 + 메뉴 + 역할 leaves appear.
+    // 역할 (sortOrder=305) is the new /admin/roles page added in RBAC simplification.
     const settingsBtn = page.getByRole('button', { name: '설정', exact: true });
     if ((await settingsBtn.getAttribute('aria-expanded')) !== 'true') {
       await settingsBtn.click();
     }
     await expect(page.getByRole('link', { name: '회사', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: '메뉴', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '역할', exact: true })).toBeVisible();
   });
 
-  test('viewer sees permitted groups but admin-only groups are pruned', async ({ page }) => {
-    await loginAsSeededUser(page, 'admin@jarvis.local', 'VIEWER');
+  test('member sees permitted groups but admin-only groups are pruned', async ({ page }) => {
+    await loginAsSeededUser(page, 'admin@jarvis.local', 'MEMBER');
     await page.goto('/dashboard');
 
-    // VIEWER has KNOWLEDGE_READ, GRAPH_READ, NOTICE_READ, etc., so the
-    // standalone 공지사항 leaf renders. (공지사항 is sortOrder=80, no group.)
+    // MEMBER has knowledge:read, notice:read, graph:read, etc., so the
+    // standalone 공지사항 leaf renders.
     await expect(page.getByRole('link', { name: '공지사항', exact: true })).toBeVisible();
 
     // Old flat "관리자" / "영업관리" headings — must NEVER appear in any role.
     await expect(page.getByRole('button', { name: '관리자', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '영업관리', exact: true })).toHaveCount(0);
 
-    // group.settings: all 8 children require ADMIN_ALL or CONTRACTOR_ADMIN.
-    // VIEWER has neither, so buildMenuTree's empty-group prune drops the
-    // header entirely → button absent.
+    // group.settings: all children require ADMIN_ALL or user:admin. MEMBER
+    // has neither, so buildMenuTree's empty-group prune drops the header.
     await expect(page.getByRole('button', { name: '설정', exact: true })).toHaveCount(0);
 
-    // group.sales: every sales.* leaf requires SALES_ALL. VIEWER lacks it,
-    // so the entire group (and its sub-groups) prunes.
+    // group.sales: every sales.* leaf requires sales:read or sales:admin.
+    // MEMBER lacks both, so the entire group prunes.
     await expect(page.getByRole('button', { name: '영업', exact: true })).toHaveCount(0);
 
-    // Specific admin-only leaves — never reachable for VIEWER regardless of
+    // Specific admin-only leaves — never reachable for MEMBER regardless of
     // group expand state, because the link itself was filtered by
     // permission JOIN.
     await expect(page.getByRole('link', { name: '회사', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: '메뉴', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: '역할', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: '사용자', exact: true })).toHaveCount(0);
   });
 
-  test('viewer hitting /admin/menus directly redirects to /dashboard?error=forbidden', async ({ page }) => {
-    await loginAsSeededUser(page, 'admin@jarvis.local', 'VIEWER');
+  test('member hitting /admin/menus directly redirects to /dashboard?error=forbidden', async ({ page }) => {
+    await loginAsSeededUser(page, 'admin@jarvis.local', 'MEMBER');
     await page.goto('/admin/menus');
-    // page-level guard (Task 6 fix) sends authenticated non-admin to dashboard,
-    // not /login. Used to be /login causing reauth loop.
+    // page-level guard sends authenticated non-admin to dashboard,
+    // not /login (would cause reauth loop).
     await expect(page).toHaveURL(/\/dashboard\?error=forbidden/);
   });
 
-  test.skip('admin viewer renders permission badges per menu row', async ({ page }) => {
-    // SKIPPED in sidebar-tree-ia branch: this test verifies the /admin/menus
-    // viewer's per-row permission badge rendering — a feature outside the
-    // sidebar-tree-ia scope. After the IA reorg added 12 group rows to
-    // menu_item, the /admin/menus DOM layout no longer matches the original
-    // div-filter-based locator (likely because of new row grouping or
-    // virtualization). The feature itself works in the UI; the test selector
-    // needs follow-up redesign that's out of scope for this branch.
-    //
-    // Original test body kept below for the follow-up:
-    await loginAsSeededUser(page, 'admin@jarvis.local', 'ADMIN');
-    await page.goto('/admin/menus');
-    const askRow = page
-      .locator('main')
-      .locator('div')
-      .filter({ hasText: 'AI 질문' })
-      .filter({ hasText: 'nav.ask' })
-      .first();
-    await expect(askRow.getByText('knowledge:read', { exact: true })).toBeVisible();
-    await expect(askRow.getByText('admin:all', { exact: true })).toBeVisible();
+  test('member hitting /admin/roles directly redirects to /dashboard?error=forbidden', async ({ page }) => {
+    await loginAsSeededUser(page, 'admin@jarvis.local', 'MEMBER');
+    await page.goto('/admin/roles');
+    await expect(page).toHaveURL(/\/dashboard\?error=forbidden/);
+  });
+
+  test('yearend has zero jarvis menus visible (external site only)', async ({ page }) => {
+    await loginAsSeededUser(page, 'admin@jarvis.local', 'YEAREND');
+    await page.goto('/dashboard');
+
+    // YEAREND role has 0 jarvis permissions — sidebar groups all prune.
+    await expect(page.getByRole('button', { name: '설정', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '인력', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '지식', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: '영업', exact: true })).toHaveCount(0);
+
+    // 공지사항 leaf requires notice:read — YEAREND lacks it.
+    await expect(page.getByRole('link', { name: '공지사항', exact: true })).toHaveCount(0);
   });
 });

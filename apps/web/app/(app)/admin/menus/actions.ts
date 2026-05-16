@@ -449,7 +449,7 @@ const PERMISSION_DESCRIPTIONS: Record<string, string> = {
   "admin:all": "관리자 전체 권한",
   "files:write": "파일 업로드",
   "graph:read": "지식 그래프 조회",
-  "graph:build": "지식 그래프 빌드",
+  "graph:admin": "지식 그래프 관리",
   "notice:read": "공지 조회",
   "notice:create": "공지 작성",
   "notice:update": "공지 수정",

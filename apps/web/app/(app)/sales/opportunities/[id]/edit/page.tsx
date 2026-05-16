@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+﻿import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
@@ -23,7 +23,7 @@ export default async function OpportunityEditPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  const session = await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const { id } = await params;
   const [result, productTypeOptions, bizStepOptions, bizOpSourceOptions] = await Promise.all([

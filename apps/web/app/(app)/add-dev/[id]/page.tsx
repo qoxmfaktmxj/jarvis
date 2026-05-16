@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
@@ -16,7 +16,7 @@ export default async function AddDevOverviewPage({
   params: Promise<{ id: string }>;
 }) {
   const t = await getTranslations("AdditionalDev.fields");
-  const session = await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_READ, "/add-dev");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/add-dev");
   const { id } = await params;
 
   const row = await getAdditionalDev({
@@ -28,7 +28,7 @@ export default async function AddDevOverviewPage({
     notFound();
   }
 
-  const canEdit = hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   const statusVariant =
     row.status === "완료" ? "success" : row.status === "보류" ? "warning" : "outline";

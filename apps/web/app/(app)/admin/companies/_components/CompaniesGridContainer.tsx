@@ -34,7 +34,6 @@ type Props = {
   industryOptions: Option[];
 };
 
-const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Company {
   const now = new Date().toISOString();
@@ -83,6 +82,7 @@ export function CompaniesGridContainer({
     "companies.gridRows",
     [],
   );
+  const [limit, setLimit] = useState<number>(DEFAULT_PAGE_SIZE);
   const [isExporting, setIsExporting] = useState(false);
   const [dirtyCount, setDirtyCount] = useState(0);
   const [isSearching, startTransition] = useTransition();
@@ -130,7 +130,7 @@ export function CompaniesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextLimit: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listCompanies({
           q: nextFilters.q || undefined,
@@ -138,7 +138,7 @@ export function CompaniesGridContainer({
           groupCode: nextFilters.groupCode || undefined,
           industryCode: nextFilters.industryCode || undefined,
           page: nextPage,
-          limit: PAGE_SIZE,
+          limit: nextLimit,
         });
         if (res.ok) {
           setRows(res.rows as Company[]);
@@ -208,10 +208,10 @@ export function CompaniesGridContainer({
   }, [COLUMNS, rows, objectDivOptions, groupOptions, industryOptions]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={() => reload(1, limit, pendingFilters)}
         isSearching={isSearching}
       >
         <GridFilterField label="대상구분" className="w-[140px]">
@@ -273,7 +273,7 @@ export function CompaniesGridContainer({
         columns={COLUMNS}
         filters={FILTERS}
         page={page}
-        limit={PAGE_SIZE}
+        limit={limit}
         makeBlankRow={makeBlankRow}
         filterValues={filterValues}
         initialGridRows={initialGridRows}
@@ -282,8 +282,13 @@ export function CompaniesGridContainer({
         onGridReady={(api) => { gridApiRef.current = api; }}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, next, filterValues);
+        }}
+        onPageChange={(p) => reload(p, limit, filterValues)}
+        onFilterChange={(f) => reload(1, limit, f)}
         onSave={async (changes) => {
           const result = await saveCompanies({
             creates: changes.creates,
@@ -291,7 +296,7 @@ export function CompaniesGridContainer({
             deletes: changes.deletes,
           });
           if (result.ok) {
-            await reload(page, filterValues);
+            await reload(page, limit, filterValues);
           }
           return {
             ok: result.ok,

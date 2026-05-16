@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import fs from 'node:fs';
 import path from 'node:path';
 import { forbidden } from 'next/navigation';
@@ -92,7 +92,7 @@ export default async function InfraImportPage() {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
   if (!session.workspaceId) forbidden();
 
-  const canRunPipeline = hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW);
+  const canRunPipeline = hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN);
   const status = readPipelineStatus();
 
   const fmtDate = (iso: string | null) =>

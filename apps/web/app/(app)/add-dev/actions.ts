@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -30,7 +30,7 @@ async function resolveAddDevContext() {
   const session = await getSession(sessionId);
   if (!session) return { ok: false as const, error: "Unauthorized" };
 
-  if (!hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_READ)) {
+  if (!hasPermission(session, PERMISSIONS.PROJECT_READ)) {
     return { ok: false as const, error: "Forbidden" };
   }
 

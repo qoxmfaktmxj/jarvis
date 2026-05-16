@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -120,7 +120,7 @@ export async function listCalendarEventsAction(rawInput: unknown) {
 export async function saveSchedulesAction(
   rawInput: unknown,
 ): Promise<SaveSchedulesOutput> {
-  const ctx = await resolveContext(PERMISSIONS.SCHEDULE_WRITE);
+  const ctx = await resolveContext(PERMISSIONS.SCHEDULE_ADMIN);
   if (!ctx.ok) {
     return { ok: false, inserted: 0, updated: 0, deleted: 0, error: ctx.error };
   }
@@ -141,6 +141,7 @@ export async function saveSchedulesAction(
   const ws = ctx.session.workspaceId;
   const actorUserId = ctx.session.userId;
   const actorIdent = ctx.session.employeeId ?? null;
+  const isSuperAdmin = ctx.session.permissions.includes(PERMISSIONS.ADMIN_ALL);
   let inserted = 0;
   let updated = 0;
   let deleted = 0;
@@ -191,8 +192,17 @@ export async function saveSchedulesAction(
         }
       }
 
-      // Updates: 본인 소유 일정만 (workspaceId + userId 가드)
+      // Updates: 본인 소유 일정만 (workspaceId + userId 가드), ADMIN_ALL은 전체 허용
       for (const u of parsed.updates) {
+        // owner check: 이벤트 소유자 확인 후 ADMIN_ALL 우회
+        const [existing] = await tx
+          .select({ userId: scheduleEvent.userId })
+          .from(scheduleEvent)
+          .where(and(eq(scheduleEvent.id, u.id), eq(scheduleEvent.workspaceId, ws)))
+          .limit(1);
+        if (!existing) continue;
+        if (existing.userId !== actorUserId && !isSuperAdmin) continue;
+
         const values: Record<string, unknown> = {
           updatedAt: new Date(),
           updatedBy: actorIdent,
@@ -207,13 +217,7 @@ export async function saveSchedulesAction(
         const [updatedRow] = await tx
           .update(scheduleEvent)
           .set(values)
-          .where(
-            and(
-              eq(scheduleEvent.id, u.id),
-              eq(scheduleEvent.workspaceId, ws),
-              eq(scheduleEvent.userId, actorUserId),
-            ),
-          )
+          .where(and(eq(scheduleEvent.id, u.id), eq(scheduleEvent.workspaceId, ws)))
           .returning({ id: scheduleEvent.id });
         if (updatedRow) {
           updated++;
@@ -225,17 +229,20 @@ export async function saveSchedulesAction(
         }
       }
 
-      // Deletes: 본인 소유 일정만
+      // Deletes: 본인 소유 일정만, ADMIN_ALL은 전체 허용
       for (const id of parsed.deletes) {
+        // owner check: 이벤트 소유자 확인 후 ADMIN_ALL 우회
+        const [existing] = await tx
+          .select({ userId: scheduleEvent.userId })
+          .from(scheduleEvent)
+          .where(and(eq(scheduleEvent.id, id), eq(scheduleEvent.workspaceId, ws)))
+          .limit(1);
+        if (!existing) continue;
+        if (existing.userId !== actorUserId && !isSuperAdmin) continue;
+
         const [deletedRow] = await tx
           .delete(scheduleEvent)
-          .where(
-            and(
-              eq(scheduleEvent.id, id),
-              eq(scheduleEvent.workspaceId, ws),
-              eq(scheduleEvent.userId, actorUserId),
-            ),
-          )
+          .where(and(eq(scheduleEvent.id, id), eq(scheduleEvent.workspaceId, ws)))
           .returning({ id: scheduleEvent.id });
         if (deletedRow) {
           deleted++;

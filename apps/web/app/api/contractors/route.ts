@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listContractors, createContractor } from "@/lib/queries/contractors";
 import { requireApiSession } from "@/lib/server/api-auth";
 import { listContractorsQuerySchema, createContractorBodySchema } from "./_schemas";
 
 export async function GET(request: NextRequest) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_READ);
   if (auth.response) return auth.response;
 
   const parsed = listContractorsQuerySchema.safeParse(
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const isAdmin = auth.session.permissions.includes(PERMISSIONS.CONTRACTOR_ADMIN);
+  const isAdmin = auth.session.permissions.includes(PERMISSIONS.USER_ADMIN);
   const result = await listContractors({
     workspaceId: auth.session.workspaceId,
     userIdFilter: isAdmin ? undefined : auth.session.userId,
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_ADMIN);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_ADMIN);
   if (auth.response) return auth.response;
 
   const body = await request.json().catch(() => null);

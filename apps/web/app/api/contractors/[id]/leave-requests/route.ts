@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { canAccessContractorData } from "@jarvis/auth/rbac";
 import { listLeaveRequests, createLeaveRequest } from "@/lib/queries/contractors";
@@ -12,7 +12,7 @@ type RouteContext = {
 };
 
 export async function GET(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_READ);
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest, ctx: RouteContext) {
 }
 
 export async function POST(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_READ);
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@jarvis/db/client';
-import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
+import { knowledgePage, knowledgePageOwner, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { getKnowledgePage } from '@/lib/queries/knowledge';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -26,6 +26,21 @@ async function resolvePage(pageId: string, workspaceId: string) {
   return page ?? null;
 }
 
+/**
+ * Owner check: 페이지 작성자(`created_by`) 또는 `knowledge_page_owner` 테이블
+ * 등록자만 본인 row로 인정. `created_by`가 nullable(legacy import 페이지)이라
+ * owner 테이블도 함께 검사 (codex P2 finding 2026-05-16).
+ */
+async function isPageOwner(pageId: string, userId: string, createdBy: string | null): Promise<boolean> {
+  if (createdBy === userId) return true;
+  const rows = await db
+    .select({ userId: knowledgePageOwner.userId })
+    .from(knowledgePageOwner)
+    .where(and(eq(knowledgePageOwner.pageId, pageId), eq(knowledgePageOwner.userId, userId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
 // GET /api/knowledge/[pageId] — page + current (latest) version content
 export async function GET(_req: NextRequest, { params }: Params) {
   const auth = await requireApiSession(_req, PERMISSIONS.KNOWLEDGE_READ);
@@ -40,13 +55,19 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 // PUT /api/knowledge/[pageId] — save a new version (increments version number)
 export async function PUT(request: NextRequest, { params }: Params) {
-  const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 
   const { pageId } = await params;
   const page = await resolvePage(pageId, session.workspaceId);
   if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // owner check: 본인 작성 또는 knowledge_page_owner 등록자만, ADMIN_ALL 보유자는 우회
+  const isSuperAdmin = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
+  if (!isSuperAdmin && !(await isPageOwner(pageId, session.userId, page.createdBy))) {
+    return NextResponse.json({ error: 'Forbidden: not owner' }, { status: 403 });
+  }
 
   if (page.publishStatus === 'archived') {
     return NextResponse.json({ error: 'Archived pages cannot be edited' }, { status: 409 });
@@ -107,13 +128,19 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 // DELETE /api/knowledge/[pageId]
 export async function DELETE(_req: NextRequest, { params }: Params) {
-  const auth = await requireApiSession(_req, PERMISSIONS.KNOWLEDGE_DELETE);
+  const auth = await requireApiSession(_req, PERMISSIONS.KNOWLEDGE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 
   const { pageId } = await params;
   const page = await resolvePage(pageId, session.workspaceId);
   if (!page) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  // owner check: 본인 작성 또는 knowledge_page_owner 등록자만, ADMIN_ALL 보유자는 우회
+  const isSuperAdmin = session.permissions.includes(PERMISSIONS.ADMIN_ALL);
+  if (!isSuperAdmin && !(await isPageOwner(pageId, session.userId, page.createdBy))) {
+    return NextResponse.json({ error: 'Forbidden: not owner' }, { status: 403 });
+  }
 
   await db.delete(knowledgePage).where(eq(knowledgePage.id, pageId));
 

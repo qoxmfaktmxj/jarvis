@@ -1,4 +1,4 @@
-/**
+﻿/**
  * apps/web/app/(app)/admin/wiki/review-queue/page.tsx
  *
  * Phase-W3 T5 — Wiki review queue 관리자 UI (RSC).
@@ -99,7 +99,7 @@ export default async function WikiReviewQueuePage({
 
   if (
     !isAdmin(session) &&
-    !hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW)
+    !hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN)
   ) {
     forbidden();
   }

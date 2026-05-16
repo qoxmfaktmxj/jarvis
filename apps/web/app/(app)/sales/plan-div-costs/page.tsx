@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
@@ -18,7 +18,7 @@ export default async function SalesPlanDivCostsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.PlanDivCosts");
   const params = await searchParams;

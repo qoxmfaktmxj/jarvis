@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AccessEntryForm } from "@/components/project/AccessEntryForm";
@@ -34,7 +34,7 @@ export default async function ProjectAccessPage({
     notFound();
   }
 
-  const canManage = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
+  const canManage = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   return (
     <div className="space-y-3">

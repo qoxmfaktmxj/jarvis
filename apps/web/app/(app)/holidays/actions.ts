@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -33,7 +33,7 @@ async function resolveContext() {
   const sessionId = await resolveSessionId();
   const session = await getSession(sessionId ?? "");
   if (!session) return { ok: false as const, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN)) {
+  if (!hasPermission(session, PERMISSIONS.USER_ADMIN)) {
     return { ok: false as const, error: "Forbidden" };
   }
   return { ok: true as const, session };

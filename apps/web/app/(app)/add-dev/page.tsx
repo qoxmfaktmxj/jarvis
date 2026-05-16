@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function AddDevListPage() {
   const t = await getTranslations("AdditionalDev");
   const session = await requirePageSession(
-    PERMISSIONS.ADDITIONAL_DEV_READ,
+    PERMISSIONS.PROJECT_READ,
     "/dashboard?error=forbidden",
   );
 
@@ -24,7 +24,7 @@ export default async function AddDevListPage() {
     pageSize: DEFAULT_PAGE_SIZE,
   });
 
-  const canCreate = hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_CREATE);
+  const canCreate = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   return (
     <PageShellFit

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
@@ -47,9 +47,9 @@ export default async function NoticeDetailPage({ params }: Props) {
   const isAdmin = session.roles.includes('ADMIN');
   const isAuthor = notice.authorId === session.userId;
   const canEdit =
-    session.permissions.includes(PERMISSIONS.NOTICE_UPDATE) &&
+    session.permissions.includes(PERMISSIONS.NOTICE_ADMIN) &&
     (isAdmin || isAuthor);
-  const canDelete = session.permissions.includes(PERMISSIONS.NOTICE_DELETE);
+  const canDelete = session.permissions.includes(PERMISSIONS.NOTICE_ADMIN);
 
   const metaParts = (
     <p className="text-xs text-muted-foreground">

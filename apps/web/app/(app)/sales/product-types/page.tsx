@@ -1,4 +1,4 @@
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+﻿import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ProductTypesGridContainer } from "./_components/ProductTypesGridContainer";
@@ -6,7 +6,7 @@ import { listProductTypes } from "./actions";
 import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 export default async function SalesProductTypesPage() {
-  await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const limit = DEFAULT_PAGE_SIZE;
   const listResult = await listProductTypes({ page: 1, limit });

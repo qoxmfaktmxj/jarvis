@@ -288,6 +288,74 @@ reference: `apps/web/app/(app)/holidays/_components/HolidaysGridContainer.tsx`
 - `discardChanges` API 노출 (`onGridReady` 콜백)
 - batch save / audit_log / workspaceId 필터 (룰 §6)
 
+### C. windowedPagination (뷰포트 적응형 — 2026-05-16 신설)
+
+대부분의 페이징 그리드는 `limit=50`이면 1600px 높이로 뷰포트(~850px) 아래로 넘쳐 페이지 컨트롤이 보이지 않는다. `windowedPagination` prop은 ResizeObserver로 테이블 컨테이너 높이를 측정하고 몇 행이 들어가는지 자동 계산해 `limit`을 동적으로 조절한다.
+
+**DataGrid props**:
+```tsx
+windowedPagination               // 활성화 (boolean flag)
+onAutoLimitChange={(next) => {   // limit 변경 통지
+  setLimit(next);
+  reload(1, urlFilters, next);   // next를 reload에 직접 전달
+}}
+```
+
+**GridContainer 패턴**:
+```tsx
+// Props: limit: initialLimit
+const [limit, setLimit] = useState(initialLimit);
+
+const reload = useCallback(
+  (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
+    startTransition(async () => {
+      const res = await listDomain({
+        ...filters,
+        page: nextPage,
+        limit: nextLimit ?? limit,   // nextLimit이 있으면 state보다 우선
+      });
+      if (res.ok) { setRows(res.rows); setTotal(res.total); }
+    });
+  },
+  [limit],  // limit state가 deps
+);
+
+// DataGrid:
+<DataGrid
+  ...
+  limit={limit}
+  windowedPagination
+  onAutoLimitChange={(next) => {
+    setLimit(next);
+    reload(1, urlFilters, next);  // stale closure 방지: next 직접 전달
+  }}
+  onPageChange={(p) => {
+    setUrlFilter("page", String(p));
+    reload(p, { ...urlFilters, page: String(p) });
+  }}
+/>
+```
+
+**핵심 구현 (DataGrid.tsx 내부)**:
+- 상수: `HEADER_ROW_HEIGHT=36`, `FILTER_ROW_HEIGHT=32`, `ROW_HEIGHT=32`, `AUTO_LIMIT_DEBOUNCE_MS=100`
+- ResizeObserver → `containerH - chrome(header+groupHeader+filterRow)` / 32 = newLimit
+- 디바운스 100ms, mount 시 즉시 측정
+- `overflow-hidden` (windowedPagination=true) / `overflow-auto` (default)
+
+**적용 대상 (페이징 그리드 전체)**:
+- admin: companies, users, faq, doc-numbers
+- projects: projects, beacons, history, modules
+- maintenance: assignments, schedule
+- sales: 21개 GridContainer 전부 (companies, activities, cloud-people-base, cloud-people-calc, contracts, contract-months, contract-services, contract-uploads, customer-contacts, customers, freelancers, mail-persons, opportunities, plan-view-permissions, plan-perf-upload, product-types, SalesFinanceGridContainer)
+- add-dev, infra
+
+**적용 제외 (고정 limit)**:
+- `HolidaysGridContainer` — 소량(~16건), `windowedPagination` 불필요
+- `admin/codes` `CodesPageClient` — MASTER_LIMIT=100, DETAIL_LIMIT=500 의도적 고정
+- `admin/menus` `MenusPageClient` — MASTER_LIMIT=200 트리 표시 전부 로드
+- `PlanDivCostsGridContainer`, `MonthExpSgaGridContainer`, `PurchasesGridContainer`, `TaxBillsGridContainer` — 페이지 컨트롤 없는 소량 그리드
+- modal 임베드 그리드 — 모달 높이 제어가 별도
+
 ## 8. 신규 그리드 PR 체크리스트
 
 새 그리드 화면 PR 머지 전 모두 통과해야 함. spec-reviewer가 검증:

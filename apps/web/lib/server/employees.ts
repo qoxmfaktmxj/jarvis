@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 import { z } from "zod";
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
@@ -33,13 +33,13 @@ export async function searchEmployees(
   // this. Add the relevant read-permission to the OR list when introducing a
   // new domain (sales, maintenance, etc.).
   const allowedPerms = [
-    PERMISSIONS.SALES_ALL,
+    PERMISSIONS.SALES_ADMIN,
     PERMISSIONS.MAINTENANCE_READ,
     PERMISSIONS.ADMIN_ALL,
     PERMISSIONS.USER_READ,
-    PERMISSIONS.ADDITIONAL_DEV_READ,
-    PERMISSIONS.ADDITIONAL_DEV_UPDATE,
-    PERMISSIONS.ADDITIONAL_DEV_CREATE,
+    PERMISSIONS.PROJECT_READ,
+    PERMISSIONS.PROJECT_ADMIN,
+    PERMISSIONS.PROJECT_ADMIN,
   ];
   if (!allowedPerms.some((p) => hasPermission(session, p))) {
     throw new Error("Forbidden");

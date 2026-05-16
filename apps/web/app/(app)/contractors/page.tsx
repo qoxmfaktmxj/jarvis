@@ -1,4 +1,4 @@
-import { hasPermission } from "@jarvis/auth/rbac";
+﻿import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { listLeaveRequests } from "@/lib/queries/contractors";
 import { listHolidays } from "@/lib/queries/holidays";
@@ -15,7 +15,7 @@ export default async function ContractorsSchedulePage({
   searchParams
 }: PageProps) {
   const session = await requirePageSession(
-    PERMISSIONS.CONTRACTOR_READ,
+    PERMISSIONS.USER_READ,
     "/dashboard"
   );
 
@@ -29,7 +29,7 @@ export default async function ContractorsSchedulePage({
   const firstDay = `${month}-01`;
   const lastDay = `${month}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
 
-  const isAdmin = hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN);
+  const isAdmin = hasPermission(session, PERMISSIONS.USER_ADMIN);
   const userIdFilter = isAdmin ? undefined : session.userId;
 
   const [leaves, holidays, contractors, currentUserRow] = await Promise.all([

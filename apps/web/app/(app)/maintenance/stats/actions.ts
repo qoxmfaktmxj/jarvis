@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { requirePermission } from "@/lib/server/action-auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -7,7 +7,7 @@ import { boss } from "@/lib/server/pg-boss-client";
 import { getStatsByGroupingSet, getStatsCombined } from "@/lib/queries/maintenance-stats";
 
 export async function importIncidents(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.SERVICE_DESK_IMPORT);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_ADMIN);
   const input = importIncidentsInput.parse(raw);
 
   const enterCd = process.env.SERVICE_DESK_DEFAULT_ENTER_CD;
@@ -82,21 +82,21 @@ async function waitForJobCompletion(
 }
 
 export async function listStatsByCompany(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MAINTENANCE_STATS_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const input = statsInput.parse(raw);
   const { byCompany } = await getStatsByGroupingSet({ ...input, workspaceId: session.workspaceId });
   return statsOutput.parse({ rows: byCompany, total: byCompany.length });
 }
 
 export async function listStatsByManager(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MAINTENANCE_STATS_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const input = statsInput.parse(raw);
   const { byManager } = await getStatsByGroupingSet({ ...input, workspaceId: session.workspaceId });
   return statsOutput.parse({ rows: byManager, total: byManager.length });
 }
 
 export async function listStatsCombined(raw: unknown) {
-  const session = await requirePermission(PERMISSIONS.MAINTENANCE_STATS_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const input = statsInput.parse(raw);
   const rows = await getStatsCombined({ ...input, workspaceId: session.workspaceId });
   return statsCombinedOutput.parse({ rows });

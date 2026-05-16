@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_CREATE);
+  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 

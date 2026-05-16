@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { PageHeader } from "@/components/patterns/PageHeader";
@@ -15,7 +15,7 @@ export default async function SchedulePage() {
   );
 
   const canWrite =
-    hasPermission(session, PERMISSIONS.SCHEDULE_WRITE) ||
+    hasPermission(session, PERMISSIONS.SCHEDULE_ADMIN) ||
     hasPermission(session, PERMISSIONS.ADMIN_ALL);
 
   const initialResult = await listSchedulesAction({

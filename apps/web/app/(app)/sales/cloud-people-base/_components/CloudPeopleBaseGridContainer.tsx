@@ -62,7 +62,7 @@ function makeBlankRow(): SalesCloudPeopleBaseRow {
   };
 }
 
-export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initialTotal, limit, initialFilters }: Props) {
+export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initialTotal, limit: initialLimit, initialFilters }: Props) {
   const t = useTranslations("Sales.CloudPeopleBase");
   const common = useTranslations("Sales.Common");
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({
@@ -73,6 +73,7 @@ export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initial
   const [rows, setRows] = useState(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
@@ -105,7 +106,7 @@ export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initial
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listCloudPeopleBase({
           q: nextFilters.q || undefined,
@@ -114,7 +115,7 @@ export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initial
           personType: nextFilters.personType || undefined,
           calcType: nextFilters.calcType || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -158,7 +159,7 @@ export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initial
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={t("filters.q")} className="w-[220px]">
           <Input className="h-8" value={pendingFilters.q} onChange={(e) => setPending("q", e.target.value)} placeholder={t("filters.qPlaceholder")} />
@@ -191,6 +192,11 @@ export function CloudPeopleBaseGridContainer({ rows: initialRows, total: initial
         isExporting={isExporting}
         exportLabel={common("Excel.button")}
         exportingLabel={common("Excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 import { cookies, headers } from "next/headers";
 import { and, eq, gte, ilike, lte } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
@@ -70,7 +70,7 @@ export async function exportCustomerContactsToExcel(
   if (!sessionId) return { ok: false, error: "Unauthorized" };
   const session = await getSession(sessionId);
   if (!session) return { ok: false, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
+  if (!hasPermission(session, PERMISSIONS.SALES_ADMIN)) {
     return { ok: false, error: "Forbidden" };
   }
   const { workspaceId, userId } = session;

@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 /**
  * apps/web/app/(app)/projects/actions.ts
  *
@@ -102,19 +102,19 @@ export async function saveProjects(
   const errors: { id?: string; message: string }[] = [];
 
   // Permission gating per mutation kind
-  if (input.creates.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_CREATE)) {
+  if (input.creates.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_ADMIN)) {
     return saveProjectsOutput.parse({
       ok: false,
       errors: [{ message: "Forbidden: PROJECT_CREATE required" }],
     });
   }
-  if (input.updates.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_UPDATE)) {
+  if (input.updates.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_ADMIN)) {
     return saveProjectsOutput.parse({
       ok: false,
       errors: [{ message: "Forbidden: PROJECT_UPDATE required" }],
     });
   }
-  if (input.deletes.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_DELETE)) {
+  if (input.deletes.length > 0 && !hasPermission(session, PERMISSIONS.PROJECT_ADMIN)) {
     return saveProjectsOutput.parse({
       ok: false,
       errors: [{ message: "Forbidden: PROJECT_DELETE required" }],
