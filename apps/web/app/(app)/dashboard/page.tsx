@@ -51,11 +51,27 @@ export default async function DashboardPage({
   const displayName = session.name || "사용자";
 
   return (
-    <div className="mx-auto flex max-w-[1360px] flex-col gap-4 p-6">
+    <div
+      className="flex flex-col gap-3"
+      style={{
+        // AppShellMain wraps in `mx-auto max-w-[1400px] px-8 py-8` so we subtract
+        // py-8 (4rem) and the global topbar height. Result: dashboard fits one
+        // viewport with no page scroll — only inner widget bodies scroll.
+        height: "calc(100vh - var(--topbar-height) - 4rem)"
+      }}
+    >
       {showForbidden ? <ForbiddenBanner /> : null}
       <HeroGreeting name={displayName} now={now} />
-      <InfoCardRow now={now} signals={signals} nextHoliday={nextHoliday} />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {/*
+        2x2 viewport-fit grid:
+          row 1: InfoCardRow (3-up: Today/DDay/FX)  | VacationsWidget
+          row 2: LoungeChat (fills, internal scroll) | Notices/Wiki/Quiz stack
+        Row 1 = auto (intrinsic height of top cards, ≥140px). Row 2 = fills rest.
+        Right col bottom stack ratio: 20/40/40 (Notices / Wiki / Quiz).
+      */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(140px,auto)_minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <InfoCardRow now={now} signals={signals} nextHoliday={nextHoliday} />
+        <VacationsWidget items={vacations} />
         <LoungeChat
           initial={chatInit}
           viewerId={session.userId}
@@ -63,9 +79,8 @@ export default async function DashboardPage({
           viewerRole={viewerRole}
           isAdmin={isAdmin}
         />
-        <div className="flex flex-col gap-4">
+        <div className="grid min-h-0 grid-rows-[1fr_2fr_2fr] gap-3">
           <NoticesWidget items={notices} now={now} />
-          <VacationsWidget items={vacations} />
           <WikiWidget
             latest={latestWiki}
             pick={wikiPick}

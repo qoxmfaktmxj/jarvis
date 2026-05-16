@@ -38,7 +38,7 @@ export function WikiWidget({
   const now = new Date(nowIso);
 
   return (
-    <section className="flex max-h-[320px] flex-col rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex shrink-0 items-center justify-between gap-2">
         <div role="tablist" className="flex items-center gap-1 text-sm">
           <TabBtn active={tab === "latest"} onClick={() => setTab("latest")}>
@@ -56,11 +56,13 @@ export function WikiWidget({
         </Link>
       </header>
 
-      {tab === "latest" ? (
-        <LatestList items={latest} workspaceId={workspaceId} now={now} />
-      ) : (
-        <PickPanel pick={pick} workspaceId={workspaceId} />
-      )}
+      <div className="flex min-h-0 flex-1 flex-col">
+        {tab === "latest" ? (
+          <LatestList items={latest} workspaceId={workspaceId} now={now} />
+        ) : (
+          <PickPanel pick={pick} workspaceId={workspaceId} />
+        )}
+      </div>
     </section>
   );
 }
@@ -106,7 +108,7 @@ function LatestList({
     );
   }
   return (
-    <ul className="flex flex-col gap-2 overflow-y-auto">
+    <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
       {items.map((w) => (
         <li key={w.id} className="flex flex-col">
           <Link
