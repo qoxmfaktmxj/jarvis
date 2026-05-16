@@ -75,7 +75,7 @@ async function loginAsSeededUser(page: Page, email: string, role: string): Promi
 
 test.describe('Theme color picker', () => {
   test.beforeEach(async ({ page }) => {
-    await loginAsSeededUser(page, 'admin@jarvis.local', 'ADMIN');
+    await loginAsSeededUser(page, 'admin@jarvis.dev', 'ADMIN');
     await page.goto('/dashboard');
   });
 
@@ -85,8 +85,10 @@ test.describe('Theme color picker', () => {
   });
 
   test('UserMenu → 테마 색상 click → 5 swatch rendered', async ({ page }) => {
-    // UserMenu trigger button (사용자 이름 노출)
-    await page.getByRole('button', { name: /Admin User|ADMIN/i }).first().click();
+    // UserMenu trigger: aria-haspopup="menu" selector (deterministic — name pattern flaky)
+    const userMenuTrigger = page.locator('button[aria-haspopup="menu"]').first();
+    await userMenuTrigger.click();
+    await expect(userMenuTrigger).toHaveAttribute('aria-expanded', 'true');
     // 테마 색상 submenu trigger (i18n: Common.themeColor = "테마 색상")
     await page.getByRole('menuitem', { name: /테마 색상/ }).click();
     // 5 swatch radio group
@@ -96,7 +98,10 @@ test.describe('Theme color picker', () => {
   });
 
   test('Forest 선택 → data-theme-color + localStorage 업데이트', async ({ page }) => {
-    await page.getByRole('button', { name: /Admin User|ADMIN/i }).first().click();
+    // UserMenu trigger: aria-haspopup="menu" selector (deterministic — name pattern flaky)
+    const userMenuTrigger = page.locator('button[aria-haspopup="menu"]').first();
+    await userMenuTrigger.click();
+    await expect(userMenuTrigger).toHaveAttribute('aria-expanded', 'true');
     await page.getByRole('menuitem', { name: /테마 색상/ }).click();
     await page.getByRole('radio', { name: 'Forest' }).click();
 
@@ -106,7 +111,10 @@ test.describe('Theme color picker', () => {
   });
 
   test('페이지 reload 후에도 선택 테마 유지 (localStorage 영속)', async ({ page }) => {
-    await page.getByRole('button', { name: /Admin User|ADMIN/i }).first().click();
+    // UserMenu trigger: aria-haspopup="menu" selector (deterministic — name pattern flaky)
+    const userMenuTrigger = page.locator('button[aria-haspopup="menu"]').first();
+    await userMenuTrigger.click();
+    await expect(userMenuTrigger).toHaveAttribute('aria-expanded', 'true');
     await page.getByRole('menuitem', { name: /테마 색상/ }).click();
     await page.getByRole('radio', { name: 'Indigo' }).click();
 
