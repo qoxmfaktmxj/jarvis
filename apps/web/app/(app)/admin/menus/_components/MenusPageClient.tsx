@@ -525,7 +525,7 @@ export function MenusPageClient({
           강제하므로 여기 grid div는 `flex-1 min-h-0`로 남은 공간을 받고,
           자식(MenuGrid/MenuPermissionGrid)이 grid item default stretch +
           내부 flex-col로 테이블 wrapper를 fill한다. */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr]">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[7fr_3fr]">
         <MenuGrid
           grid={masterGrid}
           total={masterTotal}
