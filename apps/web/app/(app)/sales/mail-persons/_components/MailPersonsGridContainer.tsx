@@ -90,7 +90,7 @@ export function MailPersonsGridContainer({
   rows: initialRows,
   total: initialTotal,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const t = useTranslations("Sales.MailPersons");
@@ -99,6 +99,7 @@ export function MailPersonsGridContainer({
   const tGrid = useTranslations("Common.Grid");
   const [rows, setRows] = useState<MailPersonRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const [isSearching, startTransition] = useTransition();
@@ -170,14 +171,14 @@ export function MailPersonsGridContainer({
   const currentPage = Math.max(1, Number(filterValues.page) || 1);
 
   const reload = useCallback(
-    (nextPage: number, filters: FilterValues) => {
+    (nextPage: number, filters: FilterValues, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listMailPersons({
           searchMail: filters.searchMail || undefined,
           name: filters.name || undefined,
           sabun: filters.sabun || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (!("error" in res)) {
           setRows(res.rows as MailPersonRow[]);
@@ -369,6 +370,11 @@ export function MailPersonsGridContainer({
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, filterValues, next);
+        }}
         onPageChange={handlePageChange}
         onFilterChange={() => {
           // Filters managed by GridSearchForm above

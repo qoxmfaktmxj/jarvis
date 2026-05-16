@@ -29,7 +29,6 @@ type Props = {
   canAdmin: boolean;
 };
 
-const PAGE_SIZE = DEFAULT_PAGE_SIZE;
 
 function makeBlankRow(): Row {
   const now = new Date().toISOString();
@@ -70,6 +69,7 @@ export function ManageGridContainer({
     "maintenance.pendingFilters",
     {},
   );
+  const [limit, setLimit] = useState<number>(DEFAULT_PAGE_SIZE);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
 
@@ -77,14 +77,14 @@ export function ManageGridContainer({
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: Record<string, string>) => {
+    (nextPage: number, nextLimit: number, nextFilters: Record<string, string>) => {
       startTransition(async () => {
         const res = await listMaintenanceAction({
           q: nextFilters.q || undefined,
           contractType: nextFilters.contractType || undefined,
           activeOn: nextFilters.activeOn || undefined,
           page: nextPage,
-          limit: PAGE_SIZE,
+          limit: nextLimit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -154,13 +154,13 @@ export function ManageGridContainer({
       {canWrite ? (
         <NewAssignmentInlineForm
           contractTypeOptions={contractTypeOptions}
-          onCreated={() => reload(1, filterValues)}
+          onCreated={() => reload(1, limit, filterValues)}
         />
       ) : null}
 
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
-        onSearch={() => reload(1, pendingFilters)}
+        onSearch={() => reload(1, limit, pendingFilters)}
         isSearching={isSearching}
       >
         <GridFilterField label={t("filters.search")} className="w-[220px]">
@@ -201,14 +201,19 @@ export function ManageGridContainer({
         columns={COLUMNS}
         filters={FILTERS}
         page={page}
-        limit={PAGE_SIZE}
+        limit={limit}
         makeBlankRow={makeBlankRow}
         onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={filterValues}
         onExport={handleExport}
         isExporting={isExporting}
-        onPageChange={(p) => reload(p, filterValues)}
-        onFilterChange={(f) => reload(1, f)}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, next, filterValues);
+        }}
+        onPageChange={(p) => reload(p, limit, filterValues)}
+        onFilterChange={(f) => reload(1, limit, f)}
         onSave={async (changes) => {
           if (!canWrite) {
             return { ok: false, errors: [{ message: t("errors.noPermission") }] };
@@ -230,7 +235,7 @@ export function ManageGridContainer({
             deletes: changes.deletes,
           });
           if (result.ok) {
-            await reload(page, filterValues);
+            await reload(page, limit, filterValues);
           }
           return {
             ok: result.ok,

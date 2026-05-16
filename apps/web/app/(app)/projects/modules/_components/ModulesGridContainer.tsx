@@ -54,7 +54,7 @@ function makeBlankRow(): ProjectModuleRow {
 export function ModulesGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -69,6 +69,7 @@ export function ModulesGridContainer({
   const [rows, setRows] = useState<ProjectModuleRow[]>(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
   const [pendingFilters, setPendingFilters] = useState<FilterState>(initialFilters);
@@ -77,7 +78,7 @@ export function ModulesGridContainer({
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listProjectModules({
           q: nextFilters.q || undefined,
@@ -85,7 +86,7 @@ export function ModulesGridContainer({
           sabun: nextFilters.sabun || undefined,
           moduleCd: nextFilters.moduleCd || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows);
@@ -181,6 +182,11 @@ export function ModulesGridContainer({
         isExporting={isExporting}
         exportLabel={common("excel.button")}
         exportingLabel={common("excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

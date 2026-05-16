@@ -139,7 +139,7 @@ export function ContractUploadsGridContainer({
   rows: initialRows,
   total: initialTotal,
   unifiedRows: initialUnifiedRows,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const t = useTranslations("Sales.ContractUploads");
@@ -151,6 +151,7 @@ export function ContractUploadsGridContainer({
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [unifiedRows, setUnifiedRows] = useState(initialUnifiedRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -188,7 +189,7 @@ export function ContractUploadsGridContainer({
   );
 
   const reload = useCallback(
-    (nextPage: number, filters: FilterState) => {
+    (nextPage: number, filters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const [uploadResult, unifiedResult] = await Promise.all([
           listContractUploads({
@@ -196,7 +197,7 @@ export function ContractUploadsGridContainer({
             ym: filters.ym || undefined,
             companyCd: filters.companyCd || undefined,
             page: nextPage,
-            limit,
+            limit: nextLimit ?? limit,
           }),
           listUnifiedContractUploads({
             q: filters.q || undefined,
@@ -365,6 +366,11 @@ export function ContractUploadsGridContainer({
         makeBlankRow={makeBlankRow}
         onGridReady={(api) => { gridApiRef.current = api; }}
         filterValues={{}}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(page) => {
           setUrlFilter("page", String(page));
           reload(page, { ...urlFilters, page: String(page) });

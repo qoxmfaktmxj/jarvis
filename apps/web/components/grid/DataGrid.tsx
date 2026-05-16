@@ -147,7 +147,33 @@ export type DataGridProps<T extends WithId> = {
    * 사용처: modal 안의 임베드 그리드처럼 자체 저장 흐름을 부모가 관리하는 경우.
    */
   hideToolbar?: boolean;
+  /**
+   * 페이징 그리드 viewport-fit 모드. true이면:
+   *  - table 영역 overflow-hidden (그리드 내부 스크롤 X)
+   *  - ResizeObserver로 table 컨테이너 height 측정 → row 가능 수 계산
+   *  - 측정 결과를 onAutoLimitChange 콜백으로 부모에 통지
+   *  - 부모는 받은 limit으로 server reload
+   *
+   * default false → 기존 동작 (overflow-auto 내부 스크롤).
+   *
+   * 사용처: admin/companies, admin/users 등 페이징 그리드. 페이지 컨트롤로
+   * 다음/이전 페이지 이동 + 한 페이지 전체가 viewport 안에 fit.
+   */
+  windowedPagination?: boolean;
+  /**
+   * windowedPagination=true일 때 ResizeObserver가 측정한 row 가능 수를 부모에
+   * 통지. 부모는 이 값을 limit으로 server fetch.
+   * - 측정 결과가 직전 호출과 같으면 호출 안 함 (loop 방지)
+   * - debounce 100ms로 resize 시 storm 방지
+   */
+  onAutoLimitChange?: (limit: number) => void;
 };
+
+// 상수: viewport-fit 모드에서 row 가능 수를 계산할 때 사용
+const HEADER_ROW_HEIGHT = 36; // thead 헤더 행 (py-2 + text-[11px] 기준)
+const FILTER_ROW_HEIGHT = 32; // per-column filter row 높이 (filters.length > 0일 때)
+const ROW_HEIGHT = 32; // tbody 행 높이 (h-8)
+const AUTO_LIMIT_DEBOUNCE_MS = 100;
 
 export function DataGrid<T extends WithId>({
   rows: initialRows,
@@ -179,6 +205,8 @@ export function DataGrid<T extends WithId>({
   onSelect,
   readOnly = false,
   hideToolbar = false,
+  windowedPagination = false,
+  onAutoLimitChange,
 }: DataGridProps<T>) {
   // Baseline strings come from `Common.Grid.*`. Callers may still override
   // `emptyMessage` per domain (e.g. "검색 결과 없음"), but DataGrid no longer
@@ -250,6 +278,54 @@ export function DataGrid<T extends WithId>({
       grid.reset(initialRows);
     }
   }, [initialRows, grid.dirtyCount, grid.reset]);
+
+  // windowedPagination: ResizeObserver로 table 컨테이너 height을 측정하여
+  // 가능한 row 수를 계산하고 onAutoLimitChange로 부모에 통지.
+  // debounce 100ms로 resize storm 방지. cleanup 시 disconnect.
+  const tableWrapperRef = useRef<HTMLDivElement | null>(null);
+  const lastAutoLimitRef = useRef<number>(-1);
+  const onAutoLimitChangeRef = useRef(onAutoLimitChange);
+  onAutoLimitChangeRef.current = onAutoLimitChange;
+  const filtersLengthRef = useRef(filters.length);
+  filtersLengthRef.current = filters.length;
+  const groupHeadersCountRef = useRef(groupHeaders?.length ?? 0);
+  groupHeadersCountRef.current = groupHeaders?.length ?? 0;
+  useEffect(() => {
+    if (!windowedPagination) return;
+    const el = tableWrapperRef.current;
+    if (!el) return;
+
+    let timerId: ReturnType<typeof setTimeout> | null = null;
+
+    const measure = () => {
+      const containerH = el.getBoundingClientRect().height;
+      // 그룹 헤더 행이 있으면 추가 헤더 행 높이만큼 차감
+      const groupHeaderH = groupHeadersCountRef.current > 0 ? HEADER_ROW_HEIGHT : 0;
+      const filterH = filtersLengthRef.current > 0 ? FILTER_ROW_HEIGHT : 0;
+      const chrome = HEADER_ROW_HEIGHT + groupHeaderH + filterH;
+      const availableH = containerH - chrome;
+      const newLimit = Math.max(1, Math.floor(availableH / ROW_HEIGHT));
+      if (newLimit !== lastAutoLimitRef.current) {
+        lastAutoLimitRef.current = newLimit;
+        onAutoLimitChangeRef.current?.(newLimit);
+      }
+    };
+
+    const debouncedMeasure = () => {
+      if (timerId !== null) clearTimeout(timerId);
+      timerId = setTimeout(measure, AUTO_LIMIT_DEBOUNCE_MS);
+    };
+
+    const observer = new ResizeObserver(debouncedMeasure);
+    observer.observe(el);
+    // 초기 측정 (mount 직후 한 번)
+    measure();
+
+    return () => {
+      if (timerId !== null) clearTimeout(timerId);
+      observer.disconnect();
+    };
+  }, [windowedPagination]);
 
   const guarded = useCallback(
     (action: () => void) => {
@@ -329,9 +405,16 @@ export function DataGrid<T extends WithId>({
         )}
       </div>
 
-      {/* table scroll 영역 — 부모의 남은 height을 모두 차지 + 내부 overflow-auto.
-          row 많을 때 내부 스크롤이 발생, 페이지/페이지네이션은 아래에 sticky. */}
-      <div className="min-h-0 flex-1 overflow-auto rounded border border-(--border-default)">
+      {/* table scroll 영역 — 부모의 남은 height을 모두 차지.
+          windowedPagination=true: overflow-hidden (내부 스크롤 X, viewport-fit).
+          windowedPagination=false(기본): overflow-auto (내부 스크롤, 기존 동작). */}
+      <div
+        ref={tableWrapperRef}
+        className={[
+          "min-h-0 flex-1 rounded border border-(--border-default)",
+          windowedPagination ? "overflow-hidden" : "overflow-auto",
+        ].join(" ")}
+      >
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-(--bg-surface) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
             {groupHeaders && groupHeaders.length > 0 ? (

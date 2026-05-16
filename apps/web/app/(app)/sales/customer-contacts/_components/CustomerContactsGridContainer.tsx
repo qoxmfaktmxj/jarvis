@@ -90,7 +90,7 @@ function makeBlankRow(): CustomerContactRow {
 export function CustomerContactsGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const router = useRouter();
@@ -105,6 +105,7 @@ export function CustomerContactsGridContainer({
 
   const [rows, setRows] = useState<CustomerContactRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [memoTarget, setMemoTarget] = useState<{ id: string; name: string } | null>(null);
   const [isSearching, startTransition] = useTransition();
@@ -168,7 +169,7 @@ export function CustomerContactsGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listCustomerContacts({
           custName: nextFilters.custName || undefined,
@@ -177,7 +178,7 @@ export function CustomerContactsGridContainer({
           searchYmdFrom: nextFilters.searchYmdFrom || undefined,
           searchYmdTo: nextFilters.searchYmdTo || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (!("error" in res)) {
           setRows(res.rows as CustomerContactRow[]);
@@ -324,6 +325,11 @@ export function CustomerContactsGridContainer({
         onRowDoubleClick={(row) => router.push("/sales/customer-contacts/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

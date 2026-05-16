@@ -48,7 +48,7 @@ type Props<T extends Row, F extends Record<string, string>> = {
 export function SalesFinanceGridContainer<T extends Row, F extends Record<string, string>>({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
   columns,
   filterFields,
@@ -66,6 +66,7 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
   const [rows, setRows] = useState<T[]>(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [pendingFilters, setPendingFilters] = useState<F>(initialFilters);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
@@ -75,11 +76,11 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
   };
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: F) => {
+    (nextPage: number, nextFilters: F, nextLimit?: number) => {
       startTransition(async () => {
         const input: Record<string, string | number | undefined> = {
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         };
         for (const [key, value] of Object.entries(nextFilters)) {
           if (key !== "page" && value) input[key] = value;
@@ -161,6 +162,11 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
         isExporting={isExporting}
         exportLabel={common("Excel.button")}
         exportingLabel={common("Excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page" as keyof F & string, String(p) as F[keyof F & string]);
           reload(p, { ...urlFilters, page: String(p) } as F);

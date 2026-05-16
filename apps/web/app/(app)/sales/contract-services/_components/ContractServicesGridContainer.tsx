@@ -89,7 +89,7 @@ function makeBlankRow(): SalesContractServiceRow {
 export function ContractServicesGridContainer({
   rows: initialRows,
   total: initialTotal,
-  limit,
+  limit: initialLimit,
   initialFilters,
 }: Props) {
   const common = useTranslations("Sales.Common");
@@ -103,6 +103,7 @@ export function ContractServicesGridContainer({
 
   const [rows, setRows] = useState<SalesContractServiceRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isSearching, startTransition] = useTransition();
 
@@ -189,14 +190,14 @@ export function ContractServicesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: FilterState) => {
+    (nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
       startTransition(async () => {
         const res = await listContractServices({
           q: nextFilters.q || undefined,
           pjtCd: nextFilters.pjtCd || undefined,
           attendCd: nextFilters.attendCd || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (res.ok) {
           setRows(res.rows as SalesContractServiceRow[]);
@@ -371,6 +372,11 @@ export function ContractServicesGridContainer({
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

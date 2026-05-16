@@ -61,7 +61,7 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialTotal, limit, initialFilters }: Props) {
+export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialTotal, limit: initialLimit, initialFilters }: Props) {
   const t = useTranslations("Sales.Charts.PlanPerfUpload");
   const common = useTranslations("Sales.Common");
   const { values: urlFilters, setValue: setUrlFilter } = useUrlFilters<FilterState>({ defaults: initialFilters });
@@ -70,6 +70,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
   const [rows, setRows] = useState(initialRows);
   const gridApiRef = useRef<{ discardChanges: () => void } | null>(null);
   const [total, setTotal] = useState(initialTotal);
+  const [limit, setLimit] = useState(initialLimit);
   const [isExporting, setIsExporting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [, startTransition] = useTransition();
@@ -94,7 +95,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
   const setPending = (key: keyof FilterState, value: string) =>
     setPendingFilters((p) => ({ ...p, [key]: value }));
 
-  const reload = useCallback((nextPage: number, nextFilters: FilterState) => {
+  const reload = useCallback((nextPage: number, nextFilters: FilterState, nextLimit?: number) => {
     startTransition(async () => {
       const res = await listPlanPerfUpload({
         q: nextFilters.q || undefined,
@@ -103,7 +104,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
         gubunCd: nextFilters.gubunCd || undefined,
         trendGbCd: nextFilters.trendGbCd || undefined,
         page: nextPage,
-        limit,
+        limit: nextLimit ?? limit,
       });
       if (res.ok) {
         setRows(res.rows);
@@ -231,6 +232,11 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
         isExporting={isExporting}
         exportLabel={common("Excel.button")}
         exportingLabel={common("Excel.downloading")}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, urlFilters, next);
+        }}
         onPageChange={(p) => {
           setUrlFilter("page", String(p));
           reload(p, { ...urlFilters, page: String(p) });

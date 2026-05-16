@@ -69,7 +69,7 @@ export function OpportunitiesGridContainer({
   initial,
   total,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   initialFilters,
   isAdmin = false,
   codeOptions,
@@ -103,6 +103,7 @@ export function OpportunitiesGridContainer({
 
   const [rows, setRows] = useState<Opportunity[]>(initial);
   const [totalCount, setTotalCount] = useState(total);
+  const [limit, setLimit] = useState(initialLimit);
   const [pendingFilters, setPendingFilters] = useTabState<Record<string, string>>(
     "sales.opportunities.pendingFilters",
     initialFilterMap,
@@ -157,7 +158,7 @@ export function OpportunitiesGridContainer({
   }, [ctx, tabKey]);
 
   const reload = useCallback(
-    (nextPage: number, nextFilters: { q: string; bizStepCode: string; productTypeCode: string; focusOnly: string }) => {
+    (nextPage: number, nextFilters: { q: string; bizStepCode: string; productTypeCode: string; focusOnly: string }, nextLimit?: number) => {
       startTransition(async () => {
         const focusOnly =
           nextFilters.focusOnly === "Y"
@@ -171,7 +172,7 @@ export function OpportunitiesGridContainer({
           productTypeCode: nextFilters.productTypeCode || undefined,
           focusOnly,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if ("ok" in res && res.ok) {
           setRows(res.rows as Opportunity[]);
@@ -334,6 +335,16 @@ export function OpportunitiesGridContainer({
         onRowDoubleClick={(row) => router.push("/sales/opportunities/" + row.id + "/edit")}
         onExport={handleExport}
         isExporting={isExporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, {
+            q: values.q,
+            bizStepCode: values.bizStepCode,
+            productTypeCode: values.productTypeCode,
+            focusOnly: values.focusOnly,
+          }, next);
+        }}
         onPageChange={(p) => {
           setValues({ page: String(p) });
           reload(p, {

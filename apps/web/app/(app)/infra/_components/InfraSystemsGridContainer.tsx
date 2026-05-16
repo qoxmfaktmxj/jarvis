@@ -87,7 +87,7 @@ function InfraSystemsGridInner({
   initialRows,
   initialTotal,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   companyOptions,
   initialQ = "",
   initialCompanyId = "",
@@ -98,6 +98,7 @@ function InfraSystemsGridInner({
   const tCommon = useTranslations("Common");
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
+  const [limit, setLimit] = useState(initialLimit);
   const [exporting, startExport] = useTransition();
   const [dupError, setDupError] = useState<string | null>(null);
   const [isSearching, startReload] = useTransition();
@@ -182,6 +183,7 @@ function InfraSystemsGridInner({
       nextCompanyId: string,
       nextEnvType: string,
       nextDbType: string,
+      nextLimit?: number,
     ) => {
       startReload(async () => {
         const res = await listInfraSystems({
@@ -190,7 +192,7 @@ function InfraSystemsGridInner({
           envType: nextEnvType || undefined,
           dbType: nextDbType || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit ?? limit,
         });
         if (!("error" in res)) {
           setTotal(res.total);
@@ -490,6 +492,11 @@ function InfraSystemsGridInner({
         onDirtyChange={setDirtyCount}
         onExport={handleExport}
         isExporting={exporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, filterValues.q, filterValues.companyId, filterValues.envType, filterValues.dbType, next);
+        }}
         onPageChange={(nextPage) => {
           setFilterValue("page", String(nextPage));
           reload(

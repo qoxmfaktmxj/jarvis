@@ -71,7 +71,7 @@ function ProjectsGridInner({
   initialRows,
   initialTotal,
   page: initialPage,
-  limit,
+  limit: initialLimit,
   companyOptions,
   initialQ = "",
   initialStatus = "",
@@ -82,6 +82,7 @@ function ProjectsGridInner({
   const [rows, setRows] = useState<ProjectListRow[]>(initialRows);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(initialPage);
+  const [limit, setLimit] = useState(initialLimit);
   const [exporting, startExport] = useTransition();
   const [isSearching, startReload] = useTransition();
 
@@ -105,6 +106,7 @@ function ProjectsGridInner({
   const reload = useCallback(
     (
       nextPage: number,
+      nextLimit: number,
       nextQ: string,
       nextStatus: string,
       nextConnectType: string,
@@ -115,7 +117,7 @@ function ProjectsGridInner({
           status: (nextStatus as "active" | "deprecated" | "decommissioned") || undefined,
           connectType: (nextConnectType as "IP" | "VPN" | "VDI" | "RE") || undefined,
           page: nextPage,
-          limit,
+          limit: nextLimit,
         });
         if ("error" in res) {
           toast({
@@ -130,7 +132,7 @@ function ProjectsGridInner({
         setPage(nextPage);
       });
     },
-    [limit, tCommon],
+    [tCommon],
   );
 
   const columns: ColumnDef<ProjectListRow>[] = useMemo(
@@ -257,7 +259,7 @@ function ProjectsGridInner({
           status: (filterValues.status as "active" | "deprecated" | "decommissioned") || undefined,
           connectType: (filterValues.connectType as "IP" | "VPN" | "VDI" | "RE") || undefined,
           page,
-          limit,
+          limit: limit,
         });
         if (!("error" in res)) {
           setRows(res.rows);
@@ -269,7 +271,7 @@ function ProjectsGridInner({
         errors: result.errors,
       };
     },
-    [filterValues, page, limit],
+    [filterValues, page, limit, reload],
   );
 
   const handleExport = useCallback(() => {
@@ -299,7 +301,7 @@ function ProjectsGridInner({
           setFilterValue("status", pendingFilters.status);
           setFilterValue("connectType", pendingFilters.connectType);
           setFilterValue("page", "1");
-          reload(1, pendingFilters.q, pendingFilters.status, pendingFilters.connectType);
+          reload(1, limit, pendingFilters.q, pendingFilters.status, pendingFilters.connectType);
         }}
         isSearching={isSearching}
       >
@@ -365,10 +367,16 @@ function ProjectsGridInner({
         makeBlankRow={makeBlankProject}
         onExport={handleExport}
         isExporting={exporting}
+        windowedPagination
+        onAutoLimitChange={(next) => {
+          setLimit(next);
+          reload(1, next, filterValues.q, filterValues.status, filterValues.connectType);
+        }}
         onPageChange={(nextPage) => {
           setFilterValue("page", String(nextPage));
           reload(
             nextPage,
+            limit,
             filterValues.q,
             filterValues.status,
             filterValues.connectType,
