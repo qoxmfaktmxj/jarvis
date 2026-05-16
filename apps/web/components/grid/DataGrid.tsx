@@ -424,7 +424,7 @@ export function DataGrid<T extends WithId>({
           ].join(" ")}
         >
           <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-(--bg-page) text-[11px] font-bold uppercase tracking-[0.08em] text-(--fg-primary)">
+          <thead className="sticky top-0 z-10 text-[11px] font-bold uppercase tracking-[0.08em] text-(--brand-primary-text)">
             {groupHeaders && groupHeaders.length > 0 ? (
               <tr
                 data-testid="group-header-row"
@@ -451,22 +451,30 @@ export function DataGrid<T extends WithId>({
                 <th aria-hidden />
               </tr>
             ) : null}
-            {/* 메인 컬럼 헤더 row — Variant C 2px brand accent 가속선.
-                테마 swap 시 (blue/indigo/teal/forest/graphite) brand-primary
-                토큰을 따라 자동 변경. 하드코드 hex 금지. */}
-            <tr className="border-b-2 border-(--brand-primary)">
+            {/* Variant D 메인 컬럼 헤더 row — brand-primary-bg 8% tint 배경 +
+                brand 20% mix 1px separator. 테마 swap 시 (blue/indigo/teal/
+                forest/graphite) brand-primary 토큰 cascade로 헤더 tint + th
+                글자 + separator 모두 동시에 따라감. 하드코드 hex 금지. */}
+            <tr
+              className="bg-(--brand-primary-bg) border-b"
+              style={{
+                borderBottomColor:
+                  "color-mix(in oklab, var(--brand-primary) 20%, transparent)",
+              }}
+            >
               {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
                   No=44px, 삭제=56px(readOnly 시 hide), 상태=64px 최소폭 보장.
-                  padding 11/14 (spec): h-8 row 안에 padding 흡수 위해 py-[7px] 조정. */}
-              <th className="w-11 whitespace-nowrap px-[14px] py-[11px] text-left">{t("no")}</th>
+                  padding 11/14 (spec): th 셀 자체는 bg-transparent — 행이 tint
+                  를 가지므로 셀은 투명. */}
+              <th className="w-11 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-left">{t("no")}</th>
               {!readOnly && (
-                <th className="w-14 whitespace-nowrap px-[14px] py-[11px] text-center">{t("delete")}</th>
+                <th className="w-14 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-center">{t("delete")}</th>
               )}
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={[
-                    "whitespace-nowrap px-[14px] py-[11px]",
+                    "whitespace-nowrap bg-transparent px-[14px] py-[11px]",
                     col.type === "numeric" ? "text-right" : "text-left",
                   ].join(" ")}
                   style={col.width ? { width: col.width } : undefined}
@@ -474,7 +482,7 @@ export function DataGrid<T extends WithId>({
                   {col.label}
                 </th>
               ))}
-              <th className="w-16 whitespace-nowrap px-[14px] py-[11px] text-center">{t("status")}</th>
+              <th className="w-16 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-center">{t("status")}</th>
             </tr>
             {/*
               per-column filter row — filters가 비어있으면 빈 행만 렌더되어
