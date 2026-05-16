@@ -2,36 +2,32 @@
 /**
  * apps/web/app/(app)/admin/menus/_components/MenuPermissionGrid.tsx
  *
- * 메뉴 권한(detail) 그리드.
+ * 메뉴 권한(detail) 그리드 — DataGrid 기반.
  *
- * 컬럼: No / 상태 / 권한 코드 / 설명 / 할당됨(boolean)
+ * Phase B: 자체 <table> 완전 제거. DataGrid 단독 사용.
  *
  * NOTE — 디테일 그리드는 행 추가/복사/삭제가 없다 (`PERMISSIONS` 상수가 권한
- * 카탈로그의 SoT). `assigned` boolean만 토글한다. 따라서 toolbar에서
- * Insert/Copy 버튼은 노출하지 않는다.
+ * 카탈로그의 SoT). `assigned` boolean만 토글한다. 따라서 allowInsert={false},
+ * allowCopy={false}.
  *
- * `selectedMenuId === null` 일 때 "메뉴를 선택하세요." 안내를 표시한다
- * (admin/codes/CodeItemGrid의 `emptyMaster` 패턴).
+ * `selectedMenuId === null`일 때 "메뉴를 선택하세요." 안내를 표시한다
+ * (admin/codes/CodeItemGrid의 emptyMaster 패턴).
  */
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
-import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
-import { EditableBooleanCell } from "@/components/grid/cells/EditableBooleanCell";
-import { Button } from "@/components/ui/button";
-import type { ColumnDef } from "@/components/grid/types";
-import type { useGridState } from "@/components/grid/useGridState";
+import type { ColumnDef, GridChanges, GridSaveResult } from "@/components/grid/types";
+import type { GridRow } from "@/components/grid/useGridState";
 import type { MenuPermissionGridRow } from "./useMenuPermissionGridState";
-
-type GridApi = ReturnType<typeof useGridState<MenuPermissionGridRow>>;
 
 type FilterValues = {
   q: string;
 };
 
 type Props = {
-  grid: GridApi;
+  rows: MenuPermissionGridRow[];
   total: number;
   selectedMenuId: string | null;
   selectedMenuCode: string | null;
@@ -40,15 +36,28 @@ type Props = {
   onDraftFilterChange: (next: FilterValues) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
-  /** 조회 클릭 시 미저장 변경분 폐기 콜백 — 부모가 `detailGrid.discardChanges` 전달. */
-  onResetGrid: () => void;
+  onGridReady: (api: { discardChanges: () => void }) => void;
+  onDirtyChange: (count: number) => void;
   saving: boolean;
-  onSave: () => void;
+  onSave: (changes: GridChanges<MenuPermissionGridRow>) => Promise<GridSaveResult>;
   onExport: () => void;
+  initialGridRows?: GridRow<MenuPermissionGridRow>[];
+  onGridRowsChange?: (rows: GridRow<MenuPermissionGridRow>[]) => void;
 };
 
+/** makeBlankRow placeholder — 실제로는 호출되지 않는다 (allowInsert=false). */
+function makeBlankPermRow(): MenuPermissionGridRow {
+  return {
+    id: crypto.randomUUID(),
+    permissionId: "",
+    permissionCode: "",
+    permissionDescription: null,
+    assigned: false,
+  };
+}
+
 export function MenuPermissionGrid({
-  grid,
+  rows,
   total,
   selectedMenuId,
   selectedMenuCode,
@@ -57,31 +66,38 @@ export function MenuPermissionGrid({
   onDraftFilterChange,
   onApplyFilters,
   onResetFilters,
-  onResetGrid,
+  onGridReady,
+  onDirtyChange,
   saving,
   onSave,
   onExport,
+  initialGridRows,
+  onGridRowsChange,
 }: Props) {
   const t = useTranslations("Admin.Menus.detailSection");
-  const update = useCallback(
-    <K extends keyof MenuPermissionGridRow>(
-      id: string,
-      key: K,
-      value: MenuPermissionGridRow[K],
-    ) => grid.update(id, key, value),
-    [grid],
+
+  const discardRef = useRef<{ discardChanges: () => void } | null>(null);
+  const handleGridReady = useCallback(
+    (api: { discardChanges: () => void }) => {
+      discardRef.current = api;
+      onGridReady(api);
+    },
+    [onGridReady],
   );
 
   const disabled = !selectedMenuId;
 
-  const COLUMNS: ColumnDef<MenuPermissionGridRow>[] = useMemo(
+  const columns: ColumnDef<MenuPermissionGridRow>[] = useMemo(
     () => [
       {
         key: "permissionCode",
         label: t("columns.permissionCode"),
-        type: "text",
+        type: "readonly",
         width: 220,
         editable: false,
+        render: (row) => (
+          <span className="font-mono">{row.permissionCode}</span>
+        ),
       },
       {
         key: "permissionDescription",
@@ -95,19 +111,17 @@ export function MenuPermissionGrid({
         label: t("columns.assigned"),
         type: "boolean",
         width: 90,
-        editable: true,
+        editable: !disabled,
       },
     ],
-    [t],
+    [t, disabled],
   );
 
   return (
-    // grid item stretch + 내부 flex-col fill — MenuGrid 동일 패턴 (주석 참조).
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-2">
-      {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
-        onResetGrid={onResetGrid}
+        onResetGrid={() => discardRef.current?.discardChanges()}
         isSearching={saving || disabled}
         searchLabel={t("filter.search")}
       >
@@ -122,7 +136,7 @@ export function MenuPermissionGrid({
         </GridFilterField>
       </GridSearchForm>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <span className="text-sm text-(--fg-secondary)">
           {t("title")}
           {selectedMenuId ? (
@@ -139,139 +153,31 @@ export function MenuPermissionGrid({
             <span className="ml-1 text-(--fg-muted)">({t("emptyMaster")})</span>
           )}
         </span>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            disabled={grid.dirtyCount === 0 || saving || disabled}
-            onClick={onSave}
-          >
-            {saving
-              ? "..."
-              : grid.dirtyCount > 0
-                ? `${t("toolbar.save")} (${grid.dirtyCount})`
-                : t("toolbar.save")}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onExport}
-            disabled={saving || disabled}
-          >
-            {t("toolbar.export")}
-          </Button>
-        </div>
       </div>
 
-      {/* flex-1 + max-h 안전망 — MenuGrid와 동일 패턴 (주석 참조). */}
-      <div className="min-h-0 max-h-[calc(100vh-260px)] flex-1 overflow-auto rounded border border-slate-200">
-        <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-            <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">{t("columns.no")}</th>
-              <th className="w-16 px-2 py-2 text-left">{t("columns.status")}</th>
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  className={[
-                    "px-2 py-2",
-                    col.type === "boolean" ? "text-center" : "text-left",
-                  ].join(" ")}
-                  style={col.width ? { minWidth: col.width } : undefined}
-                >
-                  {col.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {!selectedMenuId ? (
-              <tr>
-                <td
-                  colSpan={COLUMNS.length + 2}
-                  className="px-4 py-12 text-center text-sm text-slate-400"
-                >
-                  {t("emptyMaster")}
-                </td>
-              </tr>
-            ) : grid.rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={COLUMNS.length + 2}
-                  className="px-4 py-12 text-center text-sm text-slate-500"
-                >
-                  {t("empty")}
-                </td>
-              </tr>
-            ) : (
-              grid.rows.map((r, i) => {
-                const row = r.data;
-                return (
-                  <tr
-                    key={row.id}
-                    data-row-status={r.state}
-                    className={[
-                      "border-b border-slate-100 transition-colors duration-150",
-                      "hover:bg-slate-50",
-                      r.state === "dirty" ? "bg-amber-50/40" : "",
-                    ].join(" ")}
-                  >
-                    <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
-                      {i + 1}
-                    </td>
-                    <td className="h-8 w-16 px-2 align-middle">
-                      <RowStatusBadge state={r.state} />
-                    </td>
-                    {COLUMNS.map((col) => {
-                      const val = row[col.key];
-                      const editable = col.editable !== false;
-
-                      if (!editable) {
-                        return (
-                          <td
-                            key={col.key}
-                            className="h-8 px-2 align-middle text-[13px] text-slate-700"
-                            data-col={col.key}
-                            data-cell-value={String(val ?? "")}
-                          >
-                            {col.key === "permissionCode" ? (
-                              <span className="font-mono">{String(val ?? "")}</span>
-                            ) : (
-                              String(val ?? "")
-                            )}
-                          </td>
-                        );
-                      }
-
-                      return (
-                        <td
-                          key={col.key}
-                          className="h-8 p-0 align-middle"
-                          data-col={col.key}
-                          data-cell-value={
-                            val === null || val === undefined ? "" : String(val)
-                          }
-                        >
-                          {col.type === "boolean" && (
-                            <EditableBooleanCell
-                              value={Boolean(val)}
-                              onCommit={(v) =>
-                                update(
-                                  row.id,
-                                  col.key,
-                                  v as MenuPermissionGridRow[typeof col.key],
-                                )
-                              }
-                            />
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+      <div className="min-h-0 flex-1">
+        <DataGrid<MenuPermissionGridRow>
+          rows={rows}
+          total={total}
+          columns={columns}
+          filters={[]}
+          page={1}
+          limit={Math.max(total, 1)}
+          makeBlankRow={makeBlankPermRow}
+          onPageChange={() => {}}
+          onFilterChange={() => {}}
+          onSave={onSave}
+          emptyMessage={disabled ? t("emptyMaster") : t("empty")}
+          onGridReady={handleGridReady}
+          onDirtyChange={onDirtyChange}
+          initialGridRows={initialGridRows}
+          onGridRowsChange={onGridRowsChange}
+          readOnly={disabled}
+          allowInsert={false}
+          allowCopy={false}
+          onExport={onExport}
+          exportLabel={t("toolbar.export")}
+        />
       </div>
     </div>
   );

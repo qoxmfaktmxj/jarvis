@@ -82,6 +82,22 @@ export type DataGridProps<T extends WithId> = {
   groupHeaders?: GroupHeader[];
   /** 행 더블클릭 콜백 (master-detail 진입용) */
   onRowDoubleClick?: (row: T) => void;
+  /**
+   * [입력] 버튼 표시 여부 (default true). false이면 GridToolbar에서 hide.
+   * 사용처: detail 그리드처럼 행 추가 없이 저장만 필요한 경우.
+   */
+  allowInsert?: boolean;
+  /**
+   * [복사] 버튼 표시 여부 (default true). false이면 GridToolbar에서 hide.
+   */
+  allowCopy?: boolean;
+  /**
+   * [복사] 시 새 행 생성 커스터마이즈. 미지정 시 원본 행에서 `id`만 새 UUID로
+   * 교체. 지정 시 반환값을 새 행으로 사용.
+   *
+   * 사용처: 복사 시 일부 컬럼(예: code)을 초기화해야 하는 경우.
+   */
+  makeCopyRow?: (original: T) => T;
   /** Excel 다운로드 콜백. 제공 시 GridToolbar 우측 끝에 [다운로드] 버튼이 표시된다. */
   onExport?: () => void | Promise<void>;
   /** 다운로드 진행 중 플래그 — 버튼 라벨 토글 + disabled 적용. */
@@ -151,6 +167,9 @@ export function DataGrid<T extends WithId>({
   initialGridRows,
   onGridRowsChange,
   onRowDoubleClick,
+  allowInsert = true,
+  allowCopy = true,
+  makeCopyRow,
   onExport,
   isExporting,
   exportLabel,
@@ -283,14 +302,17 @@ export function DataGrid<T extends WithId>({
           <GridToolbar
             dirtyCount={grid.dirtyCount}
             saving={saving}
+            allowInsert={allowInsert}
+            allowCopy={allowCopy}
             onInsert={() => grid.insertBlank(makeBlankRow())}
             onCopy={
               selected
                 ? () =>
-                    grid.duplicate(selected, (c) => ({
-                      ...c,
-                      id: crypto.randomUUID(),
-                    }))
+                    grid.duplicate(selected, (c) =>
+                      makeCopyRow
+                        ? makeCopyRow(c)
+                        : { ...c, id: crypto.randomUUID() },
+                    )
                 : undefined
             }
             onSave={handleSave}
@@ -472,69 +494,74 @@ export function DataGrid<T extends WithId>({
                         className="h-8 p-0 align-middle"
                         style={col.width ? { width: col.width } : undefined}
                       >
-                        {col.type === "text" && (
-                          <EditableTextCell
-                            value={val as string | null}
-                            onCommit={commit}
-                            required={col.required}
-                          />
-                        )}
-                        {col.type === "textarea" && (
-                          <EditableTextAreaCell
-                            value={val as string | null}
-                            onCommit={commit}
-                            required={col.required}
-                          />
-                        )}
-                        {col.type === "select" && (
-                          <EditableSelectCell
-                            value={val as string | null}
-                            options={col.options ?? []}
-                            onCommit={commit}
-                            required={col.required}
-                          />
-                        )}
-                        {col.type === "date" && (
-                          <EditableDateCell
-                            value={val as string | null}
-                            onCommit={commit}
-                          />
-                        )}
-                        {col.type === "boolean" && (
-                          <EditableBooleanCell
-                            value={Boolean(val)}
-                            onCommit={commit}
-                          />
-                        )}
-                        {col.type === "numeric" && col.integer === true && (
-                          <EditableNumericCell
-                            mode="integer"
-                            value={
-                              val === null || val === undefined || val === ""
-                                ? null
-                                : Number(val)
-                            }
-                            onChange={(next) =>
-                              // integer columns commit as `number` for Zod `.int()`.
-                              commit(next === null ? null : next)
-                            }
-                          />
-                        )}
-                        {col.type === "numeric" && col.integer !== true && (
-                          <EditableNumericCell
-                            mode="decimal"
-                            value={
-                              val === null || val === undefined || val === ""
-                                ? null
-                                : String(val)
-                            }
-                            onChange={(next) =>
-                              // decimal commits raw string — preserve precision +
-                              // trailing zeros for Drizzle `numeric()` SoT.
-                              commit(next)
-                            }
-                          />
-                        )}
+                        {col.editor
+                          ? col.editor({ row: r.data, value: val, commit, disabled: false })
+                          : col.type === "text"
+                            ? (
+                              <EditableTextCell
+                                value={val as string | null}
+                                onCommit={commit}
+                                required={col.required}
+                              />
+                            )
+                            : col.type === "textarea"
+                              ? (
+                                <EditableTextAreaCell
+                                  value={val as string | null}
+                                  onCommit={commit}
+                                  required={col.required}
+                                />
+                              )
+                              : col.type === "select"
+                                ? (
+                                  <EditableSelectCell
+                                    value={val as string | null}
+                                    options={col.options ?? []}
+                                    onCommit={commit}
+                                    required={col.required}
+                                  />
+                                )
+                                : col.type === "date"
+                                  ? (
+                                    <EditableDateCell
+                                      value={val as string | null}
+                                      onCommit={commit}
+                                    />
+                                  )
+                                  : col.type === "boolean"
+                                    ? (
+                                      <EditableBooleanCell
+                                        value={Boolean(val)}
+                                        onCommit={commit}
+                                      />
+                                    )
+                                    : col.type === "numeric" && col.integer === true
+                                      ? (
+                                        <EditableNumericCell
+                                          mode="integer"
+                                          value={
+                                            val === null || val === undefined || val === ""
+                                              ? null
+                                              : Number(val)
+                                          }
+                                          onChange={(next) =>
+                                            commit(next === null ? null : next)
+                                          }
+                                        />
+                                      )
+                                      : col.type === "numeric"
+                                        ? (
+                                          <EditableNumericCell
+                                            mode="decimal"
+                                            value={
+                                              val === null || val === undefined || val === ""
+                                                ? null
+                                                : String(val)
+                                            }
+                                            onChange={(next) => commit(next)}
+                                          />
+                                        )
+                                        : null}
                       </td>
                     );
                   })}

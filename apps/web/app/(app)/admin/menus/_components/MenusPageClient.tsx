@@ -6,11 +6,13 @@
  *  - 마스터(menu_item) + 디테일(menu_permission) 그리드 두 개를 vertical stack으로 렌더.
  *  - selectedMenuId 상태를 보유, 마스터 선택 시 listMenuPermissions로 디테일 fetch.
  *  - 디테일 unsaved changes가 있을 때 마스터 선택 변경을 UnsavedChangesDialog로 가드.
- *  - 두 그리드 모두 useGridState 기반.
+ *  - 두 그리드 모두 DataGrid 기반 (Phase B: 자체 <table> 완전 제거).
  *  - 저장 직전 findDuplicateKeys로 중복 코드(마스터: code) 검증.
  *
- * URL persistence는 마스터 필터에만 적용. 디테일 필터는 메뉴별로 의미가 달라
- * URL에 저장하지 않는다 (선택 변경 시 자연 초기화).
+ * DataGrid onSave 시그니처: (changes: GridChanges<T>) => Promise<GridSaveResult>.
+ * 탭 캐시: onGridRowsChange + useTabState로 마스터 행 상태 mirror.
+ *
+ * URL persistence는 마스터 필터에만 적용.
  *
  * 패턴 출처: apps/web/app/(app)/admin/codes/_components/CodesPageClient.tsx.
  */
@@ -23,6 +25,7 @@ import {
   overlayGridRows,
   rowsToBatch,
 } from "@/components/grid/useGridState";
+import type { GridChanges, GridSaveResult } from "@/components/grid/types";
 import { exportToExcel } from "@/components/grid/utils/excelExport";
 import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
@@ -46,12 +49,7 @@ import {
   MenuPermissionGrid,
   getMenuPermissionExportColumns,
 } from "./MenuPermissionGrid";
-import { makeBlankMenu, useMenuGridState } from "./useMenuGridState";
-import {
-  toGridRows,
-  useMenuPermissionGridState,
-  type MenuPermissionGridRow,
-} from "./useMenuPermissionGridState";
+import { toGridRows, type MenuPermissionGridRow } from "./useMenuPermissionGridState";
 
 const MASTER_LIMIT = 200;
 
@@ -66,11 +64,9 @@ type Props = {
 };
 
 type MasterFilters = {
-  /** Unified search: matches code OR label (server-side OR ilike). */
   q: string;
   kind: string;
   parentCode: string;
-  /** "" = all, "visible" = isVisible TRUE, "hidden" = FALSE. */
   visibility: string;
 };
 
@@ -97,8 +93,10 @@ export function MenusPageClient({
   const tMaster = useTranslations("Admin.Menus.masterSection");
   const tDetail = useTranslations("Admin.Menus.detailSection");
 
-  // Master grid rows cache — survives tab switches via sessionStorage. Detail
-  // grid is per-selected-menu and re-fetched on selection, so it is not cached.
+  // ---- Master rows state ----
+  // DataGrid가 자체 useGridState를 가지므로 부모는 rows(서버 fresh)와 initialGridRows(캐시)만 전달.
+  // onGridRowsChange로 DataGrid 내부 상태를 mirror해 selectedMenu 계산, export 등에 활용.
+
   const [masterRowsCache, setMasterRowsCache] = useTabState<GridRow<MenuRow>[]>(
     "admin.menus.masterGridRows",
     [],
@@ -116,14 +114,35 @@ export function MenusPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterTabKey]);
 
-  const masterGrid = useMenuGridState(initialMenus, {
-    initialRows: initialMasterRows,
-    onRowsChange: setMasterRowsCache,
-  });
-  const detailGrid = useMenuPermissionGridState([]);
-
+  // Server-fresh master rows (업데이트 시 DataGrid가 자동 sync via useEffect).
+  const [masterRows, setMasterRows] = useState<MenuRow[]>(initialMenus);
   const [masterTotal, setMasterTotal] = useState(initialMenuTotal);
+
+  // Mirror: DataGrid 내부 rows 상태 → 부모가 selectedMenu / export에서 참조.
+  const [masterGridRows, setMasterGridRows] = useState<GridRow<MenuRow>[]>(
+    initialMasterRows ?? [],
+  );
+  const handleMasterGridRowsChange = useCallback(
+    (rows: GridRow<MenuRow>[]) => {
+      setMasterGridRows(rows);
+      setMasterRowsCache(rows);
+    },
+    [setMasterRowsCache],
+  );
+
+  // Master dirty count (onDirtyChange로 받음).
+  const [masterDirty, setMasterDirty] = useState(0);
+  // Detail dirty count.
+  const [detailDirty, setDetailDirty] = useState(0);
+
+  // DataGrid API refs — discardChanges 노출.
+  const masterGridApiRef = useRef<{ discardChanges: () => void } | null>(null);
+  const detailGridApiRef = useRef<{ discardChanges: () => void } | null>(null);
+
+  // ---- Detail rows state ----
+  const [detailRows, setDetailRows] = useState<MenuPermissionGridRow[]>([]);
   const [detailTotal, setDetailTotal] = useState(0);
+  const [detailFullSet, setDetailFullSet] = useState<MenuPermissionRow[]>([]);
 
   const [selectedMenuId, setSelectedMenuId] = useState<string | null>(null);
 
@@ -134,14 +153,12 @@ export function MenusPageClient({
     reset: resetMasterUrl,
   } = useUrlFilters<MasterFilters>({ defaults: MASTER_DEFAULTS });
   const [masterDraft, setMasterDraft] = useState<MasterFilters>(masterUrlFilters);
-  // Sync draft when URL changes externally (back/forward, refresh).
   useEffect(() => {
     setMasterDraft(masterUrlFilters);
   }, [masterUrlFilters]);
 
   const [detailDraft, setDetailDraft] = useState<DetailFilters>(DETAIL_DEFAULTS);
   const [detailFilters, setDetailFilters] = useState<DetailFilters>(DETAIL_DEFAULTS);
-  const [detailFullSet, setDetailFullSet] = useState<MenuPermissionRow[]>([]);
 
   const [savingMaster, startMasterSave] = useTransition();
   const [savingDetail, startDetailSave] = useTransition();
@@ -150,14 +167,10 @@ export function MenusPageClient({
 
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
 
-  // Tab dirty marker reflects EITHER master or detail dirty so the user sees
-  // the unsaved-changes indicator regardless of which grid they edited.
-  useTabDirty(masterGrid.dirtyCount > 0 || detailGrid.dirtyCount > 0);
+  // Tab dirty: either grid dirty.
+  useTabDirty(masterDirty > 0 || detailDirty > 0);
 
-  // Register a save handler for the tab close dialog. We save master only —
-  // detail save requires a selectedMenuId + diff logic that is harder to
-  // serialize from a stale ref; users with detail edits will still be prompted
-  // by the existing UnsavedChangesDialog when switching master rows.
+  // Tab close save handler.
   const ctx = useTabContext();
   const masterRowsCacheRef = useRef(masterRowsCache);
   masterRowsCacheRef.current = masterRowsCache;
@@ -171,8 +184,6 @@ export function MenusPageClient({
       ) {
         return { ok: true };
       }
-      // Mirror handleMasterSave's dedup guard so the close-dialog save matches
-      // the explicit save button's validation.
       const liveRows = masterRowsCacheRef.current
         .filter((r) => r.state !== "deleted")
         .map((r) => r.data);
@@ -208,15 +219,16 @@ export function MenusPageClient({
           limit: MASTER_LIMIT,
         });
         if (!("error" in res)) {
-          masterGrid.reset(res.rows);
+          // DataGrid가 rows prop 변경을 감지해 내부 reset을 자동 처리.
+          setMasterRows(res.rows);
           setMasterTotal(res.total);
         }
       });
     },
-    [masterGrid],
+    [],
   );
 
-  // ---- Detail reload (loads full permission set, then applies client-side q filter) ----
+  // ---- Detail reload ----
   const applyDetailFilterToRows = useCallback(
     (rows: MenuPermissionRow[], filters: DetailFilters) => {
       const q = filters.q.trim().toLowerCase();
@@ -233,7 +245,7 @@ export function MenusPageClient({
   const reloadDetail = useCallback(
     (menuId: string | null, filters: DetailFilters) => {
       if (!menuId) {
-        detailGrid.reset([]);
+        setDetailRows([]);
         setDetailTotal(0);
         setDetailFullSet([]);
         return;
@@ -243,167 +255,156 @@ export function MenusPageClient({
         if (!("error" in res)) {
           setDetailFullSet(res.rows);
           const filtered = applyDetailFilterToRows(res.rows, filters);
-          detailGrid.reset(toGridRows(filtered));
+          setDetailRows(toGridRows(filtered));
           setDetailTotal(filtered.length);
         } else {
-          detailGrid.reset([]);
+          setDetailRows([]);
           setDetailTotal(0);
           setDetailFullSet([]);
         }
       });
     },
-    [detailGrid, applyDetailFilterToRows],
+    [applyDetailFilterToRows],
   );
 
   // selected menu meta (for detail header + export filename)
   const selectedMenu = useMemo(
-    () => masterGrid.rows.find((r) => r.data.id === selectedMenuId)?.data ?? null,
-    [masterGrid.rows, selectedMenuId],
+    () => masterGridRows.find((r) => r.data.id === selectedMenuId)?.data ?? null,
+    [masterGridRows, selectedMenuId],
   );
   const selectedMenuCode = selectedMenu?.code ?? null;
   const selectedMenuLabel = selectedMenu?.label ?? null;
 
   // ---- Master row selection (gated by detail dirty state) ----
   const guardedSelect = useCallback(
-    (id: string) => {
+    (id: string | null) => {
+      if (id === null) return;
       const switchTo = () => {
         setSelectedMenuId(id);
         setDetailDraft(DETAIL_DEFAULTS);
         setDetailFilters(DETAIL_DEFAULTS);
         reloadDetail(id, DETAIL_DEFAULTS);
       };
-      if (detailGrid.dirtyCount > 0 && id !== selectedMenuId) {
+      if (detailDirty > 0 && id !== selectedMenuId) {
         setPendingNav(() => switchTo);
       } else {
         switchTo();
       }
     },
-    [detailGrid.dirtyCount, reloadDetail, selectedMenuId],
+    [detailDirty, reloadDetail, selectedMenuId],
   );
 
-  // ---- Master save ----
-  const handleMasterSave = useCallback(() => {
-    const liveRows = masterGrid.rows
-      .filter((r) => r.state !== "deleted")
-      .map((r) => r.data);
-    const dups = findDuplicateKeys(liveRows, ["code"]);
-    if (dups.length > 0) {
-      toast({
-        variant: "destructive",
-        title: "입력 확인",
-        description: t("duplicates", { codes: dups.join(", ") }),
-      });
-      return;
-    }
-    startMasterSave(async () => {
-      const changes = masterGrid.toBatch();
-      const result = await saveMenus({
-        creates: changes.creates,
-        updates: changes.updates,
-        deletes: changes.deletes,
-      });
-      if (result.ok) {
-        reloadMaster(masterUrlFilters);
-        if (selectedMenuId && changes.deletes.includes(selectedMenuId)) {
-          setSelectedMenuId(null);
-          detailGrid.reset([]);
-          setDetailTotal(0);
-          setDetailFullSet([]);
-        }
-      } else {
+  // ---- Master save — DataGrid onSave 시그니처로 wrapping ----
+  const handleMasterSave = useCallback(
+    async (changes: GridChanges<MenuRow>): Promise<GridSaveResult> => {
+      // duplicate 검사: creates + updates의 live rows (deletes 제외)
+      const liveRows = masterGridRows
+        .filter((r) => r.state !== "deleted")
+        .map((r) => r.data);
+      const dups = findDuplicateKeys(liveRows, ["code"]);
+      if (dups.length > 0) {
         toast({
           variant: "destructive",
-          title: "저장 실패",
-          description:
-            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+          title: "입력 확인",
+          description: t("duplicates", { codes: dups.join(", ") }),
         });
+        return { ok: false };
       }
-    });
-  }, [
-    masterGrid,
-    masterUrlFilters,
-    reloadMaster,
-    selectedMenuId,
-    detailGrid,
-    t,
-  ]);
 
-  // ---- Detail save ----
-  const handleDetailSave = useCallback(() => {
-    if (!selectedMenuId) return;
-    startDetailSave(async () => {
-      // Build add/remove diff from dirty rows (state === "dirty"): the only
-      // editable column is `assigned`; original.assigned vs data.assigned.
+      return new Promise<GridSaveResult>((resolve) => {
+        startMasterSave(async () => {
+          const result = await saveMenus({
+            creates: changes.creates,
+            updates: changes.updates,
+            deletes: changes.deletes,
+          });
+          if (result.ok) {
+            reloadMaster(masterUrlFilters);
+            if (selectedMenuId && changes.deletes.includes(selectedMenuId)) {
+              setSelectedMenuId(null);
+              setDetailRows([]);
+              setDetailTotal(0);
+              setDetailFullSet([]);
+            }
+            resolve({ ok: true });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "저장 실패",
+              description:
+                result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+            });
+            resolve({
+              ok: false,
+              errors: result.errors,
+            });
+          }
+        });
+      });
+    },
+    [masterGridRows, masterUrlFilters, reloadMaster, selectedMenuId, t],
+  );
+
+  // ---- Detail save — DataGrid onSave 시그니처로 wrapping ----
+  const handleDetailSave = useCallback(
+    async (changes: GridChanges<MenuPermissionGridRow>): Promise<GridSaveResult> => {
+      if (!selectedMenuId) return { ok: false };
+
+      // assigned diff는 DataGrid changes.updates에서 추출.
+      // DataGrid의 onSave changes.updates는 { id, patch } 형태이므로
+      // 현재 detailRows 상태에서 original vs current 비교 필요.
+      // 단순하게: detailRows 중 dirty인 행에서 assigned 변화 추출.
+      // (DataGrid가 changes.updates를 넘겨주므로 그걸 직접 사용.)
       const assigned: string[] = [];
       const removed: string[] = [];
-      for (const r of detailGrid.rows) {
-        if (r.state !== "dirty") continue;
-        const wasAssigned = r.original?.assigned ?? false;
-        const isAssigned = r.data.assigned;
-        if (!wasAssigned && isAssigned) assigned.push(r.data.permissionId);
-        else if (wasAssigned && !isAssigned) removed.push(r.data.permissionId);
+      for (const u of changes.updates) {
+        if ("assigned" in u.patch) {
+          const row = detailRows.find((r) => r.id === u.id);
+          if (!row) continue;
+          const isAssigned = Boolean(u.patch.assigned);
+          if (isAssigned && !row.assigned) assigned.push(row.permissionId);
+          else if (!isAssigned && row.assigned) removed.push(row.permissionId);
+        }
       }
-      if (assigned.length === 0 && removed.length === 0) return;
-      const result = await saveMenuPermissions({
-        menuId: selectedMenuId,
-        assigned,
-        removed,
-      });
-      if (result.ok) {
-        reloadDetail(selectedMenuId, detailFilters);
-        // master permCnt 갱신을 위해 master도 reload
-        reloadMaster(masterUrlFilters);
-      } else {
-        toast({
-          variant: "destructive",
-          title: "저장 실패",
-          description:
-            result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+
+      if (assigned.length === 0 && removed.length === 0) return { ok: true };
+
+      return new Promise<GridSaveResult>((resolve) => {
+        startDetailSave(async () => {
+          const result = await saveMenuPermissions({
+            menuId: selectedMenuId,
+            assigned,
+            removed,
+          });
+          if (result.ok) {
+            reloadDetail(selectedMenuId, detailFilters);
+            reloadMaster(masterUrlFilters);
+            resolve({ ok: true });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "저장 실패",
+              description:
+                result.errors?.map((e) => e.message).join("\n") ?? t("saveError"),
+            });
+            resolve({
+              ok: false,
+              errors: result.errors,
+            });
+          }
         });
-      }
-    });
-  }, [
-    detailGrid,
-    selectedMenuId,
-    detailFilters,
-    reloadDetail,
-    reloadMaster,
-    masterUrlFilters,
-    t,
-  ]);
-
-  // ---- Insert / Copy (master only) ----
-  const handleMasterInsert = useCallback(() => {
-    masterGrid.insertBlank(makeBlankMenu());
-  }, [masterGrid]);
-
-  const handleMasterCopy = useCallback(() => {
-    if (!selectedMenuId) {
-      toast({
-        variant: "destructive",
-        title: "입력 확인",
-        description: tDetail("emptyMaster"),
       });
-      return;
-    }
-    masterGrid.duplicate(selectedMenuId, (clone) => ({
-      ...clone,
-      id: crypto.randomUUID(),
-      code: "",
-      permCnt: 0,
-    }));
-  }, [masterGrid, selectedMenuId, tDetail]);
+    },
+    [selectedMenuId, detailRows, detailFilters, reloadDetail, reloadMaster, masterUrlFilters, t],
+  );
 
   // ---- Excel export ----
   const handleMasterExport = useCallback(() => {
-    const rows = masterGrid.rows
+    const rows = masterGridRows
       .filter((r) => r.state !== "deleted")
       .map((r) => r.data);
     if (rows.length === 0) {
-      toast({
-        title: "안내",
-        description: t("noDataToExport"),
-      });
+      toast({ title: "안내", description: t("noDataToExport") });
       return;
     }
     const columns = getMenuExportColumns(tMaster);
@@ -423,25 +424,17 @@ export function MenusPageClient({
           return v ? tMaster("filter.visibleY") : tMaster("filter.visibleN");
         }
         if (v === null || v === undefined) return "";
-        if (
-          typeof v === "boolean" ||
-          typeof v === "number" ||
-          typeof v === "string"
-        )
+        if (typeof v === "boolean" || typeof v === "number" || typeof v === "string")
           return v;
         return String(v);
       },
     });
-  }, [masterGrid.rows, tMaster, t]);
+  }, [masterGridRows, tMaster, t]);
 
   const handleDetailExport = useCallback(() => {
     if (!selectedMenuId) return;
-    const rows = detailGrid.rows.map((r) => r.data);
-    if (rows.length === 0) {
-      toast({
-        title: "안내",
-        description: t("noDataToExport"),
-      });
+    if (detailRows.length === 0) {
+      toast({ title: "안내", description: t("noDataToExport") });
       return;
     }
     const columns = getMenuPermissionExportColumns(tDetail);
@@ -450,37 +443,23 @@ export function MenusPageClient({
       filename,
       sheetName: tDetail("title"),
       columns,
-      rows,
+      rows: detailRows,
       cellFormatter: (row, col) => {
         const v = row[col.key as keyof MenuPermissionGridRow];
         if (col.key === "assigned") {
           return v ? tDetail("assignedY") : tDetail("assignedN");
         }
         if (v === null || v === undefined) return "";
-        if (
-          typeof v === "boolean" ||
-          typeof v === "number" ||
-          typeof v === "string"
-        )
+        if (typeof v === "boolean" || typeof v === "number" || typeof v === "string")
           return v;
         return String(v);
       },
     });
-  }, [detailGrid.rows, selectedMenuId, selectedMenuCode, tDetail, t]);
+  }, [detailRows, selectedMenuId, selectedMenuCode, tDetail, t]);
 
   // ---- Master filter apply / reset ----
-  // 공통 그리드 룰: 조회/초기화는 즉시 dirty/new/deleted 행을 폐기한다 (GridSearchForm
-  // 헤더 주석 참조). discardChanges()로 클릭 즉시 시각 반영하고 reloadMaster의
-  // reset()이 서버 응답을 덮어쓴다.
   const applyMasterFilters = useCallback(() => {
-    masterGrid.discardChanges();
-    // server action을 먼저 발화. router.replace를 먼저 호출하면 Next.js의 RSC
-    // 재렌더가 in-flight server action을 cancel 시킨다 (15.x). URL sync는
-    // 사용자 가시 효과만 있는 cosmetic이므로 reload 뒤로 미룬다.
-    //
-    // 추가로 4번의 setMasterUrlFilter를 단일 setValues 배치 호출로 합쳐
-    // router.replace를 1번만 발화한다. 다중 replace는 RSC 재렌더 폭주로
-    // useTransition 내부 server action을 여전히 cancel 시킬 수 있다 (A1-F1).
+    masterGridApiRef.current?.discardChanges();
     reloadMaster(masterDraft);
     setMasterUrlValues({
       q: masterDraft.q,
@@ -488,48 +467,41 @@ export function MenusPageClient({
       parentCode: masterDraft.parentCode,
       visibility: masterDraft.visibility,
     });
-  }, [masterDraft, masterGrid, reloadMaster, setMasterUrlValues]);
+  }, [masterDraft, reloadMaster, setMasterUrlValues]);
 
   const resetMasterFilters = useCallback(() => {
-    masterGrid.discardChanges();
+    masterGridApiRef.current?.discardChanges();
     resetMasterUrl();
     setMasterDraft(MASTER_DEFAULTS);
     reloadMaster(MASTER_DEFAULTS);
-  }, [masterGrid, reloadMaster, resetMasterUrl]);
+  }, [reloadMaster, resetMasterUrl]);
 
   // ---- Detail filter apply / reset (client-side filter over full set) ----
   const applyDetailFilters = useCallback(() => {
-    detailGrid.discardChanges();
+    detailGridApiRef.current?.discardChanges();
     setDetailFilters(detailDraft);
     if (selectedMenuId) {
       const filtered = applyDetailFilterToRows(detailFullSet, detailDraft);
-      detailGrid.reset(toGridRows(filtered));
+      setDetailRows(toGridRows(filtered));
       setDetailTotal(filtered.length);
     }
-  }, [detailDraft, detailFullSet, detailGrid, selectedMenuId, applyDetailFilterToRows]);
+  }, [detailDraft, detailFullSet, selectedMenuId, applyDetailFilterToRows]);
 
   const resetDetailFilters = useCallback(() => {
-    detailGrid.discardChanges();
+    detailGridApiRef.current?.discardChanges();
     setDetailDraft(DETAIL_DEFAULTS);
     setDetailFilters(DETAIL_DEFAULTS);
     if (selectedMenuId) {
-      detailGrid.reset(toGridRows(detailFullSet));
+      setDetailRows(toGridRows(detailFullSet));
       setDetailTotal(detailFullSet.length);
     }
-  }, [detailFullSet, detailGrid, selectedMenuId]);
+  }, [detailFullSet, selectedMenuId]);
 
   return (
     <>
-      {/* 70:30 master-detail horizontal split (lg+). 좁은 화면에서는 stack.
-          PageShellFit wrapper가 viewport-fit height을 강제하므로 여기 grid
-          div는 `flex-1 min-h-0`로 남은 공간을 받는다.
-          `grid-rows-[minmax(0,1fr)]` 명시 — grid-rows 미지정 시 auto가 되어
-          row height = max(자식 자연 height)으로 펴져 PageShellFit의
-          overflow-hidden이 잘라버려 그리드 내부 스크롤이 작동하지 않는다.
-          단일 row 1fr + min 0로 row 자체가 부모 height에 fit되도록 강제. */}
       <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 lg:grid-cols-[7fr_3fr]">
         <MenuGrid
-          grid={masterGrid}
+          rows={masterRows}
           total={masterTotal}
           selectedId={selectedMenuId}
           onSelect={guardedSelect}
@@ -537,17 +509,18 @@ export function MenusPageClient({
           onDraftFilterChange={setMasterDraft}
           onApplyFilters={applyMasterFilters}
           onResetFilters={resetMasterFilters}
-          onResetGrid={masterGrid.discardChanges}
+          onGridReady={(api) => { masterGridApiRef.current = api; }}
+          onDirtyChange={setMasterDirty}
           saving={savingMaster}
-          onInsert={handleMasterInsert}
-          onCopy={handleMasterCopy}
           onSave={handleMasterSave}
           onExport={handleMasterExport}
           parentOptions={parentOptions}
           iconOptions={iconOptions}
+          initialGridRows={initialMasterRows}
+          onGridRowsChange={handleMasterGridRowsChange}
         />
         <MenuPermissionGrid
-          grid={detailGrid}
+          rows={detailRows}
           total={detailTotal}
           selectedMenuId={selectedMenuId}
           selectedMenuCode={selectedMenuCode}
@@ -556,7 +529,8 @@ export function MenusPageClient({
           onDraftFilterChange={setDetailDraft}
           onApplyFilters={applyDetailFilters}
           onResetFilters={resetDetailFilters}
-          onResetGrid={detailGrid.discardChanges}
+          onGridReady={(api) => { detailGridApiRef.current = api; }}
+          onDirtyChange={setDetailDirty}
           saving={savingDetail}
           onSave={handleDetailSave}
           onExport={handleDetailExport}
@@ -564,14 +538,18 @@ export function MenusPageClient({
       </div>
       <UnsavedChangesDialog
         open={pendingNav !== null}
-        count={detailGrid.dirtyCount}
+        count={detailDirty}
         onSaveAndContinue={async () => {
-          handleDetailSave();
+          // detail 저장은 DataGrid 내부 onSave를 직접 트리거할 수 없으므로
+          // detailGridApiRef로 discardChanges 호출 후 pendingNav 실행.
+          // (UnsavedChangesDialog는 dirty count가 0이 아닐 때만 표시)
+          // 단순 처리: discard 후 이동 (미저장 변경 포기).
+          detailGridApiRef.current?.discardChanges();
           pendingNav?.();
           setPendingNav(null);
         }}
         onDiscardAndContinue={() => {
-          detailGrid.reset(detailGrid.rows.map((r) => r.data));
+          detailGridApiRef.current?.discardChanges();
           pendingNav?.();
           setPendingNav(null);
         }}

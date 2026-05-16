@@ -2,14 +2,11 @@
 /**
  * apps/web/app/(app)/admin/menus/_components/useMenuGridState.ts
  *
- * 메뉴(master) 그리드 행 상태 훅.
- * 공유 useGridState<T>를 MenuRow 타입으로 instantiate한 thin wrapper +
- * makeBlankMenu helper. (admin/codes 패턴 그대로.)
+ * makeBlankMenu helper — 신규 메뉴 행 기본값.
+ *
+ * Phase B: 그리드 상태는 DataGrid 내부 useGridState에 위임.
+ * useMenuGridState hook 제거 (MenusPageClient가 DataGrid에 위임).
  */
-import {
-  useGridState,
-  type UseGridStateOptions,
-} from "@/components/grid/useGridState";
 import type { MenuRow } from "@jarvis/shared/validation/admin/menu";
 
 export function makeBlankMenu(): MenuRow {
@@ -28,11 +25,4 @@ export function makeBlankMenu(): MenuRow {
     keywords: null,
     permCnt: 0,
   } satisfies MenuRow;
-}
-
-export function useMenuGridState(
-  initial: MenuRow[],
-  options?: UseGridStateOptions<MenuRow>,
-) {
-  return useGridState<MenuRow>(initial, options);
 }

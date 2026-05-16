@@ -41,6 +41,22 @@ export type ColumnDef<T> = {
    * `readOnly` (그리드 전체 readonly) 적용 시도 readonly로 강제.
    */
   lockOnExisting?: boolean;
+  /**
+   * 도메인 전용 셀 렌더러 주입. cellEditable 분기 후 `col.type`보다 우선 적용.
+   *
+   * 사용처: IconPickerCell 같이 DataGrid 표준 타입에 없는 도메인 전용 편집 셀.
+   * `editor`가 있으면 DataGrid는 type 기반 EditableXxxCell 대신 이 함수의
+   * 반환값을 렌더한다.
+   *
+   * ctx.disabled는 그리드 readOnly 또는 lockOnExisting 적용 시 true.
+   * ctx.commit: (next: unknown) => void
+   */
+  editor?: (ctx: {
+    row: T;
+    value: unknown;
+    commit: (next: unknown) => void;
+    disabled: boolean;
+  }) => ReactNode;
 };
 
 /**

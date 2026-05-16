@@ -10,6 +10,10 @@ type Props = {
   copyLabel?: string;
   saveLabel?: string;
   savingLabel?: string;
+  /** [입력] 버튼 표시 여부 (default true). */
+  allowInsert?: boolean;
+  /** [복사] 버튼 표시 여부 (default true). */
+  allowCopy?: boolean;
   onInsert: () => void;
   onCopy?: () => void;
   onSave: () => void;
@@ -27,6 +31,8 @@ export function GridToolbar({
   copyLabel,
   saveLabel,
   savingLabel,
+  allowInsert = true,
+  allowCopy = true,
   onInsert,
   onCopy,
   onSave,
@@ -57,17 +63,21 @@ export function GridToolbar({
 
   return (
     <div className="ml-auto flex items-center gap-2">
-      <Button size="sm" variant="outline" onClick={onInsert} disabled={effectiveSaving}>
-        {resolvedInsert}
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={onCopy}
-        disabled={effectiveSaving || !onCopy}
-      >
-        {resolvedCopy}
-      </Button>
+      {allowInsert && (
+        <Button size="sm" variant="outline" onClick={onInsert} disabled={effectiveSaving}>
+          {resolvedInsert}
+        </Button>
+      )}
+      {allowCopy && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onCopy}
+          disabled={effectiveSaving || !onCopy}
+        >
+          {resolvedCopy}
+        </Button>
+      )}
       <Button size="sm" disabled={effectiveDirty === 0 || effectiveSaving} onClick={onSave}>
         {effectiveSaving
           ? resolvedSaving
