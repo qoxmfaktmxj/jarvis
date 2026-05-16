@@ -12,7 +12,7 @@
  */
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageShell } from "@/components/patterns/PageShell";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listInfraSystems } from "@/lib/queries/infra-system";
 import { listCompanyOptions } from "@/lib/queries/infra-license";
@@ -51,7 +51,7 @@ export default async function InfraPage(props: {
   ]);
 
   return (
-    <PageShell title={t("title")}>
+    <PageShellFit title={t("title")}>
       <InfraSystemsGridContainer
         initialRows={listResult.rows}
         initialTotal={listResult.total}
@@ -63,6 +63,6 @@ export default async function InfraPage(props: {
         initialEnvType={envType}
         initialDbType={dbType}
       />
-    </PageShell>
+    </PageShellFit>
   );
 }

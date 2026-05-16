@@ -4,7 +4,7 @@ import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { FaqGridContainer } from "./_components/FaqGridContainer";
 import { listFaqAction } from "./actions";
@@ -43,8 +43,7 @@ export default async function FaqPage() {
   const initialTotal = initialResult.ok ? initialResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <FaqGridContainer
         initial={initialRows}
         total={initialTotal}
@@ -52,6 +51,6 @@ export default async function FaqPage() {
         canWrite={canWrite}
         canAdmin={canAdmin}
       />
-    </div>
+    </PageShellFit>
   );
 }

@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listPlanPerfUpload } from "./actions";
 import { PlanPerfUploadGridContainer } from "./_components/PlanPerfUploadGridContainer";
@@ -38,8 +38,7 @@ export default async function SalesPlanPerfUploadPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <PlanPerfUploadGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}
@@ -53,6 +52,6 @@ export default async function SalesPlanPerfUploadPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

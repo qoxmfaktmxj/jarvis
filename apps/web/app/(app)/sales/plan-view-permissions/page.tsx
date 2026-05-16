@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { PlanViewPermissionsGridContainer } from "./_components/PlanViewPermissionsGridContainer";
 import { listPlanViewPermissions } from "./actions";
@@ -39,14 +39,13 @@ export default async function SalesPlanViewPermissionsPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <PlanViewPermissionsGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}
         limit={limit}
         initialFilters={filters}
       />
-    </div>
+    </PageShellFit>
   );
 }

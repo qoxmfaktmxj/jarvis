@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractServicesGridContainer } from "./_components/ContractServicesGridContainer";
 import { listContractServices } from "./actions";
@@ -34,8 +34,7 @@ export default async function SalesContractServicesPage({
   const initialTotal = listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="서비스 인력" />
+    <PageShellFit title="서비스 인력">
       <ContractServicesGridContainer
         rows={initialRows}
         total={initialTotal}
@@ -47,6 +46,6 @@ export default async function SalesContractServicesPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

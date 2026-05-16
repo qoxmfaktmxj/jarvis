@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ProductTypesGridContainer } from "./_components/ProductTypesGridContainer";
 import { listProductTypes } from "./actions";
@@ -14,9 +14,8 @@ export default async function SalesProductTypesPage() {
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="제품군관리" />
+    <PageShellFit title="제품군관리">
       <ProductTypesGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} />
-    </div>
+    </PageShellFit>
   );
 }

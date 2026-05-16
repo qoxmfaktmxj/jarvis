@@ -3,7 +3,7 @@ import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { isAdmin } from "@jarvis/auth";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { OpportunitiesGridContainer } from "./_components/OpportunitiesGridContainer";
 import { listOpportunities } from "./actions";
@@ -49,8 +49,7 @@ export default async function SalesOpportunitiesPage({
   const initialTotal = "ok" in listResult && listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="영업기회" />
+    <PageShellFit title="영업기회">
       <OpportunitiesGridContainer
         initial={initialRows}
         total={initialTotal}
@@ -64,6 +63,6 @@ export default async function SalesOpportunitiesPage({
           bizOpSource: bizOpSourceOptions,
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

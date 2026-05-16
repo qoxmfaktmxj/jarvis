@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractUploadsGridContainer } from "./_components/ContractUploadsGridContainer";
 import { listContractUploads, listUnifiedContractUploads } from "./actions";
@@ -45,8 +45,7 @@ export default async function SalesContractUploadsPage({
   ]);
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="계약 업로드 관리" />
+    <PageShellFit title="계약 업로드 관리">
       <ContractUploadsGridContainer
         rows={uploads.ok ? uploads.rows : []}
         total={uploads.ok ? uploads.total : 0}
@@ -54,6 +53,6 @@ export default async function SalesContractUploadsPage({
         limit={limit}
         initialFilters={filters}
       />
-    </div>
+    </PageShellFit>
   );
 }

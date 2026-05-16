@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listPlanDivCosts } from "../_lib/finance-actions";
 import { PlanDivCostsGridContainer } from "./_components/PlanDivCostsGridContainer";
@@ -33,8 +33,7 @@ export default async function SalesPlanDivCostsPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <PlanDivCostsGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}
@@ -46,6 +45,6 @@ export default async function SalesPlanDivCostsPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

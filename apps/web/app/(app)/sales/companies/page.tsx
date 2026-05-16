@@ -4,7 +4,7 @@ import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { type CompanyRow } from "@jarvis/shared/validation/company";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { SalesCompaniesGridContainer } from "./_components/SalesCompaniesGridContainer";
 import { listSalesCompanies } from "./actions";
@@ -39,8 +39,7 @@ export default async function SalesCompaniesPage() {
   const initialTotal = initialResult.ok ? Number(initialResult.total ?? 0) : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <SalesCompaniesGridContainer
         initial={initialRows}
         total={initialTotal}
@@ -48,6 +47,6 @@ export default async function SalesCompaniesPage() {
         groupOptions={groupOptions}
         industryOptions={industryOptions}
       />
-    </div>
+    </PageShellFit>
   );
 }

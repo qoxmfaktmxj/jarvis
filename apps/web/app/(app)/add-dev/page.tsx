@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AddDevTable } from "@/components/add-dev/AddDevTable";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listAdditionalDev } from "@/lib/queries/additional-dev";
@@ -48,24 +48,24 @@ export default async function AddDevListPage({
   const canCreate = hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_CREATE);
 
   return (
-    <div className="space-y-3">
-      <PageHeader
-        title={t("title")}
-        actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/add-dev/new">{t("newAddDev")}</Link>
-            </Button>
-          ) : null
-        }
-      />
-
+    <PageShellFit
+      title={t("title")}
+      actions={
+        canCreate ? (
+          <Button asChild>
+            <Link href="/add-dev/new">{t("newAddDev")}</Link>
+          </Button>
+        ) : null
+      }
+    >
+      {/* 표준 그리드 select 토큰 사용 (admin/companies 등과 동일):
+          h-8 border-(--border-default) bg-(--bg-page) px-2 text-[13px]. */}
       <form className="grid gap-3 rounded-xl border border-surface-200 bg-card p-4 shadow-sm md:grid-cols-[1fr_160px_160px_auto]">
         <Input name="q" defaultValue={params.q} placeholder={t("searchPlaceholder")} />
         <select
           name="status"
           defaultValue={params.status ?? ""}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
         >
           <option value="">{t("allStatuses")}</option>
           <option value="협의중">협의중</option>
@@ -76,7 +76,7 @@ export default async function AddDevListPage({
         <select
           name="part"
           defaultValue={params.part ?? ""}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
         >
           <option value="">{t("allParts")}</option>
           <option value="Saas">Saas</option>
@@ -90,6 +90,6 @@ export default async function AddDevListPage({
       </form>
 
       <AddDevTable data={result.data} />
-    </div>
+    </PageShellFit>
   );
 }

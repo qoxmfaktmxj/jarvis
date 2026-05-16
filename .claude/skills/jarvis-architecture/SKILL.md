@@ -286,6 +286,71 @@ pnpm eval:budget-test                             # LLM budget 검증
 - **`review_request` vs `review_queue` vs `wiki_review_queue`** — knowledge 수동 리뷰 / PII·Secret 큐 / wiki 도메인 전용 큐 (3개 모두 다른 책임)
 - **스키마 변경** — `packages/db/schema/*.ts` 수정 후 운영 DB에 대응 `ALTER/CREATE` SQL을 직접 적용
 
+## 전역 레이아웃 표준 (2026-05-16 확정)
+
+**4원칙. 위반 시 PR 자동 reject.**
+
+1. **외곽 여백은 `AppShellMain` 한 곳에서만 관리.** `apps/web/components/layout/AppShellMain.tsx`가 padding(현재 `px-10 pt-10 pb-5` = 40/40/40/20)·`max-w`(sidebar-width 반응형 `calc(1700 + (220 - var(--sidebar-width)))`)·`mx-auto`의 **단일 진실(SoT)**. 페이지/layout/컴포넌트 어디서도 추가하지 않는다. 아래 50%는 위 여백의 절반(시각적 균형).
+2. **페이지 root는 `PageShell` 또는 `PageShellFit`만 사용.** `apps/web/components/patterns/PageShell.tsx`. 둘 다 자체 padding 없음, `gap-3`만.
+   - **`PageShellFit`** = `overflow-hidden + h-full` — 그리드/채팅 등 viewport-fit, 페이지 자체 스크롤 X, 내부 위젯이 자기 스크롤. **DataGrid 사용 페이지·dashboard·메뉴 등.**
+   - **`PageShell`** = `overflow-y-auto + h-full` — 본문/폼/긴 문서. 페이지 내부 자체 스크롤.
+3. **route layout(`(app)/**/layout.tsx`)은 권한·데이터 가드만.** padding·max-w·mx-auto·`<main>` 태그 일체 추가 금지. AppShellMain이 이미 `<main id="main-content">` 단일 사용 — nested `<main>`은 a11y 위반.
+4. **개별 page.tsx에서 `mx-auto`·`max-w-...`·`px-N`·`py-N`·`p-N`·`height: calc(100vh-...)`·`style={{ padding | maxWidth | margin }}` 직접 사용 금지.** PageHeader는 `PageShell`/`PageShellFit`의 `title`+`actions` prop으로 흡수. 자체 `<h1>` 렌더 금지.
+
+**예외 — `/ask` 라우트 한정.** AppShellMain이 `/ask`로 시작하는 경로 wrapper를 bypass (`fullWidth`). chat sidebar가 sidebar 우측에 flush 정렬되어야 해서. 이 예외 외엔 0건.
+
+### Diff 예시
+
+❌ Before (위반 4종 합):
+```tsx
+// route layout
+export default function AdminLayout({ children }) {
+  return <main className="overflow-auto p-8">{children}</main>;
+}
+
+// page.tsx
+return (
+  <div className="mx-auto max-w-4xl px-4 py-8 space-y-4">
+    <h1 className="text-2xl font-bold">제목</h1>
+    <Content />
+  </div>
+);
+```
+
+✅ After:
+```tsx
+// route layout
+export default function AdminLayout({ children }) {
+  // RBAC 가드만, fragment로 children 그대로 패스
+  return <>{children}</>;
+}
+
+// page.tsx
+return (
+  <PageShell title="제목">
+    <Content />
+  </PageShell>
+);
+```
+
+### 표준 입력 토큰 (그리드 select)
+
+filter form의 `<select>`는 다음 토큰을 사용. holidays/year, admin/companies/objectDiv 등 동일:
+```tsx
+className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+```
+`flex h-10 border-input bg-background px-3 py-2 text-sm` 등 옛 shadcn 기본 토큰 금지.
+
+### 자동 audit (회귀 차단)
+
+신규 page.tsx 또는 layout.tsx 추가 시 reviewer가 다음 grep으로 검증:
+```bash
+# 위반 0건이어야 함:
+rg -n 'mx-auto|max-w-\[|max-w-[0-9]|p-[0-9]|px-[0-9]|py-[0-9]|pt-[0-9]|pb-[0-9]|h-\[calc\(100vh' \
+   apps/web/app/\(app\)/ --glob '*.tsx' --glob '!**/_components/**'
+```
+hit이 있으면 PR reject. `_components/` 하위 내부 컴포넌트(form 카드·셀 등)는 자체 padding 정상 — 제외.
+
 ## 영향도 체크리스트 (계획 단계)
 
 기능 작업 계획을 짤 때 아래 모든 계층을 빠짐없이 확인한다. superpowers:writing-plans 실행 시 plan 문서에 각 계층의 변경 여부(해당 없음도 명시)를 반드시 포함한다.

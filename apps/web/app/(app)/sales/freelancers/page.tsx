@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listFreelancers } from "./actions";
 import { FreelancersGridContainer } from "./_components/FreelancersGridContainer";
@@ -29,8 +29,7 @@ export default async function SalesFreelancersPage({ searchParams }: { searchPar
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <FreelancersGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}
@@ -42,6 +41,6 @@ export default async function SalesFreelancersPage({ searchParams }: { searchPar
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ContractMonthsGridContainer } from "./_components/ContractMonthsGridContainer";
 import { listContractMonths } from "./actions";
@@ -34,8 +34,7 @@ export default async function SalesContractMonthsPage({
   const initialTotal = listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="계약 월별" />
+    <PageShellFit title="계약 월별">
       <ContractMonthsGridContainer
         rows={initialRows}
         total={initialTotal}
@@ -47,6 +46,6 @@ export default async function SalesContractMonthsPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

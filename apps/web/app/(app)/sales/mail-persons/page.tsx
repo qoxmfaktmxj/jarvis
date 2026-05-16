@@ -1,5 +1,5 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { MailPersonsGridContainer } from "./_components/MailPersonsGridContainer";
 import { listMailPersons } from "./actions";
@@ -34,8 +34,7 @@ export default async function SalesMailPersonsPage({
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="메일담당자" />
+    <PageShellFit title="메일담당자">
       <MailPersonsGridContainer
         rows={initialRows}
         total={initialTotal}
@@ -47,6 +46,6 @@ export default async function SalesMailPersonsPage({
           sabun: params.sabun ?? "",
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

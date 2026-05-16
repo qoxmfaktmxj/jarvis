@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listProjectModules } from "./actions";
 import { ModulesGridContainer } from "./_components/ModulesGridContainer";
@@ -36,8 +36,7 @@ export default async function ProjectModulesPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <ModulesGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}
@@ -50,6 +49,6 @@ export default async function ProjectModulesPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

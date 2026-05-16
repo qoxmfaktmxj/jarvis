@@ -3,7 +3,7 @@ import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem, salesOpportunity } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { isAdmin } from "@jarvis/auth";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { ActivitiesGridContainer } from "./_components/ActivitiesGridContainer";
 import { listActivities } from "./actions";
@@ -66,8 +66,7 @@ export default async function SalesActivitiesPage({
   const initialTotal = "ok" in listResult && listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="영업활동" />
+    <PageShellFit title="영업활동">
       <ActivitiesGridContainer
         initial={initialRows}
         total={initialTotal}
@@ -83,6 +82,6 @@ export default async function SalesActivitiesPage({
         }}
         opportunityOptions={opportunityOptions}
       />
-    </div>
+    </PageShellFit>
   );
 }

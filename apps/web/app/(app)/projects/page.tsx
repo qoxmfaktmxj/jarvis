@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { Button } from "@/components/ui/button";
 import { listProjectsForGrid } from "@/lib/queries/projects";
 import { listCompanyOptions } from "@/lib/queries/infra-license";
@@ -63,18 +63,16 @@ export default async function ProjectsPage({
   const canCreate = hasPermission(session, PERMISSIONS.PROJECT_CREATE);
 
   return (
-    <div className="space-y-3">
-      <PageHeader
-        title={t("title")}
-        actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/projects/new">{t("registerProject")}</Link>
-            </Button>
-          ) : null
-        }
-      />
-
+    <PageShellFit
+      title={t("title")}
+      actions={
+        canCreate ? (
+          <Button asChild>
+            <Link href="/projects/new">{t("registerProject")}</Link>
+          </Button>
+        ) : null
+      }
+    >
       <ProjectsGridContainer
         initialRows={rows}
         initialTotal={total}
@@ -85,6 +83,6 @@ export default async function ProjectsPage({
         initialStatus={status ?? ""}
         initialConnectType={connectType ?? ""}
       />
-    </div>
+    </PageShellFit>
   );
 }

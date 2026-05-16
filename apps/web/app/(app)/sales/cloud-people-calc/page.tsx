@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listCloudPeopleCalc } from "./actions";
 import { CloudPeopleCalcGridContainer } from "./_components/CloudPeopleCalcGridContainer";
@@ -33,8 +33,7 @@ export default async function SalesCloudPeopleCalcPage({ searchParams }: { searc
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <CloudPeopleCalcGridContainer
         rows={result.ok ? result.rows : []}
         total={result.ok ? result.total : 0}
@@ -48,6 +47,6 @@ export default async function SalesCloudPeopleCalcPage({ searchParams }: { searc
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

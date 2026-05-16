@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listProjectHistory } from "./actions";
 import { HistoryGridContainer } from "./_components/HistoryGridContainer";
@@ -44,8 +44,7 @@ export default async function ProjectHistoryPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <HistoryGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}
@@ -62,6 +61,6 @@ export default async function ProjectHistoryPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

@@ -106,13 +106,17 @@ export function HolidaysGridContainer({ initial, initialYear }: Props) {
   const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      {/* 표준 그리드 select 토큰 (admin/companies, sales/* 등과 동일):
+          h-8 border-(--border-default) bg-(--bg-page) px-2 text-[13px]. */}
       <div className="flex items-center gap-2">
-        <label className="text-sm text-warm-700">{t("filters.year")}</label>
+        <label className="text-[12px] font-medium text-(--fg-primary)">
+          {t("filters.year")}
+        </label>
         <select
           value={year}
           onChange={(e) => reload(Number(e.currentTarget.value))}
-          className="h-8 rounded border border-warm-200 px-2 text-sm"
+          className="h-8 rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
         >
           {yearOptions.map((y) => (
             <option key={y} value={y}>{y}</option>

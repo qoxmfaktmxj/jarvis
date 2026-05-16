@@ -4,7 +4,7 @@ import { getSession } from "@jarvis/auth/session";
 import { getOrgTree, getCodesByGroup } from "@/lib/queries/admin";
 import { listUsers } from "./actions";
 import { UsersGridContainer } from "./_components/UsersGridContainer";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
 
 function flattenTree(
@@ -47,8 +47,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
   ]);
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <UsersGridContainer
         initialRows={users.ok ? users.rows : []}
         initialTotal={users.ok ? users.total : 0}
@@ -58,6 +57,6 @@ export default async function AdminUsersPage({ searchParams }: { searchParams?: 
         positionOptions={positionCodes.map((o) => ({ value: o.code, label: o.label }))}
         jobTitleOptions={jobTitleCodes.map((o) => ({ value: o.code, label: o.label }))}
       />
-    </div>
+    </PageShellFit>
   );
 }

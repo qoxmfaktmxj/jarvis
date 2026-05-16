@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listMonthExpSga } from "../_lib/finance-actions";
 import { MonthExpSgaGridContainer } from "./_components/MonthExpSgaGridContainer";
@@ -31,8 +31,7 @@ export default async function SalesMonthExpSgaPage({
   });
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <MonthExpSgaGridContainer
         rows={listResult.ok ? listResult.rows : []}
         total={listResult.ok ? listResult.total : 0}
@@ -43,6 +42,6 @@ export default async function SalesMonthExpSgaPage({
           page: String(page),
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }

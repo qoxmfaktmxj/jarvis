@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { DocNumbersGridContainer } from "./_components/DocNumbersGridContainer";
 import { listDocumentNumbersAction, listDocumentYearsAction } from "./actions";
@@ -31,8 +31,7 @@ export default async function DocNumbersPage() {
   const years = yearsResult.ok ? yearsResult.years : [];
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <DocNumbersGridContainer
         initial={initialRows}
         total={initialTotal}
@@ -40,6 +39,6 @@ export default async function DocNumbersPage() {
         canWrite={canWrite}
         canAdmin={canAdmin}
       />
-    </div>
+    </PageShellFit>
   );
 }

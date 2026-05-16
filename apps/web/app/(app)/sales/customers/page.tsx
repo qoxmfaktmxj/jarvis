@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { CustomersGridContainer } from "./_components/CustomersGridContainer";
 import { listCustomers } from "./actions";
@@ -48,8 +48,7 @@ export default async function SalesCustomersPage({
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title="고객사관리" />
+    <PageShellFit title="고객사관리">
       <CustomersGridContainer
         rows={initialRows}
         total={initialTotal}
@@ -62,6 +61,6 @@ export default async function SalesCustomersPage({
           exchangeType: exchangeTypeOptions,
         }}
       />
-    </div>
+    </PageShellFit>
   );
 }
