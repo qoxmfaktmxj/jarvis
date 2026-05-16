@@ -424,7 +424,18 @@ export function DataGrid<T extends WithId>({
           ].join(" ")}
         >
           <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 text-[11px] font-bold uppercase tracking-[0.08em] text-(--brand-primary-text)">
+          {/* Variant C — Bottom 2px brand accent.
+              thead에 sticky + bg-(--bg-page) + box-shadow inset bottom 2px로
+              가속선 적용. border-bottom-2 대신 box-shadow를 쓰는 이유:
+              `border-collapse: collapse` table에서 sticky thead의 tr/th border
+              는 스크롤 시 sub-pixel 잘림 또는 안 그려지는 브라우저 버그가
+              있어, box-shadow inset로 회피 (sticky에서도 안정적으로 렌더). */}
+          <thead
+            className="sticky top-0 z-10 bg-(--bg-page) text-[11px] font-bold uppercase tracking-[0.08em] text-(--fg-primary)"
+            style={{
+              boxShadow: "inset 0 -2px 0 0 var(--brand-primary)",
+            }}
+          >
             {groupHeaders && groupHeaders.length > 0 ? (
               <tr
                 data-testid="group-header-row"
@@ -451,30 +462,22 @@ export function DataGrid<T extends WithId>({
                 <th aria-hidden />
               </tr>
             ) : null}
-            {/* Variant D 메인 컬럼 헤더 row — brand-primary-bg 8% tint 배경 +
-                brand 20% mix 1px separator. 테마 swap 시 (blue/indigo/teal/
-                forest/graphite) brand-primary 토큰 cascade로 헤더 tint + th
-                글자 + separator 모두 동시에 따라감. 하드코드 hex 금지. */}
-            <tr
-              className="bg-(--brand-primary-bg) border-b"
-              style={{
-                borderBottomColor:
-                  "color-mix(in oklab, var(--brand-primary) 20%, transparent)",
-              }}
-            >
+            {/* 메인 컬럼 헤더 row — 2px brand accent는 thead box-shadow가 담당
+                (sticky 안정). 여기 tr에는 별도 border 없음. 테마 swap 시
+                brand-primary 토큰 cascade. 하드코드 hex 금지. */}
+            <tr>
               {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
                   No=44px, 삭제=56px(readOnly 시 hide), 상태=64px 최소폭 보장.
-                  padding 11/14 (spec): th 셀 자체는 bg-transparent — 행이 tint
-                  를 가지므로 셀은 투명. */}
-              <th className="w-11 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-left">{t("no")}</th>
+                  padding 11/14 (spec). */}
+              <th className="w-11 whitespace-nowrap px-[14px] py-[11px] text-left">{t("no")}</th>
               {!readOnly && (
-                <th className="w-14 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-center">{t("delete")}</th>
+                <th className="w-14 whitespace-nowrap px-[14px] py-[11px] text-center">{t("delete")}</th>
               )}
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={[
-                    "whitespace-nowrap bg-transparent px-[14px] py-[11px]",
+                    "whitespace-nowrap px-[14px] py-[11px]",
                     col.type === "numeric" ? "text-right" : "text-left",
                   ].join(" ")}
                   style={col.width ? { width: col.width } : undefined}
@@ -482,7 +485,7 @@ export function DataGrid<T extends WithId>({
                   {col.label}
                 </th>
               ))}
-              <th className="w-16 whitespace-nowrap bg-transparent px-[14px] py-[11px] text-center">{t("status")}</th>
+              <th className="w-16 whitespace-nowrap px-[14px] py-[11px] text-center">{t("status")}</th>
             </tr>
             {/*
               per-column filter row — filters가 비어있으면 빈 행만 렌더되어
