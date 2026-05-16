@@ -51,15 +51,9 @@ export default async function DashboardPage({
   const displayName = session.name || "사용자";
 
   return (
-    <div
-      className="flex flex-col gap-3"
-      style={{
-        // AppShellMain wraps in `mx-auto max-w-[1400px] px-8 py-8` so we subtract
-        // py-8 (4rem) and the global topbar height. Result: dashboard fits one
-        // viewport with no page scroll — only inner widget bodies scroll.
-        height: "calc(100vh - var(--topbar-height) - 4rem)"
-      }}
-    >
+    // AppShellMain wrapper가 h-full viewport-fit 영역을 제공하므로 페이지는
+    // 그 안에서 h-full만 받으면 됨 (별도 calc 불필요, 2026-05-16 전역 프레임 전환).
+    <div className="flex h-full flex-col gap-3">
       {showForbidden ? <ForbiddenBanner /> : null}
       <HeroGreeting name={displayName} now={now} />
       {/*

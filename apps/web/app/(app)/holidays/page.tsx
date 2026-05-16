@@ -12,11 +12,9 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
   const rows = await listHolidays({ workspaceId: session.workspaceId, year });
 
   return (
-    <div className="mx-auto max-w-[1000px] px-9 py-7">
-      <PageHeader
-        stamp="Holidays"
-        title="공휴일 관리"
-      />
+    // 자체 mx-auto/max-w/padding 제거 — AppShellMain 전역 프레임이 처리.
+    <div className="space-y-3">
+      <PageHeader title="공휴일 관리" />
       <HolidaysGridContainer
         initialYear={year}
         initial={rows.map((r) => ({ id: r.id, date: r.date, name: r.name, note: r.note ?? null }))}
