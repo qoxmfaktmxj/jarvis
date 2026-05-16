@@ -290,7 +290,12 @@ export function DataGrid<T extends WithId>({
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    <div className="space-y-3">
+    // viewport-fit 부모(PageShellFit + grid 셀) 안에서 DataGrid가 height을
+    // 100% 받도록 flex h-full + min-h-0. table 영역만 flex-1 + overflow-auto로
+    // 내부 스크롤. toolbar/pagination은 shrink-0.
+    // master/detail이 사이드 by 사이드 배치될 때 두 그리드의 데이터 row 시작
+    // y가 정확히 일치하도록 정렬 보장.
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {/*
         Toolbar 영역. readOnly 또는 hideToolbar이면 toolbar 자체 hide.
         readOnly: 통계/조회용 그리드. hideToolbar: modal 임베드 그리드.
@@ -324,7 +329,9 @@ export function DataGrid<T extends WithId>({
         )}
       </div>
 
-      <div className="overflow-auto rounded border border-(--border-default)">
+      {/* table scroll 영역 — 부모의 남은 height을 모두 차지 + 내부 overflow-auto.
+          row 많을 때 내부 스크롤이 발생, 페이지/페이지네이션은 아래에 sticky. */}
+      <div className="min-h-0 flex-1 overflow-auto rounded border border-(--border-default)">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-(--bg-surface) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
             {groupHeaders && groupHeaders.length > 0 ? (
