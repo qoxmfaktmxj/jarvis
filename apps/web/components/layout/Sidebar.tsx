@@ -5,13 +5,13 @@
  *
  * - rail:     아이콘만, 활성은 좌측 3px 인디케이터. 헤더는 토글 버튼만.
  *             그룹 헤더는 숨기고 자식 리프만 평면 렌더.
- * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터.
+ * - expanded: 아이콘 + 라벨, 활성은 brand-primary 8% 틴트 pill + 좌측 3px brand-primary 인디케이터.
  *             헤더는 [Capy + "Jarvis"] 좌측, 토글 버튼 우측 끝.
  *             그룹은 NavGroup으로 collapsible 렌더.
  *
  * 모드 전환은 헤더의 토글 버튼. localStorage 키 `jv.sidebar`.
  * 트리 펼침/접힘은 useNavTreeOpen 훅 (localStorage 키 `jv.sidebar.tree`).
- * 색상은 app.jsx 디자인 토큰(--panel/--line/--ink/--muted/--line2) 사용.
+ * 색상은 디자인 토큰(--bg/--panel/--line/--ink/--muted + active는 --brand-primary*) 사용.
  *
  * 데이터 소스: 상위 RSC(layout.tsx → AppShell)에서 `getVisibleMenuTree(session,
  * "menu")` 결과를 props로 받는다. RBAC 필터링은 서버에서 끝났으므로 여기서는
