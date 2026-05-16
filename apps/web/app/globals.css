@@ -112,6 +112,7 @@
   --color-warning-strong: #b04800;
   --color-danger:         var(--color-red-500);
   --color-danger-subtle:  var(--color-red-50);
+  /* Info status는 semantic 고정 — 5테마 picker에 따라가지 않음 (Done/Warn처럼 의미). */
   --color-info:           var(--color-notion-blue);
   --color-info-subtle:    var(--color-notion-blue-bg);
 
@@ -122,19 +123,19 @@
   --color-card-foreground:      var(--color-notion-black);
   --color-popover:              #ffffff;
   --color-popover-foreground:   var(--color-notion-black);
-  --color-primary:              var(--color-notion-blue);
+  --color-primary:              var(--brand-primary);
   --color-primary-foreground:   #ffffff;
   --color-secondary:            var(--color-warm-50);
   --color-secondary-foreground: var(--color-notion-black);
   --color-muted:                var(--color-warm-50);
   --color-muted-foreground:     var(--color-warm-500);
-  --color-accent:               var(--color-notion-blue-bg);    /* lime 제거, Notion Blue tint */
-  --color-accent-foreground:    var(--color-notion-blue-text);
+  --color-accent:               var(--brand-primary-bg);
+  --color-accent-foreground:    var(--brand-primary-text);
   --color-destructive:          var(--color-red-500);
   --color-destructive-foreground: #ffffff;
   --color-border:               var(--color-whisper);
   --color-input:                var(--color-whisper);
-  --color-ring:                 var(--color-notion-blue-text);
+  --color-ring:                 var(--brand-primary);
 
   /* Role aliases (primitive에서 직접 참조) */
   /* 2026-05-16: Q5=B 적용 — 페이지 warm-50, 카드/chrome 순백 swap.
@@ -147,7 +148,11 @@
   --fg-muted:                   var(--color-warm-300);
 
   /* brand-primary 단일 SoT. hover/bg/text는 color-mix로 자동 파생.
-   * data-theme-color="..." 5블록은 --brand-primary 한 줄만 override한다. */
+   * data-theme-color="..." 5블록은 --brand-primary 한 줄만 override한다.
+   *
+   * 라이트 비율: hover 80/20 black (press 시각 강조), bg 8/92 white (whisper tint),
+   *              text = primary 그대로 (링크 / 좌측 indicator 색).
+   * 다크 비율은 dim 처리를 위해 별도 (70/30 white) — 다크 블록 참조. */
   --brand-primary:              var(--color-notion-blue);
   --brand-primary-hover:        color-mix(in oklab, var(--brand-primary) 80%, black 20%);
   --brand-primary-bg:           color-mix(in oklab, var(--brand-primary)  8%, white 92%);
@@ -264,9 +269,9 @@
     --ink2:        var(--color-warm-700);
     --muted:       var(--color-warm-500);
     --faint:       var(--color-warm-300);
-    --accent:      var(--color-notion-blue);
-    --accent-ink:  var(--color-notion-blue-text);
-    --accent-tint: var(--color-notion-blue-bg);
+    --accent:      var(--brand-primary);
+    --accent-ink:  var(--brand-primary-text);
+    --accent-tint: var(--brand-primary-bg);
     --mint:        var(--color-teal);
     --mint-tint:   var(--color-teal-50);
     --amber:       var(--color-orange);
@@ -337,19 +342,19 @@
   --color-card-foreground:      rgba(255,255,255,0.95);
   --color-popover:              #242322;
   --color-popover-foreground:   rgba(255,255,255,0.95);
-  --color-primary:              #529cca;
+  --color-primary:              var(--brand-primary);
   --color-primary-foreground:   #ffffff;
   --color-secondary:            #242322;
   --color-secondary-foreground: rgba(255,255,255,0.95);
   --color-muted:                #242322;
   --color-muted-foreground:     #a8a4a0;
-  --color-accent:               rgba(82,156,202,0.12);
-  --color-accent-foreground:    #74b3d8;
+  --color-accent:               var(--brand-primary-bg);
+  --color-accent-foreground:    var(--brand-primary-text);
   --color-destructive:          #ff6b6b;
   --color-destructive-foreground: #ffffff;
   --color-border:               rgba(255,255,255,0.094);
   --color-input:                rgba(255,255,255,0.094);
-  --color-ring:                 #74b3d8;
+  --color-ring:                 var(--brand-primary);
 
   --bg-page:                    #191918;
   --bg-surface:                 #242322;
@@ -429,7 +434,7 @@
 :root[data-theme="dark"][data-theme-color="indigo"]   { --brand-primary: #5e6ad2; }
 :root[data-theme="dark"][data-theme-color="teal"]     { --brand-primary: #2a9d99; }
 :root[data-theme="dark"][data-theme-color="forest"]   { --brand-primary: #0f6e3a; }
-:root[data-theme="dark"][data-theme-color="graphite"] { --brand-primary: #f5f5f5; }
+:root[data-theme="dark"][data-theme-color="graphite"] { --brand-primary: #f5f5f5; }  /* 다크 bg(#191918)와 충돌 방지로 반전 */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
