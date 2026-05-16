@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { z } from "zod";
 import { asc, eq } from "drizzle-orm";
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_CREATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_ADMIN);
   if (auth.response) {
     return auth.response;
   }

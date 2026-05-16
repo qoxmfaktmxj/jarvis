@@ -19,8 +19,9 @@ export const TEMP_DEV_ACCOUNTS = [
     email: "alice@jarvis.dev",
   },
   {
+    // 2026-05-16 RBAC simplification: VIEWER → MEMBER (DEVELOPER/HR도 MEMBER로 통합).
     label: "Bob Lee",
-    role: "VIEWER",
+    role: "MEMBER",
     username: "bob",
     password: "bob123!",
     email: "bob@jarvis.dev",

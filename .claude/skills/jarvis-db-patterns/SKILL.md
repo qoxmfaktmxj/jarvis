@@ -1,6 +1,6 @@
 ---
 name: jarvis-db-patterns
-description: Jarvis(엔터프라이즈 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(47 권한, 5 역할)·Zod validation·트랜잭션 패턴 레퍼런스 + 경계면 교차 비교 체크리스트(shape/권한/nullable/마이그레이션/i18n). Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한 가드 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. superpowers:writing-plans가 계획을 작성하거나 superpowers:subagent-driven-development의 spec-reviewer가 경계면 검증을 수행할 때도 이 스킬의 섹션을 컨텍스트로 주입한다. "스키마 추가", "컬럼", "권한", "마이그레이션", "Zod", "server action" 표현에서도 트리거된다.
+description: Jarvis(엔터프라이즈 업무 시스템 + LLM 컴파일 위키)의 Drizzle 스키마·마이그레이션·RBAC(23 권한, 4 역할 — 관리자/매니저/일반/연말정산)·Zod validation·트랜잭션 패턴 레퍼런스 + 경계면 교차 비교 체크리스트(shape/권한/nullable/마이그레이션/i18n) + owner check 패턴(knowledge/schedule). Drizzle 테이블 추가·수정, 마이그레이션 생성, 권한 가드 적용, server action 작성, Ask AI 세션 모델, Wiki projection 무결성, Case 독립 벡터 공간 등 DB와 닿는 모든 작업에서 반드시 이 스킬을 Read하라. superpowers:writing-plans가 계획을 작성하거나 superpowers:subagent-driven-development의 spec-reviewer가 경계면 검증을 수행할 때도 이 스킬의 섹션을 컨텍스트로 주입한다. "스키마 추가", "컬럼", "권한", "마이그레이션", "Zod", "server action" 표현에서도 트리거된다.
 ---
 
 # Jarvis DB · RBAC · Validation Patterns
@@ -83,39 +83,65 @@ export const pinPageOutput = z.object({
 - `.nullable()`(DB nullable) vs `.optional()`(입력 생략 가능) 구별
 - 재사용 sub-schema(`workspaceIdSchema` 등)는 별도 파일
 
-## 2. 권한 상수 전수 (47개 · 5역할)
+## 2. 권한 상수 전수 (23개 · 4역할 — 2026-05-16 simplification)
 
-**모든 권한**은 `packages/shared/constants/permissions.ts`의 `PERMISSIONS` 상수에 정의. 표는 핵심 도메인 일부 — 실제 전체 목록은 코드를 SoT로 본다.
+**모든 권한**은 `packages/shared/constants/permissions.ts`의 `PERMISSIONS` 상수에 정의. 변형 2-tier 패턴: 모든 도메인 `{read, admin}` + `admin:all` 마스터.
 
 ```
-도메인              상수 (합 47)
-----------------  -----------------------------------------------------------------
-Knowledge (6)     KNOWLEDGE_READ, _CREATE, _UPDATE, _DELETE, _REVIEW, _ADMIN
-Project (5)       PROJECT_READ, _CREATE, _UPDATE, _DELETE, _ADMIN
-System (5)        SYSTEM_READ, _CREATE, _UPDATE, _DELETE, SYSTEM_ACCESS_SECRET
-Notice (4)        NOTICE_READ, _CREATE, _UPDATE, _DELETE
-Additional Dev(4) ADDITIONAL_DEV_READ, _CREATE, _UPDATE, _DELETE
-Attendance (3)    ATTENDANCE_READ, _WRITE, _ADMIN
-Graph (2)         GRAPH_READ, GRAPH_BUILD
-User (2)          USER_READ, USER_WRITE
-Admin (2)         AUDIT_READ, ADMIN_ALL
-Files (1)         FILES_WRITE
+도메인           상수 (합 23 — 11도메인 × 2 + admin:all)
+--------------  -------------------------------------------------------
+Knowledge       KNOWLEDGE_READ, KNOWLEDGE_ADMIN
+Project         PROJECT_READ, PROJECT_ADMIN          (additional-dev 흡수)
+Notice          NOTICE_READ, NOTICE_ADMIN
+Maintenance     MAINTENANCE_READ, MAINTENANCE_ADMIN  (service-desk + month-report 흡수)
+Infra           INFRA_READ, INFRA_ADMIN
+Doc-num         DOC_NUM_READ, DOC_NUM_ADMIN
+FAQ             FAQ_READ, FAQ_ADMIN
+Graph           GRAPH_READ, GRAPH_ADMIN
+User            USER_READ, USER_ADMIN                (contractor 흡수)
+Schedule        SCHEDULE_READ, SCHEDULE_ADMIN        (owner check 적용)
+Sales           SALES_READ, SALES_ADMIN
+Admin (master)  ADMIN_ALL                            (audit:read + files:write 흡수)
 ```
 
-### 2.1 ROLE_PERMISSIONS 매핑 (5 역할)
+폐기된 권한(2026-05-16): KNOWLEDGE_CREATE/UPDATE/DELETE/REVIEW, PROJECT_CREATE/UPDATE/DELETE/ACCESS_SECRET, ADDITIONAL_DEV_*, NOTICE_CREATE/UPDATE/DELETE, MAINTENANCE_WRITE/STATS_READ, SERVICE_DESK_IMPORT, MONTH_REPORT_*, INFRA_WRITE, DOC_NUM_WRITE, FAQ_WRITE, GRAPH_BUILD, CONTRACTOR_*, USER_WRITE, SCHEDULE_WRITE, SALES_ALL, FILES_WRITE, AUDIT_READ — 모두 위 23개로 흡수됨.
 
-| 역할 | 권한 개수 | 핵심 특이점 |
-|------|----------|-------------|
-| ADMIN | 34 (전부) | `Object.values(PERMISSIONS)` |
-| MANAGER | 23 | Knowledge read/create/update/review, Project read/create/update, System read/create/update, Attendance read/admin, User read, Notice read/create/update, Graph full, Additional Dev full, Files write |
-| DEVELOPER | 16 | **KNOWLEDGE_REVIEW 의도적 제외** (review 권한은 MANAGER 이상), **SYSTEM_ACCESS_SECRET 명시적 포함**, Additional Dev read/update만 |
-| HR | 일부 | Knowledge read, User read, Attendance admin, Notice full, Graph read |
-| VIEWER | 일부 | read-only 전반 (Knowledge/Project/System/Attendance/Graph/Notice/Additional Dev) |
+### 2.1 ROLE_PERMISSIONS 매핑 (4 역할 + 한글 라벨)
+
+| 역할 (code) | 한글 (`ROLE_LABELS`) | 권한 개수 | 핵심 특이점 |
+|------|------|----------|-------------|
+| ADMIN | 관리자 | 23 (전부) | `Object.values(PERMISSIONS)` — 슈퍼유저 |
+| MANAGER | 매니저 | 21 | 모든 도메인 read+admin · `user:admin`/`admin:all` 제외 |
+| MEMBER | 일반 | 10 | 전 도메인 read + `schedule:admin` (본인 일정 — owner check) |
+| YEAREND | 연말정산 | 0 | jarvis 내부 권한 0개. 외부 yearend 사이트 식별 라벨 (jarvis user 인증만 공유) |
 
 새 권한 추가 시:
-- 네이밍: `{domain}:{action}` (콜론 구분)
-- `ADMIN`은 자동 포함, 다른 역할은 명시 추가
-- 관련 UI·audit·테스트 업데이트
+- 네이밍: `{domain}:{read|admin}` 표준 패턴 따름
+- 새 도메인이면 `{domain}:read` + `{domain}:admin` 한 쌍 추가
+- 기존 도메인에 새 화면 추가는 권한 추가 없이 `menu_permission` 매핑만 추가
+- `ROLE_LABELS`에 한글 라벨 동시 추가
+- `ADMIN`은 자동 포함 (`Object.values(PERMISSIONS)`), 다른 역할은 명시
+- 관련 UI·audit·테스트·`/admin/roles` 페이지 detail grid 자동 반영
+
+### 2.2 owner check 패턴 (RBAC 밖 도메인 로직)
+
+권한 가진 사용자 사이에서 "본인 row만" 격리가 필요한 도메인에 적용. RBAC는 도메인 진입 게이트 역할, owner check는 도메인 함수 안에서.
+
+| 도메인 | owner 컬럼 | 패턴 |
+|------|------|------|
+| knowledge | `created_by` (nullable) **OR** `knowledge_page_owner.userId` row 존재 | PUT/DELETE/review submit에서 검사 |
+| schedule | `user_id` 또는 `created_by` | update/delete 루프에서 검사 |
+
+```ts
+const session = await requirePermission(PERMISSIONS.KNOWLEDGE_ADMIN);
+// ... row 조회 후 ...
+const isSuperAdmin = hasPermission(session, PERMISSIONS.ADMIN_ALL);
+if (!isSuperAdmin && !(await isPageOwner(pageId, session.userId, page.createdBy))) {
+  throw new Error("FORBIDDEN: not owner");
+}
+```
+
+owner check 불필요 도메인(공용 마스터): code, company, holiday, faq, infra, doc-num, menu_item. owner check 불필요 도메인(운영 정책으로 통제): notice, project, additional-dev(project로 흡수), maintenance, sales.
 
 ### 2.2 권한 체크 헬퍼 (`packages/auth/rbac.ts`)
 
@@ -439,6 +465,6 @@ Wiki 도메인이 포함된 PR에서는 아래 표도 추가:
 - `packages/db/schema/index.ts` — 모든 도메인 export 진입점
 - `packages/db/seed/` — 시드 데이터 (gitignored, 사내 zip 채널)
 - `packages/shared/validation/` — 도메인별 Zod 스키마
-- `packages/shared/constants/permissions.ts` — 47 권한 + 5 역할 매핑
+- `packages/shared/constants/permissions.ts` — 23 권한 + 4 역할 매핑 + `ROLE_LABELS` 한글 표시 (2026-05-16 simplification)
 - `packages/auth/rbac.ts` — 권한 헬퍼 (`hasPermission`, `isAdmin`). 2026-05-12 이후 sensitivity 헬퍼는 모두 제거됨
 - `packages/auth/session.ts` — `requireSession`, `requirePermission`, `getSession`

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { z } from "zod";
 import {
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function PUT(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_ADMIN);
   if (auth.response) {
     return auth.response;
   }
@@ -79,7 +79,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_DELETE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_ADMIN);
   if (auth.response) {
     return auth.response;
   }

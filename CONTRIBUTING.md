@@ -83,7 +83,7 @@ pnpm dev
 - **진입점 스킬:** [`jarvis-feature`](.claude/skills/jarvis-feature/SKILL.md) — superpowers 워크플로우에 Jarvis 도메인 컨텍스트를 주입하는 얇은 오케스트레이터
 - **도메인 스킬 4개 (방법론 각 단계에 컨텍스트로 주입):**
   - [`jarvis-architecture`](.claude/skills/jarvis-architecture/SKILL.md) — 모노레포 구조 · 영향도 체크리스트(17계층) · 파일 변경 순서(20단계) · 검증 게이트 명령
-  - [`jarvis-db-patterns`](.claude/skills/jarvis-db-patterns/SKILL.md) — 54 스키마 · 47 권한 · 5 역할 · server action 두 패턴 · 경계면 교차 비교 체크리스트
+  - [`jarvis-db-patterns`](.claude/skills/jarvis-db-patterns/SKILL.md) — 54 스키마 · 23 권한 · 4 역할 · server action 두 패턴 · 경계면 교차 비교 체크리스트
   - [`jarvis-i18n`](.claude/skills/jarvis-i18n/SKILL.md) — ko.json · 보간 변수 · 경계면 검증
   - [`jarvis-wiki-feature`](.claude/skills/jarvis-wiki-feature/SKILL.md) — Karpathy 4원칙 · ingest 4단계 · wiki-fs/wiki-agent 경계
 - **방법론 (위임 대상):** `superpowers:brainstorming` · `writing-plans` · `subagent-driven-development` · `executing-plans` · `test-driven-development` · `verification-before-completion` · `requesting-code-review` · `receiving-code-review` · `systematic-debugging` · `dispatching-parallel-agents` · `using-git-worktrees` · `finishing-a-development-branch`

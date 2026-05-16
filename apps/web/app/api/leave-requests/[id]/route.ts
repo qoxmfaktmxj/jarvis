@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { canAccessContractorData } from "@jarvis/auth/rbac";
 import { db } from "@jarvis/db/client";
@@ -19,7 +19,7 @@ type RouteContext = {
 };
 
 export async function PATCH(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_READ);
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
@@ -65,7 +65,7 @@ export async function PATCH(request: NextRequest, ctx: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, ctx: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.CONTRACTOR_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.USER_READ);
   if (auth.response) return auth.response;
 
   const { id } = await ctx.params;
@@ -89,7 +89,7 @@ export async function DELETE(request: NextRequest, ctx: RouteContext) {
   const url = request.nextUrl;
   const hard = url.searchParams.get("hard") === "1";
 
-  if (hard && auth.session.permissions.includes(PERMISSIONS.CONTRACTOR_ADMIN)) {
+  if (hard && auth.session.permissions.includes(PERMISSIONS.USER_ADMIN)) {
     await deleteLeaveRequest({ workspaceId: auth.session.workspaceId, id });
   } else {
     await cancelLeaveRequest({ workspaceId: auth.session.workspaceId, id });

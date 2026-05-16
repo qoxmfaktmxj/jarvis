@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
@@ -31,7 +31,7 @@ async function loadCodeMap(workspaceId: string, groupCode: string) {
 }
 
 export default async function SalesDashboardPage() {
-  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  const session = await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const t = await getTranslations("Sales.Charts.Dashboard");
   const tDash = await getTranslations("Sales.Dashboard");

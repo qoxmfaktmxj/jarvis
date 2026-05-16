@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 /**
  * apps/web/app/(app)/infra/actions.ts
  *
@@ -123,7 +123,7 @@ export async function listInfraSystems(
 export async function saveInfraSystems(
   rawInput: z.input<typeof saveInfraSystemsInput>,
 ): Promise<SaveInfraSystemsOutput> {
-  const ctx = await resolveInfraContext(PERMISSIONS.INFRA_WRITE);
+  const ctx = await resolveInfraContext(PERMISSIONS.INFRA_ADMIN);
   if (!ctx.ok) {
     return saveInfraSystemsOutput.parse({
       ok: false,
@@ -324,7 +324,7 @@ export async function saveInfraSystems(
 export async function linkRunbook(
   rawInput: z.input<typeof linkRunbookInput>,
 ): Promise<LinkRunbookOutput> {
-  const ctx = await resolveInfraContext(PERMISSIONS.INFRA_WRITE);
+  const ctx = await resolveInfraContext(PERMISSIONS.INFRA_ADMIN);
   if (!ctx.ok) {
     return linkRunbookOutput.parse({ ok: false, wikiPageId: null });
   }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@jarvis/db/client';
 import { knowledgePage, knowledgePageVersion } from '@jarvis/db/schema/knowledge';
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/knowledge — create page + first version in a single transaction
 export async function POST(request: NextRequest) {
-  const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_CREATE);
+  const auth = await requireApiSession(request, PERMISSIONS.KNOWLEDGE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 

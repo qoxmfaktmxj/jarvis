@@ -1,4 +1,4 @@
-import { cookies, headers } from "next/headers";
+﻿import { cookies, headers } from "next/headers";
 import { hasPermission } from "@jarvis/auth";
 import { getSession } from "@jarvis/auth/session";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -54,13 +54,13 @@ export function missingMutationPermission(
   input: { creates: unknown[]; updates: unknown[]; deletes: unknown[] },
   has: (permission: string) => boolean
 ): string | null {
-  if (input.creates.length > 0 && !has(PERMISSIONS.PROJECT_CREATE)) {
+  if (input.creates.length > 0 && !has(PERMISSIONS.PROJECT_ADMIN)) {
     return "Forbidden: project:create required";
   }
-  if (input.updates.length > 0 && !has(PERMISSIONS.PROJECT_UPDATE)) {
+  if (input.updates.length > 0 && !has(PERMISSIONS.PROJECT_ADMIN)) {
     return "Forbidden: project:update required";
   }
-  if (input.deletes.length > 0 && !has(PERMISSIONS.PROJECT_DELETE)) {
+  if (input.deletes.length > 0 && !has(PERMISSIONS.PROJECT_ADMIN)) {
     return "Forbidden: project:delete required";
   }
   void ctx;

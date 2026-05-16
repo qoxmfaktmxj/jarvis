@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 import { z } from "zod";
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
@@ -30,7 +30,7 @@ export async function searchCompanies(
   if (!session) throw new Error("Unauthorized");
 
   const allowedPerms = [
-    PERMISSIONS.SALES_ALL,
+    PERMISSIONS.SALES_ADMIN,
     PERMISSIONS.MAINTENANCE_READ,
     PERMISSIONS.ADMIN_ALL,
   ];

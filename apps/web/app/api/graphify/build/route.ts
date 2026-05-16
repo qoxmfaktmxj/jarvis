@@ -6,6 +6,7 @@ import { requireApiSession } from '@/lib/server/api-auth';
 import PgBoss from 'pg-boss';
 import { db } from '@jarvis/db/client';
 import { rawSource } from '@jarvis/db/schema/file';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { eq } from 'drizzle-orm';
 
 const buildSchema = z.object({
@@ -35,7 +36,7 @@ async function getBoss(): Promise<PgBoss> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, 'graph:build');
+  const auth = await requireApiSession(req, PERMISSIONS.GRAPH_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 

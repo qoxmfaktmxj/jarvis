@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { cookies, headers } from "next/headers";
 import { getSession } from "@jarvis/auth/session";
@@ -72,7 +72,7 @@ export async function listFaqAction(rawInput: unknown) {
 }
 
 export async function saveFaqAction(rawInput: unknown): Promise<SaveFaqOutput> {
-  const ctx = await resolveContext(PERMISSIONS.FAQ_WRITE);
+  const ctx = await resolveContext(PERMISSIONS.FAQ_ADMIN);
   if (!ctx.ok) {
     return { ok: false, inserted: 0, updated: 0, deleted: 0, error: ctx.error };
   }

@@ -92,7 +92,7 @@ beforeEach(() => {
 });
 
 describe("P1 #5 — review-queue actions RBAC", () => {
-  describe("권한 없는 사용자 (KNOWLEDGE_REVIEW / ADMIN_ALL 둘 다 없음)", () => {
+  describe("권한 없는 사용자 (KNOWLEDGE_ADMIN / ADMIN_ALL 둘 다 없음)", () => {
     beforeEach(() => {
       getSessionMock.mockResolvedValue(sessionWith(["knowledge:read"]));
     });
@@ -119,9 +119,9 @@ describe("P1 #5 — review-queue actions RBAC", () => {
     });
   });
 
-  describe("KNOWLEDGE_REVIEW 권한 보유", () => {
+  describe("KNOWLEDGE_ADMIN 권한 보유", () => {
     beforeEach(() => {
-      getSessionMock.mockResolvedValue(sessionWith(["knowledge:review"]));
+      getSessionMock.mockResolvedValue(sessionWith(["knowledge:admin"]));
     });
 
     it("approve 허용", async () => {

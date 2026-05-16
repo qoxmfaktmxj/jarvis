@@ -1,4 +1,4 @@
-import { cookies, headers } from "next/headers";
+﻿import { cookies, headers } from "next/headers";
 import { hasPermission, isAdmin } from "@jarvis/auth";
 import { getSession } from "@jarvis/auth/session";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -26,7 +26,7 @@ export async function resolveSalesContext():
   if (!sessionId) return { ok: false, error: "Unauthorized" };
   const session = await getSession(sessionId);
   if (!session) return { ok: false, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) return { ok: false, error: "Forbidden" };
+  if (!hasPermission(session, PERMISSIONS.SALES_ADMIN)) return { ok: false, error: "Forbidden" };
   return {
     ok: true,
     userId: session.userId,

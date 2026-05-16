@@ -286,6 +286,50 @@
         "assignedN": "미할당"
       }
     },
+    "Roles": {
+      "title": "역할",
+      "description": "워크스페이스 역할과 권한 매핑을 관리합니다.",
+      "duplicates": "중복된 역할 코드가 있습니다: {codes}",
+      "saveError": "저장 중 오류가 발생했습니다.",
+      "noDataToExport": "내려받을 데이터가 없습니다.",
+      "columns": {
+        "code": "코드",
+        "name": "이름",
+        "description": "설명",
+        "isSystem": "시스템",
+        "permCount": "권한 수"
+      },
+      "filter": {
+        "keyword": "코드/이름",
+        "keywordPlaceholder": "코드 또는 이름 입력"
+      },
+      "masterSection": {
+        "title": "역할 목록",
+        "empty": "역할이 없습니다."
+      },
+      "detailSection": {
+        "title": "선택된 역할의 권한 매핑",
+        "empty": "역할을 선택하세요.",
+        "noPermissions": "권한이 없습니다.",
+        "filter": {
+          "code": "권한 코드"
+        },
+        "columns": {
+          "permissionCode": "권한 코드",
+          "permissionDescription": "설명",
+          "assigned": "할당됨"
+        },
+        "assignedY": "할당",
+        "assignedN": "미할당"
+      },
+      "actions": {
+        "add": "역할 추가",
+        "save": "저장",
+        "revert": "되돌리기",
+        "export": "다운로드"
+      },
+      "total": "전체 {count}건"
+    },
     "Organizations": {
       "title": "조직",
       "addRoot": "+ 최상위 조직 추가",

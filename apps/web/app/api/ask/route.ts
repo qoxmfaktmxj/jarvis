@@ -1,4 +1,4 @@
-// apps/web/app/api/ask/route.ts
+﻿// apps/web/app/api/ask/route.ts
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { eq, sql } from 'drizzle-orm';
@@ -43,11 +43,11 @@ function deriveSensitivityScope(workspaceId: string, permissions: string[]): str
   let level: string;
   if (permissions.includes(PERMISSIONS.ADMIN_ALL)) {
     level = 'secret';
-  } else if (permissions.includes(PERMISSIONS.KNOWLEDGE_REVIEW)) {
+  } else if (permissions.includes(PERMISSIONS.KNOWLEDGE_ADMIN)) {
     level = 'restricted';
   } else if (
     permissions.includes(PERMISSIONS.KNOWLEDGE_READ) ||
-    permissions.includes(PERMISSIONS.KNOWLEDGE_UPDATE)
+    permissions.includes(PERMISSIONS.KNOWLEDGE_ADMIN)
   ) {
     level = 'internal';
   } else {

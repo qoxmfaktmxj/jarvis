@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { serviceDeskIncident } from "@jarvis/db/schema";
@@ -14,7 +14,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ companyCd: string }> },
 ) {
-  const session = await requirePermission(PERMISSIONS.MONTH_REPORT_READ);
+  const session = await requirePermission(PERMISSIONS.MAINTENANCE_READ);
   const { companyCd } = await params;
   const ym = req.nextUrl.searchParams.get("ym");
   if (!ym || !/^\d{6}$/.test(ym)) {

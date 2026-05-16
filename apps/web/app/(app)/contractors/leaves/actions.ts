@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
@@ -27,10 +27,10 @@ export async function saveLeaveBatch(
   validateBatchBusinessRules(parsed);
 
   // requirePageSession with permission check: redirects if unauthorized
-  const session = await requirePageSession(PERMISSIONS.CONTRACTOR_ADMIN);
+  const session = await requirePageSession(PERMISSIONS.USER_ADMIN);
 
   // Additional runtime guard (requirePageSession may redirect instead of throw)
-  if (!hasPermission(session, PERMISSIONS.CONTRACTOR_ADMIN)) {
+  if (!hasPermission(session, PERMISSIONS.USER_ADMIN)) {
     throw new Error("forbidden");
   }
 

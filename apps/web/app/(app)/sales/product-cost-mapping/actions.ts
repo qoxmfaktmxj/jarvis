@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 /**
  * apps/web/app/(app)/sales/product-cost-mapping/actions.ts
  *
@@ -49,7 +49,7 @@ async function resolveSalesContext() {
   if (!sessionId) return { ok: false as const, error: "Unauthorized" };
   const session = await getSession(sessionId);
   if (!session) return { ok: false as const, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) {
+  if (!hasPermission(session, PERMISSIONS.SALES_ADMIN)) {
     return { ok: false as const, error: "Forbidden" };
   }
   return {

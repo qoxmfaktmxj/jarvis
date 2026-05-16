@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectForm } from "@/components/project/ProjectForm";
 import { PageShell } from "@/components/patterns/PageShell";
@@ -18,7 +18,7 @@ export default async function EditProjectPage({
 }: {
   params: Promise<{ projectId: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.PROJECT_UPDATE, "/projects");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_ADMIN, "/projects");
   const { projectId } = await params;
   const project = await getProject({
     workspaceId: session.workspaceId,

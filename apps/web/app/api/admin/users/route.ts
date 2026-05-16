@@ -48,7 +48,7 @@ const createUserSchema = z.object({
   position:     z.string().max(100).optional(),
   jobTitle:     z.string().max(50).optional(),
   isOutsourced: z.boolean().optional().default(false),
-  roleCode:     z.enum(['ADMIN', 'MANAGER', 'DEVELOPER', 'HR', 'VIEWER']).default('VIEWER'),
+  roleCode:     z.enum(['ADMIN', 'MANAGER', 'MEMBER', 'YEAREND']).default('MEMBER'),
 });
 
 const updateUserSchema = z.object({
@@ -60,7 +60,7 @@ const updateUserSchema = z.object({
   position:     z.string().max(100).nullable().optional(),
   jobTitle:     z.string().max(50).nullable().optional(),
   isOutsourced: z.boolean().optional(),
-  roleCodes:    z.array(z.enum(['ADMIN','MANAGER','DEVELOPER','HR','VIEWER'])).optional(),
+  roleCodes:    z.array(z.enum(['ADMIN','MANAGER','MEMBER','YEAREND'])).optional(),
 });
 
 async function validateCodeRef(

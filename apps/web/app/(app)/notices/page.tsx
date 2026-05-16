@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Plus } from 'lucide-react';
 import { requirePageSession } from '@/lib/server/page-auth';
@@ -28,7 +28,7 @@ export default async function NoticesPage() {
     actorRole: pickActorRole(session.roles),
   });
 
-  const canCreate = session.permissions.includes(PERMISSIONS.NOTICE_CREATE);
+  const canCreate = session.permissions.includes(PERMISSIONS.NOTICE_ADMIN);
 
   return (
     <PageShell

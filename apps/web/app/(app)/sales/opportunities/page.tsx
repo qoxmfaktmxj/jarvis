@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+﻿import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -24,7 +24,7 @@ export default async function SalesOpportunitiesPage({
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.SALES_ALL, "/dashboard?error=forbidden");
+  const session = await requirePageSession(PERMISSIONS.SALES_ADMIN, "/dashboard?error=forbidden");
 
   const sp = await searchParams;
   const page = Math.max(1, Number(sp.page) || 1);

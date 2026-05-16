@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 import { cookies, headers } from "next/headers";
 import { and, count, eq, ilike, inArray } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
@@ -26,7 +26,7 @@ async function resolveSalesContext() {
   if (!sessionId) return { ok: false as const, error: "Unauthorized" };
   const session = await getSession(sessionId);
   if (!session) return { ok: false as const, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) return { ok: false as const, error: "Forbidden" };
+  if (!hasPermission(session, PERMISSIONS.SALES_ADMIN)) return { ok: false as const, error: "Forbidden" };
   return { ok: true as const, userId: session.userId, workspaceId: session.workspaceId };
 }
 

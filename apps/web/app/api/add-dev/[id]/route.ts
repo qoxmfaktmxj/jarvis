@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { db } from "@jarvis/db/client";
 import { auditLog } from "@jarvis/db/schema";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
@@ -17,7 +17,7 @@ type RouteContext = {
 };
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.ADDITIONAL_DEV_READ);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_READ);
   if (auth.response) {
     return auth.response;
   }
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.ADDITIONAL_DEV_UPDATE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_ADMIN);
   if (auth.response) {
     return auth.response;
   }
@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 }
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const auth = await requireApiSession(request, PERMISSIONS.ADDITIONAL_DEV_DELETE);
+  const auth = await requireApiSession(request, PERMISSIONS.PROJECT_ADMIN);
   if (auth.response) {
     return auth.response;
   }

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { AddDevTabs } from "@/components/add-dev/AddDevTabs";
 import { PageHeader } from "@/components/patterns/PageHeader";
@@ -14,7 +14,7 @@ export default async function AddDevDetailLayout({
   children: React.ReactNode;
   params: Promise<{ id: string }>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_READ, "/add-dev");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/add-dev");
   const { id } = await params;
 
   const row = await getAdditionalDev({

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { Permission } from "@jarvis/shared/constants/permissions";
 
@@ -30,7 +30,7 @@ import type { Permission } from "@jarvis/shared/constants/permissions";
  * // ANY-match: render if user has at least one of the listed permissions.
  * <Authorized
  *   permissions={session.permissions}
- *   perm={[PERMISSIONS.NOTICE_CREATE, PERMISSIONS.ADMIN_ALL]}
+ *   perm={[PERMISSIONS.NOTICE_ADMIN, PERMISSIONS.ADMIN_ALL]}
  * >
  *   <NewNoticeButton />
  * </Authorized>

@@ -1,4 +1,4 @@
-import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
+﻿import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { RevenueHeatmap } from "@/components/add-dev/RevenueHeatmap";
 import { SectionHeader } from "@/components/patterns/SectionHeader";
 import { listRevenues } from "@/lib/queries/additional-dev";
@@ -15,7 +15,7 @@ export default async function AddDevRevenuePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await requirePageSession(PERMISSIONS.ADDITIONAL_DEV_READ, "/add-dev");
+  const session = await requirePageSession(PERMISSIONS.PROJECT_READ, "/add-dev");
   const { id } = await params;
   const sp = await searchParams;
 

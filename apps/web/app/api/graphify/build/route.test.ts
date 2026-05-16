@@ -45,7 +45,7 @@ describe("POST /api/graphify/build", () => {
     vi.clearAllMocks();
   });
 
-  it("returns 403 for a caller with graph:read but no graph:build (VIEWER)", async () => {
+  it("returns 403 for a caller with graph:read but no graph:admin (MEMBER)", async () => {
     vi.mocked(requireApiSession).mockResolvedValue({
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
     } as ReturnType<typeof requireApiSession> extends Promise<infer T>

@@ -1,12 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@jarvis/db/client';
-import { knowledgePage } from '@jarvis/db/schema/knowledge';
+import { knowledgePage, knowledgePageOwner } from '@jarvis/db/schema/knowledge';
 import { reviewRequest } from '@jarvis/db/schema/review';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { and, eq, desc } from 'drizzle-orm';
+
+/**
+ * Owner check: 페이지 작성자(`created_by`) 또는 `knowledge_page_owner` 등록자.
+ * `created_by`가 nullable(legacy import 페이지)이라 owner 테이블도 함께 검사
+ * (codex P2 finding 2026-05-16).
+ */
+async function isPageOwner(pageId: string, userId: string, createdBy: string | null): Promise<boolean> {
+  if (createdBy === userId) return true;
+  const rows = await db
+    .select({ userId: knowledgePageOwner.userId })
+    .from(knowledgePageOwner)
+    .where(and(eq(knowledgePageOwner.pageId, pageId), eq(knowledgePageOwner.userId, userId)))
+    .limit(1);
+  return rows.length > 0;
+}
 
 type Params = { params: Promise<{ pageId: string }> };
 
@@ -47,8 +62,13 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   // ---- submit ----
   if (data.action === 'submit') {
-    if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_UPDATE)) {
+    if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    // owner check: 본인 작성 또는 knowledge_page_owner 등록자만 제출 가능, ADMIN_ALL 보유자는 우회
+    const isSuperAdmin = hasPermission(session, PERMISSIONS.ADMIN_ALL);
+    if (!isSuperAdmin && !(await isPageOwner(pageId, session.userId, page.createdBy))) {
+      return NextResponse.json({ error: 'Forbidden: not owner' }, { status: 403 });
     }
     if (page.publishStatus !== 'draft') {
       return NextResponse.json(
@@ -92,7 +112,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   }
 
   // ---- approve / reject ----
-  if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_REVIEW)) {
+  if (!hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN)) {
     return NextResponse.json({ error: 'Forbidden: KNOWLEDGE_REVIEW permission required' }, { status: 403 });
   }
 

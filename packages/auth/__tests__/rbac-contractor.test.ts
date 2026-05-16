@@ -6,22 +6,22 @@ const adminSession: JarvisSession = {
   userId: "admin-id",
   workspaceId: "ws",
   roles: ["ADMIN"],
-  permissions: ["contractor:read", "contractor:admin"]
+  permissions: ["user:read", "user:admin"]
 } as JarvisSession;
 
-const userSession: JarvisSession = {
+const memberSession: JarvisSession = {
   userId: "user-id",
   workspaceId: "ws",
-  roles: ["DEVELOPER"],
-  permissions: ["contractor:read"]
+  roles: ["MEMBER"],
+  permissions: ["user:read"]
 } as JarvisSession;
 
 describe("canManageContractors", () => {
-  it("returns true for CONTRACTOR_ADMIN", () => {
+  it("returns true for USER_ADMIN", () => {
     expect(canManageContractors(adminSession)).toBe(true);
   });
-  it("returns false for CONTRACTOR_READ only", () => {
-    expect(canManageContractors(userSession)).toBe(false);
+  it("returns false for USER_READ only", () => {
+    expect(canManageContractors(memberSession)).toBe(false);
   });
 });
 
@@ -30,9 +30,9 @@ describe("canAccessContractorData", () => {
     expect(canAccessContractorData(adminSession, "other-user-id")).toBe(true);
   });
   it("allows user to access own data", () => {
-    expect(canAccessContractorData(userSession, "user-id")).toBe(true);
+    expect(canAccessContractorData(memberSession, "user-id")).toBe(true);
   });
   it("rejects user accessing others' data", () => {
-    expect(canAccessContractorData(userSession, "other-user-id")).toBe(false);
+    expect(canAccessContractorData(memberSession, "other-user-id")).toBe(false);
   });
 });

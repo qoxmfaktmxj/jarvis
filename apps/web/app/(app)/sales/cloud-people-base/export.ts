@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { format } from "date-fns";
 import { and, desc, eq, ilike, or } from "drizzle-orm";
@@ -27,7 +27,7 @@ async function resolveSalesContext() {
   if (!sessionId) return { ok: false as const, error: "Unauthorized" };
   const session = await getSession(sessionId);
   if (!session) return { ok: false as const, error: "Unauthorized" };
-  if (!hasPermission(session, PERMISSIONS.SALES_ALL)) return { ok: false as const, error: "Forbidden" };
+  if (!hasPermission(session, PERMISSIONS.SALES_ADMIN)) return { ok: false as const, error: "Forbidden" };
   return { ok: true as const, userId: session.userId, workspaceId: session.workspaceId };
 }
 

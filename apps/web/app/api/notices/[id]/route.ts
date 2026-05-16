@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { requireApiSession } from '@/lib/server/api-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants';
@@ -42,7 +42,7 @@ export async function PATCH(
   req: NextRequest,
   ctx: RouteContext,
 ): Promise<NextResponse> {
-  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_UPDATE);
+  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 
@@ -82,7 +82,7 @@ export async function DELETE(
   req: NextRequest,
   ctx: RouteContext,
 ): Promise<NextResponse> {
-  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_DELETE);
+  const auth = await requireApiSession(req, PERMISSIONS.NOTICE_ADMIN);
   if (auth.response) return auth.response;
   const { session } = auth;
 

@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import {
   Plus,
   ArrowRight,
@@ -55,7 +55,7 @@ const HUB_SECTIONS: readonly HubSection[] = [
 export default async function KnowledgeHomePage() {
   const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_READ, '/dashboard');
 
-  const canCreate = hasPermission(session, PERMISSIONS.KNOWLEDGE_CREATE);
+  const canCreate = hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN);
 
   const sectionData = await Promise.all(
     HUB_SECTIONS.map(async (section, idx) => ({

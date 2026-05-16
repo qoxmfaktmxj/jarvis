@@ -1,4 +1,4 @@
-import { getTranslations } from "next-intl/server";
+﻿import { getTranslations } from "next-intl/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import { codeGroup, codeItem } from "@jarvis/db/schema";
@@ -28,7 +28,7 @@ export default async function MaintenanceAssignmentsPage() {
   );
 
   const canWrite =
-    hasPermission(session, PERMISSIONS.MAINTENANCE_WRITE) ||
+    hasPermission(session, PERMISSIONS.MAINTENANCE_ADMIN) ||
     hasPermission(session, PERMISSIONS.ADMIN_ALL);
   const canAdmin =
     hasPermission(session, PERMISSIONS.MAINTENANCE_ADMIN) ||

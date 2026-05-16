@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { hasPermission } from "@jarvis/auth/rbac";
@@ -25,7 +25,7 @@ export default async function ProjectDeployPage({
     notFound();
   }
 
-  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.PROJECT_ADMIN);
 
   return (
     <Card>

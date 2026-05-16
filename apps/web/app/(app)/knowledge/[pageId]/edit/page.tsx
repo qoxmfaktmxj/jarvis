@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+﻿import { notFound } from 'next/navigation';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePage } from '@/lib/queries/knowledge';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 type Props = { params: Promise<{ pageId: string }> };
 
 export default async function EditKnowledgePage({ params }: Props) {
-  const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_UPDATE, '/knowledge');
+  const session = await requirePageSession(PERMISSIONS.KNOWLEDGE_ADMIN, '/knowledge');
 
   const { pageId } = await params;
   const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);

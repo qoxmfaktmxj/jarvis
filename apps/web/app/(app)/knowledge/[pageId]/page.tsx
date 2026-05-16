@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
@@ -21,7 +21,7 @@ export default async function KnowledgePageView({ params }: Props) {
   const page = await getKnowledgePage(pageId, session.workspaceId, session.permissions ?? []);
   if (!page) notFound();
 
-  const canEdit = hasPermission(session, PERMISSIONS.KNOWLEDGE_UPDATE);
+  const canEdit = hasPermission(session, PERMISSIONS.KNOWLEDGE_ADMIN);
   const mdxContent = page.currentVersion?.mdxContent ?? '';
 
   return (

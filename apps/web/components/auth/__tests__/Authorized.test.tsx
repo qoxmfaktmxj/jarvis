@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+﻿// @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render } from "@testing-library/react";
 import { Authorized } from "../Authorized";
@@ -33,8 +33,8 @@ describe("Authorized", () => {
   it("renders children when ANY of the perms in array matches (ANY-match semantics)", () => {
     const { getByText } = render(
       <Authorized
-        permissions={[PERMISSIONS.NOTICE_CREATE]}
-        perm={[PERMISSIONS.ADMIN_ALL, PERMISSIONS.NOTICE_CREATE]}
+        permissions={[PERMISSIONS.NOTICE_ADMIN]}
+        perm={[PERMISSIONS.ADMIN_ALL, PERMISSIONS.NOTICE_ADMIN]}
       >
         <span>visible</span>
       </Authorized>,
@@ -46,7 +46,7 @@ describe("Authorized", () => {
     const { queryByText } = render(
       <Authorized
         permissions={[PERMISSIONS.NOTICE_READ]}
-        perm={[PERMISSIONS.ADMIN_ALL, PERMISSIONS.KNOWLEDGE_DELETE]}
+        perm={[PERMISSIONS.ADMIN_ALL, PERMISSIONS.KNOWLEDGE_ADMIN]}
       >
         <span>visible</span>
       </Authorized>,

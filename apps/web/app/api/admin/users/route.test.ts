@@ -131,7 +131,7 @@ describe('POST /api/admin/users', () => {
       employeeId: 'E001',
       name: 'Jane Doe',
       email: 'jane@example.com',
-      roleCode: 'VIEWER',
+      roleCode: 'MEMBER',
     });
     const res = await POST(req);
     expect(res.status).toBe(201);
@@ -171,7 +171,7 @@ describe('POST /api/admin/users with new fields', () => {
     const req = makeRequest('POST', 'http://localhost/api/admin/users', {
       employeeId: 'E100',
       name: 'Outsource Kim',
-      roleCode: 'VIEWER',
+      roleCode: 'MEMBER',
       isOutsourced: true,
       position: 'SENIOR',
       jobTitle: 'MEMBER',
@@ -230,7 +230,7 @@ describe('P1 #6 — admin/users response excludes sensitive fields', () => {
       employeeId: 'E001',
       name: 'Jane Doe',
       email: 'jane@example.com',
-      roleCode: 'VIEWER',
+      roleCode: 'MEMBER',
     });
     const res = await POST(req);
     expect(res.status).toBe(201);
@@ -245,7 +245,7 @@ describe('P1 #6 — admin/users response excludes sensitive fields', () => {
       employeeId: 'E001',
       name: 'Jane Doe',
       email: 'jane@example.com',
-      roleCode: 'VIEWER',
+      roleCode: 'MEMBER',
     });
     const res = await POST(req);
     const json = await res.json() as Record<string, unknown>;
