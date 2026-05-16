@@ -112,62 +112,62 @@ export default async function InfraImportPage() {
       actions={
         <Link
           href="/infra"
-          className="inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
+          className="inline-flex shrink-0 items-center rounded-md border border-(--border-default) bg-(--bg-page) px-3 py-1.5 text-sm font-medium text-(--fg-secondary) hover:bg-(--bg-surface)"
         >
           ← 대시보드
         </Link>
       }
     >
 
-      <section className="rounded-lg border border-surface-200 bg-white p-6">
+      <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6 shadow-[var(--shadow-soft)]">
         <h2 className="text-lg font-semibold mb-4">파이프라인 현황</h2>
         <dl className="grid grid-cols-[200px_1fr] gap-x-4 gap-y-3 text-sm">
-          <dt className="text-surface-500">파서 결과 (records.jsonl)</dt>
-          <dd className="text-surface-800">
+          <dt className="text-(--fg-secondary)">파서 결과 (records.jsonl)</dt>
+          <dd className="text-(--fg-primary)">
             {status.recordsExists
               ? `${status.recordCount ?? '?'}건 — 갱신 ${fmtDate(status.recordsUpdatedAt)}`
               : '생성되지 않음'}
           </dd>
 
-          <dt className="text-surface-500">Synth prompt 팩</dt>
-          <dd className="text-surface-800">{status.promptCount}개 배치</dd>
+          <dt className="text-(--fg-secondary)">Synth prompt 팩</dt>
+          <dd className="text-(--fg-primary)">{status.promptCount}개 배치</dd>
 
-          <dt className="text-surface-500">생성된 wiki 페이지</dt>
-          <dd className="text-surface-800">
+          <dt className="text-(--fg-secondary)">생성된 wiki 페이지</dt>
+          <dd className="text-(--fg-primary)">
             {status.generatedPageCount}개 ({status.companyFolderCount}개 회사 폴더)
           </dd>
         </dl>
       </section>
 
       {canRunPipeline && (
-        <section className="rounded-lg border border-surface-200 bg-surface-50 p-6 space-y-4">
+        <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-6 space-y-4 shadow-[var(--shadow-soft)]">
           <h2 className="text-lg font-semibold">재생성 절차 (담당자)</h2>
-          <p className="text-sm text-surface-700">
-            새 SQL 덤프가 있으면 <code className="bg-surface-200 px-1 rounded">companies-source.sql</code>{' '}
+          <p className="text-sm text-(--fg-secondary)">
+            새 SQL 덤프가 있으면 <code className="bg-(--bg-surface) px-1 rounded">companies-source.sql</code>{' '}
             을 repo 루트에 두고 아래 3 단계를 순서대로 실행하세요. 결과는 자동으로{' '}
-            <code className="bg-surface-200 px-1 rounded">wiki/jarvis/auto/infra/</code> 아래에
+            <code className="bg-(--bg-surface) px-1 rounded">wiki/jarvis/auto/infra/</code> 아래에
             저장됩니다.
           </p>
 
           <ol className="space-y-4 text-sm">
             <li>
-              <div className="font-medium text-surface-900">1. 파싱 (Python)</div>
+              <div className="font-medium text-(--fg-primary)">1. 파싱 (Python)</div>
               <pre className="mt-1 rounded bg-surface-900 text-surface-100 p-3 overflow-x-auto font-mono text-xs">
                 py scripts/parse-companies-source.py --input companies-source.sql --output
                 data/infra/records.jsonl
               </pre>
             </li>
             <li>
-              <div className="font-medium text-surface-900">2. 프롬프트 팩 빌드</div>
+              <div className="font-medium text-(--fg-primary)">2. 프롬프트 팩 빌드</div>
               <pre className="mt-1 rounded bg-surface-900 text-surface-100 p-3 overflow-x-auto font-mono text-xs">
                 py scripts/build-infra-prompts.py
               </pre>
             </li>
             <li>
-              <div className="font-medium text-surface-900">
+              <div className="font-medium text-(--fg-primary)">
                 3. Synth 실행 (Claude Code 서브에이전트)
               </div>
-              <p className="mt-1 text-surface-700">
+              <p className="mt-1 text-(--fg-secondary)">
                 Claude Code 세션에서 각 prompt (
                 <code className="bg-surface-200 px-1 rounded">
                   data/infra/synth_prompts/infra_NN.md
@@ -176,8 +176,8 @@ export default async function InfraImportPage() {
               </p>
             </li>
             <li>
-              <div className="font-medium text-surface-900">4. Ingest (worker 자동)</div>
-              <p className="mt-1 text-surface-700">
+              <div className="font-medium text-(--fg-primary)">4. Ingest (worker 자동)</div>
+              <p className="mt-1 text-(--fg-secondary)">
                 wiki-fs watcher 가 변경을 감지하면 worker ingest job 이 자동으로 DB
                 projection 을 갱신합니다. 수 분 내 대시보드에 반영됩니다.
               </p>

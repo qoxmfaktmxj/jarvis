@@ -126,7 +126,7 @@ export function FrontmatterPanel({
 
   return (
     <section
-      className="rounded-lg border border-(--border-default) bg-(--bg-page) p-4 space-y-4"
+      className="rounded-xl border border-(--border-default) bg-(--bg-page) p-4 space-y-4 shadow-[var(--shadow-soft)]"
       data-testid="wiki-frontmatter-panel"
     >
       <div className="space-y-1.5">

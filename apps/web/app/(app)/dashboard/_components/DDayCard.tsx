@@ -15,7 +15,7 @@ import type { NextHoliday } from "@/lib/queries/dashboard-dday";
 export function DDayCard({ next }: { next: NextHoliday | null }) {
   if (!next) {
     return (
-      <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+      <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
         <span className="text-[13px] font-medium text-(--fg-secondary)">
           다음 공휴일
         </span>
@@ -33,7 +33,7 @@ export function DDayCard({ next }: { next: NextHoliday | null }) {
   const dateMeta = formatDateLabelKst(next.date);
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
       <span className="text-[13px] font-medium text-(--fg-secondary)">
         다음 공휴일
       </span>

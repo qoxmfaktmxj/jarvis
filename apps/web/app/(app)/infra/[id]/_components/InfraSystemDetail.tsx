@@ -42,15 +42,15 @@ export async function InfraSystemDetail({ row }: Props) {
   ];
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-6">
+    <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6 shadow-[var(--shadow-soft)]">
       <header className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-(--fg-primary)">
           {t("Detail.asset")}
         </h2>
         {row.companyId ? (
           <Link
             href={`/admin/companies/${row.companyId}`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-(--brand-primary-text) hover:underline"
           >
             {row.companyName ?? row.companyId}
           </Link>
@@ -59,10 +59,10 @@ export async function InfraSystemDetail({ row }: Props) {
       <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {fields.map((f) => (
           <div key={f.label}>
-            <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <dt className="text-xs font-medium uppercase tracking-wide text-(--fg-secondary)">
               {f.label}
             </dt>
-            <dd className="mt-1 text-sm text-slate-900">
+            <dd className="mt-1 text-sm text-(--fg-primary)">
               {f.value !== null && f.value !== undefined && f.value !== ""
                 ? String(f.value)
                 : "—"}

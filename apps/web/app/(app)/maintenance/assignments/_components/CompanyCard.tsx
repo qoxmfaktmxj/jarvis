@@ -11,7 +11,7 @@ export function CompanyCard({ assignment }: Props) {
   const t = useTranslations("Maintenance.Assignments.columns");
 
   return (
-    <article className="flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--bg-page) p-4 transition-shadow hover:shadow-(--shadow-flat)">
+    <article className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
       <header className="flex items-start justify-between gap-2">
         <h3 className="text-[14px] font-semibold text-(--fg-primary)">
           {assignment.companyName ?? "—"}

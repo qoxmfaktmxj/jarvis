@@ -3,7 +3,8 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * Card — shadcn/new-york base adapted for ISU: flat (NO shadow-sm), uses bg-card.
+ * Card — shadcn/new-york base adapted for Jarvis v5: bg-page + border-default + rounded-xl (8px)
+ *        + shadow-soft (UI kit elevation 기준, ui_kits/web/styles.css .card 정합).
  */
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -12,7 +13,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg border border-(--border-default) bg-(--bg-page) text-(--fg-primary) shadow-[var(--shadow-flat)]",
+      "rounded-xl border border-(--border-default) bg-(--bg-page) text-(--fg-primary) shadow-[var(--shadow-soft)]",
       className
     )}
     {...props}

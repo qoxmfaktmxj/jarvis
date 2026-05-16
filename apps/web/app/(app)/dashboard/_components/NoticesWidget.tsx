@@ -24,7 +24,7 @@ export async function NoticesWidget({
 }) {
   const t = await getTranslations("Dashboard.notices");
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
       <header className="mb-3 flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h2>
         <Link href="/notices" className="text-xs text-(--fg-secondary) hover:text-(--brand-primary)">

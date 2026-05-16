@@ -120,24 +120,24 @@ export function MonthGridPopup({ value, onSelect, onClose, min, max }: Props) {
   const goNextYear = () => setYear((y) => y + 1);
 
   return (
-    <div className="z-50 w-[240px] rounded-lg border border-warm-200 bg-white p-3 shadow-lg">
+    <div className="z-50 w-[240px] rounded-lg border border-(--border-default) bg-(--bg-surface) p-3 shadow-[var(--shadow-deep)]">
       <div className="mb-2 flex items-center justify-between">
         <button
           type="button"
           onClick={goPrevYear}
           aria-label={t("prevYear")}
-          className="rounded p-1 hover:bg-warm-100"
+          className="rounded p-1 text-(--fg-primary) hover:bg-(--bg-page)"
         >
           <ChevronLeft size={16} />
         </button>
-        <div className="text-sm font-semibold text-warm-900">
+        <div className="text-sm font-semibold text-(--fg-primary)">
           {t("yearLabel", { year })}
         </div>
         <button
           type="button"
           onClick={goNextYear}
           aria-label={t("nextYear")}
-          className="rounded p-1 hover:bg-warm-100"
+          className="rounded p-1 text-(--fg-primary) hover:bg-(--bg-page)"
         >
           <ChevronRight size={16} />
         </button>
@@ -166,11 +166,11 @@ export function MonthGridPopup({ value, onSelect, onClose, min, max }: Props) {
               onClick={() => onSelect(iso)}
               className={cn(
                 "h-9 rounded text-[12px] transition-colors duration-150",
-                "text-warm-900",
+                "text-(--fg-primary)",
                 isFocused && !isSelected && "ring-2 ring-notion-blue/40 ring-inset",
                 isSelected && "bg-notion-blue text-white",
                 isCurrent && !isSelected && "border border-notion-blue/60",
-                inRange && !isSelected && "hover:bg-warm-100",
+                inRange && !isSelected && "hover:bg-(--bg-page)",
                 !inRange && "cursor-not-allowed opacity-40",
               )}
             >

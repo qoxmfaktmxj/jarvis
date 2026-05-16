@@ -38,7 +38,7 @@ export function AddDevTable({ data }: { data: AddDevRow[] }) {
     );
   }
   return (
-    <div className="overflow-x-auto rounded-md border border-surface-200 bg-white">
+    <div className="overflow-x-auto rounded-xl border border-(--border-default) bg-(--bg-page) shadow-[var(--shadow-soft)]">
       <table className="w-full text-sm">
         <thead className="bg-surface-50 text-[13px] text-surface-600">
           <tr>

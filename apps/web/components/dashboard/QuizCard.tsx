@@ -37,7 +37,7 @@ export async function QuizCard({ workspaceId, userId }: Props) {
   const empty = todayQuestions.length === 0;
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
       <header className="mb-2 flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold text-(--fg-primary)">
           {t("title")}

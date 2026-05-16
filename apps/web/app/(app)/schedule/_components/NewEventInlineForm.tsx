@@ -96,7 +96,7 @@ export function NewEventInlineForm({ onCreated }: Props) {
   return (
     <section
       aria-label={t("dialog.newTitle")}
-      className="rounded-lg border border-(--border-default) bg-(--bg-page) p-4 shadow-(--shadow-flat)"
+      className="rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]"
     >
       <header className="mb-3 flex items-center justify-between">
         <h3 className="text-[13px] font-semibold text-(--fg-primary)">

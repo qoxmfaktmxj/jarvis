@@ -22,7 +22,7 @@ import { formatFetchedAt } from "@/lib/utils/format-fetched-at";
 export function FxCardServer({ fx }: { fx: FxSignal | null }) {
   if (!fx) {
     return (
-      <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+      <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
         <span className="text-[13px] font-medium text-(--fg-secondary)">
           환율 · KRW 기준
         </span>
@@ -55,7 +55,7 @@ export function FxCardServer({ fx }: { fx: FxSignal | null }) {
   ];
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4">
+    <div className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-4 shadow-[var(--shadow-soft)]">
       <span className="text-[13px] font-medium text-(--fg-secondary)">
         환율 · KRW 기준
       </span>

@@ -144,7 +144,7 @@ export function QuizPlayClient({
           })}
         </ul>
         {answered && (
-          <div className="mt-4 rounded-lg border border-(--border-default) bg-(--bg-default) p-3 text-sm">
+          <div className="mt-4 rounded-xl border border-(--border-default) bg-(--bg-default) p-3 text-sm shadow-[var(--shadow-soft)]">
             <p className="mb-1 font-semibold text-(--fg-primary)">
               {answered.output.correct ? t("correct") : t("wrong")} ·{" "}
               {t("scoreDelta", { delta: answered.output.scoreDelta })}

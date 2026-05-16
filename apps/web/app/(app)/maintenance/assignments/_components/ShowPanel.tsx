@@ -54,7 +54,7 @@ export function ShowPanel() {
 
   return (
     <div className="grid grid-cols-[300px_1fr] gap-4">
-      <aside className="space-y-2 rounded-lg border border-(--border-default) bg-(--bg-page) p-3">
+      <aside className="space-y-2 rounded-xl border border-(--border-default) bg-(--bg-page) p-3 shadow-[var(--shadow-soft)]">
         <header className="text-[12px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
           {t("userListTitle")}
         </header>
@@ -100,13 +100,13 @@ export function ShowPanel() {
 
       <section className="space-y-3">
         {!selectedUserId ? (
-          <div className="rounded-lg border border-dashed border-(--border-default) bg-(--bg-page) p-8 text-center text-[13px] text-(--fg-secondary)">
+          <div className="rounded-xl border border-dashed border-(--border-default) bg-(--bg-page) p-8 text-center text-[13px] text-(--fg-secondary) shadow-[var(--shadow-soft)]">
             {t("selectUserHint")}
           </div>
         ) : isLoadingAssignments ? (
           <div className="text-[13px] text-(--fg-secondary)">…</div>
         ) : assignments.length === 0 ? (
-          <div className="rounded-lg border border-(--border-default) bg-(--bg-page) p-6 text-center text-[13px] text-(--fg-secondary)">
+          <div className="rounded-xl border border-(--border-default) bg-(--bg-page) p-6 text-center text-[13px] text-(--fg-secondary) shadow-[var(--shadow-soft)]">
             {t("noCompanies")}
           </div>
         ) : (

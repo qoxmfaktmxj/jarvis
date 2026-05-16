@@ -25,15 +25,15 @@ export async function RunbookEmbed({
   const t = await getTranslations("Infra");
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-6">
+    <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6 shadow-[var(--shadow-soft)]">
       <header className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">
+        <h2 className="text-lg font-semibold text-(--fg-primary)">
           {t("Detail.runbookSection")}
         </h2>
         {wikiPageId && wikiPageRouteKey ? (
           <Link
             href={`/wiki/${wikiPageRouteKey}`}
-            className="text-sm text-blue-600 hover:underline"
+            className="text-sm text-(--brand-primary-text) hover:underline"
           >
             {t("viewRunbook")} →
           </Link>
@@ -41,14 +41,14 @@ export async function RunbookEmbed({
       </header>
 
       {wikiPageId && wikiPageRouteKey ? (
-        <div className="text-sm text-slate-700">
+        <div className="text-sm text-(--fg-primary)">
           <p className="mb-2">
             <span className="font-medium">{wikiPageTitle ?? wikiPageRouteKey}</span>
           </p>
-          <p className="text-slate-500">
+          <p className="text-(--fg-secondary)">
             <Link
               href={`/wiki/${wikiPageRouteKey}`}
-              className="text-blue-600 hover:underline"
+              className="text-(--brand-primary-text) hover:underline"
             >
               /wiki/{wikiPageRouteKey}
             </Link>
@@ -56,7 +56,7 @@ export async function RunbookEmbed({
         </div>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-slate-600">{t("Detail.noRunbookCta")}</p>
+          <p className="text-sm text-(--fg-secondary)">{t("Detail.noRunbookCta")}</p>
           <Button asChild variant="outline" size="sm">
             <Link href="/wiki?domain=infra">{t("createRunbook")}</Link>
           </Button>

@@ -15,7 +15,7 @@ export function ReactionPopover({
     <div
       role="menu"
       aria-label={t("addReaction")}
-      className="flex gap-1 rounded-lg border border-(--border-default) bg-(--bg-page) px-2 py-1 shadow-sm"
+      className="flex gap-1 rounded-lg border border-(--border-default) bg-(--bg-page) px-2 py-1 shadow-[var(--shadow-deep)]"
     >
       {CHAT_REACTION_EMOJIS.map((e) => (
         <button

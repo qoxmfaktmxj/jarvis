@@ -126,7 +126,7 @@ export function ScheduleCalendarView() {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-      <section className="rounded-lg border border-(--border-default) bg-(--bg-page) p-3">
+      <section className="rounded-xl border border-(--border-default) bg-(--bg-page) p-3 shadow-[var(--shadow-soft)]">
         <header className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <button
@@ -251,7 +251,7 @@ export function ScheduleCalendarView() {
         ) : null}
       </section>
 
-      <aside className="rounded-lg border border-(--border-default) bg-(--bg-page) p-3">
+      <aside className="rounded-xl border border-(--border-default) bg-(--bg-page) p-3 shadow-[var(--shadow-soft)]">
         <header className="mb-2 text-[12px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
           {selectedDate ? selectedDate : tCal("selectDate")}
         </header>
