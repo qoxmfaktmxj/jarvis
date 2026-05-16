@@ -521,9 +521,11 @@ export function MenusPageClient({
   return (
     <>
       {/* 70:30 master-detail horizontal split (lg+). 좁은 화면에서는 stack.
-          `items-start`로 두 컬럼이 각자 자기 높이를 가지게 한다 (내부 그리드가
-          viewport-relative max-h로 자체 스크롤하므로 stretch 불필요). */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr] items-start">
+          page.tsx wrapper가 viewport-fit height(`100vh - topbar - 4rem`)을
+          강제하므로 여기 grid div는 `flex-1 min-h-0`로 남은 공간을 받고,
+          자식(MenuGrid/MenuPermissionGrid)이 grid item default stretch +
+          내부 flex-col로 테이블 wrapper를 fill한다. */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr]">
         <MenuGrid
           grid={masterGrid}
           total={masterTotal}

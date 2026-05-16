@@ -215,9 +215,13 @@ export function MenuGrid({
   );
 
   return (
+    // grid item으로서 stretch 받아 부모 h-full을 따른다.
     // `min-w-0` — grid 자식 default min-width:auto가 fr 계산을 무시해 테이블
-    // min-content 폭이 컬럼을 overflow시키는 것 방지 (lg 70:30 split 환경).
-    <div className="min-w-0 space-y-2">
+    //   min-content 폭이 컬럼을 overflow시키는 것 방지.
+    // `min-h-0` — flex/grid 자식 default min-height:auto가 자식 자연 높이를
+    //   intrinsic으로 두어 부모 height을 초과하는 것 방지 (테이블 wrapper의
+    //   flex-1 + overflow:auto가 의도대로 작동하려면 필수).
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-2">
       {/* Search form */}
       <GridSearchForm
         onSearch={onApplyFilters}
@@ -297,12 +301,10 @@ export function MenuGrid({
         />
       </div>
 
-      {/* viewport-relative height: 브라우저 창 크기에 따라 자동 조절. 헤더·필터
-          ·툴바·페이지 여백 약 280px를 뺀 나머지를 그리드 본체에 할당해
-          한 화면에 들어오게 한다. 헤더는 sticky라 내부 스크롤 시에도 고정.
-          viewport 매우 작거나 admin shell 헤더가 280px를 넘는 환경 대비
-          `max()`로 최소 240px 보장. */}
-      <div className="max-h-[max(240px,calc(100vh-280px))] overflow-auto rounded border border-slate-200">
+      {/* flex parent가 viewport-fit 높이를 강제하므로 자체 max-h 불필요.
+          `flex-1 min-h-0`로 남은 공간을 차지, 내부 overflow-auto로 테이블만
+          스크롤. thead는 sticky라 내부 스크롤 시에도 고정. */}
+      <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">

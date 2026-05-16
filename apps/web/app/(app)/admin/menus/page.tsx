@@ -59,7 +59,14 @@ export default async function AdminMenusPage() {
     .map((name) => ({ value: name, label: name }));
 
   return (
-    <div className="space-y-6">
+    // viewport-fit: AppShellMain의 py-8(4rem) + 전역 topbar 높이를 뺀 나머지를
+    // 페이지 컨테이너에 강제. PageHeader는 자연 높이, MenusPageClient의 grid div가
+    // flex-1로 남은 공간을 차지해 페이지 자체 스크롤이 발생하지 않게 한다.
+    // (dashboard/page.tsx 동일 패턴 — 데이터 dense admin 화면의 표준 처리.)
+    <div
+      className="flex flex-col gap-6"
+      style={{ height: "calc(100vh - var(--topbar-height) - 4rem)" }}
+    >
       <PageHeader title={t("title")} />
       <MenusPageClient
         initialMenus={initialMenus}
