@@ -95,11 +95,16 @@ export const saveMenusOutput = z.object({
     .optional(),
 });
 
+/** Visibility filter: undefined = no filter (all), "visible" = isVisible TRUE, "hidden" = FALSE. */
+export const menuVisibilityFilter = z.enum(["visible", "hidden"]);
+export type MenuVisibilityFilter = z.infer<typeof menuVisibilityFilter>;
+
 export const listMenusInput = z.object({
-  q: z.string().optional(), // matches code
-  qLabel: z.string().optional(), // matches label
+  /** Unified search: matches code OR label (server-side OR ilike). */
+  q: z.string().optional(),
   kind: menuKindEnum.optional(),
   parentCode: z.string().max(100).optional(), // "" or undefined = no filter; "__root__" = parentId NULL
+  visibility: menuVisibilityFilter.optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(500).default(100),
 });

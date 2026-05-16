@@ -45,10 +45,12 @@ type MenuColumnDef = Omit<ColumnDef<MenuRow>, "type"> & {
 const KIND_OPTION_VALUES = ["menu", "action"] as const;
 
 type FilterValues = {
+  /** Unified search: matches code OR label (server-side OR ilike). */
   q: string;
-  qLabel: string;
   kind: string;
   parentCode: string;
+  /** "" = all, "visible" = isVisible TRUE, "hidden" = FALSE. */
+  visibility: string;
 };
 
 type ParentOption = { code: string; label: string };
@@ -221,24 +223,16 @@ export function MenuGrid({
         isSearching={saving}
         searchLabel={t("filter.search")}
       >
-        <GridFilterField label={t("filter.code")} className="w-[170px]">
-          {/* 코드 컬럼은 영문 도트 표기(예: nav.ask, admin.users). 사용자가
-              한국어 라벨을 코드 input에 입력해 0건이 나오는 인지 mismatch를
-              막기 위해 placeholder로 형식을 명시한다 (A1-F1). */}
+        <GridFilterField label={t("filter.keyword")} className="w-[260px]">
+          {/* 통합 검색: 코드(예: nav.ask) 또는 라벨(예: AI 질문) 둘 중 어느 쪽이든
+              부분 일치하면 매치 (서버에서 OR ilike). 이전 q/qLabel 2개 필드를
+              하나로 통합 (2026-05-16). 키 이름이 `keyword`인 이유: `filter.search`는
+              이미 GridSearchForm "조회" 버튼 라벨로 점유됨. */}
           <input
             type="text"
             value={draftFilters.q}
             onChange={(e) => onDraftFilterChange({ ...draftFilters, q: e.target.value })}
-            placeholder={t("filter.codePlaceholder")}
-            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
-          />
-        </GridFilterField>
-        <GridFilterField label={t("filter.label")} className="w-[210px]">
-          <input
-            type="text"
-            value={draftFilters.qLabel}
-            onChange={(e) => onDraftFilterChange({ ...draftFilters, qLabel: e.target.value })}
-            placeholder={t("filter.labelPlaceholder")}
+            placeholder={t("filter.keywordPlaceholder")}
             className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
           />
         </GridFilterField>
@@ -271,6 +265,19 @@ export function MenuGrid({
             ))}
           </select>
         </GridFilterField>
+        <GridFilterField label={t("filter.visibility")} className="w-[120px]">
+          <select
+            value={draftFilters.visibility}
+            onChange={(e) =>
+              onDraftFilterChange({ ...draftFilters, visibility: e.target.value })
+            }
+            className="h-8 w-full rounded-md border border-(--border-default) bg-(--bg-page) px-2 text-[13px] text-(--fg-primary) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
+          >
+            <option value="">{t("filter.visibilityAll")}</option>
+            <option value="visible">{t("filter.visibleY")}</option>
+            <option value="hidden">{t("filter.visibleN")}</option>
+          </select>
+        </GridFilterField>
       </GridSearchForm>
 
       <div className="flex items-center justify-between">
@@ -288,7 +295,10 @@ export function MenuGrid({
         />
       </div>
 
-      <div className="overflow-auto rounded border border-slate-200">
+      {/* viewport-relative height: 브라우저 창 크기에 따라 자동 조절. 헤더·필터
+          ·툴바·페이지 여백 약 280px를 뺀 나머지를 그리드 본체에 할당해
+          한 화면에 들어오게 한다. 헤더는 sticky라 내부 스크롤 시에도 고정. */}
+      <div className="max-h-[calc(100vh-280px)] overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">

@@ -161,7 +161,8 @@ export function MenuPermissionGrid({
         </div>
       </div>
 
-      <div className="overflow-auto rounded border border-slate-200">
+      {/* viewport-relative height — MenuGrid와 동일 헤더 주석 참조. */}
+      <div className="max-h-[calc(100vh-280px)] overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">

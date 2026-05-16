@@ -18,7 +18,7 @@
  */
 import { cookies, headers } from "next/headers";
 import { revalidateTag } from "next/cache";
-import { and, asc, count, eq, ilike, inArray, sql, isNull } from "drizzle-orm";
+import { and, asc, count, eq, ilike, inArray, or, sql, isNull } from "drizzle-orm";
 import { getSession } from "@jarvis/auth/session";
 import { hasPermission } from "@jarvis/auth";
 import { db } from "@jarvis/db/client";
@@ -86,8 +86,15 @@ export async function listMenus(rawInput: z.input<typeof listMenusInput>) {
   // self-join alias for parent.code lookup
   const parentItem = alias(menuItem, "parent_item");
 
-  const qFilter = input.q ? ilike(menuItem.code, `%${input.q}%`) : undefined;
-  const qLabelFilter = input.qLabel ? ilike(menuItem.label, `%${input.qLabel}%`) : undefined;
+  // Unified search: code OR label (server-side OR ilike). Replaces the
+  // prior `q` (code only) + `qLabel` (label only) pair — admins only need
+  // one search box for "find by anything I see in the row".
+  const qFilter = input.q
+    ? or(
+        ilike(menuItem.code, `%${input.q}%`),
+        ilike(menuItem.label, `%${input.q}%`),
+      )
+    : undefined;
   const kindFilter = input.kind ? eq(menuItem.kind, input.kind) : undefined;
 
   // parentCode filter:
@@ -101,12 +108,20 @@ export async function listMenus(rawInput: z.input<typeof listMenusInput>) {
         ? eq(parentItem.code, input.parentCode)
         : undefined;
 
+  // visibility: undefined = no filter, "visible" → TRUE, "hidden" → FALSE.
+  const visibilityFilter =
+    input.visibility === "visible"
+      ? eq(menuItem.isVisible, true)
+      : input.visibility === "hidden"
+        ? eq(menuItem.isVisible, false)
+        : undefined;
+
   const baseFilters = and(
     eq(menuItem.workspaceId, ctx.workspaceId),
     qFilter,
-    qLabelFilter,
     kindFilter,
     parentFilter,
+    visibilityFilter,
   );
 
   // permCnt: correlated subquery

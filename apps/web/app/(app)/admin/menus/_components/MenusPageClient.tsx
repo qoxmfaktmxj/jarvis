@@ -66,17 +66,19 @@ type Props = {
 };
 
 type MasterFilters = {
+  /** Unified search: matches code OR label (server-side OR ilike). */
   q: string;
-  qLabel: string;
   kind: string;
   parentCode: string;
+  /** "" = all, "visible" = isVisible TRUE, "hidden" = FALSE. */
+  visibility: string;
 };
 
 const MASTER_DEFAULTS: MasterFilters = {
   q: "",
-  qLabel: "",
   kind: "",
   parentCode: "",
+  visibility: "",
 };
 
 type DetailFilters = {
@@ -193,12 +195,15 @@ export function MenusPageClient({
       startMasterReload(async () => {
         const res = await listMenus({
           q: filters.q || undefined,
-          qLabel: filters.qLabel || undefined,
           kind:
             filters.kind === "menu" || filters.kind === "action"
               ? filters.kind
               : undefined,
           parentCode: filters.parentCode || undefined,
+          visibility:
+            filters.visibility === "visible" || filters.visibility === "hidden"
+              ? filters.visibility
+              : undefined,
           page: 1,
           limit: MASTER_LIMIT,
         });
@@ -479,9 +484,9 @@ export function MenusPageClient({
     reloadMaster(masterDraft);
     setMasterUrlValues({
       q: masterDraft.q,
-      qLabel: masterDraft.qLabel,
       kind: masterDraft.kind,
       parentCode: masterDraft.parentCode,
+      visibility: masterDraft.visibility,
     });
   }, [masterDraft, masterGrid, reloadMaster, setMasterUrlValues]);
 
@@ -515,7 +520,10 @@ export function MenusPageClient({
 
   return (
     <>
-      <div className="space-y-6">
+      {/* 70:30 master-detail horizontal split (lg+). 좁은 화면에서는 stack.
+          `items-start`로 두 컬럼이 각자 자기 높이를 가지게 한다 (내부 그리드가
+          viewport-relative max-h로 자체 스크롤하므로 stretch 불필요). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[7fr_3fr] items-start">
         <MenuGrid
           grid={masterGrid}
           total={masterTotal}
