@@ -7,7 +7,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePage } from '@/lib/queries/knowledge';
 import { PageViewer } from '@/components/knowledge/PageViewer';
 import { PageMetaSidebar } from '@/components/knowledge/PageMetaSidebar';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +25,9 @@ export default async function KnowledgePageView({ params }: Props) {
   const mdxContent = page.currentVersion?.mdxContent ?? '';
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <PageShell title={page.title}>
       {/* B4 Phase 1: Legacy route deprecation banner */}
-      <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200">
+      <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200">
         <p>
           {t('deprecationBanner')}{' '}
           <Link href="/wiki" className="font-medium underline hover:text-amber-900 dark:hover:text-amber-100">
@@ -36,8 +36,6 @@ export default async function KnowledgePageView({ params }: Props) {
         </p>
       </div>
 
-      <PageHeader title={page.title} />
-
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
         <article className="min-w-0">
           <PageViewer mdxContent={mdxContent} />
@@ -45,6 +43,6 @@ export default async function KnowledgePageView({ params }: Props) {
 
         <PageMetaSidebar page={page} canEdit={canEdit} />
       </div>
-    </div>
+    </PageShell>
   );
 }

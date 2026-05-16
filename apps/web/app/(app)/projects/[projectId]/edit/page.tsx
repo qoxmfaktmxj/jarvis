@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectForm } from "@/components/project/ProjectForm";
-import { SectionHeader } from "@/components/patterns/SectionHeader";
+import { PageShell } from "@/components/patterns/PageShell";
 import { getProject } from "@/lib/queries/projects";
 import { requirePageSession } from "@/lib/server/page-auth";
 
@@ -30,13 +30,7 @@ export default async function EditProjectPage({
   }
 
   return (
-    <div className="max-w-3xl space-y-3">
-      <div>
-        <SectionHeader title="Edit Project" />
-        <p className="text-sm text-surface-500">
-          Update metadata, ownership context, and linked operational resources.
-        </p>
-      </div>
+    <PageShell title="Edit Project">
       <ProjectForm
         mode="edit"
         projectId={projectId}
@@ -46,6 +40,6 @@ export default async function EditProjectPage({
           status: coerceStatus(project.status)
         }}
       />
-    </div>
+    </PageShell>
   );
 }

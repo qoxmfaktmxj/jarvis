@@ -5,7 +5,7 @@ import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { listNotices } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { NoticeList } from './_components/NoticeList';
 
 export const dynamic = 'force-dynamic';
@@ -31,28 +31,25 @@ export default async function NoticesPage() {
   const canCreate = session.permissions.includes(PERMISSIONS.NOTICE_CREATE);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      <PageHeader
-        title={t('title')}
-        meta={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/notices/new" aria-label={t('new')}>
-                <Plus aria-hidden="true" 
-      />
-                {t('new')}
-              </Link>
-            </Button>
-          ) : null
-        }
-      />
-
+    <PageShell
+      title={t('title')}
+      actions={
+        canCreate ? (
+          <Button asChild>
+            <Link href="/notices/new" aria-label={t('new')}>
+              <Plus aria-hidden="true" />
+              {t('new')}
+            </Link>
+          </Button>
+        ) : null
+      }
+    >
       <NoticeList
         notices={data}
         emptyLabel={t('empty')}
         pinnedLabel={t('pinned')}
         publishedAtLabel={t('publishedAt')}
       />
-    </div>
+    </PageShell>
   );
 }

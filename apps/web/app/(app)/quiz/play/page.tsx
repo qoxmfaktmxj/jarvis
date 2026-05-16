@@ -7,6 +7,7 @@ import {
 } from "@/lib/queries/quiz";
 import { QuizPlayClient } from "./_components/QuizPlayClient";
 import { getTranslations } from "next-intl/server";
+import { PageShell } from "@/components/patterns/PageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -25,15 +26,14 @@ export default async function QuizPlayPage() {
     : 0;
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
-      <header className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold text-(--fg-primary)">
-          {t("title")}
-        </h1>
+    <PageShell
+      title={t("title")}
+      actions={
         <span className="text-xs text-(--fg-secondary)">
           {season?.name ?? t("noSeason")} · {t("cumulative", { score: cumulativeScore })}
         </span>
-      </header>
+      }
+    >
       {questions.length === 0 ? (
         <section className="rounded-xl border border-(--border-default) bg-(--bg-surface) p-6 text-center">
           <p className="text-sm text-(--fg-secondary)">
@@ -48,6 +48,6 @@ export default async function QuizPlayPage() {
           seasonName={season?.name ?? null}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

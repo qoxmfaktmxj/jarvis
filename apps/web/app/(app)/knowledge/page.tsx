@@ -19,7 +19,7 @@ import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getPagesByType } from '@/lib/queries/knowledge';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,22 +74,19 @@ export default async function KnowledgeHomePage() {
   const operations = sectionData.slice(5);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader
-        title="Knowledge Base"
-        actions={
-          canCreate ? (
-            <Button asChild>
-              <Link href="/knowledge/new">
-                <Plus className="h-4 w-4" 
-      />
-                새 페이지
-              </Link>
-            </Button>
-          ) : null
-        }
-      />
-
+    <PageShell
+      title="Knowledge Base"
+      actions={
+        canCreate ? (
+          <Button asChild>
+            <Link href="/knowledge/new">
+              <Plus className="h-4 w-4" />
+              새 페이지
+            </Link>
+          </Button>
+        ) : null
+      }
+    >
       <div className="space-y-10">
         {/* ── Hero: Onboarding + HR Policies ── */}
         <section>
@@ -125,7 +122,7 @@ export default async function KnowledgeHomePage() {
           </div>
         </section>
       </div>
-    </div>
+    </PageShell>
   );
 }
 

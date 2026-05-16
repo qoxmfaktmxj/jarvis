@@ -5,8 +5,8 @@ import { db } from '@jarvis/db/client';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/patterns/PageHeader';
 import { EmptyState } from '@/components/patterns/EmptyState';
+import { PageShell } from '@/components/patterns/PageShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -77,17 +77,17 @@ export default async function InfraDashboardPage() {
   const totalSystems = groups.reduce((n, g) => n + g.systems.length, 0);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <PageHeader title="인프라 Runbook" />
+    <PageShell
+      title="인프라 Runbook"
+      actions={
         <Link
           href="/infra/import"
-          className="mt-2 inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
+          className="inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
         >
           SQL 가져오기
         </Link>
-      </div>
-
+      }
+    >
       {groups.length === 0 ? (
         <EmptyState
           title="infra 페이지 없음"
@@ -139,6 +139,6 @@ export default async function InfraDashboardPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

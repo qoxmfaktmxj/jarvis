@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getQuickLinks } from "@/lib/queries/dashboard";
 import { requirePageSession } from "@/lib/server/page-auth";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShell } from "@/components/patterns/PageShell";
 import { ProfileInfo } from "./_components/ProfileInfo";
 import { QuickMenuEditor } from "./_components/QuickMenuEditor";
 
@@ -14,13 +14,11 @@ export default async function ProfilePage() {
   const quickLinks = await getQuickLinks(session);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <PageHeader title={t("title")} />
-
+    <PageShell title={t("title")}>
       <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <ProfileInfo session={session} />
         <QuickMenuEditor initialItems={quickLinks} />
       </div>
-    </div>
+    </PageShell>
   );
 }

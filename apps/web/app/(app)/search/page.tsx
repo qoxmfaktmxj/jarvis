@@ -6,8 +6,8 @@ import { executeSearch } from '@/lib/queries/search';
 import { executePrecedentSearch } from '@/lib/queries/precedent-search';
 import { SearchPage } from '@/components/search/SearchPage';
 import { SearchBar } from '@/components/search/SearchBar';
-import { PageHeader } from '@/components/patterns/PageHeader';
 import { GlobeLoader } from '@/components/layout/GlobeLoader';
+import { PageShell } from '@/components/patterns/PageShell';
 import type { SearchSortBy } from '@jarvis/search/types';
 import { ResourceTabs, type ResourceTabValue } from './ResourceTabs';
 
@@ -37,14 +37,13 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
 
   if (!q) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        <PageHeader title="검색" />
+      <PageShell title="검색">
         <div className="mb-6">
           {/* eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount */}
           <SearchBar autoFocus />
         </div>
         <p className="text-center text-muted-foreground">검색어를 입력하세요</p>
-      </div>
+      </PageShell>
     );
   }
 
@@ -76,7 +75,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
       : await executeSearch(commonQueryArgs);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-4">
+    <PageShell title="검색">
       <ResourceTabs
         value={resourceType}
         currentQuery={q}
@@ -95,7 +94,7 @@ async function SearchResults({ searchParams }: SearchPageRouteProps) {
         pageType={params.pageType}
         sortBy={validSortBy}
       />
-    </div>
+    </PageShell>
   );
 }
 

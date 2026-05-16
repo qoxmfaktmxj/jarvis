@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -26,24 +26,21 @@ export default async function VersionHistoryPage({ params }: Props) {
   const versions = await getPageVersions(pageId, session.workspaceId, session.permissions ?? []);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader
-        title="Version History"
-        meta={
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/knowledge/${pageId}`}>
-              <ArrowLeft className="mr-1 h-4 w-4" 
-      /> Back to page
-            </Link>
-          </Button>
-        }
-      />
-
+    <PageShell
+      title="Version History"
+      actions={
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/knowledge/${pageId}`}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to page
+          </Link>
+        </Button>
+      }
+    >
       {versions.length === 0 ? (
         <p className="italic text-muted-foreground">No versions found.</p>
       ) : (
         <VersionHistory versions={versions} pageId={pageId} />
       )}
-    </div>
+    </PageShell>
   );
 }

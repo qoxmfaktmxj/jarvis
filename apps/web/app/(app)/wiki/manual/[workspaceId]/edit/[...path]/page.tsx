@@ -7,7 +7,7 @@ import { readUtf8, exists } from "@jarvis/wiki-fs";
 import * as path from "node:path";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { getWikiRepoRoot } from "@/lib/server/repo-root";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShell } from "@/components/patterns/PageShell";
 import EditPageClientShell from "./_client-shell";
 
 interface EditPageProps {
@@ -45,9 +45,9 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   // workspace 일치 검증 — 다른 워크스페이스 편집 차단
   if (session.workspaceId !== workspaceId) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-16 text-center text-sm text-destructive">
-        forbidden
-      </div>
+      <PageShell>
+        <p className="text-center text-sm text-destructive">forbidden</p>
+      </PageShell>
     );
   }
 
@@ -96,7 +96,7 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 space-y-3">
+    <PageShell title={`wiki/manual/${slugNoExt}.md`}>
       <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
@@ -104,13 +104,11 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
         </div>
       </Alert>
 
-      <PageHeader title={`wiki/manual/${slugNoExt}.md`} />
-
       <EditPageClientShell
         initialContent={initialContent}
         workspaceId={workspaceId}
         pageSlug={slugNoExt}
       />
-    </div>
+    </PageShell>
   );
 }

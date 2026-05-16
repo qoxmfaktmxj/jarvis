@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { loadWikiGraphData } from '@/lib/server/wiki-graph-loader';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { GraphViewerPage } from './_components/GraphViewerPage';
 
 export const dynamic = 'force-dynamic';
@@ -26,29 +26,26 @@ export default async function WikiGraphPage() {
   } catch (err) {
     console.error('[wiki/graph] loadWikiGraphData failed:', err);
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader title={t('title')} />
+      <PageShell title={t('title')}>
         <p className="text-sm text-destructive">{t('loadFailed')}</p>
-      </div>
+      </PageShell>
     );
   }
 
   if (loaded.nodes.length === 0) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader title={t('title')} />
+      <PageShell title={t('title')}>
         <p className="text-sm text-muted-foreground">
           {loaded.totalPublishedCount === 0
             ? t('emptyNoPages')
             : t('emptyAllFiltered')}
         </p>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader title={t('title')} />
+    <PageShell title={t('title')}>
       {loaded.filteredOutCount > 0 ? (
         <p className="-mt-4 mb-4 text-xs text-muted-foreground">
           {t('filteredHint', { count: loaded.filteredOutCount })}
@@ -56,6 +53,6 @@ export default async function WikiGraphPage() {
       ) : null}
 
       <GraphViewerPage data={{ nodes: loaded.nodes, edges: loaded.edges }} />
-    </div>
+    </PageShell>
   );
 }

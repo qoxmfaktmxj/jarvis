@@ -5,7 +5,7 @@ import { db } from '@jarvis/db/client';
 import { wikiPageIndex } from '@jarvis/db/schema/wiki-page-index';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import type { WikiPageMeta } from '@/components/WikiPageView';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { WikiIndexSearch } from './_components/WikiIndexSearch';
 import { WikiIndexShell } from './_components/WikiIndexShell';
 import { DEFAULT_PAGE_SIZE } from "@jarvis/shared/constants/pagination";
@@ -77,9 +77,7 @@ export default async function WikiHomePage({
 
   return (
     <WikiIndexShell workspaceId={workspaceId}>
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <PageHeader title={t('title')} />
-
+      <PageShell title={t('title')}>
         <WikiIndexSearch
           pages={pages}
           workspaceId={workspaceId}
@@ -87,7 +85,7 @@ export default async function WikiHomePage({
           currentPage={currentPage}
           totalPages={totalPages}
         />
-      </div>
+      </PageShell>
     </WikiIndexShell>
   );
 }

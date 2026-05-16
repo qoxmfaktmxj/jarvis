@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
@@ -31,19 +31,16 @@ export default async function ReviewPage({ params }: Props) {
   const publishStatus = (page.publishStatus ?? 'draft') as 'draft' | 'review' | 'published' | 'archived';
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <PageHeader
-        title={page.title}
-        meta={
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/knowledge/${pageId}`}>
-              <ArrowLeft className="mr-1 h-4 w-4" 
-      /> Back to page
-            </Link>
-          </Button>
-        }
-      />
-
+    <PageShell
+      title={page.title}
+      actions={
+        <Button variant="ghost" size="sm" asChild>
+          <Link href={`/knowledge/${pageId}`}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to page
+          </Link>
+        </Button>
+      }
+    >
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0">
           <PageViewer mdxContent={mdxContent} />
@@ -57,6 +54,6 @@ export default async function ReviewPage({ params }: Props) {
           />
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

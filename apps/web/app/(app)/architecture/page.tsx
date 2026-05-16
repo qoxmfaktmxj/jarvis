@@ -5,7 +5,7 @@ import { requirePageSession } from '@/lib/server/page-auth';
 import { db } from '@jarvis/db/client';
 import { graphSnapshot } from '@jarvis/db/schema/graph';
 import { eq, desc } from 'drizzle-orm';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { Network } from 'lucide-react';
 import { GraphViewer } from './components/GraphViewer';
@@ -49,20 +49,17 @@ export default async function ArchitecturePage({ searchParams }: Props) {
   }));
 
   return (
-    <main className="p-6">
-      <PageHeader
-        title={t('title')}
-        meta={
-          serializedSnapshots.length > 0 ? (
-            <SnapshotSelector
-              snapshots={serializedSnapshots}
-              currentId={current?.id ?? serializedSnapshots[0]!.id}
-            
-      />
-          ) : null
-        }
-      />
-
+    <PageShell
+      title={t('title')}
+      actions={
+        serializedSnapshots.length > 0 ? (
+          <SnapshotSelector
+            snapshots={serializedSnapshots}
+            currentId={current?.id ?? serializedSnapshots[0]!.id}
+          />
+        ) : undefined
+      }
+    >
       <div className="space-y-3">
         {/* Build lifecycle overview — always visible if workspace has any snapshots */}
         <BuildLifecycleSection workspaceId={workspaceId} />
@@ -141,6 +138,6 @@ export default async function ArchitecturePage({ searchParams }: Props) {
           );
         })()}
       </div>
-    </main>
+    </PageShell>
   );
 }

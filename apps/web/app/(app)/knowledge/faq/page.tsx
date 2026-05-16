@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { HelpCircle } from 'lucide-react';
 
@@ -24,9 +24,7 @@ export default async function FAQHubPage() {
   });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <PageHeader title="FAQ" />
-
+    <PageShell title="FAQ">
       {pages.length === 0 ? (
         <EmptyState
           icon={HelpCircle}
@@ -58,6 +56,6 @@ export default async function FAQHubPage() {
           ))}
         </Accordion>
       )}
-    </div>
+    </PageShell>
   );
 }

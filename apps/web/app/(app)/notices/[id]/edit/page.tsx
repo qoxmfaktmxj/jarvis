@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getNoticeById } from '@/lib/queries/notices';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import EditNoticeClientShell from './_client-shell';
 
 export const dynamic = 'force-dynamic';
@@ -30,15 +30,14 @@ export default async function EditNoticePage({ params }: Props) {
   if (!isAdmin && !isAuthor) {
     // RBAC ownership check
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <PageShell>
         <p className="text-sm text-destructive">Forbidden</p>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader title={t('edit')} />
+    <PageShell title={t('edit')}>
       <EditNoticeClientShell
         noticeId={notice.id}
         initialData={{
@@ -51,6 +50,6 @@ export default async function EditNoticePage({ params }: Props) {
           expiresAt: notice.expiresAt ? notice.expiresAt.toISOString() : null,
         }}
       />
-    </div>
+    </PageShell>
   );
 }

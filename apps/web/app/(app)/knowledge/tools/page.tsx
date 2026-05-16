@@ -4,7 +4,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePages } from '@/lib/queries/knowledge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { Wrench } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -22,9 +22,7 @@ export default async function ToolsHubPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader title="Tool Guides" />
-
+    <PageShell title="Tool Guides">
       {pages.length === 0 ? (
         <EmptyState
           icon={Wrench}
@@ -54,6 +52,6 @@ export default async function ToolsHubPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

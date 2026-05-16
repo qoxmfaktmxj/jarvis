@@ -10,6 +10,7 @@ import {
 } from "@/lib/queries/quiz-leaderboard";
 import { LeaderboardTabs } from "./_components/LeaderboardTabs";
 import { getTranslations } from "next-intl/server";
+import { PageShell } from "@/components/patterns/PageShell";
 
 export const dynamic = "force-dynamic";
 
@@ -42,18 +43,17 @@ export default async function QuizLeaderboardPage({ searchParams }: PageProps) {
     : [[], [], 0];
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-4 p-6">
-      <header>
-        <h1 className="text-xl font-semibold text-(--fg-primary)">
-          {t("title")}
-        </h1>
+    <PageShell
+      title={t("title")}
+      actions={
         <p className="text-sm text-(--fg-secondary)">
           {selectedName ?? t("noSeason")} ·{" "}
           {isActive
             ? t("activeLabel", { score: cumulativeScore })
             : t("frozenLabel")}
         </p>
-      </header>
+      }
+    >
       <LeaderboardTabs
         activeSeasonId={active?.id ?? null}
         activeSeasonName={active?.name ?? null}
@@ -66,6 +66,6 @@ export default async function QuizLeaderboardPage({ searchParams }: PageProps) {
         individual={individual}
         organizations={organizations}
       />
-    </div>
+    </PageShell>
   );
 }

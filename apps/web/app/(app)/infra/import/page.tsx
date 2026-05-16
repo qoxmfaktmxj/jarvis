@@ -5,7 +5,7 @@ import { forbidden } from 'next/navigation';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { hasPermission } from '@jarvis/auth/rbac';
 import { requirePageSession } from '@/lib/server/page-auth';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,16 +107,17 @@ export default async function InfraImportPage() {
       : '(없음)';
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 space-y-3">
-      <div className="flex items-start justify-between gap-4">
-        <PageHeader title="인프라 SQL 가져오기" />
+    <PageShell
+      title="인프라 SQL 가져오기"
+      actions={
         <Link
           href="/infra"
-          className="mt-2 inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
+          className="inline-flex shrink-0 items-center rounded-md border border-surface-300 bg-white px-3 py-1.5 text-sm font-medium text-surface-700 hover:bg-surface-50"
         >
           ← 대시보드
         </Link>
-      </div>
+      }
+    >
 
       <section className="rounded-lg border border-surface-200 bg-white p-6">
         <h2 className="text-lg font-semibold mb-4">파이프라인 현황</h2>
@@ -190,6 +191,6 @@ export default async function InfraImportPage() {
           재생성은 KNOWLEDGE_REVIEW 권한 보유자만 실행할 수 있습니다.
         </section>
       )}
-    </div>
+    </PageShell>
   );
 }

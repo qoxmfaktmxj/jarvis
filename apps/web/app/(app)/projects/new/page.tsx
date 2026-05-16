@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { ProjectForm } from "@/components/project/ProjectForm";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShell } from "@/components/patterns/PageShell";
 import { requirePageSession } from "@/lib/server/page-auth";
 
 export default async function NewProjectPage() {
@@ -9,9 +9,8 @@ export default async function NewProjectPage() {
   await requirePageSession(PERMISSIONS.PROJECT_CREATE, "/projects");
 
   return (
-    <div className="max-w-3xl space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShell title={t("title")}>
       <ProjectForm mode="create" />
-    </div>
+    </PageShell>
   );
 }

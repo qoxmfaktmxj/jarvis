@@ -6,7 +6,7 @@ import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getNoticeById } from '@/lib/queries/notices';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { NoticeView } from '../_components/NoticeView';
 import { DeleteNoticeButton } from '../_components/DeleteNoticeButton';
 
@@ -64,32 +64,30 @@ export default async function NoticeDetailPage({ params }: Props) {
   );
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <PageShell
+      title={notice.title}
+      actions={
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button asChild variant="outline">
+              <Link href={`/notices/${notice.id}/edit`}>{t('edit')}</Link>
+            </Button>
+          )}
+          {canDelete && <DeleteNoticeButton noticeId={notice.id} />}
+        </div>
+      }
+    >
       {notice.pinned && (
-        <div className="mb-4 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
             {t('pinned')}
           </Badge>
         </div>
       )}
 
-      <PageHeader
-        title={notice.title}
-        meta={
-          <div className="flex items-center gap-2">
-            {canEdit && (
-              <Button asChild variant="outline">
-                <Link href={`/notices/${notice.id}/edit`}>{t('edit')}</Link>
-              </Button>
-            )}
-            {canDelete && <DeleteNoticeButton noticeId={notice.id} 
-      />}
-          </div>
-        }
-      />
       <div className="-mt-6 mb-6">{metaParts}</div>
 
       <NoticeView bodyMd={notice.bodyMd} />
-    </div>
+    </PageShell>
   );
 }

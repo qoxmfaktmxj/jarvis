@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { ManualIngestForm } from './_components/ManualIngestForm';
 
 export const dynamic = 'force-dynamic';
@@ -11,9 +11,8 @@ export default async function ManualIngestPage() {
   const t = await getTranslations('WikiIngest.manual');
 
   return (
-    <div className="container mx-auto max-w-3xl py-8">
-      <PageHeader title={t('title')} />
+    <PageShell title={t('title')}>
       <ManualIngestForm />
-    </div>
+    </PageShell>
   );
 }

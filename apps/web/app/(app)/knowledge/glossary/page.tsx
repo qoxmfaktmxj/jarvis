@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { requirePageSession } from '@/lib/server/page-auth';
 import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { getKnowledgePages } from '@/lib/queries/knowledge';
-import { PageHeader } from '@/components/patterns/PageHeader';
+import { PageShell } from '@/components/patterns/PageShell';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { BookMarked } from 'lucide-react';
 
@@ -28,9 +28,7 @@ export default async function GlossaryPage() {
   const letters = Object.keys(grouped).sort();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <PageHeader title="Glossary" />
-
+    <PageShell title="Glossary">
       {/* Alphabet quick-nav */}
       {letters.length > 0 && (
         <div className="mb-6 flex flex-wrap gap-1">
@@ -82,6 +80,6 @@ export default async function GlossaryPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
