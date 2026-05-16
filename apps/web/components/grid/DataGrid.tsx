@@ -376,11 +376,12 @@ export function DataGrid<T extends WithId>({
     // 때 두 그리드의 데이터 row 시작 y가 정확히 일치하도록 정렬 보장.
     <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
       {/*
-        Toolbar 영역. readOnly 또는 hideToolbar이면 toolbar 자체 hide.
-        readOnly: 통계/조회용 그리드. hideToolbar: modal 임베드 그리드.
-        둘 다 false면 표준 toolbar 표시 (입력/복사/저장 + Excel export).
+        Toolbar 영역. readOnly 또는 hideToolbar이면 GridToolbar만 hide.
+        wrapper 자체는 h-8 고정 → master/detail 사이드 by 사이드 시 두 그리드
+        toolbar 영역 height이 같아 정렬 보존. 메뉴 선택 전 detail이 readOnly
+        라도 wrapper height = master와 동일 (32px) → table row 시작 y 일치.
       */}
-      <div className="flex items-center justify-between">
+      <div className="flex h-8 items-center justify-between">
         <span className="text-sm text-(--fg-secondary)">{t("total", { count: total })}</span>
         {!readOnly && !hideToolbar && (
           <GridToolbar
