@@ -301,10 +301,12 @@ export function MenuGrid({
         />
       </div>
 
-      {/* flex parent가 viewport-fit 높이를 강제하므로 자체 max-h 불필요.
-          `flex-1 min-h-0`로 남은 공간을 차지, 내부 overflow-auto로 테이블만
-          스크롤. thead는 sticky라 내부 스크롤 시에도 고정. */}
-      <div className="min-h-0 flex-1 overflow-auto rounded border border-slate-200">
+      {/* `flex-1 + min-h-0` chain이 작동하면 부모(PageShellFit)의 viewport-fit
+          height 안에서 자동 fit, 안 되면 `max-h calc(100vh - chrome)` 안전망이
+          최소한 viewport 안에 fit 보장. 두 layer 모두로 항상 그리드 내부 스크롤.
+          chrome 약 260px (topbar 47 + AppShell py 9 + PageHeader 37 + gap 12 +
+          GridSearchForm 75 + 메뉴목록 line 38 + gap*2 16 + 여유). */}
+      <div className="min-h-0 max-h-[calc(100vh-260px)] flex-1 overflow-auto rounded border border-slate-200">
         <table className="min-w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
             <tr className="border-b border-slate-200">
