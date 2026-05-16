@@ -396,7 +396,7 @@ export function CodesPageClient({
 
   return (
     <>
-      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[3fr_7fr] gap-3">
+      <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[4fr_6fr] gap-3">
         <CodeGroupGrid
           rows={masterRows}
           total={masterTotal}
