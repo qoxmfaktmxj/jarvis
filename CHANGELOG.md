@@ -24,6 +24,7 @@ Format: [버전/날짜] — 변경 유형 — 내용
 - **2026-05-16**: `--border-focus` `--color-notion-blue-text` 하드코딩 → `var(--brand-primary)` 참조 (테마 변경 시 focus ring 자동 따라감).
 - **2026-05-16**: `Sidebar.tsx` expanded active 시각 `var(--line2)` warm pill → `var(--brand-primary-bg)` 브랜드 틴트 + 좌측 3px indicator (rail와 패턴 통일).
 - **2026-05-16**: `docs/design-system.md` v3 → v4 갱신 (swap + 5테마 picker 섹션 + 토큰 파생 모델 추가).
+- **2026-05-16 ultrareview fix**: `--bg-page`/`--bg-surface` swap revert + 신규 `--bg-canvas` 토큰 도입 (57 파일 무수정 유지). graphite hover override(L-extreme color-mix 회피). `useThemeColor` lazy init. ThemeColorPicker 다크 graphite swatch hex 반전 일치 + APG radiogroup 키보드 패턴(roving tabindex + Arrow/Home/End). UserMenu 잘못된 `aria-haspopup`/`role="region"` 제거.
 
 ---
 
