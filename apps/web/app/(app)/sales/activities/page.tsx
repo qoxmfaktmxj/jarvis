@@ -66,7 +66,7 @@ export default async function SalesActivitiesPage({
   const initialTotal = "ok" in listResult && listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="영업활동" />
       <ActivitiesGridContainer
         initial={initialRows}

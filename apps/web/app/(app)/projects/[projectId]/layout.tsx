@@ -26,7 +26,7 @@ export default async function ProjectDetailLayout({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={project.name} />
 
       <ProjectTabs projectId={projectId} />

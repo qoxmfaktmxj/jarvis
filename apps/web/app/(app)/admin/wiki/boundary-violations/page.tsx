@@ -69,7 +69,7 @@ export default async function BoundaryViolationsPage() {
     .limit(PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="Wiki 경계 위반" />
 
       <DataTableShell

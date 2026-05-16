@@ -37,7 +37,7 @@ async function fetchRows(): Promise<Row[]> {
 export default async function LlmCostPage() {
   const rows = await fetchRows();
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="LLM Cost — 최근 7일" />
       <DataTableShell
         rowCount={rows.length}

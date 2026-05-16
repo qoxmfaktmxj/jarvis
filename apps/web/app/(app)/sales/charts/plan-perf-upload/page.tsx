@@ -38,7 +38,7 @@ export default async function SalesPlanPerfUploadPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <PlanPerfUploadGridContainer
         rows={result.ok ? result.rows : []}

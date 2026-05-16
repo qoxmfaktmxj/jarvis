@@ -37,7 +37,7 @@ export default async function OpportunityEditPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={result.opportunity.bizOpNm} />
       <OpportunityEditForm
         opportunity={result.opportunity}

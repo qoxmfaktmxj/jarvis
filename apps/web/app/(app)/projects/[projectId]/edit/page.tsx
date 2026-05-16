@@ -30,7 +30,7 @@ export default async function EditProjectPage({
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-3">
       <div>
         <SectionHeader title="Edit Project" />
         <p className="text-sm text-surface-500">

@@ -16,7 +16,7 @@ export default async function AddDevNewPage({
   const sp = await searchParams;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("newAddDev")} />
       <AddDevForm mode="create" initialProjectId={sp.projectId} />
     </div>

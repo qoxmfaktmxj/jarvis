@@ -37,7 +37,7 @@ export default async function SalesTaxBillsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <TaxBillsGridContainer
         rows={listResult.ok ? listResult.rows : []}

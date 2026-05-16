@@ -36,7 +36,7 @@ export default async function ProjectModulesPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <ModulesGridContainer
         rows={listResult.ok ? listResult.rows : []}

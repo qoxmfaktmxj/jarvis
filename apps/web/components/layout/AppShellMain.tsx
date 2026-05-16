@@ -44,7 +44,7 @@ export function AppShellMain({ children }: { children: React.ReactNode }) {
         <div className="h-full w-full overflow-hidden">{children}</div>
       ) : (
         <div
-          className="mx-auto h-full overflow-y-auto px-4 py-4"
+          className="mx-auto h-full overflow-y-auto px-4 py-2"
           style={{
             maxWidth: "calc(1700px + (220px - var(--sidebar-width)))",
           }}

@@ -48,7 +48,7 @@ export default async function SalesCustomersPage({
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="고객사관리" />
       <CustomersGridContainer
         rows={initialRows}

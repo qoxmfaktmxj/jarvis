@@ -44,7 +44,7 @@ export default async function ReviewPage({ params }: Props) {
         }
       />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_300px]">
         <div className="min-w-0">
           <PageViewer mdxContent={mdxContent} />
         </div>

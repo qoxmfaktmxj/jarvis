@@ -77,7 +77,7 @@ export default async function InfraDashboardPage() {
   const totalSystems = groups.reduce((n, g) => n + g.systems.length, 0);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
+    <div className="max-w-6xl mx-auto py-8 px-4 space-y-3">
       <div className="flex items-start justify-between gap-4">
         <PageHeader title="인프라 Runbook" />
         <Link
@@ -94,7 +94,7 @@ export default async function InfraDashboardPage() {
           description="아직 생성된 infra-runbook 페이지가 없습니다."
         />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-3">
           {groups.map((g) => (
             <section
               key={g.companyCd}

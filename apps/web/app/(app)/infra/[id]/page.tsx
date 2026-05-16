@@ -32,7 +32,7 @@ export default async function InfraSystemDetailPage(props: { params: Params }) {
   const t = await getTranslations("Infra");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("Detail.title", { systemName: row.systemName })} />
       <InfraSystemDetail row={row} />
       <RunbookEmbed

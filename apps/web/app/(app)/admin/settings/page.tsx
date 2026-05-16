@@ -19,7 +19,7 @@ export default async function AdminSettingsPage() {
     .limit(1);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t('title')} />
       {ws && <SettingsForm workspace={ws} />}
     </div>

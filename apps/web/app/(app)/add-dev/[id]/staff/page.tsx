@@ -61,7 +61,7 @@ export default function AddDevStaffPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-surface-500">
         투입인력
       </h2>

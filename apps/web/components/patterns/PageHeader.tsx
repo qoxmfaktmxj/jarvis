@@ -37,7 +37,9 @@ export function PageHeader(props: PageHeaderProps): JSX.Element {
   const { title } = props;
 
   return (
-    <header className="mb-7 flex items-start gap-5">
+    // mb 자체 제거 — 페이지 wrapper의 space-y/gap이 PageHeader↔next 사이
+    // 간격을 단일 source로 결정 (이중 margin 합산/collapse 혼란 제거).
+    <header className="flex items-start gap-5">
       <div className="flex min-w-0 flex-1 items-start justify-between gap-5">
         <div className="min-w-0">
           <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">

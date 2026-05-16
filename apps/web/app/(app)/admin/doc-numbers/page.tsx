@@ -31,7 +31,7 @@ export default async function DocNumbersPage() {
   const years = yearsResult.ok ? yearsResult.years : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <DocNumbersGridContainer
         initial={initialRows}

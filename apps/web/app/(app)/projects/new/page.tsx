@@ -9,7 +9,7 @@ export default async function NewProjectPage() {
   await requirePageSession(PERMISSIONS.PROJECT_CREATE, "/projects");
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-3xl space-y-3">
       <PageHeader title={t("title")} />
       <ProjectForm mode="create" />
     </div>

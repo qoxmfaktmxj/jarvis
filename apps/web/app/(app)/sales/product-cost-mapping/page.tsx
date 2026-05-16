@@ -46,7 +46,7 @@ export default async function SalesProductCostMappingPage({
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="제품-코스트 매핑" />
       <ProductCostMappingGrid
         initialRows={initialRows}

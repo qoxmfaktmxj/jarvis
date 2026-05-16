@@ -288,7 +288,7 @@ export default async function WikiObservabilityPage() {
 
   return (
     <WikiObservabilityClient renderedAt={renderedAt}>
-      <div className="space-y-6">
+      <div className="space-y-3">
         <PageHeader title="Wiki 운영 모니터링" />
 
         {/* Top KPIs */}

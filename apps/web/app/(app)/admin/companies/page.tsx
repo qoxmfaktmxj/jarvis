@@ -35,7 +35,7 @@ export default async function AdminCompaniesPage() {
   const initialTotal: number = initialResult.ok ? (initialResult.total as number) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <CompaniesGridContainer
         initial={initialRows}

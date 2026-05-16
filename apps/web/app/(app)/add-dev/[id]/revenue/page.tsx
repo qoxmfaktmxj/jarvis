@@ -34,7 +34,7 @@ export default async function AddDevRevenuePage({
   const selectedYear = sp.year ? Number(sp.year) : currentYear;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <SectionHeader title="매출">
         <form>
           <select

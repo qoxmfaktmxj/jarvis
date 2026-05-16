@@ -23,9 +23,9 @@ export default async function CustomerContactEditPage({
   const contact = result.contact;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={contact.custName ?? contact.custMcd} />
-      <div className="grid grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-[1fr_320px] gap-3">
         <ContactEditForm contact={contact} />
         <ContactDetailSidebar
           contactId={contact.id}

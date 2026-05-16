@@ -14,7 +14,7 @@ export default async function SalesProductTypesPage() {
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="제품군관리" />
       <ProductTypesGridContainer rows={initialRows} total={initialTotal} page={1} limit={limit} />
     </div>

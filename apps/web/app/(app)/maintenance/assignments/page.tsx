@@ -43,7 +43,7 @@ export default async function MaintenanceAssignmentsPage() {
   const initialTotal = initialResult.ok ? initialResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <MaintenanceTabsClient
         initialRows={initialRows}

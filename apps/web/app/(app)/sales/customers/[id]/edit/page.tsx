@@ -23,9 +23,9 @@ export default async function CustomerEditPage({
   const customer = result.customer;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={customer.custNm} />
-      <div className="grid grid-cols-[1fr_320px] gap-6">
+      <div className="grid grid-cols-[1fr_320px] gap-3">
         <CustomerEditForm customer={customer} />
         <CustomerDetailSidebar customerId={customer.id} customerName={customer.custNm} />
       </div>

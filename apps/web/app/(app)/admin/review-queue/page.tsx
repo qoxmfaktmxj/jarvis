@@ -90,7 +90,7 @@ export default async function ReviewQueuePage({ searchParams }: ReviewQueuePageP
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t('title')} />
 
       <DataTableShell

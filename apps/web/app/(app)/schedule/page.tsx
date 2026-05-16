@@ -28,7 +28,7 @@ export default async function SchedulePage() {
   const initialTotal = initialResult.ok ? initialResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <ScheduleTabsClient
         initialRows={initialRows}

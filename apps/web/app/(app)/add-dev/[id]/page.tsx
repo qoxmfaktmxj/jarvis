@@ -34,7 +34,7 @@ export default async function AddDevOverviewPage({
     row.status === "완료" ? "success" : row.status === "보류" ? "warning" : "outline";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <SectionHeader title="개요">
         {canEdit ? (
           <Button asChild variant="outline" size="sm">

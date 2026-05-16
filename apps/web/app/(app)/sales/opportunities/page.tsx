@@ -49,7 +49,7 @@ export default async function SalesOpportunitiesPage({
   const initialTotal = "ok" in listResult && listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="영업기회" />
       <OpportunitiesGridContainer
         initial={initialRows}

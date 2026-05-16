@@ -27,7 +27,7 @@ export default async function AdminAuditPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t('title')} />
       <AuditTable initialData={data} meta={{ ...meta, limit: meta.limit ?? 50 }} />
     </div>

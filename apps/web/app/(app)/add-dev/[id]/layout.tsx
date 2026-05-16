@@ -29,7 +29,7 @@ export default async function AddDevDetailLayout({
   const title = [row.projectName, row.requestYearMonth].filter(Boolean).join(" · ") || "추가개발";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={title} />
       <AddDevTabs id={id} />
       <div>{children}</div>

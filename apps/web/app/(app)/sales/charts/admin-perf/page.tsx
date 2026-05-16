@@ -28,7 +28,7 @@ export default async function SalesChartsAdminPerfPage({
   const result = await getAdminPerf({ year, view, metric });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <AdminPerfFilters defaults={{ year, view, metric }} />
       {result.ok ? (

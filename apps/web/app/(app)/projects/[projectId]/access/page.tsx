@@ -37,7 +37,7 @@ export default async function ProjectAccessPage({
   const canManage = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <SectionHeader title="Access Registry" />
         <p className="text-sm text-surface-500">

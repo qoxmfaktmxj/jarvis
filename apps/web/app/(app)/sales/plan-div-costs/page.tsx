@@ -33,7 +33,7 @@ export default async function SalesPlanDivCostsPage({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <PlanDivCostsGridContainer
         rows={listResult.ok ? listResult.rows : []}

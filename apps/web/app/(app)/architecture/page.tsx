@@ -63,7 +63,7 @@ export default async function ArchitecturePage({ searchParams }: Props) {
         }
       />
 
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Build lifecycle overview — always visible if workspace has any snapshots */}
         <BuildLifecycleSection workspaceId={workspaceId} />
 

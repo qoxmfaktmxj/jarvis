@@ -26,7 +26,7 @@ export default async function ContractMonthEditPage({
   const contractMonth = result.contractMonth;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={`${contractMonth.ym ?? "-"} 월별 상세`} />
       <ContractMonthEditForm contractMonth={contractMonth} />
     </div>

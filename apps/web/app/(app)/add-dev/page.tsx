@@ -48,7 +48,7 @@ export default async function AddDevListPage({
   const canCreate = hasPermission(session, PERMISSIONS.ADDITIONAL_DEV_CREATE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={t("title")}
         actions={

@@ -28,7 +28,7 @@ export default async function ProjectOverviewPage({
   const canEdit = hasPermission(session, PERMISSIONS.PROJECT_UPDATE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <SectionHeader title="Project Overview">
         {canEdit ? (
           <Button asChild variant="outline" size="sm">

@@ -34,7 +34,7 @@ export default async function SalesMailPersonsPage({
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="메일담당자" />
       <MailPersonsGridContainer
         rows={initialRows}

@@ -45,7 +45,7 @@ export default async function SalesContractUploadsPage({
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="계약 업로드 관리" />
       <ContractUploadsGridContainer
         rows={uploads.ok ? uploads.rows : []}

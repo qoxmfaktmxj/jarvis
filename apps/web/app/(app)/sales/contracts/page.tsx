@@ -34,7 +34,7 @@ export default async function SalesContractsPage({
   const initialTotal = listResult.ok ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="계약 관리" />
       <ContractsGridContainer
         rows={initialRows}

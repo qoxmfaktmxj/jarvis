@@ -17,7 +17,7 @@ export default async function ProfilePage() {
     <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader title={t("title")} />
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
         <ProfileInfo session={session} />
         <QuickMenuEditor initialItems={quickLinks} />
       </div>

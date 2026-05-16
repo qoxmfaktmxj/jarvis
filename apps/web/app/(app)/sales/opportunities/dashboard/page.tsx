@@ -41,7 +41,7 @@ export default async function DashboardPage() {
   const monthlyNew = data.monthlyNew.map((m) => ({ ym: m.ym, cnt: m.cnt }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="영업기회현황" />
       <KPICards kpis={data.kpis} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

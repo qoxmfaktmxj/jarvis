@@ -39,7 +39,7 @@ export default async function SalesCompaniesPage() {
   const initialTotal = initialResult.ok ? Number(initialResult.total ?? 0) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={t("title")} />
       <SalesCompaniesGridContainer
         initial={initialRows}

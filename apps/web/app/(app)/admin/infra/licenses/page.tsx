@@ -65,7 +65,7 @@ export default async function AdminInfraLicensesPage(props: { searchParams?: Sea
   const initialTotal = !("error" in listResult) ? listResult.total : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="인프라 라이선스" />
       <InfraLicensesGrid
         initialRows={initialRows}
