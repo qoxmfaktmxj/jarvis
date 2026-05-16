@@ -774,6 +774,8 @@
     "error": "오류가 발생했습니다.",
     "profile": "프로필",
     "searchKnowledge": "지식 검색...",
+    "themeColor": "테마 색상",
+    "themeColorRegion": "테마 색상 선택기",
     "Calendar": {
       "monthLabel": "{year}년 {month}월",
       "yearLabel": "{year}년",
@@ -834,6 +836,19 @@
         "save": "저장 후 계속",
         "cancel": "취소"
       }
+    }
+  },
+  "Theme": {
+    "picker": {
+      "title": "테마 색상",
+      "aria": "테마 색상 선택"
+    },
+    "colors": {
+      "blue": "Notion Blue",
+      "indigo": "Indigo",
+      "teal": "Teal",
+      "forest": "Forest",
+      "graphite": "Graphite"
     }
   },
   "SearchPage": {

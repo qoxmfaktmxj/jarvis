@@ -992,5 +992,22 @@
         "notOwner": "You can only edit/delete your own events."
       }
     }
+  },
+  "Common": {
+    "themeColor": "Theme color",
+    "themeColorRegion": "Theme color picker"
+  },
+  "Theme": {
+    "picker": {
+      "title": "Theme color",
+      "aria": "Select theme color"
+    },
+    "colors": {
+      "blue": "Notion Blue",
+      "indigo": "Indigo",
+      "teal": "Teal",
+      "forest": "Forest",
+      "graphite": "Graphite"
+    }
   }
 }

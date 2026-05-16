@@ -48,6 +48,12 @@ export function UserMenu({ userName }: { userName: string }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!open) {
+      setThemePickerOpen(false);
+    }
+  }, [open]);
+
   return (
     <div ref={containerRef} className="relative">
       <button
@@ -105,7 +111,7 @@ export function UserMenu({ userName }: { userName: string }) {
             <div
               className="my-1 rounded-xl border border-surface-200 bg-surface-50"
               role="region"
-              aria-label="Theme color picker"
+              aria-label={t("themeColorRegion")}
             >
               <ThemeColorPicker />
             </div>
