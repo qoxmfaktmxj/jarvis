@@ -321,7 +321,7 @@ export function UsersGridContainer({
   }, [COLUMNS, rows, orgOptions, positionOptions, jobTitleOptions, statusOptionsTranslated]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm
         onResetGrid={() => gridApiRef.current?.discardChanges()}
         onSearch={() => reload(1, limit, pendingFilters)}

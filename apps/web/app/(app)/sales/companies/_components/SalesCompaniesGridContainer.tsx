@@ -131,7 +131,7 @@ export function SalesCompaniesGridContainer({
   }, [columns, rows]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={() => reload(1, limit, pendingFilters)} isSearching={isSearching}>
         <GridFilterField label="대상구분" className="w-[140px]">
           <select

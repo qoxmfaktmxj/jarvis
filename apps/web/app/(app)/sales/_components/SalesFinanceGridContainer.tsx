@@ -133,7 +133,7 @@ export function SalesFinanceGridContainer<T extends Row, F extends Record<string
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         {filterFields.map((field) => (
           <GridFilterField key={field.key} label={field.label} className="w-[180px]">

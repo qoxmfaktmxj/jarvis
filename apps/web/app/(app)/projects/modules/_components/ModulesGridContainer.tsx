@@ -131,7 +131,7 @@ export function ModulesGridContainer({
   }, [pendingFilters, reload, setUrlFilter]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch} isSearching={isSearching}>
         <GridFilterField label={common("search")} className="w-[240px]">
           <Input

@@ -150,7 +150,7 @@ export function ManageGridContainer({
   }, [COLUMNS, rows, contractTypeOptions]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {canWrite ? (
         <NewAssignmentInlineForm
           contractTypeOptions={contractTypeOptions}

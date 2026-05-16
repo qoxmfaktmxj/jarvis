@@ -366,12 +366,15 @@ export function DataGrid<T extends WithId>({
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
-    // viewport-fit 부모(PageShellFit + grid 셀) 안에서 DataGrid가 height을
-    // 100% 받도록 flex h-full + min-h-0. table 영역만 flex-1 + overflow-auto로
-    // 내부 스크롤. toolbar/pagination은 shrink-0.
-    // master/detail이 사이드 by 사이드 배치될 때 두 그리드의 데이터 row 시작
-    // y가 정확히 일치하도록 정렬 보장.
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    // viewport-fit 부모(PageShellFit + grid 셀 또는 GridContainer flex-col) 안
+    // 에서 DataGrid가 height을 100% 받도록 flex h-full + min-h-0 + flex-1.
+    // - flex-1: 부모가 flex container면 main-axis grow (GridContainer 안에서
+    //   GridSearchForm 다음 남은 height 다 받음)
+    // - h-full: 부모가 block이면 height 100% (PageShellFit 직접 자식 케이스)
+    // table 영역만 flex-1 + overflow-auto/hidden로 내부 스크롤 or viewport-fit.
+    // toolbar/pagination은 shrink-0. master/detail이 사이드 by 사이드 배치될
+    // 때 두 그리드의 데이터 row 시작 y가 정확히 일치하도록 정렬 보장.
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-3">
       {/*
         Toolbar 영역. readOnly 또는 hideToolbar이면 toolbar 자체 hide.
         readOnly: 통계/조회용 그리드. hideToolbar: modal 임베드 그리드.

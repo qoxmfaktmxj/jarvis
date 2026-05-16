@@ -180,7 +180,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <GridSearchForm onResetGrid={() => gridApiRef.current?.discardChanges()} onSearch={handleSearch}>
         <GridFilterField label={t("filters.q")} className="w-[220px]">
           <Input className="h-8" value={pendingFilters.q} onChange={(e) => setPending("q", e.target.value)} placeholder={t("filters.qPlaceholder")} />

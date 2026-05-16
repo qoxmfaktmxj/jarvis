@@ -138,7 +138,7 @@ export function FaqGridContainer({
   }, [COLUMNS, rows, bizCodeOptions, t]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {canWrite ? (
         <NewFaqInlineForm
           bizCodeOptions={bizCodeOptions}

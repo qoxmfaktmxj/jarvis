@@ -136,7 +136,7 @@ export function DocNumbersGridContainer({
   }, [COLUMNS, rows]);
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       {canWrite ? (
         <NewDocNumberInlineForm onCreated={() => reload(1, limit, filterValues)} />
       ) : null}
