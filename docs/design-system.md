@@ -1,7 +1,7 @@
-# Jarvis · Design System v4 — Notion-aligned Hybrid + Themed
+# Jarvis · Design System v5 — Notion-aligned Hybrid + Themed
 
 > **v3 문서는 `git log docs/design-system.md`에서 확인.**
-> **2026-05-16 갱신:** 3-tier bg 토큰(`--bg-canvas` warm-50 페이지 / `--bg-page` #fff chrome+card / `--bg-surface` warm-50 subtle tint) + `color-mix` 파생 + 5테마 picker.
+> **2026-05-16 v5 갱신:** 페이지+카드+chrome 모두 `--bg-page` #fff 통합 (canvas 토큰 폐기). `--bg-surface` warm-50은 미세 tint 전용 (code / DataGrid thead / tab hover). `color-mix` 파생 + 5테마 picker 그대로.
 > **Canonical spec:** `docs/superpowers/specs/2026-04-24-design-overhaul-design.md`
 > **2026-05-16 plan:** `docs/superpowers/plans/2026-05-16-design-system-adoption.md`
 > **Mockup 검증:** `.local/design-preview/theme-collision-mockup.html`
@@ -16,12 +16,12 @@ spec을 파고든다. Phase 2 화면 리튠의 standing reference.
 
 ## 1. 핵심 원칙 (한 줄 요약)
 
-> **Notion chrome (warm-50 페이지 + 순백 카드/chrome + whisper borders + 5-테마 brand-primary)
+> **Notion chrome (순백 페이지·카드·chrome + whisper borders + 5-테마 brand-primary)
 > + 엔터프라이즈 밀도 유지. Pretendard Variable. Lime 금지 (graph 제외).**
 
-- **페이지 배경은 `--bg-canvas` (`#faf9f8` warm-50, 따뜻한 캔버스) — body에 적용**
-- **카드 + chrome 배경은 `--bg-page` (`#ffffff` 순백, 페이지 위로 올라온 것)**
-- **`--bg-surface`는 subtle warm tint** (`#faf9f8`, code chip / 카드 header 내부 seam 등 한정)
+- **페이지 + 카드 + chrome 배경 모두 `--bg-page` (`#ffffff` 순백)** — v5 단순화 (이전 v4 canvas 토큰 폐기)
+- **카드-페이지 구분은 `--border-default` (whisper 10%) + `--shadow-soft`로만**. 색 대비 X.
+- **`--bg-surface` (warm-50)는 미세 tint만** — `<code>` 태그, DataGrid `<thead>` head row, WikiWidget tab hover, 기타 spec 명시 영역에만. 카드 body로 절대 사용 X.
 - 섹션 교대 배경 금지, 리듬은 보더·shadow·간격으로만
 - Primary CTA·링크·focus·active 색은 오직 `--brand-primary` (단일 SoT)
   - hover/bg/text는 `color-mix(in oklab, ...)`로 자동 파생
@@ -44,9 +44,9 @@ spec을 파고든다. Phase 2 화면 리튠의 standing reference.
 (raw 값은 `apps/web/app/globals.css`에서 SSoT. 여기선 role만.)
 
 ```css
---bg-canvas (warm-50)              ← 페이지 캔버스, body 적용 (2026-05-16 canvas 도입)
---bg-page (#fff)                   ← chrome/card body, 기존 elevated 의미 유지
---bg-surface (warm-50)             ← subtle tint, code chip/카드 header 내부 seam
+--bg-page (#fff)                   ← 페이지 + 카드 + chrome 모두 (v5 통합)
+--bg-surface (warm-50)             ← 미세 tint 전용 (code chip / DataGrid thead / tab hover만)
+                                     카드 body로 사용 금지
 --fg-primary / --fg-secondary / --fg-muted
 --brand-primary                                ← 단일 SoT, 테마 picker로 override
 --brand-primary-hover    ← color-mix(in oklab, --brand-primary 80%, black 20%)  /* light */
@@ -99,9 +99,9 @@ picker UI는 `apps/web/components/layout/ThemeColorPicker.tsx`에서 5 swatch ra
 ## 5. 신 화면 체크리스트
 
 - [ ] 이 화면은 T1/T2/T3 중 어느 tier인가? 결정 후 해당 tier 스케일 따름
-- [ ] 페이지 루트는 unset (body가 --bg-canvas 자동 적용)
-- [ ] 카드는 `bg-[--bg-page] border border-[--border-default] rounded-{lg|xl} shadow-[var(--shadow-{flat|soft})]` (순백 + warm 페이지 위로 떠보임)
-- [ ] 카드 header/footer subtle seam 원하면 `bg-[--bg-surface]` 추가 (warm-50 tint)
+- [ ] 페이지 루트는 unset (body가 --bg-page 자동 적용, v5 순백)
+- [ ] 카드는 `bg-[--bg-page] border border-[--border-default] shadow-[var(--shadow-soft)]` — 페이지와 같은 색, border + shadow로만 구분
+- [ ] `--bg-surface` warm-50 tint는 spec 명시 영역만 (code / DataGrid thead / 일부 hover)
 - [ ] 버튼은 shadcn `<Button>` — variant로 색 제어
 - [ ] 칩은 `<StatusChip>` 또는 `<PriorityChip>` — 직접 className 만들지 말 것
 - [ ] 폼 필드는 `<Field label="…">` 로 감쌈
@@ -113,7 +113,8 @@ picker UI는 `apps/web/components/layout/ThemeColorPicker.tsx`에서 5 swatch ra
 - ❌ 인라인 hex/rgb 컬러 (`#2b5bff`, `rgb(...)`) — 토큰만
 - ❌ `bg-isu-*`, `text-surface-*`, `bg-lime-*` (Phase 2에서 전부 제거, 새 작업엔 쓰지 말 것)
 - ❌ `rounded-2xl`/`rounded-3xl` — T1 hero 카드(`rounded-xl` 16px)만 예외
-- ❌ `bg-card` 토큰 (deprecated) — `bg-[--bg-page]` 또는 `bg-white` 사용 (카드는 #fff, 페이지는 warm-50 via --bg-canvas)
+- ❌ `bg-card` 토큰 (deprecated) — `bg-[--bg-page]` 또는 `bg-white` (페이지 + 카드 + chrome 모두 #fff via --bg-page)
+- ❌ 카드 body에 `bg-[--bg-surface]` 사용 — warm-50은 미세 tint 전용 (code / DataGrid thead / tab hover)
 - ❌ `text-rose-*` — red는 `text-[--color-red-500]`로 통일
 - ❌ `shadow-lg`+ — `shadow-[var(--shadow-deep)]`만 예외 (모달)
 - ❌ 배경색 교대 (`bg-surface-100` 섹션 배경) — page=warm-50, card=#fff 외 다른 톤 금지
@@ -142,3 +143,4 @@ picker UI는 `apps/web/components/layout/ThemeColorPicker.tsx`에서 5 swatch ra
 - Phase 1 구현 플랜: `docs/superpowers/plans/2026-04-24-design-overhaul-phase-1.md`
 - **v4 — 디자인 시스템 도입 plan (2026-05-16)**: `docs/superpowers/plans/2026-05-16-design-system-adoption.md`
 - **v4 — mockup 검증 (Q5=B + 5테마 충돌)**: `.local/design-preview/theme-collision-mockup.html` (gitignored)
+- **v5 (2026-05-16, follow-up)**: canvas 토큰 폐기 + bg-surface sweep + TabBar underline + radius audit (commits `bac2f00a..3414c2ea`)

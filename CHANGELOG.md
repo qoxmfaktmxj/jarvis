@@ -25,6 +25,7 @@ Format: [버전/날짜] — 변경 유형 — 내용
 - **2026-05-16**: `Sidebar.tsx` expanded active 시각 `var(--line2)` warm pill → `var(--brand-primary-bg)` 브랜드 틴트 + 좌측 3px indicator (rail와 패턴 통일).
 - **2026-05-16**: `docs/design-system.md` v3 → v4 갱신 (swap + 5테마 picker 섹션 + 토큰 파생 모델 추가).
 - **2026-05-16 ultrareview fix**: `--bg-page`/`--bg-surface` swap revert + 신규 `--bg-canvas` 토큰 도입 (57 파일 무수정 유지). graphite hover override(L-extreme color-mix 회피). `useThemeColor` lazy init. ThemeColorPicker 다크 graphite swatch hex 반전 일치 + APG radiogroup 키보드 패턴(roving tabindex + Arrow/Home/End). UserMenu 잘못된 `aria-haspopup`/`role="region"` 제거.
+- **2026-05-16 디자인 v5 (v4 follow-up)**: `--bg-canvas` 토큰 폐기 + body 순백 + `bg-(--bg-surface)` 52 파일 97 occurrence 일괄 `--bg-page` sweep. DataGrid `<thead>`/WikiWidget TabBtn 2 패턴만 `--bg-surface` 복원 (tint 의도). TabBar chrome-tab → underline + brand-primary tint. UserMenu dropdown + AccessEntryForm radius `rounded-2xl` → `rounded-xl`. **요약**: 페이지 + 카드 + chrome 모두 #fff 통합, warm-50 회색 톤 일소.
 
 ---
 
