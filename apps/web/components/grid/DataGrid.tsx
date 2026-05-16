@@ -102,6 +102,35 @@ export type DataGridProps<T extends WithId> = {
    * ```
    */
   onGridReady?: (api: { discardChanges: () => void }) => void;
+  /**
+   * 선택된 행 ID (외부 제어). 미지정이면 DataGrid가 internal state로 관리.
+   * 지정 시 highlight 표시 + 행 클릭 시 `onSelect(id)` 통지.
+   *
+   * 사용처: master/detail 패턴 — 부모가 selectedId를 보유하고 detail fetch
+   * 트리거. admin/menus, admin/codes 등.
+   */
+  selectedId?: string | null;
+  /**
+   * 행 클릭 시 통지. selectedId 외부 제어 시 부모가 detail fetch 트리거.
+   * 같은 행 재클릭 시 null로 통지하지 않음 (외부에서 직접 처리).
+   */
+  onSelect?: (id: string | null) => void;
+  /**
+   * 그리드 전체 read-only 모드.
+   *  - 모든 셀이 readonly로 표시 (col.editable, col.lockOnExisting 무시)
+   *  - GridToolbar(입력/복사/저장) 숨김
+   *  - 삭제 체크박스 컬럼 숨김
+   *  - 페이지네이션 / 필터 / 정렬 / 검색은 그대로
+   *
+   * 사용처: 통계·집계 그리드 (maintenance/stats), 권한 없는 사용자의 조회 등.
+   */
+  readOnly?: boolean;
+  /**
+   * GridToolbar(입력/복사/저장) 자체를 숨김. readOnly와 다르게 셀 편집은 가능.
+   *
+   * 사용처: modal 안의 임베드 그리드처럼 자체 저장 흐름을 부모가 관리하는 경우.
+   */
+  hideToolbar?: boolean;
 };
 
 export function DataGrid<T extends WithId>({
@@ -127,6 +156,10 @@ export function DataGrid<T extends WithId>({
   exportLabel,
   exportingLabel,
   onGridReady,
+  selectedId,
+  onSelect,
+  readOnly = false,
+  hideToolbar = false,
 }: DataGridProps<T>) {
   // Baseline strings come from `Common.Grid.*`. Callers may still override
   // `emptyMessage` per domain (e.g. "검색 결과 없음"), but DataGrid no longer
@@ -147,7 +180,19 @@ export function DataGrid<T extends WithId>({
     initialRows: initialGridRows,
     onRowsChange: onGridRowsChange,
   });
-  const [selected, setSelected] = useState<string | null>(null);
+  // selected row state — selectedId prop이 있으면 외부 제어, 없으면 internal.
+  // 외부 제어 시 행 클릭은 onSelect로 통지하고 internal state는 무시.
+  const [internalSelected, setInternalSelected] = useState<string | null>(null);
+  const selected = selectedId !== undefined ? selectedId : internalSelected;
+  const handleRowSelect = useCallback(
+    (id: string) => {
+      if (selectedId === undefined) {
+        setInternalSelected(id);
+      }
+      onSelect?.(id);
+    },
+    [selectedId, onSelect],
+  );
   const [saving, setSaving] = useTransition();
   const [pendingNav, setPendingNav] = useState<null | (() => void)>(null);
   const [localFilterValues, setLocalFilterValues] = useState<Record<string, string>>({});
@@ -227,27 +272,34 @@ export function DataGrid<T extends WithId>({
 
   return (
     <div className="space-y-3">
+      {/*
+        Toolbar 영역. readOnly 또는 hideToolbar이면 toolbar 자체 hide.
+        readOnly: 통계/조회용 그리드. hideToolbar: modal 임베드 그리드.
+        둘 다 false면 표준 toolbar 표시 (입력/복사/저장 + Excel export).
+      */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-(--fg-secondary)">{t("total", { count: total })}</span>
-        <GridToolbar
-          dirtyCount={grid.dirtyCount}
-          saving={saving}
-          onInsert={() => grid.insertBlank(makeBlankRow())}
-          onCopy={
-            selected
-              ? () =>
-                  grid.duplicate(selected, (c) => ({
-                    ...c,
-                    id: crypto.randomUUID(),
-                  }))
-              : undefined
-          }
-          onSave={handleSave}
-          onExport={onExport}
-          isExporting={isExporting}
-          exportLabel={exportLabel}
-          exportingLabel={exportingLabel}
-        />
+        {!readOnly && !hideToolbar && (
+          <GridToolbar
+            dirtyCount={grid.dirtyCount}
+            saving={saving}
+            onInsert={() => grid.insertBlank(makeBlankRow())}
+            onCopy={
+              selected
+                ? () =>
+                    grid.duplicate(selected, (c) => ({
+                      ...c,
+                      id: crypto.randomUUID(),
+                    }))
+                : undefined
+            }
+            onSave={handleSave}
+            onExport={onExport}
+            isExporting={isExporting}
+            exportLabel={exportLabel}
+            exportingLabel={exportingLabel}
+          />
+        )}
       </div>
 
       <div className="overflow-auto rounded border border-(--border-default)">
@@ -258,7 +310,12 @@ export function DataGrid<T extends WithId>({
                 data-testid="group-header-row"
                 className="border-b border-(--border-default) bg-(--bg-surface)"
               >
-                <th className="w-10 px-2 py-2" aria-hidden colSpan={2} />
+                {/* No + 삭제 컬럼 leading. readOnly이면 No만 (삭제 컬럼 hide). */}
+                <th
+                  className="w-10 px-2 py-2"
+                  aria-hidden
+                  colSpan={readOnly ? 1 : 2}
+                />
                 {groupHeaders.map((g, idx) => (
                   <th
                     key={`${g.label}-${idx}`}
@@ -276,9 +333,11 @@ export function DataGrid<T extends WithId>({
             ) : null}
             <tr className="border-b border-(--border-default)">
               {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
-                  No=44px, 삭제=56px, 상태=64px 최소폭 보장. */}
+                  No=44px, 삭제=56px(readOnly 시 hide), 상태=64px 최소폭 보장. */}
               <th className="w-11 whitespace-nowrap px-2 py-2 text-left">{t("no")}</th>
-              <th className="w-14 whitespace-nowrap px-2 py-2 text-center">{t("delete")}</th>
+              {!readOnly && (
+                <th className="w-14 whitespace-nowrap px-2 py-2 text-center">{t("delete")}</th>
+              )}
               {columns.map((col) => (
                 <th
                   key={col.key}
@@ -297,13 +356,16 @@ export function DataGrid<T extends WithId>({
               filters={filters}
               values={filterValues}
               onChange={handleFilterChange}
-              leadingCols={2}
+              leadingCols={readOnly ? 1 : 2}
             />
           </thead>
           <tbody>
             {grid.rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + 3} className="px-4 py-12 text-center text-sm text-(--fg-muted)">
+                <td
+                  colSpan={columns.length + (readOnly ? 2 : 3)}
+                  className="px-4 py-12 text-center text-sm text-(--fg-muted)"
+                >
                   {resolvedEmpty}
                 </td>
               </tr>
@@ -312,7 +374,7 @@ export function DataGrid<T extends WithId>({
                 <tr
                   key={r.data.id}
                   data-row-status={r.state}
-                  onClick={() => setSelected(r.data.id)}
+                  onClick={() => handleRowSelect(r.data.id)}
                   onDoubleClick={() => onRowDoubleClick?.(r.data)}
                   className={[
                     "border-b border-(--border-default) transition-colors duration-150",
@@ -326,24 +388,35 @@ export function DataGrid<T extends WithId>({
                   <td className="h-8 w-11 whitespace-nowrap px-2 align-middle text-[12px] text-(--fg-muted)">
                     {(page - 1) * limit + i + 1}
                   </td>
-                  <td className="h-8 w-14 whitespace-nowrap px-2 text-center align-middle">
-                    <input
-                      type="checkbox"
-                      checked={r.state === "deleted"}
-                      onChange={() =>
-                        r.state === "new"
-                          ? grid.removeNew(r.data.id)
-                          : grid.toggleDelete(r.data.id)
-                      }
-                      className="h-4 w-4 rounded border-(--border-default) text-(--brand-primary) focus:ring-2 focus:ring-(--border-focus) focus:ring-offset-0"
-                    />
-                  </td>
+                  {/* 삭제 체크박스 — readOnly 모드에서는 hide. */}
+                  {!readOnly && (
+                    <td className="h-8 w-14 whitespace-nowrap px-2 text-center align-middle">
+                      <input
+                        type="checkbox"
+                        checked={r.state === "deleted"}
+                        onChange={() =>
+                          r.state === "new"
+                            ? grid.removeNew(r.data.id)
+                            : grid.toggleDelete(r.data.id)
+                        }
+                        className="h-4 w-4 rounded border-(--border-default) text-(--brand-primary) focus:ring-2 focus:ring-(--border-focus) focus:ring-offset-0"
+                      />
+                    </td>
+                  )}
                   {columns.map((col) => {
                     const val = (r.data as Record<string, unknown>)[col.key];
                     const commit = (v: unknown) =>
                       grid.update(r.data.id, col.key as keyof T, v as T[keyof T]);
 
-                    if (col.type === "readonly" || !col.editable) {
+                    // 셀 편집 가능 여부 — 세 조건 모두 만족해야 editable:
+                    //   1. 그리드 전체 readOnly가 아님
+                    //   2. col.editable === true
+                    //   3. lockOnExisting + 기존(saved) 행이 아님
+                    // 셋 중 하나라도 false면 readonly 분기로 렌더.
+                    const isLocked = col.lockOnExisting === true && r.state !== "new";
+                    const cellEditable = !readOnly && col.editable === true && !isLocked;
+
+                    if (col.type === "readonly" || !cellEditable) {
                       const isNumeric = col.type === "numeric";
                       // Numeric readonly: format both number and Drizzle `numeric()` strings.
                       // For strings preserve trailing zeros by splitting on "." (P0-1).

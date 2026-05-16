@@ -27,6 +27,20 @@ export type ColumnDef<T> = {
    * Ignored for non-numeric column types. (A5 audit P0-1 / P0-2, 2026-05-11.)
    */
   integer?: boolean;
+  /**
+   * 신규 행에서만 편집 가능. 기존(saved) 행에서는 readonly로 표시.
+   *
+   * 사용처: PK / 식별자 컬럼 — `code`, `employeeId` 등 한 번 INSERT 후 변경
+   * 금지인 컬럼. legacy ibsheet `KeyField:1` 패턴 대체.
+   *
+   * 동작:
+   *  - `r.state === "new"` → editable 셀로 렌더
+   *  - 그 외 (`clean`/`dirty`/`deleted`) → readonly 셀로 렌더
+   *
+   * `editable: false`와 조합 시 항상 readonly (lockOnExisting 무시).
+   * `readOnly` (그리드 전체 readonly) 적용 시도 readonly로 강제.
+   */
+  lockOnExisting?: boolean;
 };
 
 /**

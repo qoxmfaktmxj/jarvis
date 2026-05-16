@@ -2,6 +2,54 @@
 
 다량의 행 데이터를 표시·편집하는 모든 화면은 **DataGrid baseline**을 따른다. 시각·동작 표준은 `admin/companies` 화면을 reference implementation으로 하며, 모든 새 그리드는 이 표준에 1:1 부합해야 한다. 행 ≥ 20건이면 무조건 그리드 채택 — 카드형/모달폼 X.
 
+## 🔒 절대 원칙 (2026-05-16 사용자 룰 명문화)
+
+**그리드는 무조건 `<DataGrid<T>>` 한 컴포넌트만 사용. 자체 `<table>` + 부품 조합("하이브리드") 절대 금지.**
+
+> "그리드는 항상 통일. 100개 기능 넣고 50개 안 쓰더라도 통일해서 진행."
+
+DataGrid가 master/detail · lockOnExisting · readOnly · hideToolbar 등 모든 케이스를 prop으로 흡수. 새 케이스가 생기면 DataGrid에 prop 추가하지, **별도 컴포넌트로 분기 금지**.
+
+### 금지 패턴
+
+```tsx
+// ❌ NO — 자체 <table> + EditableCell 조합 = 하이브리드
+import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
+return (
+  <table className="min-w-full">
+    <thead>...</thead>
+    <tbody>
+      {rows.map((r) => <tr><td><EditableTextCell ... /></td></tr>)}
+    </tbody>
+  </table>
+);
+```
+
+```tsx
+// ✅ YES — DataGrid 사용
+<DataGrid<Row>
+  rows={rows}
+  columns={columns}
+  selectedId={selectedId}
+  onSelect={setSelectedId}
+  ...
+/>
+```
+
+### Audit grep (회귀 차단)
+
+신규 _components 파일에 자체 `<table>` 사용은 무조건 위반:
+```bash
+# 자체 <table> + grid 부품 조합 = 하이브리드 위반:
+rg -l '<table\b' apps/web/app/\(app\)/ --glob '**/_components/**/*.tsx' \
+  | xargs rg -l 'EditableTextCell|EditableSelectCell|GridToolbar|RowStatusBadge'
+```
+hit이 있으면 PR reject. 신규 케이스가 필요하면 DataGrid에 prop 추가하는 PR로 분리.
+
+> **마이그레이션 상태 (2026-05-16):** 기존 하이브리드 그리드 13개 (admin/menus·codes, admin/infra/licenses, sales/* 일부, maintenance/stats, modal grids)는 단계적으로 DataGrid로 흡수 중. Phase A(이 PR) = DataGrid에 master/detail · lockOnExisting · readOnly · hideToolbar 4 props 추가 + 룰 명문화. Phase B 이후 = 13개 하이브리드 점진 마이그레이션.
+
+
+
 ## 1. baseline 컴포넌트 위치
 
 **공유 그리드 인프라** (`apps/web/components/grid/`):
@@ -19,6 +67,85 @@
 - [`CodeGroupPopupLauncher.tsx`](../../../../apps/web/components/grid/CodeGroupPopupLauncher.tsx) — 코드그룹 팝업
 
 **도메인 wrapping 규칙**: 도메인별로 `apps/web/app/(app)/{domain}/_components/{Domain}GridContainer.tsx` 1개. 컬럼/필터 정의 + reload + handleSave + handleExport만 책임지고 그리드 본체 로직은 무조건 baseline 호출.
+
+## 1-bis. DataGrid 확장 props (2026-05-16 신설)
+
+DataGrid가 master/detail · 잠금 컬럼 · read-only · modal embed 모든 케이스를 단일 컴포넌트로 흡수. 새 prop:
+
+| Prop | 타입 | 용도 |
+|------|------|------|
+| `selectedId` | `string \| null \| undefined` | 외부 제어 행 선택 ID. master/detail 패턴. 미지정 시 DataGrid가 internal state로 관리 |
+| `onSelect` | `(id: string \| null) => void` | 행 클릭 시 통지. master/detail에서 detail fetch 트리거 |
+| `readOnly` | `boolean` | 그리드 전체 readonly (모든 셀 + GridToolbar + 삭제 컬럼 hide). 통계/조회용 |
+| `hideToolbar` | `boolean` | GridToolbar(입력/복사/저장)만 hide. modal 임베드용. 셀 편집은 가능 |
+| `columns[].lockOnExisting` | `boolean` | 신규 행에서만 편집 가능. 기존 행은 readonly. PK/식별자 컬럼용 (legacy ibsheet `KeyField:1` 대체) |
+
+### master/detail 패턴 (DataGrid 단독 사용)
+
+```tsx
+// 부모 (Domain master/detail pattern)
+const [selectedId, setSelectedId] = useState<string | null>(null);
+const [detailRows, setDetailRows] = useState<DetailRow[]>([]);
+
+const onSelectMaster = useCallback(async (id: string | null) => {
+  if (!id) return;
+  setSelectedId(id);
+  const detail = await listDetail({ masterId: id });
+  setDetailRows(detail.rows);
+}, []);
+
+return (
+  <div className="grid grid-cols-[7fr_3fr] gap-3 min-h-0 flex-1">
+    <DataGrid<MasterRow>
+      rows={masterRows}
+      columns={MASTER_COLUMNS}   // code 컬럼은 lockOnExisting: true
+      selectedId={selectedId}
+      onSelect={onSelectMaster}
+      onSave={saveMaster}
+      ...
+    />
+    <DataGrid<DetailRow>
+      rows={detailRows}
+      columns={DETAIL_COLUMNS}
+      onSave={saveDetail}
+      ...
+    />
+  </div>
+);
+```
+
+부모는 두 DataGrid를 사이드 by 사이드 + state 관리만. 자체 `<table>` 만들지 않음. master/detail dirty 게이트는 각 DataGrid의 `onDirtyChange` + `onGridReady` 콜백으로 조립.
+
+### read-only 그리드 (stats, 조회 전용)
+
+```tsx
+<DataGrid<StatsRow>
+  rows={statsRows}
+  columns={STATS_COLUMNS}
+  readOnly
+  onSave={async () => ({ ok: true })}  // no-op (호출 안 됨)
+  onPageChange={() => {}}
+  onFilterChange={() => {}}
+  makeBlankRow={() => ({} as StatsRow)}  // no-op
+  ...
+/>
+```
+
+GridToolbar / 삭제 컬럼 자동 hide. 페이지네이션 / 필터 row / 컬럼 정렬 그대로.
+
+### modal 임베드 그리드
+
+```tsx
+<DataGrid<RowInModal>
+  rows={modalRows}
+  columns={COLUMNS}
+  hideToolbar    // GridToolbar만 hide
+  onSave={...}   // 부모가 modal 자체 저장 버튼으로 트리거
+  ...
+/>
+```
+
+부모의 modal footer에서 자체 [저장] 버튼 + DataGrid `onGridReady`로 받은 grid API의 `toBatch()` 호출.
 
 ## 2. 필수 기능 (모든 그리드 7+1+1+1가지)
 

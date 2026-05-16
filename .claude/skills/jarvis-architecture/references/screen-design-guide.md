@@ -389,6 +389,10 @@ rg -n '\bbg-(blue|red|green|amber|rose|slate|gray|zinc)-[0-9]|\btext-(blue|red|g
 
 # layout.tsx <main> nested:
 rg -n '<main\b' apps/web/app/\(app\)/ --glob 'layout.tsx'
+
+# 하이브리드 그리드 (자체 <table> + grid 부품) — 절대 금지 (grid-standard §1):
+rg -l '<table\b' apps/web/app/\(app\)/ --glob '**/_components/**/*.tsx' \
+  | xargs rg -l 'EditableTextCell|EditableSelectCell|GridToolbar|RowStatusBadge'
 ```
 
 `_components/` 하위 내부 컴포넌트(form 카드·셀 등)는 자체 padding/색상 정상 — 제외.
@@ -419,8 +423,10 @@ ask/* 라우트는 fullWidth bypass (AppShellMain 자체가 wrapper 안 씌움) 
 ### 그리드 페이지 (추가)
 - [ ] `<PageShellFit>` 사용 (PageShell 아님)
 - [ ] [grid-standard.md](./grid-standard.md) 11항 체크리스트 모두 통과
+- [ ] **`<DataGrid<T>>` 단독 사용 — 자체 `<table>` + 부품 조합("하이브리드") 0건** (grid-standard §1 절대 원칙)
 - [ ] DataGrid baseline 사용 (`@tanstack/react-table` 신규 도입 0건)
 - [ ] GridContainer 최상단 wrapper = `<div className="flex h-full min-h-0 flex-col gap-3">`
+- [ ] master/detail / lockOnExisting / readOnly / hideToolbar 등 모든 케이스는 DataGrid prop으로 표현. 신규 케이스가 필요하면 DataGrid에 prop 추가 PR로 분리
 
 ### 본문/폼 페이지 (추가)
 - [ ] `<PageShell>` 사용 (PageShellFit 아님)
