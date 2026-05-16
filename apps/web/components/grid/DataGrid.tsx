@@ -409,22 +409,26 @@ export function DataGrid<T extends WithId>({
         )}
       </div>
 
-      {/* table scroll 영역 — 부모의 남은 height을 모두 차지.
-          windowedPagination=true: overflow-hidden (내부 스크롤 X, viewport-fit).
-          windowedPagination=false(기본): overflow-auto (내부 스크롤, 기존 동작). */}
-      <div
-        ref={tableWrapperRef}
-        className={[
-          "min-h-0 flex-1 rounded border border-(--border-default)",
-          windowedPagination ? "overflow-hidden" : "overflow-auto",
-        ].join(" ")}
-      >
-        <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-(--bg-surface) text-[11px] font-semibold uppercase tracking-wide text-(--fg-secondary)">
+      {/* 그리드 컨테이너 — Variant C "Bottom 2px brand accent" 스타일 (2026-05-17).
+          외부 wrapper: rounded-[var(--radius-xl)] + shadow-soft + overflow-hidden.
+            → radius와 thead 가속선이 깔끔히 겹침.
+          내부 wrapper (tableWrapperRef): 실제 scroll 영역 + ResizeObserver 측정.
+            windowedPagination=true: overflow-hidden (viewport-fit, table fits).
+            windowedPagination=false(기본): overflow-auto (rows 많으면 내부 스크롤). */}
+      <div className="min-h-0 flex-1 overflow-hidden rounded-[var(--radius-xl)] border border-(--border-default) shadow-[var(--shadow-soft)]">
+        <div
+          ref={tableWrapperRef}
+          className={[
+            "h-full",
+            windowedPagination ? "overflow-hidden" : "overflow-auto",
+          ].join(" ")}
+        >
+          <table className="min-w-full border-collapse text-sm">
+          <thead className="sticky top-0 z-10 bg-(--bg-page) text-[11px] font-bold uppercase tracking-[0.08em] text-(--fg-primary)">
             {groupHeaders && groupHeaders.length > 0 ? (
               <tr
                 data-testid="group-header-row"
-                className="border-b border-(--border-default) bg-(--bg-surface)"
+                className="border-b border-(--border-default)"
               >
                 {/* No + 삭제 컬럼 leading. readOnly이면 No만 (삭제 컬럼 hide). */}
                 <th
@@ -447,18 +451,22 @@ export function DataGrid<T extends WithId>({
                 <th aria-hidden />
               </tr>
             ) : null}
-            <tr className="border-b border-(--border-default)">
+            {/* 메인 컬럼 헤더 row — Variant C 2px brand accent 가속선.
+                테마 swap 시 (blue/indigo/teal/forest/graphite) brand-primary
+                토큰을 따라 자동 변경. 하드코드 hex 금지. */}
+            <tr className="border-b-2 border-(--brand-primary)">
               {/* whitespace-nowrap: 한글 헤더가 좁은 컬럼에서 세로 줄바꿈되지 않게.
-                  No=44px, 삭제=56px(readOnly 시 hide), 상태=64px 최소폭 보장. */}
-              <th className="w-11 whitespace-nowrap px-2 py-2 text-left">{t("no")}</th>
+                  No=44px, 삭제=56px(readOnly 시 hide), 상태=64px 최소폭 보장.
+                  padding 11/14 (spec): h-8 row 안에 padding 흡수 위해 py-[7px] 조정. */}
+              <th className="w-11 whitespace-nowrap px-[14px] py-[11px] text-left">{t("no")}</th>
               {!readOnly && (
-                <th className="w-14 whitespace-nowrap px-2 py-2 text-center">{t("delete")}</th>
+                <th className="w-14 whitespace-nowrap px-[14px] py-[11px] text-center">{t("delete")}</th>
               )}
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={[
-                    "whitespace-nowrap px-2 py-2",
+                    "whitespace-nowrap px-[14px] py-[11px]",
                     col.type === "numeric" ? "text-right" : "text-left",
                   ].join(" ")}
                   style={col.width ? { width: col.width } : undefined}
@@ -466,7 +474,7 @@ export function DataGrid<T extends WithId>({
                   {col.label}
                 </th>
               ))}
-              <th className="w-16 whitespace-nowrap px-2 py-2 text-center">{t("status")}</th>
+              <th className="w-16 whitespace-nowrap px-[14px] py-[11px] text-center">{t("status")}</th>
             </tr>
             {/*
               per-column filter row — filters가 비어있으면 빈 행만 렌더되어
@@ -496,14 +504,17 @@ export function DataGrid<T extends WithId>({
               </tr>
             ) : (
               grid.rows.map((r, i) => (
+                // Variant C: tr border 제거 + td에 border-bottom-(--border-soft)
+                // 적용 (셀 단위 separator). last:[&_td]:border-b-0로 마지막 행
+                // 셀의 border 제거. hover는 surface tint.
                 <tr
                   key={r.data.id}
                   data-row-status={r.state}
                   onClick={() => handleRowSelect(r.data.id)}
                   onDoubleClick={() => onRowDoubleClick?.(r.data)}
                   className={[
-                    "border-b border-(--border-default) transition-colors duration-150",
-                    "hover:bg-(--bg-page)",
+                    "transition-colors duration-150 [&_td]:border-b [&_td]:border-(--border-soft) last:[&_td]:border-b-0",
+                    "hover:bg-(--bg-surface)",
                     selected === r.data.id ? "bg-blue-50/40" : "",
                     r.state === "deleted" ? "bg-rose-50/40 line-through opacity-70" : "",
                     r.state === "new" ? "bg-blue-50/40" : "",
@@ -667,6 +678,7 @@ export function DataGrid<T extends WithId>({
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/*

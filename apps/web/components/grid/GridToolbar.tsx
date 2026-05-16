@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Props = {
   dirtyCount: number;
@@ -78,7 +79,20 @@ export function GridToolbar({
           {resolvedCopy}
         </Button>
       )}
-      <Button size="sm" disabled={effectiveDirty === 0 || effectiveSaving} onClick={onSave}>
+      {/*
+        Variant C 저장 버튼: dirty > 0이면 brand-primary-bg + brand-primary-text
+        tint 강조 (default solid primary보다 부드러움). dirty = 0이면 default
+        variant disabled 그대로.
+      */}
+      <Button
+        size="sm"
+        disabled={effectiveDirty === 0 || effectiveSaving}
+        onClick={onSave}
+        className={cn(
+          effectiveDirty > 0 &&
+            "bg-(--brand-primary-bg) text-(--brand-primary-text) hover:bg-(--brand-primary-bg) hover:opacity-80",
+        )}
+      >
         {effectiveSaving
           ? resolvedSaving
           : effectiveDirty > 0
