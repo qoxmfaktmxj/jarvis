@@ -131,13 +131,17 @@ function NavButton({
         gap: 10,
         padding: expanded ? "7px 10px" : "9px 0",
         justifyContent: expanded ? "flex-start" : "center",
-        color: active ? "var(--ink)" : "var(--muted)",
-        background: active && expanded ? "var(--line2)" : "transparent",
+        color: active
+          ? "var(--brand-primary-text)"
+          : "var(--muted)",
+        background: active && expanded ? "var(--brand-primary-bg)" : "transparent",
         fontWeight: active ? 500 : 400,
         fontSize: 13.5,
       }}
     >
-      {/* keep all existing children unchanged: indicator, icon, label, badge */}
+      {/* Active indicator: 3px 좌측 막대.
+       * rail 모드: 중앙 정렬(top:50%, h-14), 기존 패턴 유지.
+       * expanded 모드: 상하 6px 마진, brand-primary 색. */}
       {active && !expanded ? (
         <span
           aria-hidden
@@ -148,8 +152,22 @@ function NavButton({
             transform: "translateY(-50%)",
             width: 3,
             height: 14,
-            background: "var(--ink)",
+            background: "var(--brand-primary)",
             borderRadius: 2,
+          }}
+        />
+      ) : null}
+      {active && expanded ? (
+        <span
+          aria-hidden
+          className="absolute"
+          style={{
+            left: -2,
+            top: 6,
+            bottom: 6,
+            width: 3,
+            background: "var(--brand-primary)",
+            borderRadius: "0 2px 2px 0",
           }}
         />
       ) : null}
@@ -157,8 +175,6 @@ function NavButton({
         <Icon className="h-4 w-4" aria-hidden />
       </span>
       {expanded ? <span className="truncate">{label}</span> : null}
-      {/* Badge — expanded 모드에서만 (rail에서는 라벨이 숨겨지므로 배지도
-          생략). menu_item.badge 가 비어 있지 않은 행에만 렌더된다. */}
       {expanded && badge ? (
         <span
           aria-label={`${label} ${badge}`}
