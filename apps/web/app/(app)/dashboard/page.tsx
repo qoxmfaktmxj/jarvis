@@ -58,9 +58,13 @@ export default async function DashboardPage({
 
   return (
     <PageShellFit
-      title={t("greeting", { name: displayName })}
-      actions={
-        <>
+      header={
+        // dashboard 한정 inline 패턴 — greeting 옆에 mascot + mood 한 줄.
+        // 다른 페이지는 PageShell의 title/actions prop을 사용 (PageHeader 표준).
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">
+            {t("greeting", { name: displayName })}
+          </h1>
           <Image
             src={`/capybara/${mood.id}.png`}
             alt=""
@@ -72,7 +76,7 @@ export default async function DashboardPage({
             className="shrink-0 object-contain"
           />
           <span className="text-[13px] text-(--fg-secondary)">{mood.message}</span>
-        </>
+        </div>
       }
     >
       {showForbidden ? <ForbiddenBanner /> : null}
