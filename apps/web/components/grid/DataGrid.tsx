@@ -352,12 +352,21 @@ export function DataGrid<T extends WithId>({
               ))}
               <th className="w-16 whitespace-nowrap px-2 py-2 text-center">{t("status")}</th>
             </tr>
-            <ColumnFilterRow<T>
-              filters={filters}
-              values={filterValues}
-              onChange={handleFilterChange}
-              leadingCols={readOnly ? 1 : 2}
-            />
+            {/*
+              per-column filter row — filters가 비어있으면 빈 행만 렌더되어
+              컬럼 헤더와 첫 데이터 행 사이에 공백 줄이 보이는 시각 버그가
+              생긴다. 검색은 보통 GridSearchForm(컬럼 헤더 위 카드)이 담당하고
+              per-column row는 거의 안 쓰므로, 명시적으로 filters가 있을 때만
+              렌더해 빈 행 노출 회귀를 차단.
+            */}
+            {filters.length > 0 && (
+              <ColumnFilterRow<T>
+                filters={filters}
+                values={filterValues}
+                onChange={handleFilterChange}
+                leadingCols={readOnly ? 1 : 2}
+              />
+            )}
           </thead>
           <tbody>
             {grid.rows.length === 0 ? (
