@@ -15,7 +15,9 @@ import { usePathname } from "next/navigation";
  *  3. **max-w 사이드바 반응**: `calc(1700px + (220px - var(--sidebar-width)))` —
  *     사이드바 expanded(220px)면 max 1700, rail(60px)면 max 1860. 즉 사이드바
  *     닫은 만큼 컨텐츠 폭이 자동 확장. 화면이 max-w보다 작으면 그냥 그 폭 사용.
- *  4. **최소 padding**: px-4 + pt-1.5 (위 6px) + pb-[3px] (아래 3px, 위의 50%).
+ *  4. **표준 padding**: px-6 (좌우 24px) + pt-6 (위 24px) + pb-3 (아래 12px,
+ *     위의 50%). 모든 페이지가 이 값을 일관 사용 — 페이지에서 자체
+ *     mx-auto/max-w/px/py 사용 금지.
  *
  * 페이지 측 권장 패턴:
  *  - 자연 height 페이지: `<PageShell title>{...}</PageShell>`
@@ -45,7 +47,7 @@ export function AppShellMain({ children }: { children: React.ReactNode }) {
         <div className="h-full w-full overflow-hidden">{children}</div>
       ) : (
         <div
-          className="mx-auto h-full overflow-hidden px-4 pt-1.5 pb-[3px]"
+          className="mx-auto h-full overflow-hidden px-6 pt-6 pb-3"
           style={{
             maxWidth: "calc(1700px + (220px - var(--sidebar-width)))",
           }}
