@@ -78,7 +78,7 @@ export function UserMenu({ userName }: { userName: string }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-2 w-60 rounded-2xl border border-surface-200 bg-card p-2 shadow-xl"
+          className="absolute right-0 top-full mt-2 w-60 rounded-xl border border-surface-200 bg-card p-2 shadow-xl"
         >
           <Link
             href="/profile"

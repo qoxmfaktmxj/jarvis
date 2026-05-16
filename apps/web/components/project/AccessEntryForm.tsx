@@ -69,7 +69,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-4 rounded-2xl border border-surface-200 bg-card p-5 shadow-sm"
+      className="space-y-4 rounded-xl border border-surface-200 bg-card p-5 shadow-sm"
     >
       <div className="flex items-center justify-between">
         <div>
