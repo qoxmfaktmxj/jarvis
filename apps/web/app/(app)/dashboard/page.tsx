@@ -64,7 +64,7 @@ export default async function DashboardPage({
         // 페이지 우측 끝으로 떨어져 의도(인사 옆)와 다름. PageShellFit `header`
         // prop으로 override해서 같은 라인에 inline. items-baseline + 32px mascot
         // 으로 row height을 표준 h1과 거의 동일(~37.5px)하게 유지.
-        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-1">
           <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">
             {t("greeting", { name: displayName })}
           </h1>
