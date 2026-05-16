@@ -58,18 +58,18 @@ export default async function DashboardPage({
 
   return (
     <PageShellFit
-      header={
-        // dashboard 한정 inline 패턴 — greeting 옆에 mascot + mood 한 줄.
-        // 다른 페이지는 PageShell의 title/actions prop을 사용 (PageHeader 표준).
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-(--fg-primary)">
-            {t("greeting", { name: displayName })}
-          </h1>
+      title={t("greeting", { name: displayName })}
+      actions={
+        // mascot + mood 한 줄을 우측 actions 슬롯으로 이동. dashboard만 inline
+        // header를 쓰면 전체 페이지와 위/좌/우/아래 여백 정합이 깨져 (`items-
+        // center` + 40px mascot이 row height을 키움), 메뉴 화면 기준 통일을 위해
+        // 표준 PageHeader title+actions 패턴으로 전환 (2026-05-16).
+        <div className="flex items-center gap-2">
           <Image
             src={`/capybara/${mood.id}.png`}
             alt=""
-            width={40}
-            height={40}
+            width={32}
+            height={32}
             priority
             unoptimized
             aria-hidden="true"
