@@ -108,31 +108,21 @@ function TabItem({
         gap: 8,
         paddingInline: 14,
         marginTop: 16,
-        marginBottom: active ? -1 : 0,
         marginRight: 2,
-        borderTopLeftRadius: 10,
-        borderTopRightRadius: 10,
-        borderTop: active
-          ? "1px solid var(--line)"
-          : hovered
-            ? "1px solid var(--line2)"
-            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
-        borderLeft: active
-          ? "1px solid var(--line)"
-          : hovered
-            ? "1px solid var(--line2)"
-            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
-        borderRight: active
-          ? "1px solid var(--line)"
-          : hovered
-            ? "1px solid var(--line2)"
-            : "1px solid color-mix(in oklab, var(--line2) 45%, transparent)",
+        // v5: 단순 underline + brand-primary tint (chrome-tab style 폐기)
+        borderBottom: active
+          ? "2px solid var(--brand-primary)"
+          : "2px solid transparent",
         background: active
-          ? "var(--bg)"
+          ? "var(--brand-primary-bg)"
           : hovered
-            ? "var(--line2)"
+            ? "var(--bg-surface)"
             : "transparent",
-        color: active || hovered ? "var(--ink)" : "var(--ink2)",
+        color: active
+          ? "var(--brand-primary-text)"
+          : hovered
+            ? "var(--ink)"
+            : "var(--ink2)",
         fontSize: 12,
         fontWeight: active ? 600 : 400,
         maxWidth: 180,
