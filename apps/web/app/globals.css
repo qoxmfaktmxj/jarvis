@@ -112,6 +112,7 @@
   --color-warning-strong: #b04800;
   --color-danger:         var(--color-red-500);
   --color-danger-subtle:  var(--color-red-50);
+  /* Info status는 semantic 고정 — 5테마 picker에 따라가지 않음 (Done/Warn처럼 의미). */
   --color-info:           var(--color-notion-blue);
   --color-info-subtle:    var(--color-notion-blue-bg);
 
@@ -122,33 +123,43 @@
   --color-card-foreground:      var(--color-notion-black);
   --color-popover:              #ffffff;
   --color-popover-foreground:   var(--color-notion-black);
-  --color-primary:              var(--color-notion-blue);
+  --color-primary:              var(--brand-primary);
   --color-primary-foreground:   #ffffff;
   --color-secondary:            var(--color-warm-50);
   --color-secondary-foreground: var(--color-notion-black);
   --color-muted:                var(--color-warm-50);
   --color-muted-foreground:     var(--color-warm-500);
-  --color-accent:               var(--color-notion-blue-bg);    /* lime 제거, Notion Blue tint */
-  --color-accent-foreground:    var(--color-notion-blue-text);
+  --color-accent:               var(--brand-primary-bg);
+  --color-accent-foreground:    var(--brand-primary-text);
   --color-destructive:          var(--color-red-500);
   --color-destructive-foreground: #ffffff;
   --color-border:               var(--color-whisper);
   --color-input:                var(--color-whisper);
-  --color-ring:                 var(--color-notion-blue-text);
+  --color-ring:                 var(--brand-primary);
 
   /* Role aliases (primitive에서 직접 참조) */
-  --bg-page:                    #ffffff;
-  --bg-surface:                 var(--color-warm-50);
+  /* elevation 차원: 순백은 "올라온 것"(카드/chrome), warm은 "캔버스" */
+  --bg-page:                    #ffffff;               /* 카드 body, 폼 input, chrome 등 elevated */
+  --bg-surface:                 var(--color-warm-50);  /* code chip, 카드 header 등 subtle tint */
+  --bg-canvas:                  var(--color-warm-50);  /* 페이지 캔버스 (body background) */
   --fg-primary:                 var(--color-notion-black);
   --fg-secondary:               var(--color-warm-500);
   --fg-muted:                   var(--color-warm-300);
+
+  /* brand-primary 단일 SoT. hover/bg/text는 color-mix로 자동 파생.
+   * data-theme-color="..." 5블록은 --brand-primary 한 줄만 override한다.
+   *
+   * 라이트 비율: hover 80/20 black (press 시각 강조), bg 8/92 white (whisper tint),
+   *              text = primary 그대로 (링크 / 좌측 indicator 색).
+   * 다크 비율은 dim 처리를 위해 별도 (70/30 white) — 다크 블록 참조. */
   --brand-primary:              var(--color-notion-blue);
-  --brand-primary-hover:        var(--color-notion-blue-hover);
-  --brand-primary-bg:           var(--color-notion-blue-bg);
-  --brand-primary-text:         var(--color-notion-blue-text);
+  --brand-primary-hover:        color-mix(in oklab, var(--brand-primary) 80%, black 20%);
+  --brand-primary-bg:           color-mix(in oklab, var(--brand-primary)  8%, white 92%);
+  --brand-primary-text:         var(--brand-primary);
+
   --border-default:             var(--color-whisper);
   --border-soft:                var(--color-whisper-soft);
-  --border-focus:               var(--color-notion-blue-text);
+  --border-focus:               var(--brand-primary);
 
   /* Status role tokens (StatusChip에서 참조) */
   --status-done-bg:     var(--color-green-50);
@@ -220,6 +231,19 @@
   --color-sidebar-accent:     var(--color-lime-400);
 }
 
+/* ── Theme palette · light ─────────────────────────────────────
+ * --brand-primary 하나만 override. hover/bg/text는 위 color-mix가
+ * 자동으로 따라간다. data-theme-color="blue"는 기본값이므로
+ * override가 필요 없지만, 명시적으로 둬서 picker 활성 상태 표시 가능. */
+:root[data-theme-color="blue"]     { --brand-primary: #0075de; }
+:root[data-theme-color="indigo"]   { --brand-primary: #5e6ad2; }
+:root[data-theme-color="teal"]     { --brand-primary: #2a9d99; }
+:root[data-theme-color="forest"]   { --brand-primary: #0f6e3a; }
+:root[data-theme-color="graphite"] {
+  --brand-primary: #171717;
+  --brand-primary-hover: #3a3a3a;  /* L-extreme color-mix 무의미 → 명시 override */
+}
+
 @layer base {
   :root {
     /* Legacy semantic aliases — still referenced by existing components */
@@ -238,18 +262,18 @@
     --sidebar-width-collapsed: 60px;
     --topbar-height: 47px;
 
-    /* ── Prototype token aliases → new Notion-aligned scale ─── */
-    --bg:          #ffffff;                       /* page */
-    --panel:       var(--color-warm-50);          /* elevated surface */
-    --line:        var(--color-whisper);
-    --line2:       var(--color-whisper-soft);
-    --ink:         var(--color-notion-black);
+    /* ── Prototype token aliases ───────────────────────────── */
+    --bg:          var(--bg-canvas);   /* warm-50 캔버스 */
+    --panel:       var(--bg-page);     /* #fff elevated (카드 + chrome) */
+    --line:        var(--border-default);
+    --line2:       var(--border-soft);
+    --ink:         var(--fg-primary);
     --ink2:        var(--color-warm-700);
     --muted:       var(--color-warm-500);
     --faint:       var(--color-warm-300);
-    --accent:      var(--color-notion-blue);
-    --accent-ink:  var(--color-notion-blue-text);
-    --accent-tint: var(--color-notion-blue-bg);
+    --accent:      var(--brand-primary);
+    --accent-ink:  var(--brand-primary-text);
+    --accent-tint: var(--brand-primary-bg);
     --mint:        var(--color-teal);
     --mint-tint:   var(--color-teal-50);
     --amber:       var(--color-orange);
@@ -278,7 +302,7 @@
   }
 
   body {
-    background: var(--color-surface-50);
+    background: var(--bg-canvas);
     color: var(--color-surface-900);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -320,32 +344,36 @@
   --color-card-foreground:      rgba(255,255,255,0.95);
   --color-popover:              #242322;
   --color-popover-foreground:   rgba(255,255,255,0.95);
-  --color-primary:              #529cca;
+  --color-primary:              var(--brand-primary);
   --color-primary-foreground:   #ffffff;
   --color-secondary:            #242322;
   --color-secondary-foreground: rgba(255,255,255,0.95);
   --color-muted:                #242322;
   --color-muted-foreground:     #a8a4a0;
-  --color-accent:               rgba(82,156,202,0.12);
-  --color-accent-foreground:    #74b3d8;
+  --color-accent:               var(--brand-primary-bg);
+  --color-accent-foreground:    var(--brand-primary-text);
   --color-destructive:          #ff6b6b;
   --color-destructive-foreground: #ffffff;
   --color-border:               rgba(255,255,255,0.094);
   --color-input:                rgba(255,255,255,0.094);
-  --color-ring:                 #74b3d8;
+  --color-ring:                 var(--brand-primary);
 
-  --bg-page:                    #191918;
-  --bg-surface:                 #242322;
+  --bg-page:                    #242322;               /* 카드/chrome elevated, dark */
+  --bg-surface:                 #2e2c2a;               /* subtle tint, dark */
+  --bg-canvas:                  #191918;               /* 페이지 캔버스, dark */
   --fg-primary:                 rgba(255,255,255,0.95);
   --fg-secondary:               #a8a4a0;
   --fg-muted:                   #7c7874;
-  --brand-primary:              #529cca;
-  --brand-primary-hover:        #74b3d8;
-  --brand-primary-bg:           rgba(82,156,202,0.12);
-  --brand-primary-text:         #74b3d8;
+
+  /* 다크 — brand-primary는 light와 동일 hex 사용. bg/text는 color-mix로
+   * 어두운 배경에 자연스럽게 dim. hover는 lightness +15% 보정. */
+  --brand-primary:              var(--color-notion-blue);
+  --brand-primary-hover:        color-mix(in oklab, var(--brand-primary) 70%, white 30%);
+  --brand-primary-bg:           color-mix(in oklab, var(--brand-primary) 18%, transparent);
+  --brand-primary-text:         color-mix(in oklab, var(--brand-primary) 70%, white 30%);
   --border-default:             rgba(255,255,255,0.094);
   --border-soft:                rgba(255,255,255,0.06);
-  --border-focus:               #74b3d8;
+  --border-focus:               var(--brand-primary);
 
   --status-done-bg:              rgba(26,174,57,0.15);
   --status-done-fg:              #4ccf64;
@@ -389,20 +417,30 @@
   --color-lime-600:    #a8a4a0;
 
   /* Prototype tokens — warm-dark 팔레트 */
-  --bg:           #191918;
-  --panel:        #242322;
-  --line:         rgba(255,255,255,0.094);
-  --line2:        rgba(255,255,255,0.06);
-  --ink:          rgba(255,255,255,0.95);
+  --bg:           var(--bg-canvas);
+  --panel:        var(--bg-page);
+  --line:         var(--border-default);
+  --line2:        var(--border-soft);
+  --ink:          var(--fg-primary);
   --ink2:         #c9c5c0;
   --muted:        #a8a4a0;
   --faint:        #7c7874;
-  --accent:       #529cca;
-  --accent-ink:   #74b3d8;
-  --accent-tint:  rgba(82,156,202,0.12);
+  --accent:       var(--brand-primary);
+  --accent-ink:   var(--brand-primary-text);
+  --accent-tint:  var(--brand-primary-bg);
   --shadow-md:    0 2px 6px rgba(0,0,0,0.40), 0 6px 20px rgba(0,0,0,0.30);
   --shadow-lg:    0 10px 30px rgba(0,0,0,0.55), 0 4px 10px rgba(0,0,0,0.35);
 }
+
+/* 다크 5테마 — light hex 그대로 + color-mix 파생이 다크 처리를 담당 */
+:root[data-theme="dark"][data-theme-color="blue"]     { --brand-primary: #0075de; }
+:root[data-theme="dark"][data-theme-color="indigo"]   { --brand-primary: #5e6ad2; }
+:root[data-theme="dark"][data-theme-color="teal"]     { --brand-primary: #2a9d99; }
+:root[data-theme="dark"][data-theme-color="forest"]   { --brand-primary: #0f6e3a; }
+:root[data-theme="dark"][data-theme-color="graphite"] {
+  --brand-primary: #f5f5f5;
+  --brand-primary-hover: #d4d4d4;  /* L-extreme color-mix 무의미 → 명시 override */
+}  /* 다크 bg(#191918)와 충돌 방지로 반전 */
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {

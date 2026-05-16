@@ -8,6 +8,7 @@ Format: [버전/날짜] — 변경 유형 — 내용
 ## [Unreleased] — Phase-W 진행 중 (2026-04-16~)
 
 ### Added
+- **2026-05-16 디자인 시스템 도입 (v4)**: Q5=B token swap(`--bg-page` warm-50, `--bg-surface` `#fff`) + `--brand-primary` 단일 SoT `color-mix(in oklab)` 파생 + 5테마 picker(Notion Blue / Indigo / Teal / Forest `#0f6e3a` / Graphite) `data-theme-color` 10블록(light + dark) + 사이드바 expanded active brand-primary 8% 틴트 + 좌측 3px indicator + `ThemeColorPicker.tsx` 5 swatch radio + UserMenu "테마 설정" submenu 활성화 + `useThemeColor/setThemeColor` localStorage 영속 + `UI_PREFS_BOOTSTRAP` FOUC 방지 inline script 확장 + i18n `Theme.colors.*` / `Common.themeColor` ko+en. **Sunset 제외** (`#dd5b00` ≡ `--color-orange` Warn 충돌). 검증: vitest 11/11 PASS, playwright theme-picker 5/5 PASS×2, type-check + lint + audit:rsc + build clean. plan `docs/superpowers/plans/2026-05-16-design-system-adoption.md`.
 - Wiki Phase-C: GitHub Actions wiki-boundary-check, legacy-body-grep, type-check, schema-drift 워크플로
 - Wiki Phase-C: Tiptap 기반 manual 편집 에디터 (C1)
 - Wiki Phase-C: 읽기 전용 위키 뷰어 (C2)
@@ -17,6 +18,13 @@ Format: [버전/날짜] — 변경 유형 — 내용
 - Wiki Phase-C: wiki-check.mjs 무결성 검증 스크립트
 - Wiki Phase-C: Storybook 초기 설정 (C6)
 - Wiki Phase-C: Playwright E2E 시나리오 spec skeleton (C7)
+
+### Changed
+- **2026-05-16**: shadcn bridge 토큰(`--color-primary`/`--color-accent`/`--color-accent-foreground`/`--color-ring`) + prototype alias(`--panel`/`--bg`/`--accent*`) 모두 `--brand-primary*` SoT 참조로 통일 → 테마 picker가 shadcn UI + 라이트 prototype에도 자동 cascade.
+- **2026-05-16**: `--border-focus` `--color-notion-blue-text` 하드코딩 → `var(--brand-primary)` 참조 (테마 변경 시 focus ring 자동 따라감).
+- **2026-05-16**: `Sidebar.tsx` expanded active 시각 `var(--line2)` warm pill → `var(--brand-primary-bg)` 브랜드 틴트 + 좌측 3px indicator (rail와 패턴 통일).
+- **2026-05-16**: `docs/design-system.md` v3 → v4 갱신 (swap + 5테마 picker 섹션 + 토큰 파생 모델 추가).
+- **2026-05-16 ultrareview fix**: `--bg-page`/`--bg-surface` swap revert + 신규 `--bg-canvas` 토큰 도입 (57 파일 무수정 유지). graphite hover override(L-extreme color-mix 회피). `useThemeColor` lazy init. ThemeColorPicker 다크 graphite swatch hex 반전 일치 + APG radiogroup 키보드 패턴(roving tabindex + Arrow/Home/End). UserMenu 잘못된 `aria-haspopup`/`role="region"` 제거.
 
 ---
 

@@ -5,13 +5,13 @@
  *
  * - rail:     아이콘만, 활성은 좌측 3px 인디케이터. 헤더는 토글 버튼만.
  *             그룹 헤더는 숨기고 자식 리프만 평면 렌더.
- * - expanded: 아이콘 + 라벨, 활성은 bg-line2 pill + 아이콘 옆 3px 인디케이터.
+ * - expanded: 아이콘 + 라벨, 활성은 brand-primary 8% 틴트 pill + 좌측 3px brand-primary 인디케이터.
  *             헤더는 [Capy + "Jarvis"] 좌측, 토글 버튼 우측 끝.
  *             그룹은 NavGroup으로 collapsible 렌더.
  *
  * 모드 전환은 헤더의 토글 버튼. localStorage 키 `jv.sidebar`.
  * 트리 펼침/접힘은 useNavTreeOpen 훅 (localStorage 키 `jv.sidebar.tree`).
- * 색상은 app.jsx 디자인 토큰(--panel/--line/--ink/--muted/--line2) 사용.
+ * 색상은 디자인 토큰(--bg/--panel/--line/--ink/--muted + active는 --brand-primary*) 사용.
  *
  * 데이터 소스: 상위 RSC(layout.tsx → AppShell)에서 `getVisibleMenuTree(session,
  * "menu")` 결과를 props로 받는다. RBAC 필터링은 서버에서 끝났으므로 여기서는
@@ -131,13 +131,17 @@ function NavButton({
         gap: 10,
         padding: expanded ? "7px 10px" : "9px 0",
         justifyContent: expanded ? "flex-start" : "center",
-        color: active ? "var(--ink)" : "var(--muted)",
-        background: active && expanded ? "var(--line2)" : "transparent",
+        color: active
+          ? "var(--brand-primary-text)"
+          : "var(--muted)",
+        background: active && expanded ? "var(--brand-primary-bg)" : "transparent",
         fontWeight: active ? 500 : 400,
         fontSize: 13.5,
       }}
     >
-      {/* keep all existing children unchanged: indicator, icon, label, badge */}
+      {/* Active indicator: 3px 좌측 막대.
+       * rail 모드: 중앙 정렬(top:50%, h-14), 기존 패턴 유지.
+       * expanded 모드: 상하 6px 마진, brand-primary 색. */}
       {active && !expanded ? (
         <span
           aria-hidden
@@ -148,8 +152,22 @@ function NavButton({
             transform: "translateY(-50%)",
             width: 3,
             height: 14,
-            background: "var(--ink)",
+            background: "var(--brand-primary)",
             borderRadius: 2,
+          }}
+        />
+      ) : null}
+      {active && expanded ? (
+        <span
+          aria-hidden
+          className="absolute"
+          style={{
+            left: -2,
+            top: 6,
+            bottom: 6,
+            width: 3,
+            background: "var(--brand-primary)",
+            borderRadius: "0 2px 2px 0",
           }}
         />
       ) : null}
@@ -157,8 +175,6 @@ function NavButton({
         <Icon className="h-4 w-4" aria-hidden />
       </span>
       {expanded ? <span className="truncate">{label}</span> : null}
-      {/* Badge — expanded 모드에서만 (rail에서는 라벨이 숨겨지므로 배지도
-          생략). menu_item.badge 가 비어 있지 않은 행에만 렌더된다. */}
       {expanded && badge ? (
         <span
           aria-label={`${label} ${badge}`}

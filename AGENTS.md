@@ -12,7 +12,7 @@ Jarvis = **사내 업무 시스템 + LLM 컴파일 위키**를 하나의 TypeScr
 - 백그라운드 워커: `apps/worker` (pg-boss)
 - 공유 패키지: `packages/{ai,auth,db,search,secret,shared,wiki-fs,wiki-agent}` (8개)
 
-**상태:** 디자인은 전면 재구성 예정. UI 스타일을 완성형으로 만드는 데 시간 쓰지 말고 **구조와 데이터 흐름의 정합성을 우선**한다.
+**상태:** 디자인 시스템 v4 적용됨 (2026-05-16). 3-tier bg 토큰(`--bg-canvas` warm-50 페이지 / `--bg-page` #fff chrome+card / `--bg-surface` warm-50 subtle tint) + `--brand-primary` 단일 SoT + `color-mix(in oklab)` 파생 + 5테마 picker(`data-theme-color`). 새 UI는 `--brand-primary*` 토큰만 사용 — hex 직접 하드코딩 금지(테마 cascade 끊김). 카드/chrome은 `bg-[--bg-page]`, 페이지는 unset(body가 `--bg-canvas` 적용). 자세한 정책은 [`docs/design-system.md`](docs/design-system.md) v4.
 
 ## 개발 명령어
 
