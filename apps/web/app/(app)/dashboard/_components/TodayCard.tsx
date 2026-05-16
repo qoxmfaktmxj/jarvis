@@ -9,7 +9,7 @@ import { TodayClock } from "./TodayClock";
  *  ┌───────────────────────────────────┐
  *  │ 2026. 04. 30 목 · 서울 18° ☀     │  ← 13px regular, secondary
  *  │   10:02:46                        │  ← 36px bold mono (TodayClock)
- *  │ H 22° L 12° · 미세먼지 좋음       │  ← 12px regular, muted
+ *  │ 최고 22° 최저 12° · 미세먼지 좋음  │  ← 12px regular, muted
  *  └───────────────────────────────────┘
  *
  * 시간만 시각적으로 강조. 날짜·날씨는 컨텍스트 보조 정보.
@@ -55,7 +55,7 @@ export function TodayCard({
       <span className="text-[12px] text-(--fg-muted) tabular-nums">
         {weather ? (
           <>
-            H {Math.round(weather.hi)}° / L {Math.round(weather.lo)}°
+            최고 {Math.round(weather.hi)}° / 최저 {Math.round(weather.lo)}°
             {weather.dust ? (
               <>
                 <span className="mx-1.5">·</span>
