@@ -4,14 +4,15 @@ import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Palette, UserCircle2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { Badge } from "@/components/ui/badge";
 import { LoadingOverlay } from "@/components/layout/LoadingOverlay";
+import { ThemeColorPicker } from "./ThemeColorPicker";
 import { cn } from "@/lib/utils";
 
 export function UserMenu({ userName }: { userName: string }) {
   const t = useTranslations("Common");
   const [open, setOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [themePickerOpen, setThemePickerOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   async function handleLogout(event: FormEvent<HTMLFormElement>) {
@@ -86,15 +87,29 @@ export function UserMenu({ userName }: { userName: string }) {
           <button
             type="button"
             role="menuitem"
-            disabled
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-surface-400"
+            aria-haspopup="true"
+            aria-expanded={themePickerOpen}
+            onClick={() => setThemePickerOpen((v) => !v)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-surface-700 transition-colors hover:bg-surface-50"
           >
-            <Palette className="h-4 w-4" />
-            <span className="flex-1">테마 설정</span>
-            <Badge variant="warning" className="px-2 py-0.5 text-[11px]">
-              준비 중
-            </Badge>
+            <Palette className="h-4 w-4 text-surface-500" />
+            <span className="flex-1">{t("themeColor")}</span>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-surface-400 transition-transform",
+                themePickerOpen && "rotate-180"
+              )}
+            />
           </button>
+          {themePickerOpen ? (
+            <div
+              className="my-1 rounded-xl border border-surface-200 bg-surface-50"
+              role="region"
+              aria-label="Theme color picker"
+            >
+              <ThemeColorPicker />
+            </div>
+          ) : null}
 
           <div className="my-2 border-t border-surface-100" />
 
