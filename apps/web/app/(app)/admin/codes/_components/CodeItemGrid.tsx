@@ -171,7 +171,7 @@ export function CodeItemGrid({
   }, [t]);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       {/* Search form — DataGrid 외부. */}
       <GridSearchForm
         onSearch={onApplyFilters}

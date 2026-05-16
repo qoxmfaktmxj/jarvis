@@ -152,7 +152,7 @@ export function CodeGroupGrid({
   );
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-2">
       {/* Search form — DataGrid 외부. discardRef 경유로 DataGrid.discardChanges 연결. */}
       <GridSearchForm
         onSearch={onApplyFilters}

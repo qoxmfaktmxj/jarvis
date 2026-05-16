@@ -13,7 +13,7 @@
  */
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
-import { PageHeader } from "@/components/patterns/PageHeader";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { getCodesByGroup } from "@/lib/queries/admin";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listCodeGroups } from "./actions";
@@ -34,13 +34,12 @@ export default async function AdminCodesPage() {
     "total" in initial && typeof initial.total === "number" ? initial.total : 0;
 
   return (
-    <div className="space-y-3">
-      <PageHeader title={t("title")} />
+    <PageShellFit title={t("title")}>
       <CodesPageClient
         initialGroups={initialGroups}
         initialGroupTotal={initialGroupTotal}
         businessDivOptions={businessDivOptions}
       />
-    </div>
+    </PageShellFit>
   );
 }
