@@ -133,7 +133,7 @@ function NavButton({
         justifyContent: expanded ? "flex-start" : "center",
         color: active
           ? "var(--brand-primary-text)"
-          : "var(--muted)",
+          : "var(--ink)",
         background: active && expanded ? "var(--brand-primary-bg)" : "transparent",
         fontWeight: active ? 500 : 400,
         fontSize: 13.5,

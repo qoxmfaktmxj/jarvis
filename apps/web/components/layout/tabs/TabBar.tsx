@@ -120,9 +120,7 @@ function TabItem({
             : "transparent",
         color: active
           ? "var(--brand-primary-text)"
-          : hovered
-            ? "var(--ink)"
-            : "var(--ink2)",
+          : "var(--ink)",
         fontSize: 12,
         fontWeight: active ? 600 : 400,
         maxWidth: 180,
