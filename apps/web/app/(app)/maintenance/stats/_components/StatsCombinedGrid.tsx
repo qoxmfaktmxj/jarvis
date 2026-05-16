@@ -1,72 +1,99 @@
 "use client";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { DataGrid } from "@/components/grid/DataGrid";
+import type { ColumnDef } from "@/components/grid/types";
 import type { StatsCombinedRow } from "@jarvis/shared/validation/service-desk";
 
+type Row = StatsCombinedRow & { id: string };
+
+/**
+ * 담당자×회사 결합 통계 그리드 (read-only).
+ * 합성 id: `${managerNm}-${requestCompanyNm ?? "T"}-${index}`.
+ * 회사 == null인 subtotal 행은 셀 render에서 italic 라벨로 표시.
+ */
 export function StatsCombinedGrid({ rows }: { rows: StatsCombinedRow[] }) {
   const t = useTranslations("Maintenance.Stats.columns");
-  return (
-    <div className="overflow-auto rounded border border-slate-200">
-      <table className="w-full text-xs">
-        <thead className="sticky top-0 bg-slate-50">
-          <tr>
-            <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wide text-slate-600">
-              {t("managerName")}
-            </th>
-            <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wide text-slate-600">
-              {t("companyName")}
-            </th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("cnt")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("workTime")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("total")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("finalRank")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="p-3 text-center text-slate-400">
-                {t("empty")}
-              </td>
-            </tr>
+
+  const tableRows = useMemo<Row[]>(
+    () =>
+      rows.map((r, i) => ({
+        ...r,
+        id: `${r.managerNm ?? ""}-${r.requestCompanyNm ?? "T"}-${i}`,
+      })),
+    [rows],
+  );
+
+  const COLUMNS = useMemo<ColumnDef<Row>[]>(
+    () => [
+      {
+        key: "managerNm",
+        label: t("managerName"),
+        type: "readonly",
+        render: (r) => <span>{r.managerNm ?? "-"}</span>,
+      },
+      {
+        key: "requestCompanyNm",
+        label: t("companyName"),
+        type: "readonly",
+        render: (r) =>
+          r.requestCompanyNm !== null ? (
+            <span>{r.requestCompanyNm}</span>
           ) : (
-            rows.map((r, i) => (
-              <tr
-                key={`${r.managerNm ?? ""}-${r.requestCompanyNm ?? "T"}-${i}`}
-                className={
-                  "border-t border-slate-100 hover:bg-slate-50 " +
-                  (r.requestCompanyNm === null ? "bg-slate-50 font-semibold" : "")
-                }
-              >
-                <td className="px-2 py-1 text-slate-900">{r.managerNm ?? "-"}</td>
-                <td className="px-2 py-1 text-slate-700">
-                  {r.requestCompanyNm ?? (
-                    <span className="italic text-slate-400">{t("subtotal")}</span>
-                  )}
-                </td>
-                <td className="px-2 py-1 text-right">{r.cnt}</td>
-                <td className="px-2 py-1 text-right">{r.workTime.toFixed(0)}</td>
-                <td className="px-2 py-1 text-right">{r.total.toFixed(2)}</td>
-                <td
-                  className={
-                    "px-2 py-1 text-right " +
-                    (r.finalRank <= 3 ? "bg-rose-100 font-semibold text-rose-700" : "")
-                  }
-                >
-                  {r.finalRank}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            <span className="italic text-(--fg-muted)">{t("subtotal")}</span>
+          ),
+      },
+      { key: "cnt", label: t("cnt"), type: "numeric", width: 80, integer: true },
+      {
+        key: "workTime",
+        label: t("workTime"),
+        type: "readonly",
+        width: 96,
+        render: (r) => <span className="block text-right">{r.workTime.toFixed(0)}</span>,
+      },
+      {
+        key: "total",
+        label: t("total"),
+        type: "readonly",
+        width: 96,
+        render: (r) => <span className="block text-right">{r.total.toFixed(2)}</span>,
+      },
+      {
+        key: "finalRank",
+        label: t("finalRank"),
+        type: "readonly",
+        width: 96,
+        render: (r) => (
+          <span
+            className={
+              "block text-right " +
+              (r.finalRank <= 3
+                ? "rounded bg-rose-100 px-1.5 font-semibold text-rose-700"
+                : "")
+            }
+          >
+            {r.finalRank}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
+
+  return (
+    <DataGrid<Row>
+      rows={tableRows}
+      total={tableRows.length}
+      columns={COLUMNS}
+      filters={[]}
+      page={1}
+      limit={10000}
+      makeBlankRow={() => ({} as Row)}
+      readOnly
+      emptyMessage={t("empty")}
+      onPageChange={() => {}}
+      onFilterChange={() => {}}
+      onSave={async () => ({ ok: true })}
+    />
   );
 }

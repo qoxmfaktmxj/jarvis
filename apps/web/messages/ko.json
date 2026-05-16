@@ -1888,7 +1888,18 @@
     },
     "ContractUploads": {
       "title": "계약 업로드",
-      "downloadTemplate": "템플릿 다운로드"
+      "downloadTemplate": "템플릿 다운로드",
+      "unifiedResult": "통합 검색 결과",
+      "unifiedEmpty": "데이터가 없습니다.",
+      "unifiedColumns": {
+        "source": "출처",
+        "ym": "년월",
+        "company": "회사",
+        "project": "프로젝트",
+        "plan": "계획",
+        "view": "전망",
+        "perf": "실적"
+      }
     },
     "Contracts": {
       "title": "계약 관리",

@@ -1,65 +1,73 @@
 "use client";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { DataGrid } from "@/components/grid/DataGrid";
+import type { ColumnDef } from "@/components/grid/types";
 import type { StatsRow } from "@jarvis/shared/validation/service-desk";
 
+type Row = StatsRow & { id: string };
+
+/**
+ * 담당자별 유지보수 통계 그리드 (read-only).
+ * id 합성 + DataGrid readOnly 패턴은 StatsByCompanyGrid 참조.
+ */
 export function StatsByManagerGrid({ rows }: { rows: StatsRow[] }) {
   const t = useTranslations("Maintenance.Stats.columns");
+
+  const tableRows = useMemo<Row[]>(
+    () => rows.map((r, i) => ({ ...r, id: `${r.label}-${i}` })),
+    [rows],
+  );
+
+  const COLUMNS = useMemo<ColumnDef<Row>[]>(
+    () => [
+      { key: "label", label: t("managerName"), type: "readonly" },
+      { key: "cnt", label: t("cnt"), type: "numeric", width: 80, integer: true },
+      {
+        key: "workTime",
+        label: t("workTime"),
+        type: "readonly",
+        width: 96,
+        render: (r) => <span className="block text-right">{r.workTime.toFixed(0)}</span>,
+      },
+      { key: "rankingTime", label: t("rankingTime"), type: "numeric", width: 96, integer: true },
+      { key: "rankingCnt", label: t("rankingCnt"), type: "numeric", width: 96, integer: true },
+      {
+        key: "finalRank",
+        label: t("finalRank"),
+        type: "readonly",
+        width: 96,
+        render: (r) => (
+          <span
+            className={
+              "block text-right " +
+              (r.finalRank <= 3
+                ? "rounded bg-rose-100 px-1.5 font-semibold text-rose-700"
+                : "")
+            }
+          >
+            {r.finalRank}
+          </span>
+        ),
+      },
+    ],
+    [t],
+  );
+
   return (
-    <div className="overflow-auto rounded border border-slate-200">
-      <table className="w-full text-xs">
-        <thead className="sticky top-0 bg-slate-50">
-          <tr>
-            <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wide text-slate-600">
-              {t("managerName")}
-            </th>
-            <th className="w-20 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("cnt")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("workTime")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("rankingTime")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("rankingCnt")}
-            </th>
-            <th className="w-24 px-2 py-1.5 text-right font-semibold uppercase tracking-wide text-slate-600">
-              {t("finalRank")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={6} className="p-3 text-center text-slate-400">
-                {t("empty")}
-              </td>
-            </tr>
-          ) : (
-            rows.map((r, i) => (
-              <tr
-                key={`${r.label}-${i}`}
-                className="border-t border-slate-100 hover:bg-slate-50"
-              >
-                <td className="px-2 py-1 text-slate-900">{r.label}</td>
-                <td className="px-2 py-1 text-right">{r.cnt}</td>
-                <td className="px-2 py-1 text-right">{r.workTime.toFixed(0)}</td>
-                <td className="px-2 py-1 text-right">{r.rankingTime}</td>
-                <td className="px-2 py-1 text-right">{r.rankingCnt}</td>
-                <td
-                  className={
-                    "px-2 py-1 text-right " +
-                    (r.finalRank <= 3 ? "bg-rose-100 font-semibold text-rose-700" : "")
-                  }
-                >
-                  {r.finalRank}
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+    <DataGrid<Row>
+      rows={tableRows}
+      total={tableRows.length}
+      columns={COLUMNS}
+      filters={[]}
+      page={1}
+      limit={10000}
+      makeBlankRow={() => ({} as Row)}
+      readOnly
+      emptyMessage={t("empty")}
+      onPageChange={() => {}}
+      onFilterChange={() => {}}
+      onSave={async () => ({ ok: true })}
+    />
   );
 }

@@ -1,5 +1,8 @@
 "use client";
-
+/**
+ * @deprecated AddDevTable은 projects/[projectId]/add-dev 탭 전용으로만 사용.
+ * 메인 /add-dev 목록 페이지는 AddDevGridContainer(DataGrid 표준)를 사용하라.
+ */
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";

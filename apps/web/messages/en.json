@@ -387,7 +387,18 @@
     "ContractUploads": {
       "title": "Contract Uploads",
       "description": "Upload contract files and manage history.",
-      "downloadTemplate": "Download Template"
+      "downloadTemplate": "Download Template",
+      "unifiedResult": "Unified Search Results",
+      "unifiedEmpty": "No data.",
+      "unifiedColumns": {
+        "source": "Source",
+        "ym": "Year/Month",
+        "company": "Company",
+        "project": "Project",
+        "plan": "Plan",
+        "view": "Forecast",
+        "perf": "Actual"
+      }
     },
     "Contracts": {
       "title": "Contracts",

@@ -2,11 +2,10 @@
 /**
  * apps/web/app/(app)/admin/codes/_components/useCodeGroupGridState.ts
  *
- * 공통코드 — 그룹코드(master) 그리드 행 상태 훅.
- * 공유 useGridState<T>를 CodeGroupRow 타입으로 instantiate한 thin wrapper +
- * makeBlankCodeGroup helper. (admin/infra/licenses 패턴 그대로.)
+ * 공통코드 — 그룹코드(master) helper.
+ * Phase C: useGridState wrapper 제거 — DataGrid가 자체 state를 관리.
+ * makeBlankCodeGroup helper만 유지 (CodesPageClient가 DataGrid.makeBlankRow로 전달).
  */
-import { useGridState } from "@/components/grid/useGridState";
 import type { CodeGroupRow } from "@jarvis/shared/validation/admin/code";
 
 export function makeBlankCodeGroup(): CodeGroupRow {
@@ -22,8 +21,4 @@ export function makeBlankCodeGroup(): CodeGroupRow {
     isActive: true,
     subCnt: 0,
   } satisfies CodeGroupRow;
-}
-
-export function useCodeGroupGridState(initial: CodeGroupRow[]) {
-  return useGridState<CodeGroupRow>(initial);
 }

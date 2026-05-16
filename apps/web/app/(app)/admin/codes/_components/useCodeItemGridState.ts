@@ -2,14 +2,13 @@
 /**
  * apps/web/app/(app)/admin/codes/_components/useCodeItemGridState.ts
  *
- * 공통코드 — 세부코드(detail) 그리드 행 상태 훅.
- * 공유 useGridState<T>를 CodeItemRow 타입으로 instantiate한 thin wrapper +
- * makeBlankCodeItem helper.
+ * 공통코드 — 세부코드(detail) helper.
+ * Phase C: useGridState wrapper 제거 — DataGrid가 자체 state를 관리.
+ * makeBlankCodeItem helper만 유지 (CodeItemGrid가 DataGrid.makeBlankRow로 전달).
  *
  * 시작일/종료일 default는 packages/shared/validation/admin/code.ts의
  * codeItemCreateInput zod default와 동일 (1900-01-01 / 2999-12-31).
  */
-import { useGridState } from "@/components/grid/useGridState";
 import type { CodeItemRow } from "@jarvis/shared/validation/admin/code";
 
 export function makeBlankCodeItem(groupId: string): CodeItemRow {
@@ -37,8 +36,4 @@ export function makeBlankCodeItem(groupId: string): CodeItemRow {
     sortOrder: 0,
     isActive: true,
   } satisfies CodeItemRow;
-}
-
-export function useCodeItemGridState(initial: CodeItemRow[]) {
-  return useGridState<CodeItemRow>(initial);
 }

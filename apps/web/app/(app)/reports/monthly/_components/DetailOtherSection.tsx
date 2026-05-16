@@ -1,6 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { DataGrid } from "@/components/grid/DataGrid";
+import type {
+  ColumnDef,
+  GridChanges,
+  GridSaveResult,
+} from "@/components/grid/types";
+import type { GridRow } from "@/components/grid/useGridState";
 import { saveDetailOther } from "../actions";
 import type { MonthReportDetailOtherRow } from "@jarvis/shared/validation/month-report";
 
@@ -11,115 +18,130 @@ interface Props {
   onSaved: (rows: MonthReportDetailOtherRow[]) => void;
 }
 
-interface DraftRow {
-  seq: number;
-  etcBizCd: string | null;
-  etcTitle: string | null;
-  etcMemo: string | null;
-  status: "clean" | "new" | "dirty" | "deleted";
-  originalSeq?: number;
-}
+type Row = MonthReportDetailOtherRow & { id: string };
 
+/**
+ * 월간 리포트 — 기타 상세 그리드.
+ *
+ * server row에는 `id` 필드가 없고 `seq` (int PK)가 식별자. DataGrid 제약
+ * `T extends { id: string }`을 만족하기 위해 `id = String(seq)`로 합성.
+ * 신규 행은 max(seq) + 1로 seq 할당, save 시 deletes는 originalSeq로 변환.
+ *
+ * 기존 자체 <table> + draft state 관리 → DataGrid 내부 useGridState에 위임
+ * (admin/menus Phase B 패턴 동일).
+ */
 export function DetailOtherSection({ rows: serverRows, companyCd, ym, onSaved }: Props) {
   const t = useTranslations("Reports.Monthly.other");
-  const [draft, setDraft] = useState<DraftRow[]>([]);
-  const [saving, setSaving] = useState(false);
 
+  // server rows → grid rows (id=String(seq)). seq 자체는 행 식별자로 유지.
+  const initialRows = useMemo<Row[]>(
+    () => serverRows.map((r) => ({ ...r, id: String(r.seq) })),
+    [serverRows],
+  );
+
+  // 신규 행 seq 발급용 — 현재 보유 중인 max seq 추적.
+  const maxSeqRef = useRef<number>(
+    Math.max(0, ...serverRows.map((r) => r.seq)),
+  );
   useEffect(() => {
-    setDraft(serverRows.map(r => ({
-      seq: r.seq, etcBizCd: r.etcBizCd, etcTitle: r.etcTitle, etcMemo: r.etcMemo, status: "clean",
-      originalSeq: r.seq,
-    })));
+    maxSeqRef.current = Math.max(0, ...serverRows.map((r) => r.seq));
   }, [serverRows]);
 
-  function addRow() {
-    const maxSeq = Math.max(0, ...draft.map(d => d.seq));
-    setDraft(d => [...d, { seq: maxSeq + 1, etcBizCd: null, etcTitle: null, etcMemo: null, status: "new" }]);
-  }
+  // grid rows mirror — onSave에서 GridChanges만 받아도 되지만, originalSeq를
+  // dirty/deleted 행마다 추적하려면 onGridRowsChange로 외부 mirror 필요.
+  const [gridRowsMirror, setGridRowsMirror] = useState<GridRow<Row>[]>([]);
 
-  function updateField(idx: number, field: "etcBizCd" | "etcTitle" | "etcMemo", value: string) {
-    setDraft(d => d.map((r, i) => i === idx ? { ...r, [field]: value || null, status: r.status === "new" ? "new" : "dirty" } : r));
-  }
+  const makeBlankRow = useCallback((): Row => {
+    const newSeq = maxSeqRef.current + 1;
+    maxSeqRef.current = newSeq;
+    return {
+      enterCd: serverRows[0]?.enterCd ?? "",
+      companyCd,
+      ym,
+      seq: newSeq,
+      etcBizCd: null,
+      etcTitle: null,
+      etcMemo: null,
+      updatedAt: new Date().toISOString(),
+      updatedByName: null,
+      id: String(newSeq),
+    };
+  }, [companyCd, ym, serverRows]);
 
-  function markDelete(idx: number) {
-    setDraft(d => d.flatMap((r, i) => {
-      if (i !== idx) return [r];
-      if (r.status === "new") return [];
-      return [{ ...r, status: "deleted" as const }];
-    }));
-  }
+  const COLUMNS = useMemo<ColumnDef<Row>[]>(
+    () => [
+      { key: "etcBizCd", label: t("etcBizCd"), type: "text", width: 80, editable: true },
+      { key: "etcTitle", label: t("etcTitle"), type: "text", width: 192, editable: true },
+      { key: "etcMemo", label: t("etcMemo"), type: "textarea", editable: true },
+    ],
+    [t],
+  );
 
-  const dirtyCount =
-    draft.filter(r => r.status === "new").length +
-    draft.filter(r => r.status === "dirty").length +
-    draft.filter(r => r.status === "deleted").length;
-
-  async function save() {
-    setSaving(true);
-    try {
-      const creates = draft.filter(r => r.status === "new").map(r => ({
-        seq: r.seq, etcBizCd: r.etcBizCd, etcTitle: r.etcTitle, etcMemo: r.etcMemo,
+  const handleSave = useCallback(
+    async (changes: GridChanges<Row>): Promise<GridSaveResult> => {
+      const creates = changes.creates.map((r) => ({
+        seq: r.seq,
+        etcBizCd: r.etcBizCd,
+        etcTitle: r.etcTitle,
+        etcMemo: r.etcMemo,
       }));
-      const updates = draft.filter(r => r.status === "dirty").map(r => ({
-        seq: r.seq, etcBizCd: r.etcBizCd, etcTitle: r.etcTitle, etcMemo: r.etcMemo,
-      }));
-      const deletes = draft.filter(r => r.status === "deleted").map(r => r.originalSeq!);
+      const updates = changes.updates.map((u) => {
+        // dirty 행: 최신 data를 mirror에서 조회. patch만으로는 부족 (전체 필드 전송).
+        const row = gridRowsMirror.find((r) => r.data.id === u.id)?.data;
+        return {
+          seq: row?.seq ?? Number(u.id),
+          etcBizCd: row?.etcBizCd ?? null,
+          etcTitle: row?.etcTitle ?? null,
+          etcMemo: row?.etcMemo ?? null,
+        };
+      });
+      // deletes — DataGrid가 string id 배열로 전달. server는 originalSeq(number) 기대.
+      const deletes = changes.deletes.map((idStr) => Number(idStr));
 
       const result = await saveDetailOther({ companyCd, ym, creates, updates, deletes });
-      if (result.ok) {
-        const refreshed: MonthReportDetailOtherRow[] = draft
-          .filter(r => r.status !== "deleted")
-          .map(r => ({
-            enterCd: serverRows[0]?.enterCd ?? "",
-            companyCd, ym, seq: r.seq,
-            etcBizCd: r.etcBizCd, etcTitle: r.etcTitle, etcMemo: r.etcMemo,
-            updatedAt: new Date().toISOString(),
-            updatedByName: null,
-          }));
-        onSaved(refreshed);
+      if (!result.ok) {
+        return { ok: false, errors: [{ message: t("saveFailed") }] };
       }
-    } finally { setSaving(false); }
-  }
+
+      // 저장 성공: 부모에 refreshed rows 통지 (server 재조회 회피 — optimistic)
+      const refreshed: MonthReportDetailOtherRow[] = gridRowsMirror
+        .filter((r) => r.state !== "deleted")
+        .map((r) => ({
+          enterCd: r.data.enterCd,
+          companyCd: r.data.companyCd,
+          ym: r.data.ym,
+          seq: r.data.seq,
+          etcBizCd: r.data.etcBizCd,
+          etcTitle: r.data.etcTitle,
+          etcMemo: r.data.etcMemo,
+          updatedAt: new Date().toISOString(),
+          updatedByName: r.data.updatedByName,
+        }));
+      onSaved(refreshed);
+      return { ok: true };
+    },
+    [companyCd, ym, gridRowsMirror, onSaved, t],
+  );
 
   return (
-    <section className="rounded border border-slate-200 bg-white p-4">
+    <section className="rounded border border-(--border-default) bg-(--bg-surface) p-4">
       <header className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">{t("title")}</h3>
-        <div className="flex gap-2">
-          <button onClick={addRow} className="rounded border border-slate-300 px-3 py-1 text-xs">{t("add")}</button>
-          <button
-            onClick={save}
-            disabled={dirtyCount === 0 || saving}
-            className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
-          >
-            {saving ? t("saving") : t("save", { count: dirtyCount })}
-          </button>
-        </div>
+        <h3 className="text-sm font-semibold text-(--fg-primary)">{t("title")}</h3>
       </header>
-      <table className="w-full text-xs">
-        <thead className="bg-slate-50">
-          <tr>
-            <th className="w-20 px-2 py-1 text-left font-semibold text-slate-600">{t("etcBizCd")}</th>
-            <th className="w-48 px-2 py-1 text-left font-semibold text-slate-600">{t("etcTitle")}</th>
-            <th className="px-2 py-1 text-left font-semibold text-slate-600">{t("etcMemo")}</th>
-            <th className="w-12 px-2 py-1"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {draft.length === 0 ? (
-            <tr><td colSpan={4} className="p-3 text-center text-slate-400">{t("empty")}</td></tr>
-          ) : draft.map((r, i) => (
-            <tr key={`${r.seq}-${i}`} className={"border-t border-slate-100 " + (r.status === "deleted" ? "line-through opacity-50" : r.status === "new" ? "bg-blue-50/40" : r.status === "dirty" ? "bg-amber-50/40" : "")}>
-              <td className="px-2 py-1"><input type="text" value={r.etcBizCd ?? ""} onChange={e => updateField(i, "etcBizCd", e.target.value)} className="w-full rounded border border-slate-200 px-1 py-0.5" disabled={r.status === "deleted"} /></td>
-              <td className="px-2 py-1"><input type="text" value={r.etcTitle ?? ""} onChange={e => updateField(i, "etcTitle", e.target.value)} className="w-full rounded border border-slate-200 px-1 py-0.5" disabled={r.status === "deleted"} /></td>
-              <td className="px-2 py-1"><textarea rows={1} value={r.etcMemo ?? ""} onChange={e => updateField(i, "etcMemo", e.target.value)} className="w-full rounded border border-slate-200 px-1 py-0.5" disabled={r.status === "deleted"} /></td>
-              <td className="px-2 py-1 text-center">
-                <button onClick={() => markDelete(i)} disabled={r.status === "deleted"} className="text-rose-600 hover:underline disabled:opacity-30">{t("delete")}</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataGrid<Row>
+        rows={initialRows}
+        total={initialRows.length}
+        columns={COLUMNS}
+        filters={[]}
+        page={1}
+        limit={10000}
+        makeBlankRow={makeBlankRow}
+        onGridRowsChange={setGridRowsMirror}
+        emptyMessage={t("empty")}
+        onPageChange={() => {}}
+        onFilterChange={() => {}}
+        onSave={handleSave}
+      />
     </section>
   );
 }

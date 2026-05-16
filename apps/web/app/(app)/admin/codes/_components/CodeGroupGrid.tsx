@@ -4,37 +4,21 @@
  *
  * 공통코드 — 그룹코드(master) 그리드.
  *
- * 컬럼: No / 삭제 / *그룹코드 / *코드명 / 코드설명 / 업무구분 / 구분 / 세부코드수 / 상태
+ * Phase C: 자체 <table> 완전 제거. DataGrid 단독 사용.
+ * - code 컬럼: lockOnExisting (기존 행 readonly)
+ * - selectedId / onSelect로 master 행 선택 통지
+ * - GridSearchForm + GridFilterField는 DataGrid 외부 유지
  *
- * DataGrid 베이스라인 미사용 이유:
- *   - 부모 CodesPageClient가 master/detail 상태를 동시에 보유해야 함
- *     (detail dirty 게이트 + detail 저장 후 master reload).
- *   - code 컬럼은 신규 행에서만 편집 가능 (legacy KeyField:1).
- *   - DataGrid는 row-click 콜백·외부 grid state를 노출하지 않음.
- *
- * 필터: GridSearchForm + GridFilterField (baseline 표준 컴포넌트).
- * 툴바: GridToolbar(입력/복사/저장) + DataGridToolbar(다운로드).
+ * 컬럼: *그룹코드 / *코드명 / 코드설명 / 업무구분 / 구분 / 세부코드수
  */
-import { type MouseEvent, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { GridToolbar } from "@/components/grid/GridToolbar";
+import { DataGrid } from "@/components/grid/DataGrid";
 import { GridSearchForm } from "@/components/grid/GridSearchForm";
 import { GridFilterField } from "@/components/grid/GridFilterField";
-import { RowStatusBadge } from "@/components/grid/RowStatusBadge";
-import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
-import { EditableTextAreaCell } from "@/components/grid/cells/EditableTextAreaCell";
-import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
-import { DataGridToolbar } from "@/components/grid/DataGridToolbar";
-import type { ColumnDef } from "@/components/grid/types";
+import type { ColumnDef, GridChanges, GridSaveResult } from "@/components/grid/types";
 import type { CodeGroupRow } from "@jarvis/shared/validation/admin/code";
-import type { useGridState } from "@/components/grid/useGridState";
-
-type GridApi = ReturnType<typeof useGridState<CodeGroupRow>>;
-
-/** master grid 전용 — lockOnExisting: 기존 행의 code 컬럼을 읽기 전용으로 표시. */
-type CodeGroupColumnDef = ColumnDef<CodeGroupRow> & {
-  lockOnExisting?: boolean;
-};
+import { makeBlankCodeGroup } from "./useCodeGroupGridState";
 
 const KIND_OPTION_VALUES = ["C", "N"] as const;
 
@@ -52,26 +36,26 @@ type FilterValues = {
 type BusinessDivOption = { code: string; label: string };
 
 type Props = {
-  grid: GridApi;
+  rows: CodeGroupRow[];
   total: number;
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (id: string | null) => void;
   draftFilters: FilterValues;
   onDraftFilterChange: (next: FilterValues) => void;
   onApplyFilters: () => void;
   onResetFilters: () => void;
-  /** 조회 클릭 시 미저장 변경분 폐기 콜백 — 부모가 `masterGrid.discardChanges` 전달. */
-  onResetGrid: () => void;
+  onGridReady: (api: { discardChanges: () => void }) => void;
+  onDirtyChange: (count: number) => void;
   saving: boolean;
-  onInsert: () => void;
-  onCopy: () => void;
-  onSave: () => void;
+  onSave: (changes: GridChanges<CodeGroupRow>) => Promise<GridSaveResult>;
   onExport: () => void;
   businessDivOptions: BusinessDivOption[];
+  /** DataGrid 내부 rows 상태 mirror — export / selectedGroup 계산에 사용. */
+  onGridRowsChange?: (rows: import("@/components/grid/useGridState").GridRow<CodeGroupRow>[]) => void;
 };
 
 export function CodeGroupGrid({
-  grid,
+  rows,
   total,
   selectedId,
   onSelect,
@@ -79,19 +63,24 @@ export function CodeGroupGrid({
   onDraftFilterChange,
   onApplyFilters,
   onResetFilters,
-  onResetGrid,
+  onGridReady,
+  onDirtyChange,
   saving,
-  onInsert,
-  onCopy,
   onSave,
   onExport,
   businessDivOptions,
+  onGridRowsChange,
 }: Props) {
   const t = useTranslations("Admin.Codes.groupSection");
-  const update = useCallback(
-    <K extends keyof CodeGroupRow>(id: string, key: K, value: CodeGroupRow[K]) =>
-      grid.update(id, key, value),
-    [grid],
+
+  // DataGrid.onGridReady로 받은 discardChanges를 GridSearchForm.onResetGrid에 연결
+  const discardRef = useRef<{ discardChanges: () => void } | null>(null);
+  const handleGridReady = useCallback(
+    (api: { discardChanges: () => void }) => {
+      discardRef.current = api;
+      onGridReady(api);
+    },
+    [onGridReady],
   );
 
   const KIND_OPTIONS = useMemo(
@@ -108,7 +97,7 @@ export function CodeGroupGrid({
     [businessDivOptions],
   );
 
-  const COLUMNS: CodeGroupColumnDef[] = useMemo(
+  const columns: ColumnDef<CodeGroupRow>[] = useMemo(
     () => [
       {
         key: "code",
@@ -163,29 +152,11 @@ export function CodeGroupGrid({
   );
 
   return (
-    <div className="space-y-3">
-      {/* Toolbar */}
-      <DataGridToolbar
-        onExport={onExport}
-        exportLabel={t("toolbar.export")}
-        isExporting={saving}
-      >
-        <span className="text-sm text-slate-600">
-          {t("title")} — {total.toLocaleString()}
-        </span>
-        <GridToolbar
-          dirtyCount={grid.dirtyCount}
-          saving={saving}
-          onInsert={onInsert}
-          onCopy={onCopy}
-          onSave={onSave}
-        />
-      </DataGridToolbar>
-
-      {/* Search form */}
+    <div className="flex flex-col gap-2">
+      {/* Search form — DataGrid 외부. discardRef 경유로 DataGrid.discardChanges 연결. */}
       <GridSearchForm
         onSearch={onApplyFilters}
-        onResetGrid={onResetGrid}
+        onResetGrid={() => discardRef.current?.discardChanges()}
         isSearching={saving}
         searchLabel={t("filter.search")}
       >
@@ -234,171 +205,35 @@ export function CodeGroupGrid({
         </GridFilterField>
       </GridSearchForm>
 
-      {/* Grid */}
-      <div className="overflow-auto rounded border border-slate-200">
-        <table className="min-w-full border-collapse text-sm">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] font-semibold uppercase tracking-wide text-slate-600">
-            <tr className="border-b border-slate-200">
-              <th className="w-10 px-2 py-2 text-left">No</th>
-              <th className="w-10 px-2 py-2">삭제</th>
-              {COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  className={[
-                    "px-2 py-2",
-                    col.type === "numeric" ? "text-right" : "text-left",
-                  ].join(" ")}
-                  style={col.width ? { width: col.width } : undefined}
-                >
-                  {col.label}
-                </th>
-              ))}
-              <th className="w-16 px-2 py-2 text-left">상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grid.rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={COLUMNS.length + 3}
-                  className="px-4 py-12 text-center text-sm text-slate-500"
-                >
-                  데이터가 없습니다.
-                </td>
-              </tr>
-            ) : (
-              grid.rows.map((r, i) => {
-                const row = r.data;
-                const isSelected = row.id === selectedId;
-                const isNew = r.state === "new";
-                return (
-                  <tr
-                    key={row.id}
-                    data-row-status={r.state}
-                    onClick={() => onSelect(row.id)}
-                    className={[
-                      "cursor-pointer border-b border-slate-100 transition-colors duration-150",
-                      "hover:bg-slate-50",
-                      r.state === "deleted" ? "bg-rose-50/40 line-through opacity-70" : "",
-                      r.state === "new" ? "bg-blue-50/40" : "",
-                      r.state === "dirty" ? "bg-amber-50/40" : "",
-                      isSelected ? "ring-2 ring-blue-400 ring-inset" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    <td className="h-8 w-10 px-2 align-middle text-[12px] text-slate-500">
-                      {i + 1}
-                    </td>
-                    <td
-                      className="h-8 w-10 px-2 text-center align-middle"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={r.state === "deleted"}
-                        onChange={() =>
-                          r.state === "new"
-                            ? grid.removeNew(row.id)
-                            : grid.toggleDelete(row.id)
-                        }
-                        className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
-                      />
-                    </td>
-                    {COLUMNS.map((col) => {
-                      const val = row[col.key];
-                      const isLocked = col.lockOnExisting && !isNew;
-                      const editable = col.editable !== false && !isLocked;
-                      const stop = (e: MouseEvent) => e.stopPropagation();
-
-                      if (!editable) {
-                        if (col.type === "numeric") {
-                          const n = typeof val === "number" ? val : val == null ? null : Number(val);
-                          return (
-                            <td
-                              key={col.key}
-                              data-col={col.key}
-                              data-cell-value={n == null ? "" : String(n)}
-                              className="h-8 px-2 align-middle text-right text-[13px] tabular-nums text-slate-700"
-                            >
-                              {n == null ? "" : n.toLocaleString()}
-                            </td>
-                          );
-                        }
-                        return (
-                          <td
-                            key={col.key}
-                            data-col={col.key}
-                            data-cell-value={String(val ?? "")}
-                            className="h-8 p-0 align-middle"
-                            onClick={stop}
-                          >
-                            <div className="px-2 py-1 text-[13px] font-mono text-slate-900">
-                              {String(val ?? "")}
-                            </div>
-                          </td>
-                        );
-                      }
-
-                      return (
-                        <td
-                          key={col.key}
-                          data-col={col.key}
-                          data-cell-value={String(val ?? "")}
-                          className="h-8 p-0 align-middle"
-                          onClick={stop}
-                        >
-                          {col.type === "text" && (
-                            <EditableTextCell
-                              value={(val as string | null) || null}
-                              onCommit={(v) =>
-                                update(
-                                  row.id,
-                                  col.key,
-                                  (col.required ? (v ?? "") : v) as CodeGroupRow[typeof col.key],
-                                )
-                              }
-                              required={col.required}
-                            />
-                          )}
-                          {col.type === "textarea" && (
-                            <EditableTextAreaCell
-                              value={val as string | null}
-                              onCommit={(v) =>
-                                update(row.id, col.key, v as CodeGroupRow[typeof col.key])
-                              }
-                              required={col.required}
-                            />
-                          )}
-                          {col.type === "select" && (
-                            <EditableSelectCell
-                              value={(val as string | null) || null}
-                              options={col.options ?? []}
-                              onCommit={(v) =>
-                                update(
-                                  row.id,
-                                  col.key,
-                                  (col.required && col.key === "kindCode"
-                                    ? (v ?? "C")
-                                    : v) as CodeGroupRow[typeof col.key],
-                                )
-                              }
-                              required={col.required}
-                            />
-                          )}
-                        </td>
-                      );
-                    })}
-                    <td className="h-8 w-16 px-2 align-middle">
-                      <RowStatusBadge state={r.state} />
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+      <div className="flex items-center">
+        <span className="text-sm text-slate-600">
+          {t("title")} — {total.toLocaleString()}
+        </span>
       </div>
+
+      {/* DataGrid: 내장 toolbar(입력/복사/저장/export). */}
+      <DataGrid<CodeGroupRow>
+        rows={rows}
+        total={total}
+        columns={columns}
+        filters={[]}
+        page={1}
+        limit={Math.max(total, 1)}
+        makeBlankRow={makeBlankCodeGroup}
+        makeCopyRow={(c) => ({ ...c, id: crypto.randomUUID(), code: "", subCnt: 0 })}
+        onPageChange={() => {}}
+        onFilterChange={() => {}}
+        onSave={onSave}
+        onGridReady={handleGridReady}
+        onDirtyChange={onDirtyChange}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onExport={onExport}
+        exportLabel={t("toolbar.export")}
+        allowInsert={true}
+        allowCopy={true}
+        onGridRowsChange={onGridRowsChange}
+      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition, useRef } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { GridFilterField } from "@/components/grid/GridFilterField";
@@ -11,8 +11,6 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import { useUrlFilters } from "@/lib/hooks/useUrlFilters";
 import { triggerDownload } from "@/lib/utils/triggerDownload";
-
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 import {
   downloadContractUploadTemplate,
   listContractUploads,
@@ -23,6 +21,8 @@ import type {
   SalesContractUploadRow,
   UnifiedContractUploadRow,
 } from "@jarvis/shared/validation/sales-contract-extra";
+
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
 
 type FilterState = {
   q: string;
@@ -122,6 +122,19 @@ function makeBlankRow(): SalesContractUploadRow {
   };
 }
 
+const makeBlankUnifiedRow = (): UnifiedContractUploadRow => ({
+  id: "",
+  sourceTable: "031",
+  ym: "",
+  companyCd: null,
+  companyNm: null,
+  pjtCode: null,
+  pjtNm: null,
+  planServSaleAmt: null,
+  viewServSaleAmt: null,
+  perfServSaleAmt: null,
+});
+
 export function ContractUploadsGridContainer({
   rows: initialRows,
   total: initialTotal,
@@ -147,6 +160,32 @@ export function ContractUploadsGridContainer({
 
   const setPending = (key: keyof FilterState, value: string) =>
     setPendingFilters((current) => ({ ...current, [key]: value }));
+
+  // Unified read-only grid columns — resolved inside component so t() is available.
+  const unifiedColumns: ColumnDef<UnifiedContractUploadRow>[] = useMemo(
+    () => [
+      { key: "sourceTable", label: t("unifiedColumns.source"), type: "readonly", width: 80 },
+      { key: "ym", label: t("unifiedColumns.ym"), type: "readonly", width: 90 },
+      {
+        key: "companyNm",
+        label: t("unifiedColumns.company"),
+        type: "readonly",
+        width: 180,
+        render: (row) => row.companyNm ?? row.companyCd ?? "",
+      },
+      {
+        key: "pjtNm",
+        label: t("unifiedColumns.project"),
+        type: "readonly",
+        width: 220,
+        render: (row) => row.pjtNm ?? row.pjtCode ?? "",
+      },
+      { key: "planServSaleAmt", label: t("unifiedColumns.plan"), type: "readonly", width: 130 },
+      { key: "viewServSaleAmt", label: t("unifiedColumns.view"), type: "readonly", width: 130 },
+      { key: "perfServSaleAmt", label: t("unifiedColumns.perf"), type: "readonly", width: 130 },
+    ],
+    [t],
+  );
 
   const reload = useCallback(
     (nextPage: number, filters: FilterState) => {
@@ -350,35 +389,21 @@ export function ContractUploadsGridContainer({
       />
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-(--fg-primary)">통합 검색 결과</h2>
-        <div className="overflow-x-auto rounded-md border border-(--border-default)">
-          <table className="min-w-full text-sm">
-            <thead className="bg-(--bg-muted) text-left text-(--fg-muted)">
-              <tr>
-                <th className="px-3 py-2">출처</th>
-                <th className="px-3 py-2">년월</th>
-                <th className="px-3 py-2">회사</th>
-                <th className="px-3 py-2">프로젝트</th>
-                <th className="px-3 py-2">계획</th>
-                <th className="px-3 py-2">전망</th>
-                <th className="px-3 py-2">실적</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unifiedRows.map((row) => (
-                <tr key={`${row.sourceTable}-${row.id}`} className="border-t border-(--border-default)">
-                  <td className="px-3 py-2">{row.sourceTable}</td>
-                  <td className="px-3 py-2">{row.ym}</td>
-                  <td className="px-3 py-2">{row.companyNm ?? row.companyCd ?? ""}</td>
-                  <td className="px-3 py-2">{row.pjtNm ?? row.pjtCode ?? ""}</td>
-                  <td className="px-3 py-2">{row.planServSaleAmt ?? ""}</td>
-                  <td className="px-3 py-2">{row.viewServSaleAmt ?? ""}</td>
-                  <td className="px-3 py-2">{row.perfServSaleAmt ?? ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h2 className="text-sm font-semibold text-(--fg-primary)">{t("unifiedResult")}</h2>
+        <DataGrid<UnifiedContractUploadRow>
+          rows={unifiedRows}
+          total={unifiedRows.length}
+          columns={unifiedColumns}
+          filters={[]}
+          page={1}
+          limit={Math.max(unifiedRows.length, 1)}
+          makeBlankRow={makeBlankUnifiedRow}
+          onPageChange={() => undefined}
+          onFilterChange={() => undefined}
+          onSave={async () => ({ ok: true })}
+          readOnly={true}
+          emptyMessage={t("unifiedEmpty")}
+        />
       </section>
     </div>
   );
