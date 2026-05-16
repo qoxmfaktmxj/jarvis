@@ -11,7 +11,7 @@
  * - 인라인 편집: 클릭 시 파란 ring, blur에서 커밋
  * - 상태 배지: new/dirty/deleted 색상 pill
  */
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { useGridState, type GridRow } from "./useGridState";
@@ -163,6 +163,29 @@ export function DataGrid<T extends WithId>({
   useEffect(() => {
     onDirtyChange?.(grid.dirtyCount);
   }, [grid.dirtyCount, onDirtyChange]);
+
+  // Sync server-fresh rows into the grid when the parent refetches (pagination,
+  // filter change, etc.). useGridState's `useState(() => ...)` initializer only
+  // runs once on mount, so without this effect the grid keeps showing page 1
+  // rows after the parent navigates to page 2.
+  //
+  // We track the last-seen prop reference via a ref so the effect skips the
+  // initial mount (where `initialRows` would already match the value passed to
+  // useGridState's lazy initializer, and resetting would wipe any cached
+  // dirty/new/deleted rows restored from sessionStorage).
+  //
+  // Pagination is guarded by UnsavedChangesDialog, so by the time new server
+  // rows arrive, `dirtyCount` should already be 0. We still gate on it here as
+  // a safety net — if a race ever lands fresh data while edits are pending, we
+  // preserve the user's work rather than silently clobbering it.
+  const lastInitialRowsRef = useRef(initialRows);
+  useEffect(() => {
+    if (initialRows === lastInitialRowsRef.current) return;
+    lastInitialRowsRef.current = initialRows;
+    if (grid.dirtyCount === 0) {
+      grid.reset(initialRows);
+    }
+  }, [initialRows, grid.dirtyCount, grid.reset]);
 
   const guarded = useCallback(
     (action: () => void) => {
