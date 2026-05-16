@@ -93,7 +93,6 @@ export function UserMenu({ userName }: { userName: string }) {
           <button
             type="button"
             role="menuitem"
-            aria-haspopup="true"
             aria-expanded={themePickerOpen}
             onClick={() => setThemePickerOpen((v) => !v)}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-surface-700 transition-colors hover:bg-surface-50"
@@ -108,11 +107,7 @@ export function UserMenu({ userName }: { userName: string }) {
             />
           </button>
           {themePickerOpen ? (
-            <div
-              className="my-1 rounded-xl border border-surface-200 bg-surface-50"
-              role="region"
-              aria-label={t("themeColorRegion")}
-            >
+            <div className="my-1 rounded-xl border border-surface-200 bg-surface-50">
               <ThemeColorPicker />
             </div>
           ) : null}

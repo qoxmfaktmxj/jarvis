@@ -111,7 +111,7 @@ export function useTheme(): ThemeMode {
 }
 
 export function useThemeColor(): ThemeColorId {
-  const [color, setColorState] = useState<ThemeColorId>(DEFAULT_THEME_COLOR);
+  const [color, setColorState] = useState<ThemeColorId>(() => readThemeColor());
   useEffect(() => {
     const initial = readThemeColor();
     setColorState(initial);

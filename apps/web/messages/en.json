@@ -994,8 +994,7 @@
     }
   },
   "Common": {
-    "themeColor": "Theme color",
-    "themeColorRegion": "Theme color picker"
+    "themeColor": "Theme color"
   },
   "Theme": {
     "picker": {
