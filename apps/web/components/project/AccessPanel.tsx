@@ -109,7 +109,7 @@ export function AccessPanel({
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                className="text-(--color-danger) hover:bg-(--color-danger-subtle) hover:text-(--color-danger-strong)"
                 onClick={() => handleDelete(entry.id)}
                 disabled={deletingId === entry.id}
               >

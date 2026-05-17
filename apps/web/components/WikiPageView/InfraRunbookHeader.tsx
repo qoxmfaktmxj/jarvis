@@ -21,11 +21,11 @@ type InfraRunbookHeaderProps = {
 type Row = { label: string; value: string; mono?: boolean };
 
 const ENV_STYLES: Record<string, string> = {
-  prod: 'bg-red-50 text-red-700 ring-red-600/25',
-  production: 'bg-red-50 text-red-700 ring-red-600/25',
-  stg: 'bg-amber-50 text-amber-800 ring-amber-600/25',
-  staging: 'bg-amber-50 text-amber-800 ring-amber-600/25',
-  qa: 'bg-amber-50 text-amber-800 ring-amber-600/25',
+  prod: 'bg-(--color-danger-subtle) text-(--color-danger) ring-(--color-danger)/25',
+  production: 'bg-(--color-danger-subtle) text-(--color-danger) ring-(--color-danger)/25',
+  stg: 'bg-(--color-warning-subtle) text-(--color-warning-strong) ring-(--color-warning)/25',
+  staging: 'bg-(--color-warning-subtle) text-(--color-warning-strong) ring-(--color-warning)/25',
+  qa: 'bg-(--color-warning-subtle) text-(--color-warning-strong) ring-(--color-warning)/25',
   dev: 'bg-(--brand-primary-bg) text-(--brand-primary-text) ring-(--brand-primary)/25',
   local: 'bg-(--bg-page) text-(--fg-primary) ring-(--border-default)',
 };

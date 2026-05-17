@@ -131,7 +131,7 @@ export function MemoModal({
                   {(m.isOwn || isAdmin) && (
                     <button
                       onClick={() => remove(m.comtSeq, true)}
-                      className="text-xs text-rose-600"
+                      className="text-xs text-(--color-danger)"
                     >
                       {t("delete")}
                     </button>
@@ -177,7 +177,7 @@ export function MemoModal({
                           {(r.isOwn || isAdmin) && (
                             <button
                               onClick={() => remove(r.comtSeq, false)}
-                              className="text-xs text-rose-600"
+                              className="text-xs text-(--color-danger)"
                             >
                               {t("delete")}
                             </button>

@@ -168,7 +168,7 @@ export function ScheduleCalendarView() {
               key={k}
               className={cn(
                 "px-2 py-2 text-center",
-                i === 0 && "text-rose-500",
+                i === 0 && "text-(--color-danger)",
                 i === 6 && "text-(--brand-primary)",
               )}
             >
@@ -205,7 +205,7 @@ export function ScheduleCalendarView() {
                 <span
                   className={cn(
                     "flex items-center justify-between text-[11px] font-semibold",
-                    c.inMonth && (isSunday || isHoliday) && "text-rose-600",
+                    c.inMonth && (isSunday || isHoliday) && "text-(--color-danger)",
                     c.inMonth && isSaturday && !isHoliday && "text-(--brand-primary)",
                     c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-(--fg-primary)",
                     isToday && "rounded-full bg-(--brand-primary) px-1.5 py-0 text-white",
@@ -215,7 +215,7 @@ export function ScheduleCalendarView() {
                   {holiday ? (
                     <span
                       title={holiday.name}
-                      className="ml-1 truncate text-[10px] font-normal text-rose-600"
+                      className="ml-1 truncate text-[10px] font-normal text-(--color-danger)"
                     >
                       {holiday.name}
                     </span>
@@ -271,7 +271,7 @@ export function ScheduleCalendarView() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="font-medium text-(--fg-primary)">{ev.title}</div>
                     {ev.isShared ? (
-                      <span className="rounded-full bg-amber-100 px-1.5 py-0 text-[10px] font-medium text-amber-700">
+                      <span className="rounded-full bg-(--color-warning-subtle) px-1.5 py-0 text-[10px] font-medium text-(--color-warning)">
                         {t("shared.yes")}
                       </span>
                     ) : null}

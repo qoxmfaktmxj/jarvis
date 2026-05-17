@@ -112,7 +112,7 @@ export function ApprovalDialog({
     mode === "approve" ? t("approve") : mode === "reject" ? t("reject") : "";
 
   const submitClassName =
-    mode === "reject" ? "bg-red-600 text-white hover:bg-red-700" : undefined;
+    mode === "reject" ? "bg-(--color-danger) text-white hover:bg-(--color-danger-strong)" : undefined;
 
   const submitVariant: "default" | "secondary" =
     mode === "approve" ? "default" : "secondary";
@@ -189,7 +189,7 @@ export function ApprovalDialog({
             ) : null}
 
             {error ? (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-(--color-danger)" role="alert">
                 {error}
               </p>
             ) : null}

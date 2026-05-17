@@ -45,7 +45,7 @@ export function StatsByCompanyGrid({ rows }: { rows: StatsRow[] }) {
             className={
               "block text-right " +
               (r.finalRank <= 3
-                ? "rounded bg-rose-100 px-1.5 font-semibold text-rose-700"
+                ? "rounded bg-(--color-danger-subtle) px-1.5 font-semibold text-(--color-danger)"
                 : "")
             }
           >

@@ -203,7 +203,7 @@ export function PlanViewPerfDetailView({
                   const row = draft.get(m.id) ?? m;
                   const isDirty = dirtyIds.includes(m.id);
                   return (
-                    <tr key={m.id} className={isDirty ? "bg-amber-50" : "hover:bg-(--bg-page)"}>
+                    <tr key={m.id} className={isDirty ? "bg-(--color-warning-subtle)" : "hover:bg-(--bg-page)"}>
                       <td className="sticky left-0 border border-(--border-default) bg-(--bg-surface) px-2 py-1.5 font-medium text-(--fg-primary)">{m.ym}</td>
                       {MONTH_COLS.map((c) => (
                         <td key={c.key} className="border border-(--border-default) p-0">

@@ -6,8 +6,8 @@ import type { RowStatus } from "./types";
 const STYLES: Record<RowStatus, string> = {
   clean: "",
   new: "bg-(--brand-primary-bg) text-(--brand-primary)",
-  dirty: "bg-amber-100 text-amber-700",
-  deleted: "bg-rose-100 text-rose-700",
+  dirty: "bg-(--color-warning-subtle) text-(--color-warning)",
+  deleted: "bg-(--color-danger-subtle) text-(--color-danger)",
 };
 
 // 라벨 키는 항상 한글 2자 폭으로 통일 — 좁은 상태 컬럼에서 세로 줄바꿈 방지 + 시각적 일관성.

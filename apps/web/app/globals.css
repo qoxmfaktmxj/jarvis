@@ -112,6 +112,7 @@
   --color-warning-strong: #b04800;
   --color-danger:         var(--color-red-500);
   --color-danger-subtle:  var(--color-red-50);
+  --color-danger-strong:  #b91c1c;                  /* red-700 — hover/pressed */
   /* Info status는 semantic 고정 — 5테마 picker에 따라가지 않음 (Done/Warn처럼 의미). */
   --color-info:           var(--color-notion-blue);
   --color-info-subtle:    var(--color-notion-blue-bg);

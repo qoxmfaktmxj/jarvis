@@ -134,7 +134,7 @@ export const MaskedMonthInput = forwardRef<MaskedMonthInputHandle, Props>(
         className={cn(
           "h-8 w-full bg-transparent px-2 text-[13px] text-(--fg-primary) outline-none",
           "focus:ring-2 focus:ring-notion-blue focus:ring-inset",
-          ariaInvalid && "ring-1 ring-red-500 ring-inset",
+          ariaInvalid && "ring-1 ring-(--color-danger) ring-inset",
           className,
         )}
       />

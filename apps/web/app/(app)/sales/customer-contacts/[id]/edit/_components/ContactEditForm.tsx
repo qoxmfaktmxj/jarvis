@@ -155,7 +155,7 @@ export function ContactEditForm({ contact }: ContactEditFormProps) {
           type="button"
           disabled={isPending}
           onClick={handleDelete}
-          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded bg-(--color-danger) px-4 py-2 text-sm font-medium text-white hover:bg-(--color-danger-strong) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("delete")}
         </button>

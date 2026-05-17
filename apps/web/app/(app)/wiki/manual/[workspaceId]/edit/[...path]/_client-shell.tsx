@@ -109,7 +109,7 @@ export default function EditPageClientShell({
           </span>
         )}
         {status.kind === "err" && (
-          <span className="text-sm text-red-600" role="alert">
+          <span className="text-sm text-(--color-danger)" role="alert">
             {t("saveFailed", { reason: status.reason })}
           </span>
         )}

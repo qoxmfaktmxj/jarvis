@@ -16,8 +16,8 @@ const SENSITIVITY_META: Record<
 > = {
   PUBLIC: { label: 'Public', className: 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20' },
   INTERNAL: { label: 'Internal', className: 'bg-(--brand-primary-bg) text-(--brand-primary-text) ring-1 ring-inset ring-(--brand-primary)/20' },
-  CONFIDENTIAL: { label: 'Confidential', className: 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-600/20' },
-  SECRET_REF_ONLY: { label: 'Secret', className: 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/20' },
+  CONFIDENTIAL: { label: 'Confidential', className: 'bg-(--color-warning-subtle) text-(--color-warning-strong) ring-1 ring-inset ring-(--color-warning)/20' },
+  SECRET_REF_ONLY: { label: 'Secret', className: 'bg-(--color-danger-subtle) text-(--color-danger) ring-1 ring-inset ring-(--color-danger)/20' },
 };
 
 const PAGE_TYPE_META: Record<

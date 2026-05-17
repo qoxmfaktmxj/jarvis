@@ -159,7 +159,7 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
   return (
     <form onSubmit={onSubmit} className="space-y-8">
       {serverError ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-lg border border-(--color-danger) bg-(--color-danger-subtle) px-4 py-3 text-sm text-(--color-danger)">
           {serverError}
         </div>
       ) : null}

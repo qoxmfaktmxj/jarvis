@@ -71,7 +71,7 @@ export default function AddDevStaffPage() {
         className="grid gap-3 rounded-xl border border-surface-200 bg-card p-4 shadow-sm md:grid-cols-[1fr_1fr_160px_160px_auto]"
       >
         {error ? (
-          <p className="col-span-full text-sm text-rose-600">{error}</p>
+          <p className="col-span-full text-sm text-(--color-danger)">{error}</p>
         ) : null}
         <Input name="userId" placeholder="사용자 UUID" />
         <Input name="role" placeholder="역할" />

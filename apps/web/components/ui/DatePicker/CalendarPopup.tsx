@@ -127,7 +127,7 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
       </div>
       <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] font-medium text-(--fg-secondary)">
         {WEEKDAY_KEYS.map((k, i) => (
-          <div key={k} className={cn("py-1", i === 0 && "text-red-500", i === 6 && "text-notion-blue-text")}>{tWeekday(k)}</div>
+          <div key={k} className={cn("py-1", i === 0 && "text-(--color-danger)", i === 6 && "text-notion-blue-text")}>{tWeekday(k)}</div>
         ))}
       </div>
       <div
@@ -162,7 +162,7 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
                   className={cn(
                     "relative h-8 w-8 rounded text-[12px] transition-colors duration-150",
                     !c.inMonth && "text-(--fg-muted)",
-                    c.inMonth && (isSunday || isHoliday) && "text-red-500",
+                    c.inMonth && (isSunday || isHoliday) && "text-(--color-danger)",
                     c.inMonth && isSaturday && !isHoliday && "text-notion-blue",
                     c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-(--fg-primary)",
                     isFocused && !isSelected && "ring-2 ring-notion-blue/40 ring-inset",
@@ -176,7 +176,7 @@ export function CalendarPopup({ value, onSelect, onClose, min, max }: Props) {
                   {holiday && (
                     <span
                       data-holiday-dot
-                      className="absolute right-1 top-1 h-1 w-1 rounded-full bg-red-500"
+                      className="absolute right-1 top-1 h-1 w-1 rounded-full bg-(--color-danger)"
                     />
                   )}
                 </button>

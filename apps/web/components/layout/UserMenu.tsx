@@ -119,7 +119,7 @@ export function UserMenu({ userName }: { userName: string }) {
               type="submit"
               role="menuitem"
               disabled={isLoggingOut}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-rose-600 transition-colors hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-(--color-danger) transition-colors hover:bg-(--color-danger-subtle) disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
               <span>로그아웃</span>

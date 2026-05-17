@@ -31,7 +31,7 @@ export function NoticeListItem({
       <Link href={`/notices/${notice.id}`} className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           {notice.pinned && (
-            <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+            <span className="rounded bg-(--color-warning-subtle) px-2 py-0.5 text-xs font-semibold text-(--color-warning-strong) dark:bg-(--color-warning)/40 dark:text-(--color-warning-subtle)">
               {pinnedLabel}
             </span>
           )}

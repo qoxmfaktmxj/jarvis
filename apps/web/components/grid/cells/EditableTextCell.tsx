@@ -31,7 +31,7 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
         className={cn(
           "flex h-full w-full items-center px-2 text-left text-[13px] text-(--fg-primary)",
           "hover:bg-(--bg-page)/60",
-          invalid && "ring-1 ring-rose-500 ring-inset",
+          invalid && "ring-1 ring-(--color-danger) ring-inset",
         )}
       >
         {value ? (
@@ -39,7 +39,7 @@ export function EditableTextCell({ value, placeholder, onCommit, invalid, requir
         ) : (
           <span className="text-(--fg-muted)">{placeholder ?? ""}</span>
         )}
-        {required && !value && <span className="ml-1 shrink-0 text-rose-500">*</span>}
+        {required && !value && <span className="ml-1 shrink-0 text-(--color-danger)">*</span>}
       </button>
     );
   }

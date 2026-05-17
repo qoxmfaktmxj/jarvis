@@ -123,7 +123,7 @@ export function QuizPlayClient({
               ? isCorrectAnswer
                 ? "border-emerald-500/70 bg-emerald-500/10 text-(--fg-primary)"
                 : isChosen
-                  ? "border-rose-500/70 bg-rose-500/10 text-(--fg-primary)"
+                  ? "border-(--color-danger)/70 bg-(--color-danger)/10 text-(--fg-primary)"
                   : "border-(--border-default) bg-(--bg-default) text-(--fg-secondary)"
               : "border-(--border-default) bg-(--bg-default) hover:border-(--brand-primary) hover:bg-(--bg-hover)";
             return (
@@ -161,7 +161,7 @@ export function QuizPlayClient({
           </div>
         )}
         {error && (
-          <p className="mt-3 text-xs text-rose-500">{error}</p>
+          <p className="mt-3 text-xs text-(--color-danger)">{error}</p>
         )}
       </article>
       <div className="flex items-center justify-between">

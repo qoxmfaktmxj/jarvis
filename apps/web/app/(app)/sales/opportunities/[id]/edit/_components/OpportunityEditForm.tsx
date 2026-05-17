@@ -125,7 +125,7 @@ function MemoSection({ opportunityId }: { opportunityId: string }) {
                 <span>#{m.comtSeq} · {m.authorName ?? "(작성자)"} · {m.insdate.slice(0, 16)}</span>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => setReplyTo(m.comtSeq)} className="text-(--brand-primary) hover:underline">답글</button>
-                  {m.isOwn ? (<button type="button" onClick={() => handleDelete(m.comtSeq)} className="text-rose-600 hover:underline">삭제</button>) : null}
+                  {m.isOwn ? (<button type="button" onClick={() => handleDelete(m.comtSeq)} className="text-(--color-danger) hover:underline">삭제</button>) : null}
                 </div>
               </div>
               <div className="mt-1 whitespace-pre-wrap text-sm text-(--fg-primary)">{m.memo}</div>
@@ -135,7 +135,7 @@ function MemoSection({ opportunityId }: { opportunityId: string }) {
                     <li key={r.comtSeq} className="rounded bg-(--bg-page) p-2">
                       <div className="flex items-start justify-between text-xs text-(--fg-secondary)">
                         <span>↳ #{r.comtSeq} · {r.authorName ?? "(작성자)"} · {r.insdate.slice(0, 16)}</span>
-                        {r.isOwn ? (<button type="button" onClick={() => handleDelete(r.comtSeq)} className="text-rose-600 hover:underline">삭제</button>) : null}
+                        {r.isOwn ? (<button type="button" onClick={() => handleDelete(r.comtSeq)} className="text-(--color-danger) hover:underline">삭제</button>) : null}
                       </div>
                       <div className="mt-1 whitespace-pre-wrap text-sm text-(--fg-primary)">{r.memo}</div>
                     </li>

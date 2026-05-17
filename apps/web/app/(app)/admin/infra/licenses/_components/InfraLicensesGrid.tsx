@@ -445,7 +445,7 @@ function InfraLicensesGridInner({
       {dupError ? (
         <div
           role="alert"
-          className="rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+          className="rounded border border-(--color-danger) bg-(--color-danger-subtle) px-3 py-2 text-sm text-(--color-danger)"
         >
           {dupError}
         </div>

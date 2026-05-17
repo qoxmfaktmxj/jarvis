@@ -527,9 +527,9 @@ export function DataGrid<T extends WithId>({
                     "transition-colors duration-150 [&_td]:border-b [&_td]:border-(--border-soft) last:[&_td]:border-b-0",
                     "hover:bg-(--bg-surface)",
                     selected === r.data.id ? "bg-(--brand-primary-bg)/40" : "",
-                    r.state === "deleted" ? "bg-rose-50/40 line-through opacity-70" : "",
+                    r.state === "deleted" ? "bg-(--color-danger-subtle)/40 line-through opacity-70" : "",
                     r.state === "new" ? "bg-(--brand-primary-bg)/40" : "",
-                    r.state === "dirty" ? "bg-amber-50/40" : "",
+                    r.state === "dirty" ? "bg-(--color-warning-subtle)/40" : "",
                   ].join(" ")}
                 >
                   <td className="h-8 w-11 whitespace-nowrap px-2 align-middle text-[12px] text-(--fg-muted)">

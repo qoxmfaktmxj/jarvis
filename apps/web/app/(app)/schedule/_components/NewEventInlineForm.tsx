@@ -177,7 +177,7 @@ export function NewEventInlineForm({ onCreated }: Props) {
       </div>
 
       {error ? (
-        <p className="mt-3 text-[12px] text-rose-700">{error}</p>
+        <p className="mt-3 text-[12px] text-(--color-danger)">{error}</p>
       ) : null}
 
       <footer className="mt-4 flex justify-end gap-2">

@@ -114,7 +114,7 @@ export function ManualIngestForm() {
         />
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-(--color-danger)">{error}</p>}
 
       <Button type="submit" disabled={loading}>
         {loading ? t("form.submitting") : t("form.submit")}

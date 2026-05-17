@@ -32,7 +32,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-(--fg-primary)">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-(--color-danger)">*</span>}
       </label>
       <input
         className={[
@@ -412,7 +412,7 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
       <AmountGroup
         prefix="view"
         label="전망 (VIEW)"
-        bgClass="bg-yellow-50"
+        bgClass="bg-(--color-warning-subtle)"
         draft={draft}
         patch={patch}
       />
@@ -486,7 +486,7 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
           type="button"
           disabled={isPending}
           onClick={handleDelete}
-          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded bg-(--color-danger) px-4 py-2 text-sm font-medium text-white hover:bg-(--color-danger-strong) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("delete")}
         </button>

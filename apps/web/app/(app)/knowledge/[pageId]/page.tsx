@@ -27,10 +27,10 @@ export default async function KnowledgePageView({ params }: Props) {
   return (
     <PageShell title={page.title}>
       {/* B4 Phase 1: Legacy route deprecation banner */}
-      <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-600 dark:bg-amber-950 dark:text-amber-200">
+      <div className="rounded-md border border-(--color-warning) bg-(--color-warning-subtle) px-4 py-3 text-sm text-(--color-warning-strong) dark:border-(--color-warning) dark:bg-(--color-warning) dark:text-(--color-warning-subtle)">
         <p>
           {t('deprecationBanner')}{' '}
-          <Link href="/wiki" className="font-medium underline hover:text-amber-900 dark:hover:text-amber-100">
+          <Link href="/wiki" className="font-medium underline hover:text-(--color-warning-strong) dark:hover:text-(--color-warning-subtle)">
             {t('deprecationLink')}
           </Link>
         </p>

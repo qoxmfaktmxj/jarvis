@@ -84,7 +84,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
       </div>
 
       {serverError ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="rounded-lg border border-(--color-danger) bg-(--color-danger-subtle) px-4 py-3 text-sm text-(--color-danger)">
           {serverError}
         </div>
       ) : null}
@@ -120,7 +120,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
           <span className="text-sm font-medium text-surface-700">Label</span>
           <Input placeholder="Primary DB" {...register("label")} />
           {errors.label ? (
-            <span className="text-sm text-rose-600">{errors.label.message}</span>
+            <span className="text-sm text-(--color-danger)">{errors.label.message}</span>
           ) : null}
         </label>
       </div>
@@ -142,7 +142,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
             })}
           />
           {errors.port ? (
-            <span className="text-sm text-rose-600">{errors.port.message}</span>
+            <span className="text-sm text-(--color-danger)">{errors.port.message}</span>
           ) : null}
         </label>
       </div>

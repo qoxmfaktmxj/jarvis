@@ -97,7 +97,7 @@ export default async function ManualWikiEditPage({ params }: EditPageProps) {
 
   return (
     <PageShell title={`wiki/manual/${slugNoExt}.md`}>
-      <Alert variant="default" className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+      <Alert variant="default" className="border-(--color-warning) bg-(--color-warning-subtle) text-(--color-warning-strong) dark:border-(--color-warning) dark:bg-(--color-warning)/40 dark:text-(--color-warning-subtle)">
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" />
           <AlertDescription>{t("manualOnlyBanner")}</AlertDescription>

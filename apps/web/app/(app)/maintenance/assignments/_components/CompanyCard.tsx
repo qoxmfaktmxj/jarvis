@@ -17,7 +17,7 @@ export function CompanyCard({ assignment }: Props) {
           {assignment.companyName ?? "—"}
         </h3>
         {assignment.contractType ? (
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+          <span className="rounded-full bg-(--color-warning-subtle) px-2 py-0.5 text-[11px] font-medium text-(--color-warning)">
             {assignment.contractType}
           </span>
         ) : null}

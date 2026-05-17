@@ -38,7 +38,7 @@ function NumericField({ label, value, required, onChange }: NumericFieldProps) {
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-(--fg-primary)">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-(--color-danger)">*</span>}
       </label>
       <input
         className="rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm outline-none focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)"
@@ -150,7 +150,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
     <div className="flex flex-col gap-1">
       <label className="text-sm font-medium text-(--fg-primary)">
         {label}
-        {required && <span className="ml-1 text-red-500">*</span>}
+        {required && <span className="ml-1 text-(--color-danger)">*</span>}
       </label>
       <input
         className={[
@@ -892,7 +892,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
           type="button"
           disabled={isPending}
           onClick={handleDelete}
-          className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded bg-(--color-danger) px-4 py-2 text-sm font-medium text-white hover:bg-(--color-danger-strong) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("delete")}
         </button>

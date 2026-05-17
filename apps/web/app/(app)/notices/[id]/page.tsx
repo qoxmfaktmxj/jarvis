@@ -79,7 +79,7 @@ export default async function NoticeDetailPage({ params }: Props) {
     >
       {notice.pinned && (
         <div className="flex items-center gap-2">
-          <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+          <Badge variant="secondary" className="bg-(--color-warning-subtle) text-(--color-warning-strong) dark:bg-(--color-warning)/40 dark:text-(--color-warning-subtle)">
             {t('pinned')}
           </Badge>
         </div>

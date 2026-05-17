@@ -44,7 +44,7 @@ function StatCard({
     tone === "danger"
       ? "border-destructive/30 bg-destructive/5"
       : tone === "warn"
-        ? "border-amber-300 bg-amber-50"
+        ? "border-(--color-warning) bg-(--color-warning-subtle)"
         : "border-surface-200 bg-card";
   return (
     <section className={`flex flex-col gap-2 rounded-xl border p-5 ${toneClass}`}>

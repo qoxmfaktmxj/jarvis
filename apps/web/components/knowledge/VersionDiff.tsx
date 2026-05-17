@@ -43,7 +43,7 @@ function DiffLine({ change }: { change: Change }) {
   }
   if (change.removed) {
     return (
-      <div className="bg-red-50 px-3 py-0.5 font-mono text-xs text-red-800 whitespace-pre-wrap line-through opacity-80">
+      <div className="bg-(--color-danger-subtle) px-3 py-0.5 font-mono text-xs text-(--color-danger) whitespace-pre-wrap line-through opacity-80">
         <span className="text-danger mr-1">-</span>{change.value}
       </div>
     );
@@ -109,7 +109,7 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
               <span>→</span>
               <span className="font-mono">{labelB}</span>
               <span className="ml-auto text-green-600">+{added} lines</span>
-              <span className="text-red-600">-{removed} lines</span>
+              <span className="text-(--color-danger)">-{removed} lines</span>
             </div>
           )}
         </DialogHeader>
@@ -123,7 +123,7 @@ export function VersionDiff({ pageId, versionIdA, versionIdB, onClose }: Version
             </div>
           )}
           {error && (
-            <div className="p-4 text-sm text-red-600">{error}</div>
+            <div className="p-4 text-sm text-(--color-danger)">{error}</div>
           )}
           {!loading && !error && (
             <div className="divide-y divide-surface-100">

@@ -187,7 +187,7 @@ export default async function InfraImportPage() {
       )}
 
       {!canRunPipeline && (
-        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <section className="rounded-lg border border-(--color-warning) bg-(--color-warning-subtle) p-4 text-sm text-(--color-warning-strong)">
           재생성은 KNOWLEDGE_REVIEW 권한 보유자만 실행할 수 있습니다.
         </section>
       )}
