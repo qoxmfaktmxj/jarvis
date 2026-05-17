@@ -91,6 +91,7 @@ async function main() {
   // cron `0 21 * * 0` = UTC 일요일 21:00 = KST 월요일 06:00 (의도)
   await boss.schedule(QUIZ_GENERATE_QUEUE, QUIZ_GENERATE_CRON, {});
   await boss.work(QUIZ_GENERATE_QUEUE, quizGenerateHandler);
+  // cron `1 15 * * *` = UTC 15:01 = KST 00:01 (의도, 매일)
   await boss.schedule(QUIZ_SEASON_ROTATE_QUEUE, QUIZ_SEASON_ROTATE_CRON, {});
   await boss.work(QUIZ_SEASON_ROTATE_QUEUE, quizSeasonRotateHandler);
 
