@@ -19,12 +19,12 @@ interface FieldProps {
 function Field({ label, value, readOnly, onChange }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
       <input
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
@@ -130,14 +130,14 @@ export function ContactEditForm({ contact }: ContactEditFormProps) {
           onChange={(v) => patch("switComp", v)}
         />
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-(--fg-primary)">
             {t("fields.statusYn")}
           </label>
           <input
             type="checkbox"
             checked={draft.statusYn}
             onChange={(e) => patch("statusYn", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-(--brand-primary) focus:ring-(--brand-primary)"
+            className="h-4 w-4 rounded border-(--border-default) text-(--brand-primary) focus:ring-(--brand-primary)"
           />
         </div>
       </div>

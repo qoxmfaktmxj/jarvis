@@ -48,9 +48,9 @@ function CountChips({
 }) {
   return (
     <div className="flex gap-1 text-[11px]">
-      <span className="rounded bg-slate-100 px-2 py-0.5">고객사 {counts.custCompany}</span>
-      <span className="rounded bg-slate-100 px-2 py-0.5">기회 {counts.op}</span>
-      <span className="rounded bg-slate-100 px-2 py-0.5">활동 {counts.act}</span>
+      <span className="rounded bg-(--bg-surface) px-2 py-0.5">고객사 {counts.custCompany}</span>
+      <span className="rounded bg-(--bg-surface) px-2 py-0.5">기회 {counts.op}</span>
+      <span className="rounded bg-(--bg-surface) px-2 py-0.5">활동 {counts.act}</span>
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -217,7 +217,7 @@ export function CustomerContactsGridContainer({
             onMemoClick={() => setMemoTarget({ id: row.id, name: row.custName ?? "" })}
           />
         ) : (
-          <span className="text-slate-300">—</span>
+          <span className="text-(--fg-muted)">—</span>
         ),
     },
     {

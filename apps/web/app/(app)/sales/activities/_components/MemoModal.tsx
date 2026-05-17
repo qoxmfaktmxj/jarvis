@@ -140,7 +140,7 @@ export function MemoModal({
                 <p className="mt-1 whitespace-pre-wrap text-sm">{m.memo}</p>
                 <button
                   onClick={() => setComposing({ priorComtSeq: m.comtSeq })}
-                  className="mt-2 text-xs text-slate-700"
+                  className="mt-2 text-xs text-(--fg-primary)"
                 >
                   {t("createReply")}
                 </button>
@@ -168,7 +168,7 @@ export function MemoModal({
                     {m.replies.map((r) => (
                       <li
                         key={r.comtSeq}
-                        className="ml-6 rounded border-l-2 border-slate-300 pl-3"
+                        className="ml-6 rounded border-l-2 border-(--border-default) pl-3"
                       >
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">

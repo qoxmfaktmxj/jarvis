@@ -7,7 +7,7 @@
  *
  * 디자인 표준 (jarvis-architecture "그리드 표준 화면"):
  * - 행 높이: h-8 (32px)
- * - 헤더: bg-slate-50, text-[11px] font-semibold uppercase tracking-wide
+ * - 헤더: bg-(--bg-surface), text-[11px] font-semibold uppercase tracking-wide
  * - 인라인 편집: 클릭 시 파란 ring, blur에서 커밋
  * - 상태 배지: new/dirty/deleted 색상 pill
  */

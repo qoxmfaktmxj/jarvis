@@ -191,10 +191,10 @@ export function PlanViewPerfDetailView({
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-xs" data-testid="pvp-detail-month-table">
               <thead>
-                <tr className="bg-slate-50">
-                  <th className="sticky left-0 z-10 border border-slate-200 bg-slate-50 px-2 py-2 text-left text-slate-600">년월</th>
+                <tr className="bg-(--bg-surface)">
+                  <th className="sticky left-0 z-10 border border-(--border-default) bg-(--bg-surface) px-2 py-2 text-left text-(--fg-secondary)">년월</th>
                   {MONTH_COLS.map((c) => (
-                    <th key={c.key} className="border border-slate-200 px-2 py-2 text-right text-slate-600">{c.label}</th>
+                    <th key={c.key} className="border border-(--border-default) px-2 py-2 text-right text-(--fg-secondary)">{c.label}</th>
                   ))}
                 </tr>
               </thead>

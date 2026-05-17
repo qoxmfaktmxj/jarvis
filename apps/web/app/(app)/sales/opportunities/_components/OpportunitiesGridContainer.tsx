@@ -231,7 +231,7 @@ export function OpportunitiesGridContainer({
               {t("Memo.memoButton")}
             </button>
           ) : (
-            <span className="text-slate-300">—</span>
+            <span className="text-(--fg-muted)">—</span>
           ),
       },
     ],

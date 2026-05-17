@@ -80,7 +80,7 @@ export function ShowPanel() {
                   type="button"
                   onClick={() => setSelectedUserId(u.userId)}
                   className={
-                    "flex w-full items-center justify-between px-2 py-2 text-left transition-colors hover:bg-slate-50 " +
+                    "flex w-full items-center justify-between px-2 py-2 text-left transition-colors hover:bg-(--bg-surface) " +
                     (isSelected ? "bg-(--brand-primary-bg)/40" : "")
                   }
                 >

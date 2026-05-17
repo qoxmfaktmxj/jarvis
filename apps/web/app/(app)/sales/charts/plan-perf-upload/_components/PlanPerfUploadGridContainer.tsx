@@ -192,7 +192,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
           <Input className="h-8" value={pendingFilters.orgCd} onChange={(e) => setPending("orgCd", e.target.value)} placeholder="SALES01" />
         </GridFilterField>
         <GridFilterField label={t("filters.gubunCd")} className="w-[140px]">
-          <select className="h-8 w-full rounded border border-slate-200 px-2 text-sm" value={pendingFilters.gubunCd} onChange={(e) => setPending("gubunCd", e.target.value)}>
+          <select className="h-8 w-full rounded border border-(--border-default) px-2 text-sm" value={pendingFilters.gubunCd} onChange={(e) => setPending("gubunCd", e.target.value)}>
             <option value="">{t("filters.all")}</option>
             <option value="PLAN">PLAN</option>
             <option value="ACTUAL">ACTUAL</option>
@@ -200,7 +200,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
           </select>
         </GridFilterField>
         <GridFilterField label={t("filters.trendGbCd")} className="w-[160px]">
-          <select className="h-8 w-full rounded border border-slate-200 px-2 text-sm" value={pendingFilters.trendGbCd} onChange={(e) => setPending("trendGbCd", e.target.value)}>
+          <select className="h-8 w-full rounded border border-(--border-default) px-2 text-sm" value={pendingFilters.trendGbCd} onChange={(e) => setPending("trendGbCd", e.target.value)}>
             <option value="">{t("filters.all")}</option>
             <option value="SALES">SALES</option>
             <option value="GROSS_PROFIT">GROSS_PROFIT</option>
@@ -215,7 +215,7 @@ export function PlanPerfUploadGridContainer({ rows: initialRows, total: initialT
           {isUploading ? t("uploading") : t("uploadBtn")}
         </Button>
         <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileChange} />
-        <span className="text-xs text-slate-500" data-testid="plan-perf-upload-help">{t("uploadHelp")}</span>
+        <span className="text-xs text-(--fg-secondary)" data-testid="plan-perf-upload-help">{t("uploadHelp")}</span>
       </div>
 
       <DataGrid<SalesPlanPerfRow>

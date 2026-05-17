@@ -319,7 +319,7 @@ function InfraLicensesGridInner({
         span: g.columns.length,
         className: "border-l border-(--border-default)",
       })),
-      { label: "메타", span: 1, className: "border-l border-slate-200" },
+      { label: "메타", span: 1, className: "border-l border-(--border-default)" },
     ],
     [],
   );

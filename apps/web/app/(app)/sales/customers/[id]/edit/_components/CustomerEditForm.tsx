@@ -20,7 +20,7 @@ interface FieldProps {
 function Field({ label, value, readOnly, required, onChange }: FieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-(--fg-primary)">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
@@ -28,7 +28,7 @@ function Field({ label, value, readOnly, required, onChange }: FieldProps) {
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}

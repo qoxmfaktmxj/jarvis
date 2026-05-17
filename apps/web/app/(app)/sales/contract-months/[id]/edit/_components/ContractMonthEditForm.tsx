@@ -30,7 +30,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-(--fg-primary)">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
@@ -38,7 +38,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
@@ -63,12 +63,12 @@ interface TextareaFieldProps {
 function TextareaField({ label, value, readOnly, onChange }: TextareaFieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
       <textarea
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
@@ -95,14 +95,14 @@ function BooleanField({ label, checked, readOnly, onChange }: BooleanFieldProps)
       <input
         type="checkbox"
         className={[
-          "h-4 w-4 rounded border-gray-300",
+          "h-4 w-4 rounded border-(--border-default)",
           readOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer",
         ].join(" ")}
         checked={checked === "Y"}
         disabled={readOnly}
         onChange={(e) => onChange?.(e.target.checked ? "Y" : "N")}
       />
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
     </div>
   );
 }
@@ -142,7 +142,7 @@ interface AmountGroupProps {
 function AmountGroup({ prefix, label, bgClass, draft, patch }: AmountGroupProps) {
   return (
     <section className={`rounded p-4 ${bgClass}`}>
-      <h2 className="mb-3 text-lg font-semibold text-gray-900">{label}</h2>
+      <h2 className="mb-3 text-lg font-semibold text-(--fg-primary)">{label}</h2>
       <div className="grid gap-3 sm:grid-cols-3">
         {AMOUNT_FIELDS.map((f) => {
           const fieldKey = `${prefix}${f.suffix}` as keyof DraftState;
@@ -375,7 +375,7 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
 
       {/* ── Section 1: 메타 ──────────────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">메타</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">메타</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="계약 ID"
@@ -428,7 +428,7 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
 
       {/* ── Section 5: 전표 + 마감 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">전표 + 마감</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">전표 + 마감</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="세금계산서 발주금액"
@@ -458,8 +458,8 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
       </section>
 
       {/* ── Readonly footer: 레거시 + 감사 정보 ──────────────────────────── */}
-      <section className="space-y-4 border-t border-gray-200 pt-4">
-        <h2 className="text-base font-semibold text-gray-500">레거시 + 감사 정보</h2>
+      <section className="space-y-4 border-t border-(--border-default) pt-4">
+        <h2 className="text-base font-semibold text-(--fg-secondary)">레거시 + 감사 정보</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="레거시 계약년도" value={contractMonth.legacyContYear ?? ""} readOnly />
           <Field label="레거시 계약번호" value={contractMonth.legacyContNo ?? ""} readOnly />
@@ -473,7 +473,7 @@ export function ContractMonthEditForm({ contractMonth }: ContractMonthEditFormPr
       </section>
 
       {/* ── Action buttons ──────────────────────────────────────────────── */}
-      <div className="flex gap-3 border-t border-gray-200 pt-4">
+      <div className="flex gap-3 border-t border-(--border-default) pt-4">
         <button
           type="button"
           disabled={isPending || !draft.ym.trim()}

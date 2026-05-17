@@ -24,20 +24,20 @@ export function CompanyListPanel({ selected, onSelect }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-col gap-2 border-b border-slate-200 p-2">
+      <div className="flex flex-col gap-2 border-b border-(--border-default) p-2">
         <input
           type="search"
           placeholder={t("searchPlaceholder")}
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
+          className="rounded border border-(--border-default) px-2 py-1 text-sm"
         />
       </div>
       <div className="flex-1 overflow-auto">
         {loading ? (
-          <p className="p-3 text-xs text-slate-500">{t("loading")}</p>
+          <p className="p-3 text-xs text-(--fg-secondary)">{t("loading")}</p>
         ) : rows.length === 0 ? (
-          <p className="p-3 text-xs text-slate-500">{t("empty")}</p>
+          <p className="p-3 text-xs text-(--fg-secondary)">{t("empty")}</p>
         ) : (
           <ul role="listbox">
             {rows.map(r => {
@@ -55,12 +55,12 @@ export function CompanyListPanel({ selected, onSelect }: Props) {
                   onClick={() => onSelect({ companyCd: r.companyCd, companyName: r.companyName })}
                   onKeyDown={e => { if (e.key === "Enter" || e.key === " ") onSelect({ companyCd: r.companyCd, companyName: r.companyName }); }}
                   className={
-                    "flex cursor-pointer flex-col gap-0.5 border-b border-slate-100 p-2.5 text-sm hover:bg-slate-50 " +
+                    "flex cursor-pointer flex-col gap-0.5 border-b border-(--border-default) p-2.5 text-sm hover:bg-(--bg-surface) " +
                     (isSelected ? "bg-(--brand-primary-bg)" : "")
                   }
                 >
-                  <span className="font-medium text-slate-900">{r.companyName}</span>
-                  <span className="text-xs text-slate-500">
+                  <span className="font-medium text-(--fg-primary)">{r.companyName}</span>
+                  <span className="text-xs text-(--fg-secondary)">
                     {r.companyCd} · {t("optionsBadge", { count: enabledCount })}
                   </span>
                 </li>

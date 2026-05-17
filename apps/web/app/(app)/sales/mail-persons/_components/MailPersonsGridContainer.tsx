@@ -288,7 +288,7 @@ export function MailPersonsGridContainer({
             />
           );
         }
-        return <span className="text-[13px] text-slate-900">{row.sabun}</span>;
+        return <span className="text-[13px] text-(--fg-primary)">{row.sabun}</span>;
       },
     },
     { key: "name", label: tCols("name"), type: "text", width: 140, editable: true, required: true },

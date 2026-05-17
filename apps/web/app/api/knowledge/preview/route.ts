@@ -27,6 +27,6 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
-    html: `<pre class="whitespace-pre-wrap text-sm text-gray-700">${escapeHtml(mdxContent)}</pre>`,
+    html: `<pre class="whitespace-pre-wrap text-sm text-(--fg-primary)">${escapeHtml(mdxContent)}</pre>`,
   });
 }

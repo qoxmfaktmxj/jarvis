@@ -23,7 +23,7 @@ export function TrendTabs({ active }: { active: Metric }) {
   };
 
   return (
-    <div className="flex items-center gap-1 border-b border-slate-200">
+    <div className="flex items-center gap-1 border-b border-(--border-default)">
       {TABS.map((t) => {
         const isActive = t.metric === active;
         return (
@@ -33,7 +33,7 @@ export function TrendTabs({ active }: { active: Metric }) {
             className={
               isActive
                 ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary)"
-                : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
+                : "border-b-2 border-transparent px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"
             }
             data-testid={`trend-tab-${t.metric}`}
           >
@@ -41,7 +41,7 @@ export function TrendTabs({ active }: { active: Metric }) {
           </button>
         );
       })}
-      {pending ? <span className="ml-2 text-xs text-slate-500">로딩…</span> : null}
+      {pending ? <span className="ml-2 text-xs text-(--fg-secondary)">로딩…</span> : null}
     </div>
   );
 }

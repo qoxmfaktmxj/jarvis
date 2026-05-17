@@ -10,7 +10,7 @@ export default async function MaintenanceStatsPage() {
 
   return (
     <PageShell title={t("title")}>
-      <p className="text-sm text-slate-600">{t("description")}</p>
+      <p className="text-sm text-(--fg-secondary)">{t("description")}</p>
       <StatsContainer />
     </PageShell>
   );

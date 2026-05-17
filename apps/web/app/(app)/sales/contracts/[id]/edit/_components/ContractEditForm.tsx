@@ -36,7 +36,7 @@ function NumericField({ label, value, required, onChange }: NumericFieldProps) {
   const [editing, setEditing] = useState(false);
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-(--fg-primary)">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
@@ -102,13 +102,13 @@ function CodeField({
   const display = matched ? `${matched.label} (${matched.code})` : value;
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
       <div className="flex items-stretch gap-2">
         <input
           type="text"
           readOnly
           value={display}
-          className="flex-1 cursor-not-allowed rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700"
+          className="flex-1 cursor-not-allowed rounded border border-(--border-default) bg-(--bg-surface) px-3 py-2 text-sm text-(--fg-primary)"
         />
         <CodeGroupPopupLauncher
           triggerLabel={label}
@@ -148,7 +148,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
 
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-(--fg-primary)">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
@@ -156,7 +156,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
@@ -181,12 +181,12 @@ interface TextareaFieldProps {
 function TextareaField({ label, value, readOnly, onChange }: TextareaFieldProps) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
       <textarea
         className={[
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
-            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+            ? "cursor-not-allowed bg-(--bg-surface) text-(--fg-secondary)"
             : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
@@ -213,14 +213,14 @@ function BooleanField({ label, checked, readOnly, onChange }: BooleanFieldProps)
       <input
         type="checkbox"
         className={[
-          "h-4 w-4 rounded border-gray-300",
+          "h-4 w-4 rounded border-(--border-default)",
           readOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer",
         ].join(" ")}
         checked={checked === "Y"}
         disabled={readOnly}
         onChange={(e) => onChange?.(e.target.checked ? "Y" : "N")}
       />
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-(--fg-primary)">{label}</label>
     </div>
   );
 }
@@ -384,7 +384,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
       {/* ── Section 1: 계약 기본 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">계약 기본</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">계약 기본</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="계약명"
@@ -445,7 +445,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
       {/* ── Section 2: 회사·거래처 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">회사·거래처</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">회사·거래처</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="회사코드"
@@ -498,7 +498,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
           name and writes both fields atomically. Today users must hand-enter
           the legacy customerNo and rely on the upstream RSC to set companyCd. */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">담당자·기타</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">담당자·기타</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="고객담당자번호"
@@ -522,7 +522,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
       {/* ── Section 4: 계약 금액 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">계약 금액</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">계약 금액</h2>
         <div className="grid grid-cols-2 gap-4">
           {/*착수금 */}
           <NumericField
@@ -616,17 +616,17 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
       {/* ── Section 5: 보증·이행 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">보증·이행</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">보증·이행</h2>
         {/* 9 Y/N + rate cells in grid-cols-3: 이행|발행|보증율 x 계약/선급/하자 */}
         <div className="grid grid-cols-3 gap-4">
           {/* Header labels */}
-          <div className="text-xs font-semibold uppercase text-gray-500">이행여부</div>
-          <div className="text-xs font-semibold uppercase text-gray-500">발행여부</div>
-          <div className="text-xs font-semibold uppercase text-gray-500">보증율 (%)</div>
+          <div className="text-xs font-semibold uppercase text-(--fg-secondary)">이행여부</div>
+          <div className="text-xs font-semibold uppercase text-(--fg-secondary)">발행여부</div>
+          <div className="text-xs font-semibold uppercase text-(--fg-secondary)">보증율 (%)</div>
 
           {/* 계약보증 */}
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">계약보증</p>
+            <p className="text-xs text-(--fg-secondary)">계약보증</p>
             <BooleanField
               label="계약이행여부"
               checked={draft.contImplYn}
@@ -634,7 +634,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             />
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">계약보증</p>
+            <p className="text-xs text-(--fg-secondary)">계약보증</p>
             <BooleanField
               label="계약발행여부"
               checked={draft.contPublYn}
@@ -650,7 +650,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
           {/* 선급보증 */}
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">선급보증</p>
+            <p className="text-xs text-(--fg-secondary)">선급보증</p>
             <BooleanField
               label="선급이행여부"
               checked={draft.advanImplYn}
@@ -658,7 +658,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             />
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">선급보증</p>
+            <p className="text-xs text-(--fg-secondary)">선급보증</p>
             <BooleanField
               label="선급발행여부"
               checked={draft.advanPublYn}
@@ -674,7 +674,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
           {/* 하자보증 */}
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">하자보증</p>
+            <p className="text-xs text-(--fg-secondary)">하자보증</p>
             <BooleanField
               label="하자이행여부"
               checked={draft.defectImplYn}
@@ -682,7 +682,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
             />
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-gray-500">하자보증</p>
+            <p className="text-xs text-(--fg-secondary)">하자보증</p>
             <BooleanField
               label="하자발행여부"
               checked={draft.defectPublYn}
@@ -716,7 +716,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
       {/* ── Section 6: 계획 일정 (collapsible) ──────────────────────────── */}
       <section className="space-y-4">
         <details>
-          <summary className="cursor-pointer text-lg font-semibold text-gray-900 hover:text-(--brand-primary)">
+          <summary className="cursor-pointer text-lg font-semibold text-(--fg-primary) hover:text-(--brand-primary)">
             계획 일정 (14개 항목)
           </summary>
           <div className="mt-4 grid grid-cols-2 gap-4">
@@ -824,7 +824,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
 
       {/* ── Section 7: 부가정보 ──────────────────────────────────────── */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">부가정보</h2>
+        <h2 className="text-lg font-semibold text-(--fg-primary)">부가정보</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field
             label="이전계약번호"
@@ -868,8 +868,8 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
       </section>
 
       {/* ── Audit footer (readonly) ──────────────────────────────────────── */}
-      <section className="space-y-4 border-t border-gray-200 pt-4">
-        <h2 className="text-base font-semibold text-gray-500">감사 정보</h2>
+      <section className="space-y-4 border-t border-(--border-default) pt-4">
+        <h2 className="text-base font-semibold text-(--fg-secondary)">감사 정보</h2>
         <div className="grid grid-cols-2 gap-4">
           <Field label="생성일시" value={contract.createdAt} readOnly />
           <Field label="수정일시" value={contract.updatedAt ?? ""} readOnly />
@@ -879,7 +879,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
       </section>
 
       {/* ── Action buttons ──────────────────────────────────────── */}
-      <div className="flex gap-3 border-t border-gray-200 pt-4">
+      <div className="flex gap-3 border-t border-(--border-default) pt-4">
         <button
           type="button"
           disabled={isPending || !draft.contNm.trim()}
