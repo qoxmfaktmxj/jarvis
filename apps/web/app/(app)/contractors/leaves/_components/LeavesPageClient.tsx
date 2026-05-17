@@ -39,11 +39,13 @@ export function LeavesPageClient({ initialSummary, initialQuery, isAdmin }: Prop
     [],
   );
 
-  // mount-once: 첫 행 detail 자동 로드
+  // initialSummary 변경 시 selectedId + detail 동기화
   useEffect(() => {
-    if (selectedId) loadDetail(selectedId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // mount-once
+    const firstId = initialSummary[0]?.contractId ?? null;
+    setSelectedId(firstId);
+    if (firstId) loadDetail(firstId);
+    else setDetailRows([]);
+  }, [initialSummary, loadDetail]);
 
   const handleSelect = useCallback(
     (id: string | null) => {

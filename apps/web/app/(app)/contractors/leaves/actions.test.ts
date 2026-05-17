@@ -143,6 +143,23 @@ describe("leaveBatchInputSchema", () => {
       })
     ).toThrow();
   });
+  it("accepts type='hourly'", () => {
+    expect(() =>
+      leaveBatchInputSchema.parse({
+        contractId: TEST_CONTRACT_ID,
+        inserts: [
+          {
+            type: "hourly",
+            startDate: "2026-05-17",
+            endDate: "2026-05-17",
+            hours: 2,
+            reason: "회의",
+          },
+        ],
+        cancels: [],
+      })
+    ).not.toThrow();
+  });
 });
 
 describe("validateBatchBusinessRules", () => {

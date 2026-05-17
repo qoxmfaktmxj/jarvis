@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const LEAVE_TYPES = ["annual", "halfAm", "halfPm", "sick", "family"] as const;
+const LEAVE_TYPES = ["annual", "halfAm", "halfPm", "hourly", "sick", "family"] as const;
 
 const insertSchema = z.object({
   type: z.enum(LEAVE_TYPES),
