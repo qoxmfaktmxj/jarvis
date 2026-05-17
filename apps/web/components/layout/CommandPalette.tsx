@@ -12,7 +12,7 @@
  * 이미 완료된 상태이므로 여기서는 검색 필터링만 수행한다.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 
@@ -148,8 +148,45 @@ export function CommandPalette({ menus, actions }: Props) {
 
   const flat = useMemo(() => [...bySection.navigate, ...bySection.actions], [bySection]);
 
+  /**
+   * Client action dispatcher — handles routePaths of the shape `/_action/<id>`.
+   *
+   * Convention: the `_action` prefix is reserved (Next.js underscore convention
+   * blocks the segment from being a real route), and isSafeInternalPath()
+   * accepts it because it starts with `/`. Seed `menu_item.route_path` to
+   * `/_action/logout` etc. to expose a non-route command in the palette.
+   */
+  const handleClientAction = useCallback(
+    async (id: string) => {
+      switch (id) {
+        case "logout": {
+          await fetch("/api/auth/logout", { method: "POST", redirect: "manual" });
+          // Hard navigate so any in-memory cache (RSC, swr) is cleared.
+          window.location.href = "/login";
+          return;
+        }
+        case "reload": {
+          router.refresh();
+          return;
+        }
+        default: {
+          if (process.env.NODE_ENV !== "production") {
+            // eslint-disable-next-line no-console
+            console.warn(`[CommandPalette] unknown client action: ${id}`);
+          }
+        }
+      }
+    },
+    [router],
+  );
+
   const run = async (it: PaletteItem) => {
     setOpen(false);
+    if (it.href.startsWith("/_action/")) {
+      const id = it.href.slice("/_action/".length);
+      await handleClientAction(id);
+      return;
+    }
     const ok = await openTab(it.href, it.label);
     if (ok) {
       router.push(it.href);
