@@ -116,6 +116,8 @@ export async function POST(request: NextRequest) {
         if (!devDbUser) {
           return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
         }
+        const devDisabled = await rejectIfNotActive(devDbUser, ip, payload.username);
+        if (devDisabled) return devDisabled;
         return buildLoginResponse(devDbUser, sessionLifetimeMs, ip, payload.keepSignedIn === true);
       }
     }
@@ -149,11 +151,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid credentials" }, { status: 401 });
   }
 
+  const disabled = await rejectIfNotActive(dbUser, ip, payload.username);
+  if (disabled) return disabled;
+
   return buildLoginResponse(dbUser, sessionLifetimeMs, ip, payload.keepSignedIn === true);
 }
 
 async function buildLoginResponse(
-  dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null },
+  dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null; status: string },
   sessionLifetimeMs: number,
   ip: string,
   keepSignedIn = false,
@@ -215,4 +220,34 @@ async function buildLoginResponse(
     .catch(() => undefined);
 
   return response;
+}
+
+async function rejectIfNotActive(
+  dbUser: { id: string; workspaceId: string; status: string },
+  ip: string,
+  username: string,
+): Promise<NextResponse | null> {
+  if (dbUser.status === "active") return null;
+  await db
+    .insert(auditLog)
+    .values({
+      workspaceId: dbUser.workspaceId,
+      userId: dbUser.id,
+      action: "auth.login.fail",
+      resourceType: "login",
+      ipAddress: ip === "unknown" ? null : ip,
+      details: {
+        ip,
+        username,
+        reason: "account_not_active",
+        status: dbUser.status,
+        usernameHash: createHash("sha256").update(username).digest("hex").slice(0, 16),
+      },
+      success: false,
+    })
+    .catch(() => undefined);
+  return NextResponse.json(
+    { error: "account_disabled", status: dbUser.status },
+    { status: 403 },
+  );
 }

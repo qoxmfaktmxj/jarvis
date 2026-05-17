@@ -11,6 +11,7 @@ const {
   auditInsertMock,
   checkRateLimitMock,
   findTempDevAccountMock,
+  verifyPasswordMock,
 } = vi.hoisted(() => ({
   createSessionMock: vi.fn(),
   userLookupQueue: [] as unknown[][],
@@ -18,6 +19,7 @@ const {
   auditInsertMock: vi.fn(),
   checkRateLimitMock: vi.fn(),
   findTempDevAccountMock: vi.fn(),
+  verifyPasswordMock: vi.fn(),
 }));
 
 vi.mock("@jarvis/auth/session", () => ({
@@ -54,6 +56,10 @@ vi.mock("@/lib/auth/dev-accounts", () => ({
 vi.mock("@/lib/server/rate-limit", () => ({
   checkRateLimit: checkRateLimitMock,
   __resetRateLimitForTests: vi.fn(),
+}));
+
+vi.mock("@jarvis/auth/password", () => ({
+  verifyPassword: verifyPasswordMock,
 }));
 
 import { POST } from "./route";
@@ -93,6 +99,7 @@ const DB_USER = {
   name: "Admin User",
   email: "admin@jarvis.dev",
   orgId: null,
+  status: "active" as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -239,6 +246,57 @@ describe("/api/auth/login", () => {
     const res = await POST(buildRequest({ username: "admin", password: "admin123!" }));
     expect(res.status).toBe(401);
   });
+
+  // ── P0-X: status guard (TDD red phase — Task 6에서 구현) ─────────────────
+
+  it("TC: locked user + correct password → 403 account_disabled", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    checkRateLimitMock.mockReturnValue(ALLOWED_RL);
+    verifyPasswordMock.mockResolvedValue(true);
+    userLookupQueue.push([
+      { ...DB_USER, status: "locked", passwordHash: "stub-hash" },
+    ]);
+
+    const req = buildRequest({ username: "EMP001", password: "correct" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(403);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body).toMatchObject({ error: "account_disabled", status: "locked" });
+    expect(auditInsertMock).toHaveBeenCalled();
+  });
+
+  it("TC: inactive user + correct password → 403 account_disabled", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    checkRateLimitMock.mockReturnValue(ALLOWED_RL);
+    verifyPasswordMock.mockResolvedValue(true);
+    userLookupQueue.push([
+      { ...DB_USER, status: "inactive", passwordHash: "stub-hash" },
+    ]);
+
+    const req = buildRequest({ username: "EMP001", password: "correct" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(403);
+    const body = await res.json() as Record<string, unknown>;
+    expect(body).toMatchObject({ error: "account_disabled", status: "inactive" });
+  });
+
+  it("TC: active user + correct password → 200 (regression guard)", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    checkRateLimitMock.mockReturnValue(ALLOWED_RL);
+    verifyPasswordMock.mockResolvedValue(true);
+    userLookupQueue.push([
+      { ...DB_USER, status: "active", passwordHash: "stub-hash" },
+    ]);
+    roleLookupQueue.push([{ roleCode: "ADMIN" }]);
+    createSessionMock.mockResolvedValue(undefined);
+
+    const req = buildRequest({ username: "EMP001", password: "correct" });
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+  });
 });
 
 describe("/api/auth/login - cookie options", () => {
@@ -269,6 +327,7 @@ describe("/api/auth/login - cookie options", () => {
       name: "Admin User",
       email: "admin@jarvis.dev",
       orgId: null,
+      status: "active",
     }]);
     roleLookupQueue.push([{ roleCode: "ADMIN" }]);
   }
