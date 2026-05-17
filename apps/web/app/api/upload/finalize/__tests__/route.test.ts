@@ -7,11 +7,12 @@ const mockSession = {
   userId: 'user-abc',
   workspaceId: 'ws-xyz',
   roles: ['VIEWER'],
-  permissions: ['files:write'],
+  permissions: ['sales:admin'],
 };
 
 vi.mock('@/lib/server/api-auth', () => ({
   requireApiSession: vi.fn().mockResolvedValue({ session: mockSession }),
+  requireAnyApiPermission: vi.fn().mockResolvedValue({ session: mockSession }),
 }));
 
 // ── Mock: DB (for audit_log) ──────────────────────────────────────────────────
@@ -248,10 +249,10 @@ describe('POST /api/upload/finalize', () => {
     expect(JSON.stringify(json)).not.toContain('MinIO connection error');
   });
 
-  // ── Unauthorized (mocked requireApiSession returns response) ─────────────
+  // ── Unauthorized (mocked requireAnyApiPermission returns response) ───────
   it('returns 401 when session is missing', async () => {
-    const { requireApiSession } = await import('@/lib/server/api-auth');
-    vi.mocked(requireApiSession).mockResolvedValueOnce({
+    const { requireAnyApiPermission } = await import('@/lib/server/api-auth');
+    vi.mocked(requireAnyApiPermission).mockResolvedValueOnce({
       response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }),
     } as never);
 

@@ -7,11 +7,12 @@ const mockSession = {
   userId: 'user-abc',
   workspaceId: 'ws-xyz',
   roles: ['VIEWER'],
-  permissions: ['files:write'],
+  permissions: ['sales:admin'],
 };
 
 vi.mock('@/lib/server/api-auth', () => ({
   requireApiSession: vi.fn().mockResolvedValue({ session: mockSession }),
+  requireAnyApiPermission: vi.fn().mockResolvedValue({ session: mockSession }),
 }));
 
 // ── Mock: DB ───────────────────────────────────────────────────────────────

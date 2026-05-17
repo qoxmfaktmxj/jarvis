@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type Readable } from 'node:stream';
 import { Client } from 'minio';
-import { requireApiSession } from '@/lib/server/api-auth';
+import { requireAnyApiPermission } from '@/lib/server/api-auth';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { auditLog } from '@jarvis/db/schema/audit';
 import { verifyMagicBytes } from '@/lib/upload/magic-bytes';
+
+const UPLOAD_PERMISSIONS = [
+  PERMISSIONS.SALES_ADMIN,
+  PERMISSIONS.KNOWLEDGE_ADMIN,
+  PERMISSIONS.PROJECT_ADMIN,
+  PERMISSIONS.NOTICE_ADMIN,
+  PERMISSIONS.MAINTENANCE_ADMIN,
+] as const;
 
 const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 /** Bytes to read from MinIO for magic-byte verification (256 covers all signatures + text heuristic). */
@@ -56,7 +65,7 @@ async function readPartialBytes(stream: Readable, length: number): Promise<Uint8
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // ── Auth ──────────────────────────────────────────────────────────────────
-  const auth = await requireApiSession(req, 'files:write');
+  const auth = await requireAnyApiPermission(req, UPLOAD_PERMISSIONS);
   if (auth.response) return auth.response;
   const { session } = auth;
 
