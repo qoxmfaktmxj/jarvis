@@ -197,6 +197,7 @@ export function ScheduleCalendar({
 
   return (
     <div
+      className="h-full overflow-y-auto"
       onMouseUp={() => {
         setDragStart(null);
         setDragEnd(null);
