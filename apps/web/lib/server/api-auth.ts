@@ -1,6 +1,6 @@
 import type { JarvisSession } from "@jarvis/auth/types";
 import { getSession } from "@jarvis/auth/session";
-import { hasPermission } from "@jarvis/auth/rbac";
+import { hasAnyPermission, hasPermission } from "@jarvis/auth/rbac";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { resolveSessionId } from "@/lib/session-cookie";
@@ -34,6 +34,33 @@ export async function requireApiSession(
   }
 
   if (permission !== undefined && !hasPermission(session, permission)) {
+    return {
+      response: NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    };
+  }
+
+  return { session };
+}
+
+export async function requireAnyApiPermission(
+  request: NextRequest,
+  permissions: readonly string[]
+): Promise<ApiAuthResult> {
+  const sessionId = resolveRequestSessionId(request);
+  if (!sessionId) {
+    return {
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    };
+  }
+
+  const session = await getSession(sessionId);
+  if (!session) {
+    return {
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    };
+  }
+
+  if (!hasAnyPermission(session, permissions)) {
     return {
       response: NextResponse.json({ error: "Forbidden" }, { status: 403 })
     };
