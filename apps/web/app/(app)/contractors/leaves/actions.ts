@@ -1,7 +1,7 @@
 ﻿"use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@jarvis/db/client";
 import {
   contractorContract,
@@ -13,6 +13,7 @@ import { hasPermission } from "@jarvis/auth/rbac";
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import {
   leaveBatchInputSchema,
+  listLeaveRequestsInputSchema,
   validateBatchBusinessRules
 } from "./actions.validators";
 
@@ -117,4 +118,76 @@ export async function saveLeaveBatch(
   });
 
   return { inserted, cancelled, cancelFailed };
+}
+
+// ---------------------------------------------------------------------------
+// List leave requests for a contract
+// ---------------------------------------------------------------------------
+
+export interface LeaveRequestRow {
+  id: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  hours: number;
+  reason: string | null;
+  status: "active" | "cancelled";
+  appliedAt: string;
+  cancelledAt: string | null;
+  requestStatus: string;
+}
+
+export async function listLeaveRequestsForContract(
+  input: unknown
+): Promise<{ ok: true; rows: LeaveRequestRow[] }> {
+  const parsed = listLeaveRequestsInputSchema.parse(input);
+  const session = await requirePageSession(PERMISSIONS.USER_READ);
+
+  // contract ownership check
+  const [contract] = await db
+    .select({ id: contractorContract.id, workspaceId: contractorContract.workspaceId })
+    .from(contractorContract)
+    .where(eq(contractorContract.id, parsed.contractId))
+    .limit(1);
+
+  if (!contract || contract.workspaceId !== session.workspaceId) {
+    throw new Error("forbidden");
+  }
+
+  const rows = await db
+    .select({
+      id: leaveRequest.id,
+      type: leaveRequest.type,
+      startDate: leaveRequest.startDate,
+      endDate: leaveRequest.endDate,
+      hours: leaveRequest.hours,
+      reason: leaveRequest.reason,
+      status: leaveRequest.status,
+      appliedAt: leaveRequest.createdAt,
+      cancelledAt: leaveRequest.cancelledAt
+    })
+    .from(leaveRequest)
+    .where(
+      and(
+        eq(leaveRequest.workspaceId, session.workspaceId),
+        eq(leaveRequest.contractId, parsed.contractId)
+      )
+    )
+    .orderBy(desc(leaveRequest.startDate));
+
+  return {
+    ok: true,
+    rows: rows.map((r) => ({
+      id: r.id,
+      type: r.type,
+      startDate: r.startDate,
+      endDate: r.endDate,
+      hours: Number(r.hours),
+      reason: r.reason ?? null,
+      status: r.status === "cancelled" ? "cancelled" : "active",
+      appliedAt: r.appliedAt.toISOString(),
+      cancelledAt: r.cancelledAt?.toISOString() ?? null,
+      requestStatus: "approved"
+    }))
+  };
 }

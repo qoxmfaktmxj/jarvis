@@ -24,3 +24,9 @@ export function validateBatchBusinessRules(input: LeaveBatchInput): void {
     if (ins.hours <= 0) throw new Error("invalid-hours");
   }
 }
+
+export const listLeaveRequestsInputSchema = z.object({
+  contractId: z.string().uuid()
+});
+
+export type ListLeaveRequestsInput = z.infer<typeof listLeaveRequestsInputSchema>;
