@@ -1241,6 +1241,7 @@
         "submit": "조회"
       },
       "master": {
+        "title": "휴가 요약",
         "columns": {
           "no": "No",
           "employeeId": "사번",
@@ -1251,9 +1252,11 @@
           "used": "사용일수",
           "remaining": "잔여일수",
           "note": "비고"
-        }
+        },
+        "empty": "조건에 맞는 계약자가 없습니다."
       },
       "detail": {
+        "title": "휴가 신청",
         "columns": {
           "no": "No",
           "delete": "삭제",
@@ -1264,15 +1267,36 @@
           "startDate": "적용시작일",
           "endDate": "적용종료일",
           "days": "적용일수",
+          "hours": "시간",
           "reason": "사유"
+        },
+        "types": {
+          "annual": "연차",
+          "halfAm": "오전반차",
+          "halfPm": "오후반차",
+          "hourly": "시간차",
+          "sick": "병가",
+          "family": "경조사"
+        },
+        "status": {
+          "active": "유효",
+          "cancelled": "취소"
+        },
+        "requestStatus": {
+          "approved": "승인",
+          "pending": "대기",
+          "rejected": "반려"
         },
         "actions": {
           "add": "입력",
           "save": "저장"
         },
+        "empty": "선택된 계약에 휴가 내역이 없습니다.",
+        "noSelection": "좌측에서 계약자를 선택하세요.",
         "toast": {
           "saved": "저장되었습니다",
-          "saveFailed": "저장 실패"
+          "saveFailed": "저장 실패",
+          "cancelFailed": "다음 취소를 처리하지 못했습니다: {ids}"
         }
       }
     },
