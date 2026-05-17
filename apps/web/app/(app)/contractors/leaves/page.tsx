@@ -2,7 +2,7 @@
 import { PERMISSIONS } from "@jarvis/shared/constants/permissions";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { listLeaveSummary } from "@/lib/queries/contractors";
-import { LeaveManagementPanel } from "@/components/contractors/LeaveManagementPanel";
+import { LeavesPageClient } from "./_components/LeavesPageClient";
 import type { PageProps } from "@jarvis/shared/types/page";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +33,7 @@ export default async function ContractorsLeavesPage({
   });
 
   return (
-    <LeaveManagementPanel
+    <LeavesPageClient
       initialSummary={rows}
       initialQuery={{ referenceDate, name: nameLike }}
       isAdmin={isAdmin}
