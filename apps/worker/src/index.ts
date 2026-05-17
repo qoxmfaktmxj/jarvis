@@ -88,6 +88,7 @@ async function main() {
   await boss.work('cache-cleanup', cacheCleanupHandler);
 
   // Phase-Dashboard (2026-04-30) — 위키 퀴즈 주간 batch + 시즌 rotate.
+  // cron `0 21 * * 0` = UTC 일요일 21:00 = KST 월요일 06:00 (의도)
   await boss.schedule(QUIZ_GENERATE_QUEUE, QUIZ_GENERATE_CRON, {});
   await boss.work(QUIZ_GENERATE_QUEUE, quizGenerateHandler);
   await boss.schedule(QUIZ_SEASON_ROTATE_QUEUE, QUIZ_SEASON_ROTATE_CRON, {});
@@ -95,6 +96,7 @@ async function main() {
 
   // Phase-Dashboard (2026-04-30) — 외부 시그널(FX + 날씨) 캐시.
   // KST 07-19시 매시 + KST 21·00·03시 = 하루 16회 (단일 cron 표현식으로 등록).
+  // cron `0 22,23,0-10,12,15,18 * * *` = UTC 시간 표기, KST = UTC + 9h
   // pg-boss schedule()은 큐 이름을 PK로 사용하므로 두 번 호출하면 마지막 값만 남는다.
   await boss.schedule(EXTERNAL_SIGNAL_FETCH_QUEUE, EXTERNAL_SIGNAL_FETCH_CRON, {});
   await boss.work(EXTERNAL_SIGNAL_FETCH_QUEUE, externalSignalFetchHandler);
@@ -140,6 +142,7 @@ async function main() {
   // in environments that have not opted in.
   if (featureWikiLintCron()) {
     await boss.createQueue(WIKI_LINT_QUEUE);
+    // cron `0 18 * * 6` = UTC 토요일 18:00 = KST 일요일 03:00 (의도)
     await boss.schedule(WIKI_LINT_QUEUE, WIKI_LINT_CRON, {});
     await boss.work(WIKI_LINT_QUEUE, wikiLintHandler);
     logger.info({ cron: WIKI_LINT_CRON }, '[worker] wiki-lint cron registered');
