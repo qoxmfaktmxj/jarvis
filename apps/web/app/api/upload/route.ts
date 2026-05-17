@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { type Readable } from 'node:stream';
 import { Client } from 'minio';
 import { requireAnyApiPermission } from '@/lib/server/api-auth';
-import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
+import { UPLOAD_PERMISSIONS } from '@/lib/server/upload-permissions';
 import { db } from '@jarvis/db/client';
 import { rawSource, attachment } from '@jarvis/db/schema/file';
 import { auditLog } from '@jarvis/db/schema/audit';
@@ -13,14 +13,6 @@ import {
   validateUploadAgainstPolicy,
 } from '@/lib/server/validateUpload';
 import PgBoss from 'pg-boss';
-
-const UPLOAD_PERMISSIONS = [
-  PERMISSIONS.SALES_ADMIN,
-  PERMISSIONS.KNOWLEDGE_ADMIN,
-  PERMISSIONS.PROJECT_ADMIN,
-  PERMISSIONS.NOTICE_ADMIN,
-  PERMISSIONS.MAINTENANCE_ADMIN,
-] as const;
 
 const uploadSchema = z.object({
   objectKey: z.string().min(1),

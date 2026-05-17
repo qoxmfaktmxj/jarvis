@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function buildLoginResponse(
-  dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null; status: string },
+  dbUser: { id: string; workspaceId: string; employeeId: string; name: string; email: string | null; orgId: string | null; status: "active" | "inactive" | "locked" },
   sessionLifetimeMs: number,
   ip: string,
   keepSignedIn = false,
@@ -223,7 +223,7 @@ async function buildLoginResponse(
 }
 
 async function rejectIfNotActive(
-  dbUser: { id: string; workspaceId: string; status: string },
+  dbUser: { id: string; workspaceId: string; status: "active" | "inactive" | "locked" },
   ip: string,
   username: string,
 ): Promise<NextResponse | null> {
@@ -246,6 +246,10 @@ async function rejectIfNotActive(
       success: false,
     })
     .catch(() => undefined);
+  // status leak is intentional (spec 2026-05-17 §2): ops clarity > enumeration risk.
+  // Mitigated by precondition that password verification must succeed before reaching
+  // this branch — see line ~101 — so an attacker cannot probe status without valid
+  // credentials.
   return NextResponse.json(
     { error: "account_disabled", status: dbUser.status },
     { status: 403 },

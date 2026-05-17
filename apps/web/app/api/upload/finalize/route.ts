@@ -3,18 +3,10 @@ import { z } from 'zod';
 import { type Readable } from 'node:stream';
 import { Client } from 'minio';
 import { requireAnyApiPermission } from '@/lib/server/api-auth';
-import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
+import { UPLOAD_PERMISSIONS } from '@/lib/server/upload-permissions';
 import { db } from '@jarvis/db/client';
 import { auditLog } from '@jarvis/db/schema/audit';
 import { verifyMagicBytes } from '@/lib/upload/magic-bytes';
-
-const UPLOAD_PERMISSIONS = [
-  PERMISSIONS.SALES_ADMIN,
-  PERMISSIONS.KNOWLEDGE_ADMIN,
-  PERMISSIONS.PROJECT_ADMIN,
-  PERMISSIONS.NOTICE_ADMIN,
-  PERMISSIONS.MAINTENANCE_ADMIN,
-] as const;
 
 const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 /** Bytes to read from MinIO for magic-byte verification (256 covers all signatures + text heuristic). */
