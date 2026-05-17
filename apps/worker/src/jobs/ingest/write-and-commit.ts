@@ -42,7 +42,6 @@ import {
   parseWikilinks,
   createTempWorktree,
   type WikiFrontmatter,
-  type WikiSensitivity,
   type TempWorktreeHandle,
 } from "@jarvis/wiki-fs";
 import {
@@ -61,7 +60,7 @@ export interface WriteAndCommitInput {
   fileBlocks: FileBlock[];
   reviewBlocks: ReviewBlock[];
   /** Sensitivity inherited from the source; downstream sensitivity may rise. */
-  sourceSensitivity: WikiSensitivity;
+  sourceSensitivity: string;
   /** Source filename for the commit message. */
   sourceTitle: string;
   /** Run id for log lines / temp branch names. */
@@ -179,7 +178,7 @@ function substituteFrontmatter(
   block: FileBlock,
   workspaceId: string,
   rawSourceId: string,
-  sourceSensitivity: WikiSensitivity,
+  sourceSensitivity: string,
 ): SubstitutedBlock | SubstituteFailure {
   // Validate path before any other processing to prevent directory traversal.
   const pathCheck = validateBlockPath(block.path, workspaceId);
@@ -217,13 +216,13 @@ function substituteFrontmatter(
   }
 
   const now = new Date().toISOString();
+  // `authority`, `sensitivity`, `requiredPermission` are no longer emitted —
+  // directory layout + RBAC + workspaceId are the actual access boundaries.
+  // (2026-05-17 frontmatter cleanup; sourceSensitivity is accepted but ignored.)
+  void sourceSensitivity;
   const fm: WikiFrontmatter = {
     ...parsed.data,
     workspaceId,
-    // Authority is auto for any LLM-generated page.
-    authority: "auto",
-    // sensitivity floor: never demote below source.
-    sensitivity: maxSensitivity(parsed.data.sensitivity, sourceSensitivity),
     sources:
       parsed.data.sources && parsed.data.sources.length > 0
         ? parsed.data.sources
@@ -232,10 +231,8 @@ function substituteFrontmatter(
     updated: now,
   };
 
-  // Replace any leftover string placeholders in known string fields.
-  for (const key of ["title", "requiredPermission"] as const) {
-    if (fm[key] === PLACEHOLDER) fm[key] = "";
-  }
+  // Replace any leftover string placeholder in `title`.
+  if (fm.title === PLACEHOLDER) fm.title = "";
 
   const content = serializeFrontmatter(fm, parsed.body);
 
@@ -248,17 +245,6 @@ function substituteFrontmatter(
     isBookkeeping: false,
     mode: block.mode ?? "overwrite",
   };
-}
-
-const SENSITIVITY_ORDER: Record<WikiSensitivity, number> = {
-  PUBLIC: 0,
-  INTERNAL: 1,
-  RESTRICTED: 2,
-  SECRET_REF_ONLY: 3,
-};
-
-function maxSensitivity(a: WikiSensitivity, b: WikiSensitivity): WikiSensitivity {
-  return SENSITIVITY_ORDER[a] >= SENSITIVITY_ORDER[b] ? a : b;
 }
 
 // ── Validation ────────────────────────────────────────────────────────────
@@ -372,27 +358,16 @@ async function recordIngestDlq(input: {
  */
 function derivePublishedStatus(
   fm: WikiFrontmatter,
-  sourceSensitivity: WikiSensitivity,
+  sourceSensitivity: string,
   hasContradiction: boolean,
 ): "draft" | "published" {
-  // High-sensitivity content always starts as draft.
-  if (fm.sensitivity === "RESTRICTED" || fm.sensitivity === "SECRET_REF_ONLY") {
-    return "draft";
-  }
-  // Sensitivity was bumped above source baseline → requires review.
-  if (SENSITIVITY_ORDER[fm.sensitivity] > SENSITIVITY_ORDER[sourceSensitivity]) {
-    return "draft";
-  }
-  // Non-default requiredPermission means restricted access → keep draft.
-  const perm = fm.requiredPermission ?? "";
-  if (perm.length > 0 && perm !== "knowledge:read") {
-    return "draft";
-  }
-  // Explicit frontmatter review flag.
+  // Sensitivity / requiredPermission no longer gate publish state — those
+  // fields were retired in the 2026-05-17 frontmatter cleanup. Only the two
+  // remaining review signals keep a page in draft.
+  void sourceSensitivity;
   if (fm["reviewRequired"] === true) {
     return "draft";
   }
-  // Contradiction signal from Step A / Step B.
   if (hasContradiction) {
     return "draft";
   }
@@ -403,7 +378,7 @@ async function projectPages(opts: {
   workspaceId: string;
   blocks: SubstitutedBlock[];
   commitSha: string;
-  sourceSensitivity: WikiSensitivity;
+  sourceSensitivity: string;
   /** relPaths (not wikiPaths) of blocks that carry a contradiction signal. */
   contradictionPaths: Set<string>;
   tx?: DbOrTx;

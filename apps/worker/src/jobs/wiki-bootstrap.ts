@@ -177,13 +177,13 @@ async function generateWikiPage(
 
 function makeDryRunPage(doc: CanonicalDoc): BootstrapPage {
   const now = new Date().toISOString();
+  // sensitivity / requiredPermission / authority retired 2026-05-17 — directory
+  // layout + RBAC govern access; we no longer write those fields.
   const fm = {
     ...defaultFrontmatter(),
     title: doc.sectionTitle || doc.slug,
     type: "concept" as const,
     workspaceId: WORKSPACE_ID || "dry-run-workspace",
-    sensitivity: "INTERNAL" as const,
-    requiredPermission: "knowledge:read",
     sources: [`docs/canonical/${path.basename(doc.filePath)}`],
     aliases: [
       doc.sectionTitle,
@@ -193,7 +193,6 @@ function makeDryRunPage(doc: CanonicalDoc): BootstrapPage {
     tags: ["bootstrap", "canonical"],
     created: now,
     updated: now,
-    authority: "auto" as const,
     linkedPages: [],
   };
 

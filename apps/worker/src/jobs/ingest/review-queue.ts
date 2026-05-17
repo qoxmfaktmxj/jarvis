@@ -94,9 +94,13 @@ export async function recordReviewQueue(
   }
 
   // 3. Sensitivity promotion (input-level, not per-page).
+  // `WikiSensitivity` was relaxed to `string` in the 2026-05-17 cleanup so the
+  // lookup can return undefined when callers pass values outside the legacy
+  // four-tier enum. Skip the check entirely in that case rather than fabricate
+  // an ordering for unknown values.
   const prev = SENSITIVITY_ORDER[input.previousSensitivity];
   const next = SENSITIVITY_ORDER[input.newSensitivity];
-  if (next > prev) {
+  if (prev !== undefined && next !== undefined && next > prev) {
     await db.insert(wikiReviewQueue).values({
       workspaceId: input.workspaceId,
       kind: "sensitivity_promotion",

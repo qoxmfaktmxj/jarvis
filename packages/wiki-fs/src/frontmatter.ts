@@ -13,31 +13,10 @@
 
 import YAML from "yaml";
 
-import type {
-  WikiAuthority,
-  WikiFrontmatter,
-  WikiPageType,
-  WikiSensitivity,
-} from "./types.js";
+import type { WikiFrontmatter } from "./types.js";
 
 const FRONTMATTER_OPEN = "---";
 const FRONTMATTER_CLOSE = "---";
-
-const VALID_TYPES: readonly WikiPageType[] = [
-  "source",
-  "entity",
-  "concept",
-  "synthesis",
-  "derived",
-  "infra-runbook",
-];
-const VALID_SENSITIVITIES: readonly WikiSensitivity[] = [
-  "PUBLIC",
-  "INTERNAL",
-  "RESTRICTED",
-  "SECRET_REF_ONLY",
-];
-const VALID_AUTHORITIES: readonly WikiAuthority[] = ["auto", "manual"];
 
 /**
  * Split a markdown document into `{ frontmatter, body }` without parsing
@@ -72,16 +51,15 @@ export function splitFrontmatter(source: string): {
 
 /**
  * Parse frontmatter + body out of a markdown document. Missing fields are
- * filled with schema-safe defaults so callers can assume the returned
- * `data` is always complete. Unknown keys pass through unchanged.
+ * filled with schema-safe defaults so callers can assume `title`, `type`,
+ * `workspaceId`, and the array fields are always present. Unknown keys
+ * pass through unchanged.
  *
- * Throws when:
- *  - The YAML itself is malformed.
- *  - `type` / `sensitivity` / `authority` contain values outside the enum.
- *
- * Does not throw for missing `title` / `workspaceId` — callers validate
- * domain constraints separately (some ingest intermediates intentionally
- * write incomplete frontmatter while processing).
+ * Throws only when the YAML itself is malformed. As of 2026-05-17 the
+ * `type` / `sensitivity` / `authority` enum throws were removed — those
+ * fields are now advisory and arbitrary strings round-trip unchanged.
+ * Callers that previously relied on validation must perform their own
+ * checks.
  */
 export function parseFrontmatter(source: string): {
   data: WikiFrontmatter;
@@ -143,14 +121,11 @@ export function defaultFrontmatter(): WikiFrontmatter {
     title: "",
     type: "concept",
     workspaceId: "",
-    sensitivity: "INTERNAL",
-    requiredPermission: "knowledge:read",
     sources: [],
     aliases: [],
     tags: [],
     created: now,
     updated: now,
-    authority: "auto",
     linkedPages: [],
   };
 }
@@ -173,13 +148,26 @@ const KNOWN_FIELDS: readonly (keyof WikiFrontmatter)[] = [
   "freshnessSlaDays",
 ];
 
+// Fields no longer populated by `defaultFrontmatter` — they pass through if
+// present on disk but are not emitted on freshly-built frontmatter blocks.
+// Kept in KNOWN_FIELDS so serialization order stays stable for legacy pages.
+const DEPRECATED_FIELDS = new Set<keyof WikiFrontmatter>([
+  "sensitivity",
+  "requiredPermission",
+  "authority",
+]);
+
 function orderFields(
   data: Partial<WikiFrontmatter> & { [key: string]: unknown },
 ): Record<string, unknown> {
-  const merged = { ...defaultFrontmatter(), ...data };
+  const merged = { ...defaultFrontmatter(), ...data } as Record<string, unknown>;
   const ordered: Record<string, unknown> = {};
   for (const key of KNOWN_FIELDS) {
-    ordered[key] = merged[key];
+    const value = merged[key];
+    // Skip undefined entries so YAML.stringify doesn't emit `key: null` rows
+    // for deprecated fields that the caller chose not to set.
+    if (value === undefined) continue;
+    ordered[key] = value;
   }
   // Preserve unknown (future) keys at the tail in insertion order.
   for (const key of Object.keys(data)) {
@@ -192,51 +180,29 @@ function orderFields(
 
 function coerceFrontmatter(raw: Record<string, unknown>): WikiFrontmatter {
   const defaults = defaultFrontmatter();
-  const typeValue = isEnumMember(raw.type, VALID_TYPES)
-    ? raw.type
-    : defaults.type;
-  const sensitivityValue = isEnumMember(raw.sensitivity, VALID_SENSITIVITIES)
-    ? raw.sensitivity
-    : defaults.sensitivity;
-  const authorityValue = isEnumMember(raw.authority, VALID_AUTHORITIES)
-    ? raw.authority
-    : defaults.authority;
-
-  // Validate enum-bearing fields explicitly — if a caller wrote an invalid
-  // enum value on disk we surface it loudly so ingest's validate step can
-  // route to ingest_dlq.
-  if (raw.type !== undefined && !isEnumMember(raw.type, VALID_TYPES)) {
-    throw new Error(
-      `Invalid frontmatter.type: ${JSON.stringify(raw.type)} (expected ${VALID_TYPES.join("|")})`,
-    );
-  }
-  if (raw.sensitivity !== undefined && !isEnumMember(raw.sensitivity, VALID_SENSITIVITIES)) {
-    throw new Error(
-      `Invalid frontmatter.sensitivity: ${JSON.stringify(raw.sensitivity)} (expected ${VALID_SENSITIVITIES.join("|")})`,
-    );
-  }
-  if (raw.authority !== undefined && !isEnumMember(raw.authority, VALID_AUTHORITIES)) {
-    throw new Error(
-      `Invalid frontmatter.authority: ${JSON.stringify(raw.authority)} (expected ${VALID_AUTHORITIES.join("|")})`,
-    );
-  }
 
   const data: WikiFrontmatter = {
     ...defaults,
     title: stringOr(raw.title, defaults.title),
-    type: typeValue,
+    type: stringOr(raw.type, defaults.type),
     workspaceId: stringOr(raw.workspaceId, defaults.workspaceId),
-    sensitivity: sensitivityValue,
-    requiredPermission: stringOr(raw.requiredPermission, defaults.requiredPermission),
     sources: stringArrayOr(raw.sources, defaults.sources),
     aliases: stringArrayOr(raw.aliases, defaults.aliases),
     tags: stringArrayOr(raw.tags, defaults.tags),
     created: stringOr(raw.created, defaults.created),
     updated: stringOr(raw.updated, defaults.updated),
-    authority: authorityValue,
     linkedPages: stringArrayOr(raw.linkedPages, defaults.linkedPages),
     freshnessSlaDays: numberOrUndefined(raw.freshnessSlaDays),
   };
+
+  // Deprecated string fields — pass through verbatim if present, do not
+  // synthesize a value when absent. Never validate against an enum: legacy
+  // pages on disk carry values like `procedure`, `policy`, `internal` (mixed
+  // case), or Korean department names in `authority`, all of which used to
+  // throw 500s from the page-view path.
+  if (typeof raw.sensitivity === "string") data.sensitivity = raw.sensitivity;
+  if (typeof raw.requiredPermission === "string") data.requiredPermission = raw.requiredPermission;
+  if (typeof raw.authority === "string") data.authority = raw.authority;
 
   // Pass through unknown fields intact for round-trip safety.
   for (const key of Object.keys(raw)) {
@@ -255,13 +221,6 @@ function stringOr(value: unknown, fallback: string): string {
 function stringArrayOr(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return fallback;
   return value.filter((item): item is string => typeof item === "string");
-}
-
-function isEnumMember<T extends string>(
-  value: unknown,
-  members: readonly T[],
-): value is T {
-  return typeof value === "string" && (members as readonly string[]).includes(value);
 }
 
 function numberOrUndefined(value: unknown): number | undefined {

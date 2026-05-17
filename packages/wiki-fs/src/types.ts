@@ -6,39 +6,33 @@
  */
 
 /**
- * Page type — used to decide which `auto/` subdirectory holds the page and
- * which ingest prompt path applies.
+ * Page type — free-form string. Historically enumerated, now advisory only.
  *
- * `infra-runbook` is for companies-source-derived system runbooks under
- * `wiki/<ws>/auto/infra/`. Structure defined in the infra pipeline plan
- * (see legacy company-master export pipeline doc).
+ * Validation was removed in the 2026-05-17 frontmatter cleanup once the
+ * disk corpus accumulated legacy values (`procedure`, `policy`, `reference`,
+ * etc.) that ingest jobs had been emitting outside the original 6-member
+ * enum. The DB column is `varchar(20)`, so any short string round-trips.
  */
-export type WikiPageType =
-  | "source"
-  | "entity"
-  | "concept"
-  | "synthesis"
-  | "derived"
-  | "infra-runbook";
+export type WikiPageType = string;
 
 /**
- * Sensitivity classification. Must match the enum used in the DB schema
- * (`packages/db/schema/*` — sensitivityEnum). Values are compared with
- * `===` on disk so keep them upper-case as-is.
+ * Sensitivity classification (legacy).
+ *
+ * Row-level sensitivity filtering was retired on 2026-05-12 in favor of
+ * RBAC + workspaceId isolation. The DB column has been dropped. This type
+ * is kept as `string` so existing callers (e.g. ingest substitution paths)
+ * still compile while we burn down references.
  */
-export type WikiSensitivity =
-  | "PUBLIC"
-  | "INTERNAL"
-  | "RESTRICTED"
-  | "SECRET_REF_ONLY";
+export type WikiSensitivity = string;
 
 /**
- * Authority — `auto` is LLM-owned, `manual` is human-owned. Auto/manual
- * separation is enforced at the directory level: within each workspace
- * the `auto/` subtree is LLM-only while the `manual/` subtree is
- * human-only. Mirrored here so ingest can cross-check.
+ * Authority (legacy).
+ *
+ * Auto vs manual is enforced at the directory level (`auto/` vs `manual/`),
+ * so the frontmatter field is redundant. Kept as `string` for compile-time
+ * compatibility; runtime ignores it.
  */
-export type WikiAuthority = "auto" | "manual";
+export type WikiAuthority = string;
 
 /**
  * Full frontmatter schema written into every wiki page's YAML block.
@@ -50,14 +44,17 @@ export interface WikiFrontmatter {
   title: string;
   type: WikiPageType;
   workspaceId: string;
-  sensitivity: WikiSensitivity;
-  requiredPermission: string;
+  /** @deprecated Row-level sensitivity filter dropped 2026-05-12; field is advisory only. */
+  sensitivity?: WikiSensitivity;
+  /** @deprecated RBAC happens at the route level; this field is no longer enforced. */
+  requiredPermission?: string;
   sources: string[];
   aliases: string[];
   tags: string[];
   created: string;
   updated: string;
-  authority: WikiAuthority;
+  /** @deprecated Directory (`auto/` vs `manual/`) is authoritative; this field is redundant. */
+  authority?: WikiAuthority;
   linkedPages: string[];
   freshnessSlaDays?: number;
   /**

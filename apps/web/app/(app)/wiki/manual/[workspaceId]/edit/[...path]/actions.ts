@@ -110,10 +110,11 @@ export async function saveWikiPage(
     ...safeFm
   } = parsed.data.frontmatter;
 
+  // `authority` is no longer written into frontmatter — directory layout
+  // (`manual/` vs `auto/`) is the single source of truth. (2026-05-17 cleanup)
   const mergedFm = {
     ...safeFm,
     workspaceId: parsed.data.workspaceId,
-    authority: "manual" as const,
     updated: new Date().toISOString(),
   };
   const fileContent = serializeFrontmatter(mergedFm, incomingBody);

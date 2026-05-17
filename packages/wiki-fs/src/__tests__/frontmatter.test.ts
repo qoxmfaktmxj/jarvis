@@ -364,31 +364,51 @@ describe("frontmatter — freshness SLA", () => {
   });
 });
 
-describe("frontmatter — validation", () => {
-  it("throws on invalid `type`", () => {
+describe("frontmatter — validation (legacy values pass through)", () => {
+  // The 2026-05-17 cleanup removed enum throws for `type` / `sensitivity` /
+  // `authority`. Disk pages carrying values like `procedure`, lowercase
+  // `internal`, or Korean department names in `authority` no longer crash
+  // the page-view path with a 500.
+
+  it("passes arbitrary `type` values through unchanged", () => {
     const source = [
       "---",
-      "title: 잘못된 페이지",
-      "type: bogus",
+      "title: 절차 페이지",
+      "type: procedure",
       "workspaceId: ws-1",
-      "sensitivity: INTERNAL",
       "---",
       "body",
     ].join("\n");
-    expect(() => parseFrontmatter(source)).toThrow(/Invalid frontmatter\.type/);
+    const parsed = parseFrontmatter(source);
+    expect(parsed.data.type).toBe("procedure");
   });
 
-  it("throws on invalid `sensitivity`", () => {
+  it("passes lowercase `sensitivity` through unchanged", () => {
     const source = [
       "---",
       "title: ok",
       "type: concept",
       "workspaceId: ws-1",
-      "sensitivity: MAYBE",
+      "sensitivity: internal",
       "---",
       "",
     ].join("\n");
-    expect(() => parseFrontmatter(source)).toThrow(/Invalid frontmatter\.sensitivity/);
+    const parsed = parseFrontmatter(source);
+    expect(parsed.data.sensitivity).toBe("internal");
+  });
+
+  it("passes non-enum `authority` (e.g. Korean dept name) through unchanged", () => {
+    const source = [
+      "---",
+      "title: ok",
+      "type: concept",
+      "workspaceId: ws-1",
+      "authority: HR담당자",
+      "---",
+      "",
+    ].join("\n");
+    const parsed = parseFrontmatter(source);
+    expect(parsed.data.authority).toBe("HR담당자");
   });
 
   it("returns defaults for empty doc without frontmatter", () => {
@@ -414,12 +434,16 @@ describe("splitFrontmatter", () => {
 });
 
 describe("defaultFrontmatter", () => {
-  it("returns schema-safe defaults", () => {
+  it("returns schema-safe defaults without deprecated legacy fields", () => {
     const d = defaultFrontmatter();
     expect(d.type).toBe("concept");
-    expect(d.sensitivity).toBe("INTERNAL");
-    expect(d.authority).toBe("auto");
     expect(d.aliases).toEqual([]);
     expect(d.linkedPages).toEqual([]);
+    // sensitivity / requiredPermission / authority are no longer populated —
+    // they remain on the interface (optional) for backward read compatibility
+    // but freshly-built frontmatter blocks must not synthesize values.
+    expect(d.sensitivity).toBeUndefined();
+    expect(d.requiredPermission).toBeUndefined();
+    expect(d.authority).toBeUndefined();
   });
 });

@@ -4,6 +4,8 @@ import { wikiPageIndex, type WikiPageIndex } from "@jarvis/db/schema/wiki-page-i
 import {
   readUtf8,
   parseFrontmatter,
+  defaultFrontmatter,
+  splitFrontmatter,
   type WikiFrontmatter,
 } from "@jarvis/wiki-fs";
 import { resolveWikiPath } from "./repo-root";
@@ -109,7 +111,22 @@ export async function loadWikiPageForView(
     throw err;
   }
 
-  const { data: frontmatter, body } = parseFrontmatter(content);
+  // Defense-in-depth: even though parseFrontmatter no longer throws on enum
+  // mismatches (2026-05-17 cleanup), keep a try/catch here so any future YAML
+  // surprises render as an empty-frontmatter page rather than a 500. The body
+  // is still returned via splitFrontmatter so the user sees the page content.
+  let frontmatter: WikiFrontmatter;
+  let body: string;
+  try {
+    ({ data: frontmatter, body } = parseFrontmatter(content));
+  } catch (err) {
+    console.warn(
+      "[wiki-page-loader] frontmatter parse failed; serving body with defaults",
+      { workspaceId, routeKeyOrSlug, path: meta.path, error: (err as Error).message },
+    );
+    frontmatter = defaultFrontmatter();
+    body = splitFrontmatter(content).body;
+  }
 
   return {
     meta,
