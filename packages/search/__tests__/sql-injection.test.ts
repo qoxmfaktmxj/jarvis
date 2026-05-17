@@ -197,19 +197,13 @@ describe('facet-counter SQL injection regression', () => {
     mockDb.select.mockImplementation(() => makeSelectChain());
   });
 
-  it('runs two execute calls for pageType + sensitivity facets', async () => {
+  // 2026-05-11 sensitivity 컬럼 제거 + 2026-05-12 sensitivity 필터 전면 폐기.
+  // facet-counter는 이제 pageType facet 한 번만 execute하고 bySensitivity는 빈 객체로 반환.
+  it('runs one execute call for pageType facet (sensitivity facet polyfilled empty)', async () => {
     const parsed = parseQuery('test query');
-    await countFacets(BASE_WORKSPACE, parsed.tsquery, BASE_PERMS);
-    // Should have made 2 execute calls (pageType + sensitivity facets)
-    expect(capturedSqls.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('sensitivity filter from permissions does not contain user-controlled strings', async () => {
-    // buildLegacyKnowledgeSensitivitySqlFilter returns constants only.
-    // After migration to SQL fragment, the filter is embedded via Drizzle templating.
-    await countFacets(BASE_WORKSPACE, "websearch_to_tsquery('simple', 'test')", ['knowledge:read']);
-    expect(capturedSqls.length).toBeGreaterThanOrEqual(2);
-    // No errors thrown means the SQL was constructed correctly
+    const result = await countFacets(BASE_WORKSPACE, parsed.tsquery, BASE_PERMS);
+    expect(capturedSqls.length).toBe(1);
+    expect(result.bySensitivity).toEqual({});
   });
 });
 

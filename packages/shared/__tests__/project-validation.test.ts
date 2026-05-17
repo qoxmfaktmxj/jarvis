@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_PAGE_SIZE } from "../constants/pagination.js";
 import {
   listProjectBeaconsInput,
   listProjectHistoryInput,
@@ -38,7 +39,7 @@ describe("project extension validation", () => {
       updatedBy: null,
     }).beaconMcd).toBe("B-1");
 
-    expect(listProjectBeaconsInput.parse({}).limit).toBe(50);
+    expect(listProjectBeaconsInput.parse({}).limit).toBe(DEFAULT_PAGE_SIZE);
     expect(saveProjectBeaconsInput.parse({}).creates).toEqual([]);
   });
 
