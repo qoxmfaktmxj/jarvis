@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { type Readable } from 'node:stream';
 import { Client } from 'minio';
-import { requireApiSession } from '@/lib/server/api-auth';
+import { requireAnyApiPermission } from '@/lib/server/api-auth';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { db } from '@jarvis/db/client';
 import { rawSource, attachment } from '@jarvis/db/schema/file';
 import { auditLog } from '@jarvis/db/schema/audit';
@@ -12,6 +13,14 @@ import {
   validateUploadAgainstPolicy,
 } from '@/lib/server/validateUpload';
 import PgBoss from 'pg-boss';
+
+const UPLOAD_PERMISSIONS = [
+  PERMISSIONS.SALES_ADMIN,
+  PERMISSIONS.KNOWLEDGE_ADMIN,
+  PERMISSIONS.PROJECT_ADMIN,
+  PERMISSIONS.NOTICE_ADMIN,
+  PERMISSIONS.MAINTENANCE_ADMIN,
+] as const;
 
 const uploadSchema = z.object({
   objectKey: z.string().min(1),
@@ -81,7 +90,7 @@ async function getBoss(): Promise<PgBoss> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, 'files:write');
+  const auth = await requireAnyApiPermission(req, UPLOAD_PERMISSIONS);
   if (auth.response) return auth.response;
   const { session } = auth;
 

@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireApiSession } from '@/lib/server/api-auth';
+import { requireAnyApiPermission } from '@/lib/server/api-auth';
+import { PERMISSIONS } from '@jarvis/shared/constants/permissions';
 import { Client } from 'minio';
 import { nanoid } from 'nanoid';
 import { getUploadPolicy, validateUploadAgainstPolicy } from '@/lib/server/validateUpload';
+
+const UPLOAD_PERMISSIONS = [
+  PERMISSIONS.SALES_ADMIN,
+  PERMISSIONS.KNOWLEDGE_ADMIN,
+  PERMISSIONS.PROJECT_ADMIN,
+  PERMISSIONS.NOTICE_ADMIN,
+  PERMISSIONS.MAINTENANCE_ADMIN,
+] as const;
 
 const BUCKET = process.env['MINIO_BUCKET'] ?? 'jarvis-files';
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -50,7 +59,7 @@ function getMinioClient(): Client {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const auth = await requireApiSession(req, 'files:write');
+  const auth = await requireAnyApiPermission(req, UPLOAD_PERMISSIONS);
   if (auth.response) return auth.response;
   const { session } = auth;
 
