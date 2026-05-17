@@ -95,7 +95,7 @@ export function WikiIndexSearch({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t('search')}
-            className="h-10 rounded-md border-surface-200 bg-(--bg-page) pl-10 pr-10 text-[14px] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
+            className="h-10 rounded-md border-surface-200 bg-(--bg-page) pl-10 pr-10 text-[14px] placeholder:text-surface-400 focus-visible:border-(--brand-primary) focus-visible:ring-(--brand-primary)"
           />
           {isSearching ? (
             <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-surface-400" />
@@ -255,7 +255,7 @@ function WikiPagination({
                   buttonVariants({ variant: active ? 'outline' : 'ghost', size: 'icon' }),
                   'text-display h-9 w-9 rounded-md text-[13px] tabular-nums transition-colors',
                   active
-                    ? 'border-isu-300 bg-isu-50 text-isu-700 hover:bg-isu-50 hover:text-isu-700'
+                    ? 'border-(--brand-primary) bg-(--brand-primary-bg) text-(--brand-primary) hover:bg-(--brand-primary-bg) hover:text-(--brand-primary)'
                     : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
                 )}
               >
@@ -349,16 +349,16 @@ function WikiPageRow({
       className={cn(
         'group relative flex items-center gap-3 overflow-hidden rounded-md border bg-(--bg-page) px-4 py-2.5 transition-all',
         isActive
-          ? 'border-isu-400 bg-isu-50/40 shadow-[0_4px_14px_-8px_rgba(28,77,167,0.25)]'
-          : 'border-surface-200 hover:border-isu-200 hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]',
+          ? 'border-(--brand-primary) bg-(--brand-primary-bg)/40 shadow-[0_4px_14px_-8px_rgba(28,77,167,0.25)]'
+          : 'border-surface-200 hover:border-(--brand-primary) hover:shadow-[0_4px_14px_-8px_rgba(28,77,167,0.18)]',
       )}
     >
       <span
         className={cn(
           'flex h-7 w-7 shrink-0 items-center justify-center rounded-md ring-1 ring-inset transition-colors',
           isActive
-            ? 'bg-isu-50 text-isu-600 ring-isu-200'
-            : 'bg-surface-50 text-surface-500 ring-surface-200 group-hover:bg-isu-50 group-hover:text-isu-600 group-hover:ring-isu-200',
+            ? 'bg-(--brand-primary-bg) text-(--brand-primary) ring-(--brand-primary)'
+            : 'bg-surface-50 text-surface-500 ring-surface-200 group-hover:bg-(--brand-primary-bg) group-hover:text-(--brand-primary) group-hover:ring-(--brand-primary)',
         )}
       >
         <FileText className="h-3.5 w-3.5" />
@@ -368,7 +368,7 @@ function WikiPageRow({
         <h3
           className={cn(
             'truncate text-[14px] font-semibold transition-colors',
-            isActive ? 'text-isu-700' : 'text-surface-900 group-hover:text-isu-700',
+            isActive ? 'text-(--brand-primary)' : 'text-surface-900 group-hover:text-(--brand-primary)',
           )}
         >
           {page.title}

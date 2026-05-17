@@ -30,7 +30,7 @@ export function GodNodesCard({
         <ul className="space-y-1">
           {godNodes.map((node, i) => (
             <li key={i} className="flex items-center gap-2 text-sm">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-isu-100 text-xs font-medium text-isu-700 dark:bg-isu-900 dark:text-isu-200">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-(--brand-primary-bg) text-xs font-medium text-(--brand-primary) dark:bg-(--brand-primary) dark:text-(--brand-primary)">
                 {i + 1}
               </span>
               {node}

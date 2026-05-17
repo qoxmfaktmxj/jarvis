@@ -154,7 +154,7 @@ export function AddDevForm({ mode, id, defaultValues, initialProjectId }: Props)
   }
 
   const selectClass =
-    "flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100";
+    "flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)";
 
   return (
     <form onSubmit={onSubmit} className="space-y-8">

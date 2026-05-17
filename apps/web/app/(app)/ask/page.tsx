@@ -85,7 +85,7 @@ export default async function AskPage({ searchParams }: Props) {
   return (
     <div className="flex h-full min-h-0 flex-col px-6 pb-4 pt-4">
       <div className="flex items-baseline gap-3 border-b border-surface-200 pb-3 mb-3">
-        <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-isu-600">
+        <p className="text-display text-[11px] font-semibold uppercase tracking-[0.18em] text-(--brand-primary)">
           Ask AI
         </p>
         <h1 className="text-display text-base font-semibold tracking-tight text-surface-900">

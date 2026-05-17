@@ -55,7 +55,7 @@ export function FilterPanel({ facets, baseQuery }: FilterPanelProps) {
               params.set('q', baseQuery);
               router.push(`/search?${params.toString()}`);
             }}
-            className="text-[11px] font-medium text-isu-600 hover:text-isu-700"
+            className="text-[11px] font-medium text-(--brand-primary) hover:text-(--brand-primary)"
           >
             초기화
           </button>

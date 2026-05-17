@@ -29,7 +29,7 @@ export function SuggestedQuestions({ questions, snapshotId }: SuggestedQuestions
           {questions.slice(0, 5).map((q, i) => (
             <li key={i}>
               <button
-                className="text-left text-sm text-isu-600 hover:underline"
+                className="text-left text-sm text-(--brand-primary) hover:underline"
                 onClick={() => router.push(buildUrl(q))}
               >
                 {q}

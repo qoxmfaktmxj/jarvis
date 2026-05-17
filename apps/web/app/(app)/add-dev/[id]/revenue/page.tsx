@@ -48,7 +48,7 @@ export default async function AddDevRevenuePage({
               </option>
             ))}
           </select>
-          <button type="submit" className="rounded-md bg-isu-600 px-3 py-1 text-sm text-white hover:bg-isu-700">적용</button>
+          <button type="submit" className="rounded-md bg-(--brand-primary) px-3 py-1 text-sm text-white hover:bg-(--brand-primary-hover)">적용</button>
         </form>
       </SectionHeader>
 

@@ -255,11 +255,11 @@ export function CommandPalette({ menus, actions }: Props) {
                           onClick={() => void run(it)}
                           className={cn(
                             "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-                            active ? "bg-isu-100 text-isu-900" : "text-surface-700 hover:bg-surface-50"
+                            active ? "bg-(--brand-primary-bg) text-(--brand-primary)" : "text-surface-700 hover:bg-surface-50"
                           )}
                         >
                           <Icon
-                            className={cn("h-4 w-4 shrink-0", active ? "text-isu-600" : "text-surface-400")}
+                            className={cn("h-4 w-4 shrink-0", active ? "text-(--brand-primary)" : "text-surface-400")}
                             aria-hidden
                           />
                           <span className="flex-1 text-sm font-medium">{it.label}</span>

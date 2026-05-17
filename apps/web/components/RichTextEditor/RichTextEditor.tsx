@@ -82,7 +82,7 @@ export function RichTextEditor({
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { class: "text-isu-600 underline" },
+        HTMLAttributes: { class: "text-(--brand-primary) underline" },
       }),
       CodeBlockLowlight.configure({ lowlight }),
       Underline,

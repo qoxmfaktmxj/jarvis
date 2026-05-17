@@ -64,7 +64,7 @@ export default async function ProjectOverviewPage({
                     href={project.prodDomainUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-isu-600 hover:underline"
+                    className="text-(--brand-primary) hover:underline"
                   >
                     {project.prodDomainUrl}
                   </a>
@@ -80,7 +80,7 @@ export default async function ProjectOverviewPage({
                     href={project.devDomainUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-isu-600 hover:underline"
+                    className="text-(--brand-primary) hover:underline"
                   >
                     {project.devDomainUrl}
                   </a>

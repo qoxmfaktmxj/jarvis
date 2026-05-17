@@ -91,7 +91,7 @@ export function ProjectForm({ mode, projectId, defaultValues }: Props) {
           <select
             name="status"
             defaultValue={vals.status}
-            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)"
           >
             <option value="active">active</option>
             <option value="deprecated">deprecated</option>

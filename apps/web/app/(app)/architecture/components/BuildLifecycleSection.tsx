@@ -81,7 +81,7 @@ function StatusChip({
   label,
 }: { kind: BuildStatus; count: number; label: string }) {
   const color = {
-    running: "text-isu-600",
+    running: "text-(--brand-primary)",
     pending: "text-muted-foreground",
     error:   "text-destructive",
     done:    "text-emerald-600 dark:text-emerald-400",
@@ -96,7 +96,7 @@ function StatusChip({
 }
 
 function StatusIcon({ kind, className }: { kind: BuildStatus; className?: string }) {
-  if (kind === "running") return <Loader2 className={`${className} animate-spin text-isu-600`} />;
+  if (kind === "running") return <Loader2 className={`${className} animate-spin text-(--brand-primary)`} />;
   if (kind === "pending") return <Circle className={`${className} text-muted-foreground`} />;
   if (kind === "error")   return <AlertTriangle className={`${className} text-destructive`} />;
   return <CheckCircle2 className={`${className} text-emerald-600 dark:text-emerald-400`} />;

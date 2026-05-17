@@ -93,7 +93,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-surface-700">환경</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)"
             {...register("envType")}
           >
             <option value="prod">prod</option>
@@ -104,7 +104,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-surface-700">Type</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)"
             {...register("accessType")}
           >
             <option value="db">db</option>
@@ -188,7 +188,7 @@ export function AccessEntryForm({ projectId }: { projectId: string }) {
         <label className="space-y-2">
           <span className="text-sm font-medium text-surface-700">Required Role</span>
           <select
-            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-isu-500 focus:outline-none focus:ring-2 focus:ring-isu-100"
+            className="flex h-10 w-full rounded-lg border border-surface-300 bg-card px-3 py-2 text-sm text-surface-900 shadow-sm focus:border-(--brand-primary) focus:outline-none focus:ring-2 focus:ring-(--brand-primary-bg)"
             {...register("requiredRole")}
           >
             <option value="VIEWER">VIEWER</option>

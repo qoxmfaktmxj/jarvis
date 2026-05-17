@@ -23,7 +23,7 @@ export function AdminNav({ items }: { items: AdminNavItem[] }) {
             aria-current={active ? "page" : undefined}
             className={
               active
-                ? "rounded-md px-3 py-2 text-sm font-semibold bg-isu-50 text-isu-800 transition-colors"
+                ? "rounded-md px-3 py-2 text-sm font-semibold bg-(--brand-primary-bg) text-(--brand-primary) transition-colors"
                 : "rounded-md px-3 py-2 text-sm font-medium text-surface-700 transition-colors hover:bg-surface-100 hover:text-surface-900"
             }
           >

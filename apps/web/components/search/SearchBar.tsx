@@ -132,7 +132,7 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
           onKeyDown={handleKeyDown}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           placeholder="위키, 런북, 회의록, 코드… 검색"
-          className="h-12 rounded-md border-(--border-default) bg-(--bg-page) pl-11 pr-11 text-[15px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-surface-400 focus-visible:border-isu-500 focus-visible:ring-isu-200"
+          className="h-12 rounded-md border-(--border-default) bg-(--bg-page) pl-11 pr-11 text-[15px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] placeholder:text-surface-400 focus-visible:border-(--brand-primary) focus-visible:ring-(--brand-primary)"
           // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: primary focus target on mount
           autoFocus={autoFocus}
           aria-label="검색"
@@ -181,14 +181,14 @@ export function SearchBar({ defaultValue = '', className, autoFocus }: SearchBar
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-2.5 rounded-[6px] px-2.5 py-2 text-sm transition-colors',
                   selectedIndex === index
-                    ? 'bg-isu-50 text-isu-800'
+                    ? 'bg-(--brand-primary-bg) text-(--brand-primary)'
                     : 'text-surface-700 hover:bg-surface-100',
                 )}
               >
                 <Search
                   className={cn(
                     'h-3.5 w-3.5',
-                    selectedIndex === index ? 'text-isu-500' : 'text-surface-400',
+                    selectedIndex === index ? 'text-(--brand-primary)' : 'text-surface-400',
                   )}
                 />
                 <span className="truncate">{suggestion}</span>

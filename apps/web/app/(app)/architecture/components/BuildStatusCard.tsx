@@ -16,9 +16,9 @@ export async function BuildStatusCard({ kind, title, startedAt, error }: Props) 
 
   if (kind === "running") {
     return (
-      <div className="rounded-lg border border-isu-200 bg-isu-50/50 p-6 dark:border-isu-900 dark:bg-isu-950/20">
+      <div className="rounded-lg border border-(--brand-primary) bg-(--brand-primary-bg)/50 p-6 dark:border-(--brand-primary) dark:bg-(--brand-primary)/20">
         <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 animate-spin text-isu-600" />
+          <Loader2 className="h-5 w-5 animate-spin text-(--brand-primary)" />
           <div>
             <p className="font-medium">{t("running", { title })}</p>
             <p className="text-xs text-muted-foreground">

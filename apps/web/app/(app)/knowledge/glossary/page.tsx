@@ -63,7 +63,7 @@ export default async function GlossaryPage() {
                     <dt>
                       <Link
                         href={`/knowledge/${page.id}`}
-                        className="font-semibold text-isu-600 hover:underline"
+                        className="font-semibold text-(--brand-primary) hover:underline"
                       >
                         {page.title}
                       </Link>

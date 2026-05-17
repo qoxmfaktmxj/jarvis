@@ -66,7 +66,7 @@ export function UserMenu({ userName }: { userName: string }) {
           open ? "bg-surface-100" : "hover:bg-surface-100"
         )}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-isu-600 text-xs font-medium text-white">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-(--brand-primary) text-xs font-medium text-white">
           {userName.charAt(0)}
         </div>
         <span className="text-sm text-surface-700">{userName}</span>

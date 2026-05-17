@@ -43,7 +43,7 @@ export function GraphViewerPage({ data }: GraphViewerPageProps) {
         <GraphStat label={t('nodeCount')} value={data.nodes.length} tone="isu" />
         <GraphStat label={t('edgeCount')} value={data.edges.length} tone="neutral" />
         <span className="text-display ml-auto flex items-center gap-1 text-[11px] text-surface-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-isu-500" aria-hidden />
+          <span className="h-1.5 w-1.5 rounded-full bg-(--brand-primary)" aria-hidden />
           클릭하여 페이지로 이동
         </span>
       </div>
@@ -62,7 +62,7 @@ function GraphStat({
 }) {
   const toneClass =
     tone === 'isu'
-      ? 'bg-isu-50 text-isu-700 ring-isu-500/20'
+      ? 'bg-(--brand-primary-bg) text-(--brand-primary) ring-(--brand-primary)/20'
       : 'bg-surface-50 text-surface-700 ring-surface-200';
   return (
     <span

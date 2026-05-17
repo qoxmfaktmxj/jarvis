@@ -46,7 +46,7 @@ export default async function FAQHubPage() {
                 {page.summary ?? (
                   <Link
                     href={`/knowledge/${page.id}`}
-                    className="text-isu-600 underline hover:text-isu-700"
+                    className="text-(--brand-primary) underline hover:text-(--brand-primary)"
                   >
                     Read full answer
                   </Link>

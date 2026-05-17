@@ -59,7 +59,7 @@ export function AddDevTable({ data }: { data: AddDevRow[] }) {
               <td className="px-3 py-2 font-mono text-xs">{r.requestYearMonth ?? "—"}</td>
               <td className="px-3 py-2">{r.customerCompanyName ?? "—"}</td>
               <td className="px-3 py-2">
-                <Link href={`/add-dev/${r.id}`} className="text-isu-600 hover:underline">
+                <Link href={`/add-dev/${r.id}`} className="text-(--brand-primary) hover:underline">
                   {r.projectName ?? "—"}
                 </Link>
               </td>
