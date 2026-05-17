@@ -5,7 +5,16 @@ export function hasPermission(
   session: JarvisSession,
   permission: string
 ): boolean {
+  if (session.permissions.includes(PERMISSIONS.ADMIN_ALL)) return true;
   return session.permissions.includes(permission);
+}
+
+export function hasAnyPermission(
+  session: JarvisSession,
+  permissions: readonly string[]
+): boolean {
+  if (session.permissions.includes(PERMISSIONS.ADMIN_ALL)) return true;
+  return permissions.some((p) => session.permissions.includes(p));
 }
 
 export function hasRole(session: JarvisSession, roleCode: string): boolean {
