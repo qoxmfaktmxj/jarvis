@@ -32,7 +32,10 @@ function WikiIndexShellInner({ workspaceId, children }: WikiIndexShellProps) {
   const showPanel = isLg && panel.active !== null;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    // h-full로 부모(AppShellMain의 padded wrapper)에 맞춤. 직전 `h-[calc(100vh-4rem)]`은
+    // topbar(47px)·padding(pt-10/pb-5)을 고려 못 해서 부모를 overflow → 하단
+    // 페이지네이션이 부모 overflow-hidden에 잘려 안 보이는 시각 버그가 있었음.
+    <div className="flex h-full">
       <div
         className={
           showPanel
