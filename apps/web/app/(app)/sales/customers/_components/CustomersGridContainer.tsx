@@ -61,7 +61,7 @@ function CountChips({
           e.stopPropagation();
           onMemoClick();
         }}
-        className="rounded bg-blue-100 px-2 py-0.5 text-blue-700 hover:bg-blue-200"
+        className="rounded bg-(--brand-primary-bg) px-2 py-0.5 text-(--brand-primary) hover:bg-(--brand-primary-bg)"
       >
         의견 {counts.comt}
       </button>

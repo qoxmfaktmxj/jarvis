@@ -56,7 +56,7 @@ export function CompanyListPanel({ selected, onSelect }: Props) {
                   onKeyDown={e => { if (e.key === "Enter" || e.key === " ") onSelect({ companyCd: r.companyCd, companyName: r.companyName }); }}
                   className={
                     "flex cursor-pointer flex-col gap-0.5 border-b border-slate-100 p-2.5 text-sm hover:bg-slate-50 " +
-                    (isSelected ? "bg-blue-50" : "")
+                    (isSelected ? "bg-(--brand-primary-bg)" : "")
                   }
                 >
                   <span className="font-medium text-slate-900">{r.companyName}</span>

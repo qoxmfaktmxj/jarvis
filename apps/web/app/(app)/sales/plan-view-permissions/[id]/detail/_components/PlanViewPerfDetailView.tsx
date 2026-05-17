@@ -210,7 +210,7 @@ export function PlanViewPerfDetailView({
                           <input
                             type="text"
                             inputMode="numeric"
-                            className="h-7 w-full bg-transparent px-2 text-right tabular-nums text-(--fg-secondary) outline-none focus:bg-blue-50 focus:ring-1 focus:ring-inset focus:ring-blue-500"
+                            className="h-7 w-full bg-transparent px-2 text-right tabular-nums text-(--fg-secondary) outline-none focus:bg-(--brand-primary-bg) focus:ring-1 focus:ring-inset focus:ring-(--brand-primary)"
                             value={fmt(row[c.key])}
                             onChange={(e) => patchCell(m.id, c.key, e.target.value)}
                           />

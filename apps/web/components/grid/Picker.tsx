@@ -133,7 +133,7 @@ export function Picker<T>({
               aria-selected={i === active}
               className={cn(
                 "cursor-pointer px-2 py-1 text-[13px]",
-                i === active && "bg-blue-100",
+                i === active && "bg-(--brand-primary-bg)",
               )}
               onMouseEnter={() => setActive(i)}
               onMouseDown={(e) => {

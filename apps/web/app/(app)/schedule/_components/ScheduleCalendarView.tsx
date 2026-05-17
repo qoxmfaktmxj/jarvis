@@ -154,7 +154,7 @@ export function ScheduleCalendarView() {
               {tCal("today")}
             </Button>
             <span className="flex items-center gap-1">
-              <span className="inline-block h-2 w-2 rounded-sm bg-blue-500" /> {tCal("legend.own")}
+              <span className="inline-block h-2 w-2 rounded-sm bg-(--brand-primary)" /> {tCal("legend.own")}
             </span>
             <span className="flex items-center gap-1">
               <span className="inline-block h-2 w-2 rounded-sm bg-(--fg-muted)" /> {tCal("legend.shared")}
@@ -169,7 +169,7 @@ export function ScheduleCalendarView() {
               className={cn(
                 "px-2 py-2 text-center",
                 i === 0 && "text-rose-500",
-                i === 6 && "text-blue-600",
+                i === 6 && "text-(--brand-primary)",
               )}
             >
               {tWeekday(k)}
@@ -199,16 +199,16 @@ export function ScheduleCalendarView() {
                 className={cn(
                   "relative flex min-h-[88px] flex-col items-stretch gap-1 bg-(--bg-page) p-1 text-left text-[12px] transition-colors hover:bg-(--bg-surface)",
                   !c.inMonth && "bg-(--bg-surface)/40 text-(--fg-muted)",
-                  isSelected && "ring-2 ring-blue-500 ring-inset",
+                  isSelected && "ring-2 ring-(--brand-primary) ring-inset",
                 )}
               >
                 <span
                   className={cn(
                     "flex items-center justify-between text-[11px] font-semibold",
                     c.inMonth && (isSunday || isHoliday) && "text-rose-600",
-                    c.inMonth && isSaturday && !isHoliday && "text-blue-600",
+                    c.inMonth && isSaturday && !isHoliday && "text-(--brand-primary)",
                     c.inMonth && !isSunday && !isSaturday && !isHoliday && "text-(--fg-primary)",
-                    isToday && "rounded-full bg-blue-500 px-1.5 py-0 text-white",
+                    isToday && "rounded-full bg-(--brand-primary) px-1.5 py-0 text-white",
                   )}
                 >
                   <span>{c.day}</span>
@@ -228,7 +228,7 @@ export function ScheduleCalendarView() {
                       className={cn(
                         "truncate rounded px-1 text-[10.5px] leading-4",
                         ev.isOwn
-                          ? "bg-blue-100 text-blue-800"
+                          ? "bg-(--brand-primary-bg) text-(--brand-primary)"
                           : "bg-(--bg-surface) text-(--fg-secondary)",
                       )}
                       title={`${ev.title}${ev.userName ? ` · ${ev.userName}` : ""}`}
@@ -265,7 +265,7 @@ export function ScheduleCalendarView() {
                   key={ev.id}
                   className={cn(
                     "rounded border-l-4 bg-(--bg-page) p-2 text-[12px]",
-                    ev.isOwn ? "border-blue-500" : "border-(--border-default)",
+                    ev.isOwn ? "border-(--brand-primary)" : "border-(--border-default)",
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">

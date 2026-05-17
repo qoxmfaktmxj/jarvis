@@ -81,14 +81,14 @@ export function ShowPanel() {
                   onClick={() => setSelectedUserId(u.userId)}
                   className={
                     "flex w-full items-center justify-between px-2 py-2 text-left transition-colors hover:bg-slate-50 " +
-                    (isSelected ? "bg-blue-50/40" : "")
+                    (isSelected ? "bg-(--brand-primary-bg)/40" : "")
                   }
                 >
                   <span className="flex flex-col">
                     <span className="text-[13px] font-medium text-(--fg-primary)">{u.name}</span>
                     <span className="text-[11px] text-(--fg-secondary)">{u.employeeId}</span>
                   </span>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                  <span className="rounded-full bg-(--brand-primary-bg) px-2 py-0.5 text-[11px] font-medium text-(--brand-primary)">
                     {t("responsibleCompanies", { count: u.companyCount })}
                   </span>
                 </button>

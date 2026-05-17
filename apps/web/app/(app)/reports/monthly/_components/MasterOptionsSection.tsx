@@ -46,7 +46,7 @@ export function MasterOptionsSection({ master, onSaved }: Props) {
         <button
           onClick={save}
           disabled={!dirty || saving}
-          className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-40"
+          className="rounded bg-(--brand-primary) px-3 py-1 text-xs font-medium text-white hover:bg-(--brand-primary-hover) disabled:opacity-40"
         >
           {t(saving ? "saving" : "save")}
         </button>

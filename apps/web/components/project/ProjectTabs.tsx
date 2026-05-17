@@ -29,7 +29,7 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
             className={cn(
               "border-b-2 px-4 py-2 text-sm font-medium transition-colors",
               active
-                ? "border-blue-600 text-blue-600"
+                ? "border-(--brand-primary) text-(--brand-primary)"
                 : "border-transparent text-surface-500 hover:border-surface-300 hover:text-surface-900"
             )}
           >

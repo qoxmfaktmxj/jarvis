@@ -5,7 +5,7 @@ import type { RowStatus } from "./types";
 
 const STYLES: Record<RowStatus, string> = {
   clean: "",
-  new: "bg-blue-100 text-blue-700",
+  new: "bg-(--brand-primary-bg) text-(--brand-primary)",
   dirty: "bg-amber-100 text-amber-700",
   deleted: "bg-rose-100 text-rose-700",
 };

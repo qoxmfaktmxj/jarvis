@@ -32,7 +32,7 @@ export function TrendTabs({ active }: { active: Metric }) {
             onClick={() => switchTo(t.metric)}
             className={
               isActive
-                ? "border-b-2 border-blue-500 px-4 py-2 text-sm font-semibold text-blue-700"
+                ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary)"
                 : "border-b-2 border-transparent px-4 py-2 text-sm text-slate-600 hover:text-slate-900"
             }
             data-testid={`trend-tab-${t.metric}`}

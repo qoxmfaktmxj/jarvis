@@ -105,9 +105,9 @@ function MemoSection({ opportunityId }: { opportunityId: string }) {
     <div className="space-y-3" data-testid="opportunity-memo-section">
       <div className="rounded border border-(--border-default) bg-(--bg-page) p-3">
         {replyTo != null ? (
-          <div className="mb-2 flex items-center justify-between text-xs text-blue-700">
+          <div className="mb-2 flex items-center justify-between text-xs text-(--brand-primary)">
             <span>댓글 작성 중 (#{replyTo})</span>
-            <button type="button" onClick={() => setReplyTo(null)} className="text-blue-700 underline">취소</button>
+            <button type="button" onClick={() => setReplyTo(null)} className="text-(--brand-primary) underline">취소</button>
           </div>
         ) : null}
         <textarea className="w-full min-h-[80px] rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm" placeholder="새 메모..." value={draft} onChange={(e) => setDraft(e.target.value)} />
@@ -124,7 +124,7 @@ function MemoSection({ opportunityId }: { opportunityId: string }) {
               <div className="flex items-start justify-between text-xs text-(--fg-secondary)">
                 <span>#{m.comtSeq} · {m.authorName ?? "(작성자)"} · {m.insdate.slice(0, 16)}</span>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setReplyTo(m.comtSeq)} className="text-blue-600 hover:underline">답글</button>
+                  <button type="button" onClick={() => setReplyTo(m.comtSeq)} className="text-(--brand-primary) hover:underline">답글</button>
                   {m.isOwn ? (<button type="button" onClick={() => handleDelete(m.comtSeq)} className="text-rose-600 hover:underline">삭제</button>) : null}
                 </div>
               </div>
@@ -211,8 +211,8 @@ export function OpportunityEditForm({ opportunity, codeOptions }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1 border-b border-(--border-default)">
-        <button type="button" onClick={() => setTab("info")} className={tab === "info" ? "border-b-2 border-blue-500 px-4 py-2 text-sm font-semibold text-blue-700" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="opportunity-tab-info">기본정보</button>
-        <button type="button" onClick={() => setTab("memo")} className={tab === "memo" ? "border-b-2 border-blue-500 px-4 py-2 text-sm font-semibold text-blue-700" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="opportunity-tab-memo">메모</button>
+        <button type="button" onClick={() => setTab("info")} className={tab === "info" ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary)" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="opportunity-tab-info">기본정보</button>
+        <button type="button" onClick={() => setTab("memo")} className={tab === "memo" ? "border-b-2 border-(--brand-primary) px-4 py-2 text-sm font-semibold text-(--brand-primary)" : "px-4 py-2 text-sm text-(--fg-secondary) hover:text-(--fg-primary)"} data-testid="opportunity-tab-memo">메모</button>
       </div>
 
       {tab === "info" ? (

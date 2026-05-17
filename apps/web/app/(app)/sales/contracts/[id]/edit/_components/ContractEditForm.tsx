@@ -41,7 +41,7 @@ function NumericField({ label, value, required, onChange }: NumericFieldProps) {
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
       <input
-        className="rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        className="rounded border border-(--border-default) bg-(--bg-page) px-3 py-2 text-sm outline-none focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)"
         value={editing ? value : fmtNum(value)}
         inputMode="numeric"
         required={required}
@@ -157,7 +157,7 @@ function Field({ label, value, readOnly, required, type = "text", placeholder, o
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
             ? "cursor-not-allowed bg-gray-100 text-gray-500"
-            : "border-(--border-default) bg-(--bg-page) focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
         readOnly={readOnly}
@@ -187,7 +187,7 @@ function TextareaField({ label, value, readOnly, onChange }: TextareaFieldProps)
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
             ? "cursor-not-allowed bg-gray-100 text-gray-500"
-            : "border-(--border-default) bg-(--bg-page) focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
         readOnly={readOnly}
@@ -716,7 +716,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
       {/* ── Section 6: 계획 일정 (collapsible) ──────────────────────────── */}
       <section className="space-y-4">
         <details>
-          <summary className="cursor-pointer text-lg font-semibold text-gray-900 hover:text-blue-600">
+          <summary className="cursor-pointer text-lg font-semibold text-gray-900 hover:text-(--brand-primary)">
             계획 일정 (14개 항목)
           </summary>
           <div className="mt-4 grid grid-cols-2 gap-4">
@@ -884,7 +884,7 @@ export function ContractEditForm({ contract }: ContractEditFormProps) {
           type="button"
           disabled={isPending || !draft.contNm.trim()}
           onClick={handleSave}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded bg-(--brand-primary) px-4 py-2 text-sm font-medium text-white hover:bg-(--brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("save")}
         </button>

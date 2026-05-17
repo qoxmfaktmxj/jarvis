@@ -61,7 +61,7 @@ export function DetailMonthSection({ monthDetail, master, ym, onSaved }: Props) 
         <button
           onClick={save}
           disabled={saving}
-          className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+          className="rounded bg-(--brand-primary) px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
         >
           {t(saving ? "saving" : "save")}
         </button>

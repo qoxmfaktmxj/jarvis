@@ -55,7 +55,7 @@ export function StatsContainer() {
           <button
             onClick={search}
             disabled={isPending || filters.categories.length === 0}
-            className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded bg-(--brand-primary) px-3 py-1.5 text-sm font-medium text-white hover:bg-(--brand-primary-hover) disabled:opacity-50"
           >
             {t(isPending ? "searching" : "search")}
           </button>

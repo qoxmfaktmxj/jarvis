@@ -25,7 +25,7 @@ function Field({ label, value, readOnly, onChange }: FieldProps) {
           "rounded border px-3 py-2 text-sm outline-none",
           readOnly
             ? "cursor-not-allowed bg-gray-100 text-gray-500"
-            : "border-(--border-default) bg-(--bg-page) focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+            : "border-(--border-default) bg-(--bg-page) focus:border-(--brand-primary) focus:ring-1 focus:ring-(--brand-primary)",
         ].join(" ")}
         value={value ?? ""}
         readOnly={readOnly}
@@ -137,7 +137,7 @@ export function ContactEditForm({ contact }: ContactEditFormProps) {
             type="checkbox"
             checked={draft.statusYn}
             onChange={(e) => patch("statusYn", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            className="h-4 w-4 rounded border-gray-300 text-(--brand-primary) focus:ring-(--brand-primary)"
           />
         </div>
       </div>
@@ -147,7 +147,7 @@ export function ContactEditForm({ contact }: ContactEditFormProps) {
           type="button"
           disabled={isPending}
           onClick={handleSave}
-          className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded bg-(--brand-primary) px-4 py-2 text-sm font-medium text-white hover:bg-(--brand-primary-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {t("save")}
         </button>
