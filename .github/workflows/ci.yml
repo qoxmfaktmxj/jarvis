@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          fetch-depth: 1
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:boundary
+      - run: pnpm lint
+      - run: pnpm type-check
+      - run: pnpm test
+      - name: Provision isolated local stack
+        shell: bash
+        run: |
+          pnpm setup:local
+          cat .env.local >> "$GITHUB_ENV"
+      - name: Prepare synthetic E2E credentials
+        shell: bash
+        run: |
+          {
+            echo "PLAYWRIGHT_ADMIN_EMAIL=e2e-admin@example.invalid"
+            echo "PLAYWRIGHT_ADMIN_PASSWORD=E2eAdmin${GITHUB_RUN_ID}Only"
+            echo "PLAYWRIGHT_EDITOR_EMAIL=e2e-editor@example.invalid"
+            echo "PLAYWRIGHT_EDITOR_PASSWORD=E2eEditor${GITHUB_RUN_ID}Only"
+            echo "PLAYWRIGHT_TARGET_EMAIL=e2e-target@example.invalid"
+            echo "PLAYWRIGHT_TARGET_PASSWORD=E2eTarget${GITHUB_RUN_ID}Only"
+            echo "ASK_DAILY_BUDGET_USD=1"
+          } >> "$GITHUB_ENV"
+      - name: Bootstrap synthetic E2E admin
+        shell: bash
+        run: |
+          BOOTSTRAP_ADMIN_EMAIL="$PLAYWRIGHT_ADMIN_EMAIL" \
+          BOOTSTRAP_ADMIN_PASSWORD="$PLAYWRIGHT_ADMIN_PASSWORD" \
+          pnpm admin:bootstrap
+      - run: pnpm test:integration
+      - run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm test:e2e
+        env:
+          LLM_MODE: mock
+      - run: pnpm worker:eval
+        env:
+          LLM_MODE: mock
+      - run: pnpm eval:budget-test --fixture apps/worker/eval/fixtures/public-demo/budget.json
+      - run: pnpm audit --audit-level=high
+      - run: pnpm security:scan

@@ -1,0 +1,18 @@
+{
+  "entries": [
+    {
+      "relativePath": "average-wage.json",
+      "synthetic": true,
+      "title": "평균임금 산정 예시",
+      "provider": "local",
+      "contactEmail": "hr-demo@example.invalid"
+    },
+    {
+      "relativePath": "retirement-income-tax.json",
+      "synthetic": true,
+      "title": "퇴직소득세 예시",
+      "provider": "local",
+      "contactEmail": "tax-demo@example.invalid"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@jarvis/storage",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --exclude \"**/*.integration.test.ts\"",
+    "test:integration": "vitest run src/__tests__/minio.integration.test.ts",
+    "type-check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "minio": "8.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

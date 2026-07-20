@@ -1,0 +1,32 @@
+{
+  "name": "@jarvis/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude \"**/*.integration.test.ts\"",
+    "test:integration": "vitest run src/__tests__/seed-idempotency.integration.test.ts",
+    "migrate": "tsx src/migrate-cli.ts",
+    "seed": "tsx src/seed/index.ts",
+    "schema:generate": "drizzle-kit generate --config drizzle.config.ts --name public_baseline"
+  },
+  "dependencies": {
+    "@jarvis/shared": "workspace:*",
+    "drizzle-orm": "0.45.2",
+    "pg": "8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "@types/pg": "8.15.6",
+    "drizzle-kit": "0.31.10",
+    "tsx": "4.21.0",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@jarvis/auth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./password": "./src/password.ts",
+    "./cookie": "./src/cookie.ts",
+    "./rbac": "./src/rbac.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run src/__tests__/password.test.ts src/__tests__/cookie.test.ts src/__tests__/rbac.test.ts ../../scripts/bootstrap-admin.test.ts",
+    "test:integration": "vitest run src/__tests__/session.integration.test.ts src/__tests__/demo.integration.test.ts"
+  },
+  "dependencies": {
+    "@jarvis/db": "workspace:*",
+    "@jarvis/shared": "workspace:*",
+    "drizzle-orm": "0.45.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "@types/pg": "8.15.6",
+    "pg": "8.20.0",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

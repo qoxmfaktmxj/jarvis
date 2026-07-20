@@ -1,0 +1,2 @@
+{"question":"평균임금 산정 예시 문서를 한 문단으로 요약해줘.","expectedCitations":["[[average-wage]]"],"mode":"mock"}
+{"question":"퇴직소득세 예시 문서의 핵심 항목 세 가지를 알려줘.","expectedCitations":["[[retirement-income-withholding]]"],"mode":"mock"}

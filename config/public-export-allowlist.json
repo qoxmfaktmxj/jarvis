@@ -1,0 +1,22 @@
+[
+  "apps",
+  "packages",
+  "infra",
+  "samples",
+  "scripts",
+  "docs",
+  ".github",
+  "config",
+  "package.json",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "turbo.json",
+  "tsconfig.json",
+  ".gitignore",
+  ".gitattributes",
+  ".env.example",
+  "README.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "LICENSE"
+]

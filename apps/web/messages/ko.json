@@ -1,0 +1,146 @@
+{
+  "Common": {
+    "actions": {
+      "save": "저장",
+      "cancel": "취소",
+      "delete": "삭제"
+    },
+    "Dialog": {
+      "close": "닫기"
+    },
+    "Grid": {
+      "insert": "입력",
+      "copy": "복사",
+      "save": "저장",
+      "saving": "저장 중…",
+      "export": "다운로드",
+      "exporting": "다운로드 중…",
+      "empty": "데이터가 없습니다.",
+      "saveFailed": "저장 실패",
+      "total": "전체 {count, number}건",
+      "prev": "이전",
+      "next": "다음",
+      "no": "No",
+      "delete": "삭제",
+      "status": "상태",
+      "RowStatus": {
+        "new": "입력",
+        "dirty": "수정",
+        "deleted": "삭제"
+      },
+      "Unsaved": {
+        "title": "저장되지 않은 변경사항",
+        "bodyWithCount": "저장되지 않은 변경사항이 {count}건 있습니다. 계속하시겠습니까?",
+        "bodyNoCount": "저장되지 않은 변경사항이 있습니다. 계속하시겠습니까?",
+        "discard": "변경사항 무시하고 계속",
+        "save": "저장 후 계속",
+        "cancel": "취소"
+      }
+    }
+  },
+  "Auth": {
+    "Login": {
+      "title": "Jarvis 로그인",
+      "description": "HR 컴플라이언스 근거 Wiki에 로그인합니다.",
+      "email": "이메일",
+      "password": "비밀번호",
+      "signIn": "로그인",
+      "signingIn": "로그인 중…",
+      "or": "또는",
+      "startDemo": "데모로 시작",
+      "startingDemo": "데모 준비 중…",
+      "demoDescription": "임시 READER 계정으로 조회·검색·AI 질의를 체험합니다.",
+      "invalidCredentials": "이메일 또는 비밀번호를 확인해 주세요."
+    },
+    "Forbidden": {
+      "title": "접근 권한이 없습니다.",
+      "description": "현재 계정에는 이 화면을 사용할 권한이 없습니다.",
+      "back": "대시보드로 돌아가기"
+    }
+  },
+  "Dashboard": {
+    "Home": {
+      "title": "HR 컴플라이언스 대시보드",
+      "description": "공식 근거를 기준일과 함께 탐색합니다.",
+      "evidenceTitle": "근거 중심 지식 탐색",
+      "evidenceDescription": "Wiki, 통합 검색, Ask AI에서 법령·판례·행정해석·공식 가이드를 연결해 확인할 수 있습니다."
+    }
+  },
+  "Profile": {
+    "Page": {
+      "title": "프로필",
+      "description": "현재 계정과 보안 설정을 확인합니다.",
+      "displayName": "이름",
+      "email": "이메일",
+      "role": "역할",
+      "accountType": "계정 유형",
+      "roles": {
+        "admin": "관리자",
+        "editor": "편집자",
+        "reader": "열람자"
+      },
+      "accountTypes": {
+        "human": "일반 계정",
+        "demo": "데모 계정"
+      },
+      "demoPasswordDisabled": "데모 계정은 비밀번호를 사용하지 않습니다."
+    },
+    "Password": {
+      "title": "비밀번호 변경",
+      "currentPassword": "현재 비밀번호",
+      "newPassword": "새 비밀번호",
+      "policy": "12자 이상이며 영문자와 숫자를 각각 하나 이상 포함해야 합니다.",
+      "save": "비밀번호 변경",
+      "saving": "변경 중…",
+      "success": "비밀번호와 세션이 안전하게 갱신되었습니다.",
+      "errors": {
+        "invalidInput": "새 비밀번호 정책을 확인해 주세요.",
+        "invalidCurrentPassword": "현재 비밀번호가 일치하지 않습니다.",
+        "demoReadOnly": "데모 계정은 비밀번호를 변경할 수 없습니다."
+      }
+    }
+  },
+  "Navigation": {
+    "productName": "Jarvis HR Evidence Wiki",
+    "primary": "주 메뉴",
+    "profile": "프로필",
+    "logout": "로그아웃",
+    "loggingOut": "로그아웃 중…",
+    "logoutFailed": "로그아웃에 실패했습니다.",
+    "roles": {
+      "admin": "관리자",
+      "editor": "편집자",
+      "reader": "열람자"
+    }
+  },
+  "Admin": {
+    "Sources": {
+      "title": "공식 출처",
+      "description": "공식 문서 수집과 최신 revision 상태를 관리합니다."
+    },
+    "WikiReviews": {
+      "title": "위키 검토 큐",
+      "description": "자동 생성 결과의 검토·재검토 상태를 관리합니다."
+    },
+    "Users": {
+      "title": "사용자",
+      "description": "공개 배포용 사용자 계정 상태와 역할을 관리합니다."
+    },
+    "Menus": {
+      "title": "메뉴",
+      "description": "고정 allowlist 경로와 권한 상수만 사용해 메뉴를 관리합니다."
+    },
+    "Codes": {
+      "title": "코드",
+      "description": "코드 그룹과 상세 항목을 한 화면에서 관리합니다."
+    },
+    "LlmUsage": {
+      "title": "LLM 사용량",
+      "description": "모델 호출량과 비용을 읽기 전용으로 확인합니다."
+    },
+    "Audit": {
+      "title": "감사 로그",
+      "description": "관리 작업의 결과와 redacted 세부정보를 조회합니다."
+    }
+  }
+}

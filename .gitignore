@@ -1,0 +1,13 @@
+.env*
+!.env.example
+/.runtime/
+/artifacts/
+.turbo/
+node_modules/
+.next/
+.next-e2e/
+dist/
+coverage/
+test-results/
+/playwright-report/
+.DS_Store

@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated local state is outside the public candidate"
+paths = [
+  '''(^|/)(\.runtime|artifacts|node_modules|\.next|\.next-e2e|\.turbo|\.vite|dist|coverage|test-results|playwright-report)(/|$)''',
+  '''(^|/)\.env\.local$'''
+]

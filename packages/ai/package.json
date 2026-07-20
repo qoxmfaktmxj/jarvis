@@ -1,0 +1,28 @@
+{
+  "name": "@jarvis/ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --exclude \"**/*.smoke.test.ts\"",
+    "test:live": "vitest run src/__tests__/openai-live.smoke.test.ts"
+  },
+  "dependencies": {
+    "@jarvis/db": "workspace:*",
+    "@jarvis/search": "workspace:*",
+    "@jarvis/shared": "workspace:*",
+    "@jarvis/storage": "workspace:*",
+    "@jarvis/wiki-fs": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@jarvis/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./constants/permissions": "./src/constants/permissions.ts",
+    "./constants/routes": "./src/constants/routes.ts",
+    "./audit": "./src/audit.ts",
+    "./queues/wiki": "./src/queues/wiki.ts",
+    "./validation/auth": "./src/validation/auth.ts",
+    "./validation/admin/user": "./src/validation/admin/user.ts",
+    "./validation/admin/menu": "./src/validation/admin/menu.ts",
+    "./validation/admin/code": "./src/validation/admin/code.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

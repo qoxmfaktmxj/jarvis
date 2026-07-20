@@ -1,0 +1,12 @@
+{
+  "entries": [
+    {
+      "label": "page-first-qa/mock",
+      "promptTokens": 900,
+      "completionTokens": 300,
+      "maxTotalTokens": 2000,
+      "actualCostUsd": 0,
+      "maxCostUsd": 0
+    }
+  ]
+}

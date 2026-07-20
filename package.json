@@ -1,0 +1,48 @@
+{
+  "name": "jarvis-public-staging",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "tsc -p tsconfig.json --noEmit && turbo run type-check",
+    "test": "vitest run ./scripts && turbo run test",
+    "test:integration": "node --env-file=.env.local ./node_modules/turbo/bin/turbo run test:integration",
+    "test:e2e": "pnpm --filter @jarvis/web test:e2e",
+    "setup:local": "tsx scripts/setup-local.ts",
+    "db:migrate": "pnpm --filter @jarvis/db migrate",
+    "db:seed": "pnpm --filter @jarvis/db seed",
+    "samples:ingest": "tsx scripts/copy-samples.ts",
+    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts",
+    "data:sync": "tsx scripts/data-sync.ts",
+    "wiki:bootstrap": "tsx scripts/init-wiki.ts",
+    "wiki:project": "pnpm --filter @jarvis/worker project-once",
+    "worker:eval": "pnpm --filter @jarvis/worker eval:page-first",
+    "wiki:check": "pnpm verify:boundary && pnpm verify:routes",
+    "verify:boundary": "tsx scripts/verify-clean-boundary.ts",
+    "verify:routes": "tsx scripts/verify-routes.ts",
+    "audit:rsc": "node scripts/audit-rsc-boundary.mjs",
+    "eval:budget-test": "tsx scripts/eval-budget-test.ts",
+    "export:candidate": "tsx scripts/export-candidate.ts",
+    "security:scan": "tsx scripts/security-scan.ts gate",
+    "security:scan:content": "tsx scripts/security-scan.ts content",
+    "security:scan:pre-init": "tsx scripts/security-scan.ts nested-git pre-init",
+    "security:scan:post-init": "tsx scripts/security-scan.ts nested-git post-init"
+  },
+  "devDependencies": {
+    "@jarvis/auth": "workspace:*",
+    "@jarvis/db": "workspace:*",
+    "@jarvis/shared": "workspace:*",
+    "@types/node": "22.15.3",
+    "drizzle-orm": "0.45.2",
+    "tsx": "4.21.0",
+    "turbo": "2.9.12",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

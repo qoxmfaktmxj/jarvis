@@ -1,0 +1,14 @@
+{
+  "revisionKey": "v1",
+  "publishedAt": "2026-02-01",
+  "effectiveFrom": "2026-02-01",
+  "normalizedText": "퇴직소득세 합성 예시는 근속연수, 퇴직급여 총액, 비과세 항목을 구분하여 계산한다. 원천징수 전 체크리스트와 설명 책임을 포함한다.",
+  "summary": {
+    "scope": "synthetic-demo",
+    "steps": [
+      "근속연수 확인",
+      "과세/비과세 항목 분리",
+      "계산 결과와 안내 문구 검토"
+    ]
+  }
+}
