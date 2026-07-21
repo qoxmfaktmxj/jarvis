@@ -1,0 +1,4 @@
+auths/
+logs/
+certs/
+config.local.yaml

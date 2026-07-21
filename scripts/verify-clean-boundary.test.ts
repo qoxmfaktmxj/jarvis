@@ -34,6 +34,8 @@ describe("findForbiddenPaths", () => {
     await mkdir(join(root, "apps", "worker", "src"), { recursive: true });
     await writeFile(join(root, "apps", "worker", "src", "job.ts"), "export {};\n");
     await writeFile(join(root, "apps", "worker", "src", "job.js"), "export {};\n");
+    await mkdir(join(root, "infra", "cliproxy"), { recursive: true });
+    await writeFile(join(root, "infra", "cliproxy", "compose.yaml"), "services: {}\n");
     await mkdir(join(root, "node_modules"), { recursive: true });
     await writeFile(join(root, "node_modules", "tool.exe"), "");
     for (const ignoredDir of [".turbo", ".next", ".next-e2e", ".vite", "dist", "coverage", "test-results", "playwright-report", ".runtime", "artifacts"]) {

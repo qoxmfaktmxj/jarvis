@@ -1,0 +1,6 @@
+services:
+  cli-proxy:
+    environment:
+      SSL_CERT_FILE: /etc/ssl/certs/jarvis-corporate-root.crt
+    volumes:
+      - ./certs/corporate-root.crt:/etc/ssl/certs/jarvis-corporate-root.crt:ro

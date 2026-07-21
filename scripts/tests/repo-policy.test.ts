@@ -110,7 +110,10 @@ SOFTWARE.
       "MINIO_ACCESS_KEY",
       "MINIO_SECRET_KEY",
       "MINIO_BUCKET",
-      "LLM_MODE",
+      "LLM_GATEWAY_URL",
+      "LLM_GATEWAY_KEY",
+      "ASK_AI_MODEL",
+      "INGEST_AI_MODEL",
       "ASK_DAILY_BUDGET_USD",
     ]));
   });

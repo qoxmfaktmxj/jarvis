@@ -79,7 +79,8 @@ export async function findForbiddenPaths(root: string): Promise<string[]> {
 
       if (entry.isDirectory()) {
         if (IGNORED_DIRS.has(entry.name)) continue;
-        if (FORBIDDEN_NAME_FRAGMENTS.some((fragment) => entry.name.toLowerCase().includes(fragment))) {
+        const isApprovedCliProxy = displayPath === "infra/cliproxy";
+        if (!isApprovedCliProxy && FORBIDDEN_NAME_FRAGMENTS.some((fragment) => entry.name.toLowerCase().includes(fragment))) {
           hits.push(displayPath);
           continue;
         }

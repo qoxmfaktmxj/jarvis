@@ -51,11 +51,7 @@ jobs:
       - run: pnpm test:integration
       - run: pnpm --filter @jarvis/web exec playwright install chromium --with-deps
       - run: pnpm test:e2e
-        env:
-          LLM_MODE: mock
       - run: pnpm worker:eval
-        env:
-          LLM_MODE: mock
       - run: pnpm eval:budget-test --fixture apps/worker/eval/fixtures/public-demo/budget.json
       - name: Verify Drizzle CLI compatibility
         run: pnpm --filter @jarvis/db exec drizzle-kit check --config drizzle.config.ts

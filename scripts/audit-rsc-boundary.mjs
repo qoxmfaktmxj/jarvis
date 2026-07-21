@@ -15,7 +15,7 @@ const BANNED_CLIENT_IMPORTS = [
   "server-only",
 ];
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs"]);
-const IGNORED_DIRS = new Set([".git", "node_modules", ".turbo", ".next", "dist", "coverage", "test-results", "playwright-report", ".runtime", "artifacts"]);
+const IGNORED_DIRS = new Set([".git", ".worktrees", "node_modules", ".turbo", ".next", "dist", "coverage", "test-results", "playwright-report", ".runtime", "artifacts"]);
 
 function isClientFile(source) {
   return /^\s*["']use client["'];?/m.test(source);

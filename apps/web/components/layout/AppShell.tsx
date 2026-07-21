@@ -11,7 +11,7 @@ export function AppShell(props: {
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] lg:flex">
+    <div className="min-h-screen bg-transparent lg:flex">
       <Sidebar items={props.menu} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <Topbar session={props.session} />

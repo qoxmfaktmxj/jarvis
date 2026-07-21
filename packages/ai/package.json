@@ -10,7 +10,7 @@
     "build": "tsc -p tsconfig.json",
     "type-check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --exclude \"**/*.smoke.test.ts\"",
-    "test:live": "vitest run src/__tests__/openai-live.smoke.test.ts"
+    "test:live": "vitest run src/__tests__/cli-proxy-live.smoke.test.ts"
   },
   "dependencies": {
     "@jarvis/db": "workspace:*",

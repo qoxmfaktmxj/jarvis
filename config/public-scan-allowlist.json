@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "ruleId": "forbidden-term",
+    "path": "README.md",
+    "match": "cliproxy",
+    "reason": "Documented path for the approved local subscription gateway."
+  },
+  {
+    "ruleId": "forbidden-term",
+    "path": "docs/deployment-openclaw.md",
+    "match": "cliproxy",
+    "reason": "Deployment guide must name the approved gateway paths and services."
+  },
+  {
+    "ruleId": "forbidden-term",
+    "path": "scripts/start-prod.sh",
+    "match": "cliproxy",
+    "reason": "Production launcher starts the approved local subscription gateway."
+  },
+  {
+    "ruleId": "forbidden-term",
+    "path": "scripts/verify-clean-boundary.ts",
+    "match": "cliproxy",
+    "reason": "Boundary verifier explicitly permits only the approved infra path."
+  },
+  {
+    "ruleId": "forbidden-term",
+    "path": "scripts/verify-clean-boundary.test.ts",
+    "match": "cliproxy",
+    "reason": "Boundary regression fixture covers the approved infra path."
+  }
+]

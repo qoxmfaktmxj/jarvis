@@ -23,7 +23,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg-page);
+  background: transparent;
   color: var(--fg-primary);
   font-family: Arial, "Noto Sans KR", sans-serif;
 }

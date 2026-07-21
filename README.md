@@ -2,7 +2,7 @@
 
 Jarvis는 법령, 행정해석, 세무 자료를 바탕으로 HR 질문에 근거와 함께 답하는 지식 플랫폼입니다. 참고한 문서와 조항을 답변에 연결하고, 원문 변경이 Wiki와 검색 색인에 반영되는 과정까지 관리합니다.
 
-기본 실행 환경은 합성 HR 자료와 결정론적 mock provider를 사용합니다. 회사 문서나 실제 개인정보는 포함하지 않습니다.
+기본 데이터는 합성 HR 자료이며 회사 문서나 실제 개인정보는 포함하지 않습니다. 모든 실제 LLM 호출은 로컬 CLI Proxy를 통해 Codex 구독 OAuth 모델만 사용합니다.
 
 > Jarvis의 답변은 자료 검토를 돕기 위한 참고 정보이며 법률·세무 자문을 대신하지 않습니다. 실제 업무 판단 전에는 최신 원문과 전문가 의견을 확인해야 합니다.
 
@@ -14,7 +14,7 @@ Jarvis는 법령, 행정해석, 세무 자료를 바탕으로 HR 질문에 근�
 - Wiki 제목·요약과 원문 메타데이터를 찾는 PostgreSQL 전문 검색
 - `ADMIN`, `EDITOR`, `READER` 역할 기반 접근 제어
 - 사용자, 메뉴, 공통 코드, 원문, Wiki 검토, 감사 기록 관리 화면
-- 외부 API 없이 반복 실행할 수 있는 로컬 mock 모드
+- API 과금 키 없이 Codex 구독 OAuth로 동작하는 단일 CLI Proxy 경로
 
 ## 동작 구조
 
@@ -41,16 +41,21 @@ Wiki 본문은 DB에 중복 저장하지 않습니다. PostgreSQL에는 검색�
 - Node.js 22 이상
 - pnpm 10.33.0
 - Docker Desktop
+- Codex 구독 계정
 
 ### 시작
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm setup:local
+docker compose -f infra/cliproxy/compose.yaml run --rm --service-ports cli-proxy /CLIProxyAPI/CLIProxyAPI --codex-login
+docker compose -f infra/cliproxy/compose.yaml up -d
 pnpm dev
 ```
 
 `pnpm setup:local`은 PostgreSQL 16과 MinIO를 시작하고 migration, seed, 합성 자료 ingest, Wiki projection을 순서대로 실행합니다. 처음 실행할 때만 임의로 생성한 로컬 비밀값을 `.env.local`에 기록합니다.
+
+CLI Proxy 인증 토큰은 Git에서 제외된 `infra/cliproxy/auths/`에 저장됩니다. direct API key나 mock fallback은 없으므로 프록시 장애 또는 구독 한도 소진 시 LLM 작업은 그대로 실패합니다. 다른 서버 배포는 [OpenClaw 배포 가이드](docs/deployment-openclaw.md)를 따르세요.
 
 웹은 `http://localhost:3010`에서 열립니다. 로그인 화면의 **데모로 시작** 버튼을 누르면 `READER` 권한으로 둘러볼 수 있습니다.
 

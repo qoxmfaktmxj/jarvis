@@ -14,6 +14,8 @@ export type {
 } from "./types.js";
 export { createProvider } from "./provider.js";
 export { createDeterministicMockProvider } from "./providers/mock.js";
+export { createCliProxyClient, JARVIS_MODELS } from "./cli-proxy.js";
+export type { CliProxyClient, CliProxyEnv, CliProxyMessage, JarvisModel } from "./cli-proxy.js";
 export { createSourceRevisionReadRepository } from "./source-revision-repository.js";
 export { createBudgetTracker } from "./budget.js";
 export { createMemoryRateLimiter } from "./rate-limit.js";

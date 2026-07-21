@@ -10,9 +10,6 @@ export function resolveAskDailyBudgetUsd(
     return configured;
   }
 
-  const mode = (env.LLM_MODE ?? "mock").trim().toLowerCase();
-  if (env.NODE_ENV === "production" || mode !== "mock") {
-    throw new Error("ASK_DAILY_BUDGET_USD is required outside local mock mode");
-  }
-  return "1";
+  if (env.NODE_ENV !== "production") return "1";
+  throw new Error("ASK_DAILY_BUDGET_USD is required in production");
 }

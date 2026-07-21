@@ -1,0 +1,13 @@
+name: jarvis-cli-proxy
+services:
+  cli-proxy:
+    image: eceasy/cli-proxy-api:v6.9.29
+    container_name: jarvis-cli-proxy
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8317:8317"
+      - "127.0.0.1:1455:1455"
+    volumes:
+      - ${CLIPROXY_CONFIG_PATH:-./config.yaml}:/CLIProxyAPI/config.yaml:ro
+      - ./auths:/root/.cli-proxy-api
+      - ./logs:/CLIProxyAPI/logs

@@ -13,7 +13,10 @@ const REQUIRED_LOCAL_KEYS = [
   "MINIO_ACCESS_KEY",
   "MINIO_SECRET_KEY",
   "MINIO_BUCKET",
-  "LLM_MODE",
+  "LLM_GATEWAY_URL",
+  "LLM_GATEWAY_KEY",
+  "ASK_AI_MODEL",
+  "INGEST_AI_MODEL",
 ] as const;
 
 export interface RunCommandOptions {
@@ -57,7 +60,11 @@ export function renderLocalEnv(options: { cwd: string }): string {
     `MINIO_ACCESS_KEY=${accessKey}`,
     `MINIO_SECRET_KEY=${secretKey}`,
     "MINIO_BUCKET=jarvis-public-sources",
-    "LLM_MODE=mock",
+    "LLM_GATEWAY_URL=http://127.0.0.1:8317/v1",
+    "LLM_GATEWAY_KEY=sk-jarvis-local-dev",
+    "ASK_AI_MODEL=gpt-5.6-terra",
+    "INGEST_AI_MODEL=gpt-5.6-sol",
+    "ASK_DAILY_BUDGET_USD=1",
     "",
   ].join("\n");
 }
@@ -79,9 +86,6 @@ export async function loadAndValidateLocalEnv(envPath: string, requiredKeys = RE
     if (!parsed[key]?.trim()) {
       throw new Error(`missing required local env key: ${key}`);
     }
-  }
-  if (parsed.LLM_MODE !== "mock") {
-    throw new Error("local setup must use LLM_MODE=mock");
   }
   if (parsed.BOOTSTRAP_ADMIN_EMAIL || parsed.BOOTSTRAP_ADMIN_PASSWORD) {
     throw new Error("bootstrap admin credentials must not be persisted locally");

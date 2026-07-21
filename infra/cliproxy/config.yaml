@@ -1,0 +1,36 @@
+# CLIProxyAPI v6.9.29 — Codex 구독 OAuth 전용
+port: 8317
+host: ""
+auth-dir: "/root/.cli-proxy-api"
+
+# Jarvis -> 로컬 프록시 인증용 bearer secret. OpenAI 과금 API key가 아니다.
+api-keys:
+  - "sk-jarvis-local-dev"
+
+debug: false
+logging-to-file: true
+logs-max-total-size-mb: 500
+error-logs-max-files: 30
+usage-statistics-enabled: true
+
+# 장애·쿼터 초과 시 다른 credential/upstream으로 우회하지 않는다.
+request-retry: 0
+max-retry-credentials: 0
+max-retry-interval: 0
+quota-exceeded:
+  switch-project: false
+  switch-preview-model: false
+
+payload:
+  override:
+    - models: [{ name: "gpt-5.6-terra", protocol: "codex" }]
+      params:
+        "reasoning.effort": "medium"
+    - models: [{ name: "gpt-5.6-sol", protocol: "codex" }]
+      params:
+        "reasoning.effort": "high"
+
+streaming:
+  keepalive-seconds: 15
+  bootstrap-retries: 0
+nonstream-keepalive-interval: 20

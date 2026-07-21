@@ -45,7 +45,10 @@ describe("setupLocal", () => {
     expect(first).toContain("WIKI_REPO_ROOT=");
     expect(first).toContain(".runtime/wiki-repo");
     expect(first).toContain("MINIO_BUCKET=jarvis-public-sources");
-    expect(first).toContain("LLM_MODE=mock");
+    expect(first).toContain("LLM_GATEWAY_URL=http://127.0.0.1:8317/v1");
+    expect(first).toContain("LLM_GATEWAY_KEY=sk-jarvis-local-dev");
+    expect(first).toContain("ASK_AI_MODEL=gpt-5.6-terra");
+    expect(first).toContain("INGEST_AI_MODEL=gpt-5.6-sol");
     expect(first).not.toMatch(/^BOOTSTRAP_ADMIN_/m);
 
     expect(fakeRun).toHaveBeenNthCalledWith(

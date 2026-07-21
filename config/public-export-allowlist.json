@@ -12,6 +12,7 @@
   "pnpm-workspace.yaml",
   "turbo.json",
   "tsconfig.json",
+  "vitest.config.ts",
   ".gitignore",
   ".gitattributes",
   ".env.example",
