@@ -126,6 +126,10 @@ export class GitRepo {
     const paths = normalized.map(([pathValue]) => pathValue);
     await this.git.raw(["add", "--", ...paths]);
     await this.git.raw([
+      "-c",
+      `user.name=${options.author.name}`,
+      "-c",
+      `user.email=${options.author.email}`,
       "commit",
       "--author",
       `${options.author.name} <${options.author.email}>`,

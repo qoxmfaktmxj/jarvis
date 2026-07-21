@@ -53,6 +53,46 @@ describe("GitRepo", () => {
     await expect(repo.createRepo("main")).rejects.toThrow(/bootstrap tree|wiki path/i);
   });
 
+  it("commits with the supplied author when the ambient Git identity is empty", async () => {
+    const environmentKeys = [
+      "GIT_CONFIG_COUNT",
+      "GIT_CONFIG_KEY_0",
+      "GIT_CONFIG_VALUE_0",
+      "GIT_CONFIG_KEY_1",
+      "GIT_CONFIG_VALUE_1",
+    ];
+    const previousEnvironment = new Map(
+      environmentKeys.map((key) => [key, process.env[key]]),
+    );
+    try {
+      process.env.GIT_CONFIG_COUNT = "2";
+      process.env.GIT_CONFIG_KEY_0 = "user.name";
+      process.env.GIT_CONFIG_VALUE_0 = "";
+      process.env.GIT_CONFIG_KEY_1 = "user.email";
+      process.env.GIT_CONFIG_VALUE_1 = "";
+
+      const repo = new GitRepo(repoDirectory);
+      await repo.createRepo("main");
+      await expect(
+        repo.writeAndCommit({
+          actor: "system",
+          files: { "auto/concepts/identity.md": "identity\n" },
+          message: "[manual] identity-independent commit",
+          author: AUTHOR,
+        }),
+      ).resolves.toMatchObject({ author: AUTHOR });
+    } finally {
+      for (const key of environmentKeys) {
+        const previousValue = previousEnvironment.get(key);
+        if (previousValue === undefined) {
+          delete process.env[key];
+        } else {
+          process.env[key] = previousValue;
+        }
+      }
+    }
+  });
+
   it("commits normalized exact paths and fast-forwards from a detached worktree", async () => {
     const mainRepo = new GitRepo(repoDirectory);
     await mainRepo.createRepo("main");
@@ -130,7 +170,16 @@ describe("GitRepo", () => {
     });
     const git = simpleGit({ baseDir: repoDirectory });
     for (let index = 0; index < 10; index += 1) {
-      await git.raw(["commit", "--allow-empty", "-m", `[manual] filler ${index}`]);
+      await git.raw([
+        "-c",
+        "user.name=jarvis-wiki-bot",
+        "-c",
+        "user.email=wiki-bot@example.invalid",
+        "commit",
+        "--allow-empty",
+        "-m",
+        `[manual] filler ${index}`,
+      ]);
     }
     await expect(repo.hasCommitTrailer(marker)).resolves.toMatchObject({
       sha: marked.sha,
@@ -147,7 +196,15 @@ describe("GitRepo", () => {
     await fs.writeFile(join(repoDirectory, "link-target.txt"), "auto/concepts/target.md", "utf8");
     const blobSha = (await git.raw(["hash-object", "-w", "link-target.txt"])).trim();
     await git.raw(["update-index", "--add", "--cacheinfo", `120000,${blobSha},auto/link.md`]);
-    await git.raw(["commit", "-m", "[manual] add synthetic symlink entry"]);
+    await git.raw([
+      "-c",
+      "user.name=jarvis-wiki-bot",
+      "-c",
+      "user.email=wiki-bot@example.invalid",
+      "commit",
+      "-m",
+      "[manual] add synthetic symlink entry",
+    ]);
     await expect(repo.listTreePaths(await repo.headSha())).rejects.toThrow(/120000/);
   });
 });
