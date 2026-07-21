@@ -57,5 +57,7 @@ jobs:
         env:
           LLM_MODE: mock
       - run: pnpm eval:budget-test --fixture apps/worker/eval/fixtures/public-demo/budget.json
-      - run: pnpm audit --audit-level=high
+      - name: Verify Drizzle CLI compatibility
+        run: pnpm --filter @jarvis/db exec drizzle-kit check --config drizzle.config.ts
+      - run: pnpm audit --audit-level=moderate
       - run: pnpm security:scan
