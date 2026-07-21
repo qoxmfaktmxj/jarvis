@@ -76,6 +76,12 @@ SOFTWARE.
     expect(workflow).toContain("pnpm worker:eval");
   });
 
+  it("installs Playwright from the web package in CI", async () => {
+    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
+    expect(workflow).toContain("pnpm --filter @jarvis/web exec playwright install chromium --with-deps");
+    expect(workflow).not.toContain("pnpm exec playwright install chromium --with-deps");
+  });
+
   it("keeps runtime package exports on tracked source files", async () => {
     for (const packageName of ["wiki-fs", "wiki-agent"]) {
       const manifest = JSON.parse(

@@ -49,7 +49,7 @@ jobs:
           BOOTSTRAP_ADMIN_PASSWORD="$PLAYWRIGHT_ADMIN_PASSWORD" \
           pnpm admin:bootstrap
       - run: pnpm test:integration
-      - run: pnpm exec playwright install chromium --with-deps
+      - run: pnpm --filter @jarvis/web exec playwright install chromium --with-deps
       - run: pnpm test:e2e
         env:
           LLM_MODE: mock
