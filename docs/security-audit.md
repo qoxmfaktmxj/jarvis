@@ -1,8 +1,8 @@
-# Public Candidate Security Audit
+# Public Security Audit
 
 ## Scope
 
-- Local source tree only; no remote is configured.
+- The public source tree is the audit scope.
 - Scan date and tool output are recorded under ignored `artifacts/security/` files.
 - The root commit SHA is recorded after commit in ignored `artifacts/security/root-commit.txt`.
 - Runtime state, generated output, local credentials, and the runtime Wiki Git repository are excluded from the public tree.
@@ -16,7 +16,7 @@
 
 ## Functional gates
 
-The final candidate passed:
+The public release passed:
 
 - `pnpm verify:boundary`
 - `pnpm type-check`
@@ -45,4 +45,4 @@ The dependency audit has no high or critical findings. It reports two low and fo
 - `nested-git-pre-init.json`: only `.runtime/wiki-repo/.git`.
 - `nested-git-post-init.json`: only `.git` and `.runtime/wiki-repo/.git`.
 - `.env.local`, `.runtime`, generated build output, test output, and audit artifacts are ignored and excluded from staging.
-- `remotes.txt` must remain empty after the root commit.
+- Git remotes are reviewed before each release.
