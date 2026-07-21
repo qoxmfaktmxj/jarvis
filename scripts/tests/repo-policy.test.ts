@@ -82,6 +82,12 @@ SOFTWARE.
     expect(workflow).not.toContain("pnpm exec playwright install chromium --with-deps");
   });
 
+  it("blocks moderate dependency vulnerabilities in CI", async () => {
+    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
+    expect(workflow).toContain("pnpm audit --audit-level=moderate");
+    expect(workflow).not.toContain("pnpm audit --audit-level=high");
+  });
+
   it("keeps runtime package exports on tracked source files", async () => {
     for (const packageName of ["wiki-fs", "wiki-agent"]) {
       const manifest = JSON.parse(

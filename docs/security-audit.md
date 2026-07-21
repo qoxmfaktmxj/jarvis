@@ -29,9 +29,9 @@ The public release passed:
 - `pnpm worker:eval`
 - `pnpm eval:budget-test --fixture apps/worker/eval/fixtures/public-demo/budget.json`
 - clean export, frozen install, local bootstrap, unit tests, type-check, and production build
-- `pnpm audit --audit-level high`
+- `pnpm audit --audit-level moderate`
 
-The dependency audit has no high or critical findings. It reports two low and four moderate findings below the configured release threshold.
+The dependency audit reports no known vulnerabilities. CI blocks any future moderate, high, or critical finding.
 
 ## Secret and leak scans
 
