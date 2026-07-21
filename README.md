@@ -67,6 +67,8 @@ pnpm admin:bootstrap
 
 관리자 bootstrap 값은 `.env.local`에 저장하지 않습니다.
 
+운영 서버의 이후 갱신은 `pnpm deploy:openclaw` 한 명령으로 수행합니다. package/migration/CLI Proxy 변경 여부를 감지해 필요한 단계만 실행하며, CI에서 끝난 lint·unit·security 검사를 서버에서 반복하지 않습니다.
+
 ## 자주 쓰는 명령
 
 ```bash

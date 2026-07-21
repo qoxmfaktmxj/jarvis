@@ -68,22 +68,24 @@ SOFTWARE.
     expect(codeowners).not.toContain(`@${["repo", "owner"].join("-")}`);
   });
 
-  it("ensures CI provisions local setup before integration/e2e gates", async () => {
-    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
-    expect(workflow).toContain("pnpm setup:local");
-    expect(workflow).toContain("pnpm test:integration");
-    expect(workflow).toContain("pnpm test:e2e");
-    expect(workflow).toContain("pnpm worker:eval");
+  it("keeps integration/e2e gates in manual deep verification", async () => {
+    const required = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
+    const deep = await readFile(join(process.cwd(), ".github", "workflows", "deep-verify.yml"), "utf8");
+    expect(required).not.toContain("pnpm setup:local");
+    expect(deep).toContain("pnpm setup:local");
+    expect(deep).toContain("pnpm test:integration");
+    expect(deep).toContain("pnpm test:e2e");
+    expect(deep).toContain("pnpm worker:eval");
   });
 
-  it("installs Playwright from the web package in CI", async () => {
-    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
+  it("installs Playwright from the web package in deep verification", async () => {
+    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "deep-verify.yml"), "utf8");
     expect(workflow).toContain("pnpm --filter @jarvis/web exec playwright install chromium --with-deps");
     expect(workflow).not.toContain("pnpm exec playwright install chromium --with-deps");
   });
 
-  it("blocks moderate dependency vulnerabilities in CI", async () => {
-    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "ci.yml"), "utf8");
+  it("blocks moderate dependency vulnerabilities in deep verification", async () => {
+    const workflow = await readFile(join(process.cwd(), ".github", "workflows", "deep-verify.yml"), "utf8");
     expect(workflow).toContain("pnpm audit --audit-level=moderate");
     expect(workflow).not.toContain("pnpm audit --audit-level=high");
   });

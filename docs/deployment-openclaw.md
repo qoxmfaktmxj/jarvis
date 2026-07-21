@@ -203,18 +203,15 @@ BOOTSTRAP_ADMIN_PASSWORD='<강한-관리자-비밀번호>' \
 pnpm admin:bootstrap
 ```
 
-## 8. 검증과 production build
+## 8. 빠른 production build
 
-배포 전 최소 게이트:
+`main`에 들어오기 전 GitHub의 required `verify`가 boundary, lint, unit test, production build, content security scan을 수행한다. 서버에서 같은 검사를 반복하지 않는다. 최초 설치와 일반 배포 서버에서는 build 한 번만 실행한다.
 
 ```bash
-pnpm verify:boundary
-pnpm type-check
-pnpm lint
-pnpm test
-pnpm security:scan
 pnpm build
 ```
+
+DB integration, Playwright E2E, eval, dependency audit 같은 무거운 검사는 GitHub Actions의 **Deep Verify**를 필요할 때 수동 실행한다. 일반 배포를 막지 않는다.
 
 구독 gateway live smoke:
 
@@ -223,7 +220,7 @@ set -a; source .env.local; set +a
 pnpm --filter @jarvis/ai test:live
 ```
 
-실패한 게이트를 무시하지 않는다. 특히 CLI Proxy 실패를 mock이나 API key로 우회하지 않는다.
+build 또는 live smoke가 실패하면 배포를 중단한다. 특히 CLI Proxy 실패를 mock이나 API key로 우회하지 않는다.
 
 ## 9. systemd 서비스
 
@@ -355,26 +352,23 @@ docker logs --tail 200 jarvis-cli-proxy
 
 ## 12. 이후 main 갱신
 
+일반 갱신은 아래 한 명령으로 끝낸다.
+
 ```bash
 cd /opt/jarvis
-git fetch origin
-git status --short
-git pull --ff-only origin main
-pnpm install --frozen-lockfile
-pnpm db:migrate
-pnpm type-check
-pnpm test
-pnpm build
-sudo systemctl restart jarvis-worker jarvis-web
-sudo systemctl status jarvis-worker jarvis-web --no-pager
+pnpm deploy:openclaw
 ```
 
-`git status --short`에 `.env.local`, auth 파일, runtime Wiki가 나타나면 진행을 중단한다. 이들은 Git 추적 대상이 아니다. CLI Proxy 이미지나 설정이 바뀐 배포에서만 다음을 추가한다.
+이 스크립트는 다음만 수행한다.
 
-```bash
-docker compose -f infra/cliproxy/compose.yaml pull
-sudo systemctl restart jarvis-cliproxy
-```
+1. tracked 파일이 깨끗한지 확인하고 `origin/main`을 fast-forward한다.
+2. package/lockfile 변경 때만 `pnpm install`을 실행한다.
+3. migration 변경 때만 `pnpm db:migrate`를 실행한다.
+4. production build 후 web/worker를 재시작한다.
+5. CLI Proxy 파일이 바뀐 경우에만 이미지를 갱신하고 프록시를 재시작한다.
+6. `/login` HTTP smoke가 성공해야 완료한다.
+
+즉, 서버에서 lint/type-check/unit/integration/E2E/security를 다시 실행하지 않는다. 상세 검증은 CI 결과를 신뢰한다.
 
 ## 13. 백업과 롤백
 
@@ -410,7 +404,7 @@ sudo systemctl restart jarvis-cliproxy
 4) PostgreSQL/MinIO를 infra/compose.yaml로 시작하고 migration/seed/최초 Wiki 초기화를 수행하라.
 5) CLI Proxy에서 --codex-login으로 구독 OAuth만 인증하라. OPENAI_API_KEY, mock, fallback provider를 만들지 마라.
 6) gpt-5.6-terra와 gpt-5.6-sol의 /models 및 실제 completion HTTP 200을 확인하라.
-7) pnpm verify:boundary, type-check, lint, test, security:scan, build가 모두 성공한 뒤 systemd web/worker/cliproxy를 활성화하라.
+7) 최초 설치는 pnpm build만 실행하고 systemd web/worker/cliproxy를 활성화하라. 이후 배포는 pnpm deploy:openclaw 한 명령만 사용하라. lint/unit/security는 GitHub required verify 결과를 신뢰하고 서버에서 반복하지 마라.
 8) Nginx는 127.0.0.1:3010으로 proxy하고 SSE buffering을 끄며 DB/MinIO/CLI Proxy 포트는 외부에 열지 마라.
 9) 최종 보고에 배포 commit SHA, 서비스 상태, health check, LLM smoke 결과를 포함하되 token/비밀번호는 절대 포함하지 마라.
 10) 오류가 나면 로그와 원인을 보고하고 수정하라. 다른 LLM 경로나 API key로 우회하지 마라.

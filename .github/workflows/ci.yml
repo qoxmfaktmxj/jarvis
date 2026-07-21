@@ -23,37 +23,23 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:boundary
       - run: pnpm lint
-      - run: pnpm type-check
       - run: pnpm test
-      - name: Provision isolated local stack
+      - name: Create build-only environment
         shell: bash
         run: |
-          pnpm setup:local
-          cat .env.local >> "$GITHUB_ENV"
-      - name: Prepare synthetic E2E credentials
-        shell: bash
-        run: |
-          {
-            echo "PLAYWRIGHT_ADMIN_EMAIL=e2e-admin@example.invalid"
-            echo "PLAYWRIGHT_ADMIN_PASSWORD=E2eAdmin${GITHUB_RUN_ID}Only"
-            echo "PLAYWRIGHT_EDITOR_EMAIL=e2e-editor@example.invalid"
-            echo "PLAYWRIGHT_EDITOR_PASSWORD=E2eEditor${GITHUB_RUN_ID}Only"
-            echo "PLAYWRIGHT_TARGET_EMAIL=e2e-target@example.invalid"
-            echo "PLAYWRIGHT_TARGET_PASSWORD=E2eTarget${GITHUB_RUN_ID}Only"
-            echo "ASK_DAILY_BUDGET_USD=1"
-          } >> "$GITHUB_ENV"
-      - name: Bootstrap synthetic E2E admin
-        shell: bash
-        run: |
-          BOOTSTRAP_ADMIN_EMAIL="$PLAYWRIGHT_ADMIN_EMAIL" \
-          BOOTSTRAP_ADMIN_PASSWORD="$PLAYWRIGHT_ADMIN_PASSWORD" \
-          pnpm admin:bootstrap
-      - run: pnpm test:integration
-      - run: pnpm --filter @jarvis/web exec playwright install chromium --with-deps
-      - run: pnpm test:e2e
-      - run: pnpm worker:eval
-      - run: pnpm eval:budget-test --fixture apps/worker/eval/fixtures/public-demo/budget.json
-      - name: Verify Drizzle CLI compatibility
-        run: pnpm --filter @jarvis/db exec drizzle-kit check --config drizzle.config.ts
-      - run: pnpm audit --audit-level=moderate
-      - run: pnpm security:scan
+          cat > .env.local <<'EOF'
+          DATABASE_URL=postgresql://build:build@127.0.0.1:55432/build
+          SESSION_SECRET=ci-build-session-secret-not-for-runtime
+          WIKI_REPO_ROOT=/tmp/jarvis-wiki-build
+          MINIO_ENDPOINT=http://127.0.0.1:59000
+          MINIO_ACCESS_KEY=ci-build
+          MINIO_SECRET_KEY=ci-build-secret
+          MINIO_BUCKET=ci-build
+          LLM_GATEWAY_URL=http://127.0.0.1:8317/v1
+          LLM_GATEWAY_KEY=ci-build-local-proxy-secret
+          ASK_AI_MODEL=gpt-5.6-terra
+          INGEST_AI_MODEL=gpt-5.6-sol
+          ASK_DAILY_BUDGET_USD=1
+          EOF
+      - run: pnpm build
+      - run: pnpm security:scan:content

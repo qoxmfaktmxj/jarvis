@@ -32,7 +32,8 @@
     "security:scan": "tsx scripts/security-scan.ts gate",
     "security:scan:content": "tsx scripts/security-scan.ts content",
     "security:scan:pre-init": "tsx scripts/security-scan.ts nested-git pre-init",
-    "security:scan:post-init": "tsx scripts/security-scan.ts nested-git post-init"
+    "security:scan:post-init": "tsx scripts/security-scan.ts nested-git post-init",
+    "deploy:openclaw": "bash scripts/deploy-openclaw.sh"
   },
   "devDependencies": {
     "@jarvis/auth": "workspace:*",
