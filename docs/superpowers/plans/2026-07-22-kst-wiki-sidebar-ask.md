@@ -179,7 +179,7 @@ git add apps/web/lib/server/wiki-page-loader.ts apps/web/lib/server/wiki-page-lo
 git commit -m "feat: add paged Wiki split view"
 ```
 
-### Task 4: Ask 새 대화·이름 변경·삭제 메뉴
+### Task 4: Ask 새 대화·이름 변경·삭제 메뉴와 근거 우측 패널
 
 **Files:**
 - Modify: `apps/web/lib/server/conversation-repository.ts`
@@ -188,6 +188,13 @@ git commit -m "feat: add paged Wiki split view"
 - Modify: `apps/web/app/(app)/ask/_components/ConversationList.tsx`
 - Create: `apps/web/app/(app)/ask/_components/ConversationListClient.tsx`
 - Create: `apps/web/app/(app)/ask/_components/ConversationListClient.test.tsx`
+- Create: `apps/web/app/(app)/ask/_components/AskWorkspace.tsx`
+- Create: `apps/web/app/(app)/ask/_components/AskWorkspace.test.tsx`
+- Modify: `apps/web/app/(app)/ask/page.tsx`
+- Modify: `apps/web/app/(app)/ask/[conversationId]/page.tsx`
+- Modify: `apps/web/components/ai/AnswerBody.tsx`
+- Modify: `apps/web/components/ai/AnswerCard.tsx`
+- Modify: `apps/web/components/ai/SourceRefCard.tsx`
 - Modify: `apps/web/messages/ko.json`
 - Modify: `apps/web/e2e/conversation-isolation.spec.ts`
 
@@ -195,6 +202,7 @@ git commit -m "feat: add paged Wiki split view"
 - `renameOwnedConversation({ workspaceId, userId, conversationId, title }): Promise<boolean>`.
 - `deleteOwnedConversation({ workspaceId, userId, conversationId }): Promise<boolean>`.
 - Server actions return `{ ok: true } | { ok: false; errorCode: "INVALID_TITLE" | "NOT_FOUND" }`.
+- Wiki 근거가 있는 링크는 데스크톱 일반 좌클릭에서 `/api/wiki/page?path=<encoded path>` 우측 패널을 열고, 모바일·modifier·middle click은 기존 `/wiki/...` 전체 페이지 이동을 유지한다.
 
 - [ ] **Step 1: Write failing repository ownership tests**
 
@@ -220,17 +228,21 @@ Run: `pnpm --filter @jarvis/web test -- app/\(app\)/ask/_components/Conversation
 
 Use native React state and the existing `Dialog`; do not add a dropdown dependency. The vertical-dot popover closes after action or Escape.
 
-- [ ] **Step 6: Add i18n and E2E ownership coverage**
+- [ ] **Step 6: Add Ask citation split panel**
+
+Add an Ask workspace provider/shell around both Ask routes. Internal Wiki citations in the answer body and source cards open the right split panel on desktop; official external-only sources keep their safe new-tab behavior. Add focused tests for ordinary desktop click, close, mobile/modifier fallback, and fetch failure.
+
+- [ ] **Step 7: Add i18n and E2E ownership coverage**
 
 Add `Ask.Conversations` keys for menu, rename, rename title/label/save, delete, delete title/description/confirm, and action failures. Extend conversation isolation to verify another user's conversation cannot be renamed or deleted.
 
-- [ ] **Step 7: Run GREEN**
+- [ ] **Step 8: Run GREEN**
 
-Run: `pnpm --filter @jarvis/web test -- lib/server/conversation-repository.test.ts app/\(app\)/ask/_components/ConversationListClient.test.tsx`
+Run: `pnpm --filter @jarvis/web test -- lib/server/conversation-repository.test.ts app/\(app\)/ask/_components/ConversationListClient.test.tsx app/\(app\)/ask/_components/AskWorkspace.test.tsx`
 
 Expected: all selected tests pass.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add apps/web/lib/server/conversation-repository.ts apps/web/lib/server/conversation-repository.test.ts apps/web/app/\(app\)/ask apps/web/messages/ko.json apps/web/e2e/conversation-isolation.spec.ts
@@ -267,4 +279,3 @@ Check dashboard brand link/sidebar toggle, Ask auto rail and conversation menu, 
 - [ ] **Step 5: Final review and integration**
 
 Generate a full branch diff, resolve all Critical/Important review findings, merge fast-forward to `main`, rerun focused smoke checks, and push `main`.
-

@@ -13,6 +13,8 @@ Jarvis의 사용자 노출 시간을 한국 표준시로 통일하고, HR Wiki�
 - Ask 대화 목록은 그대로 유지한다. `새 대화` 옆에 `+` 아이콘을 표시한다.
 - 각 대화의 세로 점 메뉴에는 `이름 변경`과 `삭제`를 둔다. 삭제는 destructive 색상과 확인 절차를 사용한다.
 - 활성 대화를 삭제하면 `/ask`로 이동한다.
+- Ask 답변의 내부 Wiki 근거는 데스크톱 일반 클릭에서 오른쪽 split panel로 열고, 모바일·키보드·modifier click은 기존 전체 페이지 이동을 유지한다.
+- `wikiPath`가 있는 근거는 공식 URL보다 내부 Wiki를 우선하며, Wiki 경로가 없는 공식 외부 출처만 새 탭으로 연다.
 - HR Wiki는 페이지당 20건 서버 페이징을 사용한다.
 - 데스크톱에서 Wiki 항목을 클릭하면 목록을 유지한 채 오른쪽 split panel이 열린다. 모바일 및 modifier click은 기존 상세 페이지 이동을 유지한다.
 - Wiki 패널은 독립 스크롤과 닫기 버튼을 제공한다.
@@ -36,6 +38,10 @@ Jarvis의 사용자 노출 시간을 한국 표준시로 통일하고, HR Wiki�
 
 repository에 rename/delete owner-scoped 함수를 추가한다. 모든 mutation은 `workspaceId + userId + conversationId`를 조건으로 사용한다. server action은 세션의 값을 전달하고 경로를 revalidate한다. DB FK cascade로 메시지를 함께 삭제하므로 스키마 변경은 없다.
 
+### Ask 근거 패널
+
+두 Ask 라우트를 client workspace/provider로 감싸고, 답변 본문의 `[[slug]]`와 `wikiPath`가 있는 source card가 같은 path 기반 Wiki API를 사용해 오른쪽 패널을 연다. 공개 API는 published Wiki predicate를 강제하며 본문은 계속 Git disk SSoT에서 읽는다.
+
 ## 오류와 경계 처리
 
 - 잘못된 시간 값은 빈 문자열로 렌더한다.
@@ -52,6 +58,7 @@ repository에 rename/delete owner-scoped 함수를 추가한다. 모든 mutation
 - Wiki loader 단위 테스트: count/offset/page clamp.
 - Wiki UI 테스트: desktop click panel, 닫기, modifier click 유지.
 - Conversation repository/action/UI 테스트: owner filter, rename validation, destructive delete, 활성 삭제 redirect.
+- Ask 근거 패널 테스트: desktop pointer click, 닫기, 모바일·키보드·modifier fallback, fetch 실패.
 - 최종 web unit, type-check, lint, RSC audit, 관련 Playwright E2E를 실행한다.
 
 ## 영향도
@@ -64,4 +71,3 @@ repository에 rename/delete owner-scoped 함수를 추가한다. 모든 mutation
 - Ask AI/LLM: 모델 호출과 SSE 계약 변경 없음.
 - 검색/worker/audit: 변경 없음.
 - UI/i18n/tests: 변경 있음.
-
