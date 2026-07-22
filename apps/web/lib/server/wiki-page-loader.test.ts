@@ -14,7 +14,7 @@ vi.mock("drizzle-orm", async (importOriginal) => {
   const actual = await importOriginal<typeof import("drizzle-orm")>();
   return {
     ...actual,
-    and: (...args: any[]) => {
+    and: (...args: Parameters<typeof actual.and>) => {
       drizzleMocks.and(...args);
       return actual.and(...args);
     },
