@@ -95,9 +95,18 @@ export function GridBackground() {
       pointer.active = true;
     };
     const clear = () => { pointer.active = false; };
+    const refreshTheme = () => {
+      rebuild();
+      draw(performance.now(), media.matches);
+    };
+    const themeObserver = new MutationObserver(refreshTheme);
 
     resize();
     syncMotion();
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme", "data-theme-color"],
+    });
     window.addEventListener("resize", resize);
     window.addEventListener("pointermove", move, { passive: true });
     window.addEventListener("pointerleave", clear);
@@ -105,6 +114,7 @@ export function GridBackground() {
     media.addEventListener("change", syncMotion);
     return () => {
       stop();
+      themeObserver.disconnect();
       window.removeEventListener("resize", resize);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerleave", clear);

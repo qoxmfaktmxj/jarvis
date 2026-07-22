@@ -113,6 +113,26 @@
       "reader": "열람자"
     }
   },
+  "Theme": {
+    "pickerLabel": "테마 색상",
+    "colors": {
+      "blue": "블루",
+      "forest": "포레스트 그린",
+      "red": "프리미엄 레드"
+    },
+    "switchToDark": "다크 모드로 전환",
+    "switchToLight": "라이트 모드로 전환"
+  },
+  "Ask": {
+    "Composer": {
+      "label": "질문",
+      "placeholder": "무엇이든 물어보세요…",
+      "hint": "Enter 전송 · Shift+Enter 줄바꿈",
+      "submit": "질문 전송",
+      "submitting": "질문 처리 중",
+      "failed": "질문 처리에 실패했습니다."
+    }
+  },
   "Admin": {
     "Sources": {
       "title": "공식 출처",

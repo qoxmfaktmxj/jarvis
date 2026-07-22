@@ -1,15 +1,42 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --bg-page: #ffffff;
   --bg-surface: #f7f6f3;
   --fg-primary: #191919;
   --fg-secondary: #5f5f5f;
   --fg-muted: #7a7a7a;
   --border-default: #dedbd5;
-  --brand-primary: #315c4c;
-  --brand-primary-hover: #274b3e;
+  --brand-primary: #2d8cdb;
+  --brand-primary-hover: #2478bd;
   --shadow-soft: 0 8px 24px rgb(30 41 35 / 8%);
+}
+
+:root[data-theme-color="blue"] {
+  --brand-primary: #2d8cdb;
+  --brand-primary-hover: #2478bd;
+}
+
+:root[data-theme-color="forest"] {
+  --brand-primary: #176b4d;
+  --brand-primary-hover: #11563d;
+}
+
+:root[data-theme-color="red"] {
+  --brand-primary: #a33a3a;
+  --brand-primary-hover: #873030;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-page: #15191d;
+  --bg-surface: #1f252b;
+  --fg-primary: #f4f6f7;
+  --fg-secondary: #bec6cc;
+  --fg-muted: #8f9aa3;
+  --border-default: #364049;
+  --shadow-soft: 0 8px 24px rgb(0 0 0 / 28%);
 }
 
 * {
@@ -29,7 +56,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 

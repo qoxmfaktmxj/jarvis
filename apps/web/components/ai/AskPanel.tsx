@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
+import { Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { shouldSubmitQuestion } from "./ask-keyboard";
 import { AnswerCard } from "./AnswerCard";
 import type { SourceRef } from "./SourceRefCard";
 
@@ -15,6 +18,7 @@ type StreamEvent =
   | { type: "tool"; name: string };
 
 export function AskPanel({ conversationId }: { conversationId?: string }) {
+  const t = useTranslations("Ask.Composer");
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [pending, setPending] = useState(false);
@@ -39,7 +43,7 @@ export function AskPanel({ conversationId }: { conversationId?: string }) {
 
     if (!response?.ok || !response.body) {
       setPending(false);
-      setError("질문 처리에 실패했습니다.");
+      setError(t("failed"));
       return;
     }
 
@@ -83,23 +87,50 @@ export function AskPanel({ conversationId }: { conversationId?: string }) {
     }
   }
 
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
+    if (!shouldSubmitQuestion({
+      key: event.key,
+      shiftKey: event.shiftKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      isComposing: event.nativeEvent.isComposing,
+    })) {
+      return;
+    }
+    event.preventDefault();
+    void submit();
+  }
+
   return (
-    <section className="space-y-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-page)] p-4 shadow-[var(--shadow-soft)]">
-      <div className="space-y-2">
-        <label htmlFor="ask-question" className="block text-sm font-medium">
-          질문
+    <section className="space-y-4">
+      <div className="overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-page)] shadow-[var(--shadow-soft)] transition-colors focus-within:border-[var(--brand-primary)] focus-within:ring-1 focus-within:ring-[var(--brand-primary)]">
+        <label htmlFor="ask-question" className="sr-only">
+          {t("label")}
         </label>
         <textarea
           id="ask-question"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          rows={4}
-          className="w-full rounded-md border border-[var(--border-default)] px-3 py-2 outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+          onKeyDown={handleKeyDown}
+          rows={3}
+          placeholder={t("placeholder")}
+          disabled={pending}
+          className="block min-h-24 max-h-60 w-full resize-none bg-transparent px-4 py-3 text-sm leading-relaxed text-[var(--fg-primary)] outline-none placeholder:text-[var(--fg-muted)] disabled:cursor-not-allowed disabled:opacity-60"
         />
+        <div className="flex items-center gap-3 border-t border-[var(--border-default)] px-3 py-2">
+          <span className="hidden text-xs text-[var(--fg-muted)] sm:inline">{t("hint")}</span>
+          <Button
+            size="icon"
+            className="ml-auto rounded-lg"
+            disabled={pending || !question.trim()}
+            onClick={() => void submit()}
+            aria-label={pending ? t("submitting") : t("submit")}
+            title={pending ? t("submitting") : t("submit")}
+          >
+            {pending ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Send aria-hidden="true" className="h-4 w-4" />}
+          </Button>
+        </div>
       </div>
-      <Button disabled={pending} onClick={() => void submit()}>
-        {pending ? "질문 중…" : "질문하기"}
-      </Button>
       {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
       {answer ? <AnswerCard text={answer} sources={sources} /> : null}
     </section>

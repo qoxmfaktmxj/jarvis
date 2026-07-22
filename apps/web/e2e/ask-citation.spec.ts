@@ -17,11 +17,30 @@ test("Ask UI renders safe SSE answer and source locator", async ({ page }) => {
     });
   });
   await page.goto("/ask");
-  await page.getByLabel("질문").fill("평균임금이란?");
-  await page.getByRole("button", { name: "질문하기" }).click();
+  const question = page.getByLabel("질문");
+  await question.fill("평균임금이란?");
+  await question.press("Enter");
 
   await expect(page.getByTestId("answer-text")).toContainText("평균임금");
   await expect(page.getByTestId("citation-locator")).toContainText("근로기준법 제2조");
   await expect(page.getByRole("link", { name: /평균임금/ })).toBeVisible();
   await expect(page.locator("[data-testid='answer-text'] script")).toHaveCount(0);
+});
+
+test("Ask composer keeps Shift+Enter as a newline", async ({ page }) => {
+  await loginAsReader(page);
+  let requestCount = 0;
+  await page.route("**/api/ask", async (route) => {
+    requestCount += 1;
+    await route.abort();
+  });
+
+  await page.goto("/ask");
+  const question = page.getByLabel("질문");
+  await question.fill("첫 번째 줄");
+  await question.press("Shift+Enter");
+  await question.type("두 번째 줄");
+
+  await expect(question).toHaveValue("첫 번째 줄\n두 번째 줄");
+  expect(requestCount).toBe(0);
 });
