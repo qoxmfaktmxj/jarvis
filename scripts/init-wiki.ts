@@ -6,6 +6,8 @@ import {
   assertFileIsRegular,
   assertSafeRelativePath,
   copyTreeChecked,
+  ensureParentDirectory,
+  pathExists,
   readJsonFile,
   resolveInside,
 } from "./fs-utils.js";
@@ -69,6 +71,23 @@ export async function initWiki({
   });
   for (const [relativePath, content] of rendered) {
     await writeFile(resolveInside(runtimeRoot, relativePath), content, { flag: "w" });
+  }
+}
+
+export async function syncWikiSamples({
+  samplesRoot,
+  runtimeRoot,
+  sourceRevisionIds = {},
+}: InitWikiOptions): Promise<void> {
+  const rendered = await renderTemplates(samplesRoot, sourceRevisionIds);
+  for (const [relativePath, content] of rendered) {
+    const target = resolveInside(runtimeRoot, relativePath);
+    if (await pathExists(target)) {
+      await assertFileIsRegular(target, relativePath);
+    } else {
+      await ensureParentDirectory(target);
+    }
+    await writeFile(target, content, { flag: "w" });
   }
 }
 

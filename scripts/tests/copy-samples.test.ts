@@ -157,4 +157,47 @@ describe("copySamples", () => {
       })
     ).rejects.toThrow(/symlink|junction/i);
   });
+
+  it("ingests a curated local snapshot with an exact provenance URL", async () => {
+    const sandbox = await mkdtemp(join(tmpdir(), "jarvis-copy-samples-curated-"));
+    const samplesRoot = join(sandbox, "samples", "sources");
+    await mkdir(samplesRoot, { recursive: true });
+    await writeFile(
+      join(samplesRoot, "withholding.json"),
+      JSON.stringify({
+        revisionKey: "abc123",
+        publishedAt: "2026-06-15",
+        effectiveFrom: "2026-06-15",
+        normalizedText: "verified.fact\n확정된 원천징수 자료",
+      }),
+    );
+    await writeFile(
+      join(samplesRoot, "manifest.json"),
+      JSON.stringify({
+        entries: [
+          {
+            relativePath: "withholding.json",
+            curated: true,
+            title: "원천징수 검증 자료",
+            provider: "local",
+            sourceType: "guide",
+            canonicalUrl: "https://github.com/qoxmfaktmxj/withhold-tax/blob/abc123/content/facts.json",
+          },
+        ],
+      }),
+    );
+
+    const ingestSourceRevision = vi.fn(async ({ providerAdapter, manifestEntry }) => {
+      const payload = await providerAdapter.fetch(manifestEntry.relativePath);
+      expect(payload.document).toMatchObject({
+        sourceType: "guide",
+        canonicalUrl: "https://github.com/qoxmfaktmxj/withhold-tax/blob/abc123/content/facts.json",
+        metadata: { curated: true, synthetic: false },
+      });
+      return "sr_curated_001";
+    });
+
+    await copySamples({ cwd: sandbox, ingestSourceRevision });
+    expect(ingestSourceRevision).toHaveBeenCalledOnce();
+  });
 });

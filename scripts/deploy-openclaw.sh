@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_dir"
+sample_bootstrapped=0
 
 bootstrap_sample_evidence() {
   local wiki_root=".runtime/wiki-repo"
@@ -16,6 +17,15 @@ bootstrap_sample_evidence() {
   fi
   pnpm wiki:bootstrap
   pnpm wiki:project
+  sample_bootstrapped=1
+}
+
+sync_sample_evidence() {
+  local changed_files="$1"
+  if [[ "$sample_bootstrapped" -eq 0 ]] && grep -Eq '^(samples/|scripts/(copy-samples|data-sync|init-wiki|sync-wiki-samples|setup-local)\.ts)' <<<"$changed_files"; then
+    echo "bundled evidence changed; syncing source and Wiki data"
+    pnpm data:sync
+  fi
 }
 
 if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
@@ -43,6 +53,7 @@ if grep -q '^packages/db/migrations/' <<<"$changed"; then
 fi
 
 bootstrap_sample_evidence
+sync_sample_evidence "$changed"
 
 # PR의 required verify가 lint/unit/security를 이미 통과시킨다.
 # 서버에서는 production build와 재기동 smoke만 반복한다.

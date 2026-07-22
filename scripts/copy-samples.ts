@@ -17,14 +17,27 @@ interface LegalCaseSeed {
   citedProvisions?: string[];
 }
 
-interface ManifestEntry {
+interface ManifestBase {
   relativePath: string;
-  synthetic: true;
   title: string;
   provider: "local";
-  contactEmail: string;
   legalCase?: LegalCaseSeed;
 }
+
+interface SyntheticManifestEntry extends ManifestBase {
+  synthetic: true;
+  curated?: never;
+  contactEmail: string;
+}
+
+interface CuratedManifestEntry extends ManifestBase {
+  synthetic?: false;
+  curated: true;
+  sourceType: "law" | "case" | "interpretation" | "guide";
+  canonicalUrl: string;
+}
+
+type ManifestEntry = SyntheticManifestEntry | CuratedManifestEntry;
 
 export interface CopySamplesOptions {
   cwd?: string;
@@ -114,20 +127,39 @@ function parseManifestEntry(value: unknown): ManifestEntry {
   if (!isPlainObject(value)) {
     throw new Error("manifest entry must be an object");
   }
-  if (value.synthetic !== true) {
-    throw new Error("manifest entry must be synthetic");
-  }
   if (value.provider !== "local") {
     throw new Error("manifest provider must be local");
   }
-  return {
+  const base = {
     relativePath: requireNonEmptyString(value.relativePath, "relativePath"),
-    synthetic: true,
     title: requireNonEmptyString(value.title, "title"),
-    provider: "local",
-    contactEmail: requireEmail(value.contactEmail, "contactEmail"),
+    provider: "local" as const,
     legalCase: value.legalCase === undefined ? undefined : parseLegalCaseSeed(value.legalCase),
   };
+  if (value.synthetic === true) {
+    return {
+      ...base,
+      synthetic: true,
+      contactEmail: requireEmail(value.contactEmail, "contactEmail"),
+    };
+  }
+  if (value.curated !== true) {
+    throw new Error("manifest entry must be synthetic or curated");
+  }
+  const sourceType = requireNonEmptyString(value.sourceType, "sourceType");
+  if (sourceType !== "law" && sourceType !== "case" && sourceType !== "interpretation" && sourceType !== "guide") {
+    throw new Error("invalid sourceType");
+  }
+  const canonicalUrl = requireNonEmptyString(value.canonicalUrl, "canonicalUrl");
+  const url = new URL(canonicalUrl);
+  if (
+    url.protocol !== "https:" ||
+    url.hostname.toLowerCase() !== "github.com" ||
+    !/^\/qoxmfaktmxj\/withhold-tax\/blob\/[0-9a-f]{6,40}\/content\/facts\.json$/.test(url.pathname)
+  ) {
+    throw new Error("curated canonicalUrl must pin the withhold-tax facts.json revision");
+  }
+  return { ...base, curated: true, sourceType, canonicalUrl: url.toString() };
 }
 
 async function loadWorkspaceId(): Promise<string> {
@@ -148,7 +180,7 @@ async function loadWorkspaceId(): Promise<string> {
 
 class LocalProviderAdapter implements ProviderAdapter {
   readonly id = "local";
-  readonly canonicalHostnames = new Set(["example.invalid"]);
+  readonly canonicalHostnames = new Set(["example.invalid", "github.com"]);
 
   constructor(
     private readonly samplesRoot: string,
@@ -167,7 +199,7 @@ class LocalProviderAdapter implements ProviderAdapter {
   async fetch(externalId: string): Promise<ProviderPayload> {
     const entry = this.entries.get(externalId);
     if (!entry) {
-      throw new Error(`synthetic source not found: ${externalId}`);
+      throw new Error(`local source not found: ${externalId}`);
     }
     const filePath = resolveInside(this.samplesRoot, entry.relativePath);
     const rawBytes = new Uint8Array(await readFile(filePath));
@@ -177,13 +209,14 @@ class LocalProviderAdapter implements ProviderAdapter {
       document: {
         provider: this.id,
         externalId,
-        sourceType: "guide",
+        sourceType: entry.synthetic === true ? "guide" : entry.sourceType,
         title: entry.title,
-        canonicalUrl: `https://example.invalid/sources/${encodeURIComponent(entry.relativePath)}`,
-        metadata: {
-          synthetic: true,
-          contactEmail: entry.contactEmail,
-        },
+        canonicalUrl: entry.synthetic === true
+          ? `https://example.invalid/sources/${encodeURIComponent(entry.relativePath)}`
+          : entry.canonicalUrl,
+        metadata: entry.synthetic === true
+          ? { synthetic: true, contactEmail: entry.contactEmail }
+          : { synthetic: false, curated: true },
       },
       revision: {
         revisionKey: typeof source.revisionKey === "string" ? source.revisionKey : "v1",
@@ -193,10 +226,9 @@ class LocalProviderAdapter implements ProviderAdapter {
         rawBytes,
         contentType: "application/json",
         normalizedText: typeof source.normalizedText === "string" ? source.normalizedText : rawText,
-        metadata: {
-          synthetic: true,
-          title: entry.title,
-        },
+        metadata: entry.synthetic === true
+          ? { synthetic: true, title: entry.title }
+          : { synthetic: false, curated: true, title: entry.title },
       },
     };
   }

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
-import { initWiki } from "../init-wiki.js";
+import { initWiki, syncWikiSamples } from "../init-wiki.js";
 
 const accessAsync = promisify(access);
 
@@ -83,5 +83,29 @@ describe("initWiki", () => {
       runtimeRoot,
       sourceRevisionIds: {},
     })).rejects.toThrow(/placeholder|revision/i);
+  });
+
+  it("upserts bundled sample pages into an existing runtime without touching user pages", async () => {
+    const sandbox = await mkdtemp(join(tmpdir(), "jarvis-sync-wiki-"));
+    const samplesRoot = join(sandbox, "samples", "wiki");
+    const runtimeRoot = join(sandbox, ".runtime", "wiki-repo");
+    await mkdir(join(samplesRoot, "manual", "notes"), { recursive: true });
+    await writeFile(
+      join(samplesRoot, "manual", "notes", "withholding.md"),
+      "sourceRevisionId: {{sourceRevisionId:withholding.json}}\n",
+    );
+    await mkdir(join(runtimeRoot, "manual", "notes"), { recursive: true });
+    await writeFile(join(runtimeRoot, "manual", "notes", "user-note.md"), "사용자 문서\n");
+
+    await syncWikiSamples({
+      samplesRoot,
+      runtimeRoot,
+      sourceRevisionIds: { "withholding.json": "550e8400-e29b-41d4-a716-446655440000" },
+    });
+
+    await expect(readFile(join(runtimeRoot, "manual", "notes", "user-note.md"), "utf8"))
+      .resolves.toBe("사용자 문서\n");
+    await expect(readFile(join(runtimeRoot, "manual", "notes", "withholding.md"), "utf8"))
+      .resolves.toContain("550e8400-e29b-41d4-a716-446655440000");
   });
 });

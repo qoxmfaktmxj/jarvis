@@ -164,6 +164,7 @@ export async function dataSync({
   };
   const options = { cwd, env: localEnv };
   await run("pnpm", ["samples:ingest"], options);
+  await run("pnpm", ["wiki:sync-samples"], options);
   await run("pnpm", ["wiki:project"], options);
 }
 
