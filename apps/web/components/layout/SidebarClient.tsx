@@ -12,6 +12,10 @@ type SidebarMode = "expanded" | "rail";
 
 const SIDEBAR_MODE_STORAGE_KEY = "jarvis.sidebar.mode";
 
+function isAskPathname(pathname: string): boolean {
+  return pathname === "/ask" || pathname.startsWith("/ask/");
+}
+
 export type SidebarLabels = {
   primary: string;
   productName: string;
@@ -28,12 +32,12 @@ function readStoredMode(): SidebarMode {
   }
 }
 
-function MenuNode({ item, depth = 0, mode }: { item: MenuTreeItem; depth?: number; mode: SidebarMode }) {
+function DesktopMenuNode({ item, depth = 0, mode }: { item: MenuTreeItem; depth?: number; mode: SidebarMode }) {
   const Icon = getMenuIcon(item.icon);
   const isRail = mode === "rail";
 
   if (isRail && item.kind === "group") {
-    return <>{item.children.map((child) => <MenuNode key={child.id} item={child} mode={mode} />)}</>;
+    return <>{item.children.map((child) => <DesktopMenuNode key={child.id} item={child} mode={mode} />)}</>;
   }
 
   const content = (
@@ -62,7 +66,37 @@ function MenuNode({ item, depth = 0, mode }: { item: MenuTreeItem; depth?: numbe
       )}
       {item.children.length > 0 && !isRail ? (
         <ul className="space-y-1">
-          {item.children.map((child) => <MenuNode key={child.id} item={child} depth={depth + 1} mode={mode} />)}
+          {item.children.map((child) => <DesktopMenuNode key={child.id} item={child} depth={depth + 1} mode={mode} />)}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
+function MobileMenuNode({ item, depth = 0 }: { item: MenuTreeItem; depth?: number }) {
+  const Icon = getMenuIcon(item.icon);
+  const content = (
+    <span className="flex min-w-max items-center gap-2" style={{ paddingLeft: `${depth * 12}px` }}>
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <span>{item.label}</span>
+    </span>
+  );
+
+  return (
+    <li>
+      {item.kind === "page" && isAllowedRoutePath(item.routePath) ? (
+        <Link
+          href={item.routePath}
+          className="block rounded-md px-3 py-2 text-sm text-[var(--fg-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--fg-primary)]"
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className="px-3 py-2 text-xs font-semibold text-[var(--fg-muted)]">{content}</div>
+      )}
+      {item.children.length > 0 ? (
+        <ul className="space-y-1">
+          {item.children.map((child) => <MobileMenuNode key={child.id} item={child} depth={depth + 1} />)}
         </ul>
       ) : null}
     </li>
@@ -89,7 +123,7 @@ export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels
   }, []);
 
   useEffect(() => {
-    if (pathname === "/ask" && previousPathname.current !== "/ask") {
+    if (isAskPathname(pathname) && !isAskPathname(previousPathname.current ?? "")) {
       updateMode("rail");
     }
     previousPathname.current = pathname;
@@ -118,8 +152,11 @@ export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels
         </button>
       </div>
       <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:overflow-visible">
-        <ul className="flex gap-1 lg:block lg:space-y-1">
-          {items.map((item) => <MenuNode key={item.id} item={item} mode={mode} />)}
+        <ul className="flex gap-1 lg:hidden">
+          {items.map((item) => <MobileMenuNode key={item.id} item={item} />)}
+        </ul>
+        <ul className="hidden lg:block lg:space-y-1">
+          {items.map((item) => <DesktopMenuNode key={item.id} item={item} mode={mode} />)}
         </ul>
       </nav>
     </aside>

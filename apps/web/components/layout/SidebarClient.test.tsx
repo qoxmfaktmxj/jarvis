@@ -36,6 +36,26 @@ const items = [{
   children: [],
 }];
 
+const groupedItems = [{
+  id: "work",
+  code: "nav.work",
+  label: "업무",
+  icon: null,
+  kind: "group" as const,
+  routePath: null,
+  sortOrder: 10,
+  children: [{
+    id: "leave",
+    code: "nav.leave",
+    label: "휴가 신청",
+    icon: null,
+    kind: "page" as const,
+    routePath: "/ask",
+    sortOrder: 20,
+    children: [],
+  }],
+}];
+
 const labels = {
   primary: "주 메뉴",
   productName: "Jarvis",
@@ -81,11 +101,14 @@ describe("SidebarClient", () => {
 
     expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("rail");
     expect(container.querySelector('[data-testid="panel-left-open"]')).toBeInTheDocument();
-    expect(container.querySelector('a[href="/ask"]')).toHaveAttribute("title", "Ask AI");
+    const railLink = [...container.querySelectorAll<HTMLAnchorElement>('a[href="/ask"]')].find(
+      (link) => link.title === "Ask AI",
+    );
+    expect(railLink).toHaveAttribute("title", "Ask AI");
   });
 
-  it("starts in rail mode when it first hydrates on /ask", async () => {
-    pathname = "/ask";
+  it("starts in rail mode when it first hydrates on a nested Ask route", async () => {
+    pathname = "/ask/conversations/1";
     localStorage.setItem("jarvis.sidebar.mode", "expanded");
 
     await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
@@ -94,9 +117,9 @@ describe("SidebarClient", () => {
     expect(container.querySelector('[data-testid="panel-left-open"]')).toBeInTheDocument();
   });
 
-  it("collapses when navigating from a non-Ask route to /ask", async () => {
+  it("collapses when navigating from a non-Ask route to a nested Ask route", async () => {
     await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
-    pathname = "/ask";
+    pathname = "/ask/conversations/1";
 
     await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
 
@@ -113,5 +136,35 @@ describe("SidebarClient", () => {
 
     expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("expanded");
     expect(container.querySelector('[data-testid="panel-left-close"]')).toBeInTheDocument();
+  });
+
+  it("keeps a manual reopen while navigating within Ask routes", async () => {
+    pathname = "/ask";
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    const toggle = container.querySelector('button[aria-label="사이드바 펼치기"]') as HTMLButtonElement;
+
+    await act(async () => toggle.click());
+    pathname = "/ask/conversations/1";
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+
+    expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("expanded");
+    expect(container.querySelector('[data-testid="panel-left-close"]')).toBeInTheDocument();
+  });
+
+  it("keeps the grouped horizontal mobile menu when desktop is in rail mode", async () => {
+    await act(async () => root.render(<SidebarClient items={groupedItems} labels={labels} />));
+    const toggle = container.querySelector('button[aria-label="사이드바 접기"]') as HTMLButtonElement;
+    await act(async () => toggle.click());
+
+    const mobileMenu = [...container.querySelectorAll("ul")].find(
+      (element) => element.className === "flex gap-1 lg:hidden",
+    );
+    const groupHeader = [...(mobileMenu?.querySelectorAll("div") ?? [])].find(
+      (element) => element.textContent === "업무",
+    );
+    const child = mobileMenu?.querySelector('a[href="/ask"] span');
+
+    expect(groupHeader).toBeInTheDocument();
+    expect(child).toHaveStyle({ paddingLeft: "12px" });
   });
 });
