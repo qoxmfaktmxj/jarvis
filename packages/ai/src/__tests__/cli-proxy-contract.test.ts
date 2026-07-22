@@ -61,4 +61,90 @@ describe("CLI Proxy provider contract", () => {
       LLM_GATEWAY_KEY: "direct-key",
     })).toThrow(/loopback/);
   });
+
+  it("preserves the tool call id across the assistant and tool messages", async () => {
+    const requests: Array<{ messages?: Array<Record<string, unknown>> }> = [];
+    const server = createServer((req, res) => {
+      let body = "";
+      req.on("data", (chunk) => { body += String(chunk); });
+      req.on("end", () => {
+        const parsed = JSON.parse(body) as { messages?: Array<Record<string, unknown>> };
+        requests.push(parsed);
+        res.setHeader("content-type", "application/json");
+        if (requests.length === 1) {
+          res.end(JSON.stringify({
+            choices: [{
+              message: {
+                content: null,
+                tool_calls: [{
+                  id: "call-wiki-search-1",
+                  type: "function",
+                  function: { name: "wiki_search", arguments: '{"query":"식대 비과세"}' },
+                }],
+              },
+            }],
+            usage: { prompt_tokens: 12, completion_tokens: 7 },
+          }));
+          return;
+        }
+
+        const assistant = parsed.messages?.[1] as {
+          tool_calls?: Array<{ id?: string }>;
+        } | undefined;
+        const tool = parsed.messages?.[2] as { tool_call_id?: string } | undefined;
+        if (
+          assistant?.tool_calls?.[0]?.id !== "call-wiki-search-1" ||
+          tool?.tool_call_id !== "call-wiki-search-1"
+        ) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ error: { message: "missing tool call id" } }));
+          return;
+        }
+        res.end(JSON.stringify({
+          choices: [{ message: { content: "확인했습니다." } }],
+          usage: { prompt_tokens: 18, completion_tokens: 4 },
+        }));
+      });
+    });
+    servers.add(server);
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("failed to bind test server");
+
+    const provider = createProvider({
+      LLM_GATEWAY_URL: `http://127.0.0.1:${address.port}/v1`,
+      LLM_GATEWAY_KEY: "local-proxy-secret",
+      ASK_AI_MODEL: "gpt-5.6-terra",
+    });
+    const tools = [{
+      name: "wiki_search" as const,
+      description: "Search the Wiki",
+      inputSchema: { type: "object" },
+    }];
+    const first = await provider.next({
+      messages: [{ role: "user", content: "식대 비과세 한도는?" }],
+      tools,
+    });
+    expect(first.kind).toBe("tool");
+    if (first.kind !== "tool") throw new Error("expected tool call");
+    const call = first.call as typeof first.call & { id: string };
+    expect(call.id).toBe("call-wiki-search-1");
+
+    const second = await provider.next({
+      messages: [
+        { role: "user", content: "식대 비과세 한도는?" },
+        { role: "assistant", content: "", toolCall: call },
+        {
+          role: "tool",
+          content: JSON.stringify({ value: [] }),
+          toolName: "wiki_search",
+          toolCallId: call.id,
+        },
+      ] as Parameters<typeof provider.next>[0]["messages"],
+      tools,
+    });
+
+    expect(second).toMatchObject({ kind: "final", text: "확인했습니다." });
+    expect(requests).toHaveLength(2);
+  });
 });

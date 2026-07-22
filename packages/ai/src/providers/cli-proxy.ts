@@ -21,6 +21,19 @@ export function createCliProxyProvider(
           role: message.role,
           content: message.content,
           ...(message.toolName ? { name: message.toolName } : {}),
+          ...(message.toolCall
+            ? {
+                tool_calls: [{
+                  id: message.toolCall.id,
+                  type: "function" as const,
+                  function: {
+                    name: message.toolCall.name,
+                    arguments: JSON.stringify(message.toolCall.arguments),
+                  },
+                }],
+              }
+            : {}),
+          ...(message.toolCallId ? { tool_call_id: message.toolCallId } : {}),
         })),
         tools: payload.tools.map((tool) => ({
           type: "function" as const,
@@ -42,6 +55,7 @@ export function createCliProxyProvider(
         return {
           kind: "tool",
           call: {
+            id: completion.toolCall.id,
             name: completion.toolCall.name,
             arguments: parseArguments(completion.toolCall.arguments),
           },

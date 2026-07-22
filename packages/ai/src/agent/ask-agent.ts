@@ -177,8 +177,13 @@ export async function* askAgentStream(input: AskInput, deps: AskAgentDeps): Asyn
         latencyMs: nowDate(deps).getTime() - searchStartedAt.getTime(),
       });
       messages.push(
-        { role: "assistant", content: JSON.stringify(response.call) },
-        { role: "tool", toolName: name, content: wrapUntrustedToolResult(result) },
+        { role: "assistant", content: "", toolCall: response.call },
+        {
+          role: "tool",
+          toolName: name,
+          toolCallId: response.call.id,
+          content: wrapUntrustedToolResult(result),
+        },
       );
       continue;
     }
@@ -203,8 +208,13 @@ export async function* askAgentStream(input: AskInput, deps: AskAgentDeps): Asyn
       });
     }
     messages.push(
-      { role: "assistant", content: JSON.stringify(response.call) },
-      { role: "tool", toolName: name, content: wrapUntrustedToolResult(toolResult) },
+      { role: "assistant", content: "", toolCall: response.call },
+      {
+        role: "tool",
+        toolName: name,
+        toolCallId: response.call.id,
+        content: wrapUntrustedToolResult(toolResult),
+      },
     );
   }
 

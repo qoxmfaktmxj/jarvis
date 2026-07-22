@@ -111,4 +111,33 @@ describe("AskPanel", () => {
     );
     expect(sessionStorage.getItem(DASHBOARD_ASK_DRAFT_KEY)).toBeNull();
   });
+
+  it("keeps a stream failure visible instead of navigating away", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        new Response(
+          'event: error\ndata: {"type":"error","errorCode":"ASK_STREAM_FAILED"}\n\n',
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "text/event-stream",
+              "X-Conversation-Id": "550e8400-e29b-41d4-a716-446655440000",
+            },
+          },
+        ),
+      ),
+    );
+
+    await act(async () => root.render(<AskPanel />));
+    const textarea = container.querySelector("textarea");
+    await act(async () => changeTextarea(textarea as HTMLTextAreaElement, "식대 비과세 한도는?"));
+    await act(async () => {
+      textarea?.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect(container.querySelector('[role="alert"]')).toHaveTextContent("ASK_STREAM_FAILED");
+    expect(router.replace).not.toHaveBeenCalled();
+  });
 });

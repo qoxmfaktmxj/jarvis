@@ -124,7 +124,7 @@ function tool(
 ): ProviderResponse {
   return {
     kind: "tool",
-    call: { name, arguments: args },
+    call: { id: `mock-${name}`, name, arguments: args },
     usage: { promptTokens: 10, completionTokens: 5, costUsd: "0" },
   };
 }

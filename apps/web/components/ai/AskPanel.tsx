@@ -128,6 +128,7 @@ export function AskPanel({
     let buffer = "";
     let completedAnswer = "";
     let completedSources: SourceRef[] = [];
+    let streamFailed = false;
 
     while (true) {
       const { value, done } = await reader.read();
@@ -155,6 +156,7 @@ export function AskPanel({
           completedAnswer = payload.reason;
           setAnswer(payload.reason);
         } else if (payload.type === "error") {
+          streamFailed = true;
           setError(payload.errorCode);
         }
       }
@@ -175,7 +177,7 @@ export function AskPanel({
       setSources([]);
     }
 
-    if (!conversationId && nextConversationId) {
+    if (!streamFailed && !conversationId && nextConversationId) {
       router.replace(`/ask/${nextConversationId}`);
     }
   }

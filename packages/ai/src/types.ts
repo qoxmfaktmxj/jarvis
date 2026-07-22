@@ -61,6 +61,7 @@ export type AskEvent =
   | { type: "done" };
 
 export interface ToolCall {
+  id: string;
   name: ToolName;
   arguments: Record<string, unknown>;
 }
@@ -79,6 +80,8 @@ export interface ProviderMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   toolName?: ToolName;
+  toolCall?: ToolCall;
+  toolCallId?: string;
 }
 
 export interface ToolDefinition {

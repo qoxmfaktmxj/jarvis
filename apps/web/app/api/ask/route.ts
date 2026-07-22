@@ -148,8 +148,11 @@ export const POST = withApiPermission(PERMISSIONS.ASK_USE, async (request, sessi
           }
         }
       } catch (error) {
+        console.error("[ask-stream]", error instanceof Error ? error.message : "unknown error");
         controller.enqueue(
-          encoder.encode(`event: error\ndata: ${JSON.stringify({ errorCode: publicErrorCode(error) })}\n\n`),
+          encoder.encode(
+            `event: error\ndata: ${JSON.stringify({ type: "error", errorCode: publicErrorCode(error) })}\n\n`,
+          ),
         );
       } finally {
         controller.close();

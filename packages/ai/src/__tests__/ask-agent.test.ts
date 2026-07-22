@@ -158,11 +158,12 @@ describe("askAgentStream", () => {
       async next() {
         step += 1;
         if (step === 1) {
-          return { kind: "tool", call: { name: "wiki_search", arguments: { query: "평균임금" } } };
+          return { kind: "tool", call: { id: "call-search", name: "wiki_search", arguments: { query: "평균임금" } } };
         }
         return {
           kind: "tool",
           call: {
+            id: "call-read",
             name: "wiki_read",
             arguments: { slug: "average-wage", path: "manual/notes/demo-guidance.md" },
           },

@@ -6,6 +6,12 @@ export interface CliProxyMessage {
   role: "system" | "user" | "assistant" | "tool";
   content: string;
   name?: string;
+  tool_calls?: Array<{
+    id: string;
+    type: "function";
+    function: { name: string; arguments: string };
+  }>;
+  tool_call_id?: string;
 }
 
 export interface CliProxyTool {
@@ -19,7 +25,7 @@ export interface CliProxyTool {
 
 export interface CliProxyCompletion {
   content: string;
-  toolCall?: { name: string; arguments: string };
+  toolCall?: { id: string; name: string; arguments: string };
   usage: { promptTokens: number; completionTokens: number };
 }
 
@@ -93,22 +99,34 @@ export function createCliProxyClient(
         choices?: Array<{
           message?: {
             content?: string | null;
-            tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
+            tool_calls?: Array<{
+              id?: string;
+              function?: { name?: string; arguments?: string };
+            }>;
           };
         }>;
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
       const message = parsed.choices?.[0]?.message;
       if (!message) throw new Error("CLI_PROXY_RESPONSE_INVALID");
-      const rawToolCall = message.tool_calls?.[0]?.function;
-      if (message.tool_calls?.length && !rawToolCall?.name) {
+      const rawToolCall = message.tool_calls?.[0];
+      if (message.tool_calls?.length && !rawToolCall?.id) {
+        throw new Error("CLI_PROXY_TOOL_ID_MISSING");
+      }
+      if (message.tool_calls?.length && !rawToolCall?.function?.name) {
         throw new Error("CLI_PROXY_TOOL_NAME_MISSING");
       }
 
       return {
         content: message.content ?? "",
-        ...(rawToolCall?.name
-          ? { toolCall: { name: rawToolCall.name, arguments: rawToolCall.arguments ?? "{}" } }
+        ...(rawToolCall?.id && rawToolCall.function?.name
+          ? {
+              toolCall: {
+                id: rawToolCall.id,
+                name: rawToolCall.function.name,
+                arguments: rawToolCall.function.arguments ?? "{}",
+              },
+            }
           : {}),
         usage: {
           promptTokens: parsed.usage?.prompt_tokens ?? 0,
