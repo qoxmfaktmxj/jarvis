@@ -1,4 +1,5 @@
 import { DataGrid } from "@/components/grid/DataGrid";
+import { formatDateTimeKst } from "@/lib/format-date-time";
 
 type Row = {
   id: string;
@@ -14,7 +15,7 @@ type Row = {
 export function LlmUsageGridContainer(props: { initialRows: Row[]; total: number }) {
   return (
     <DataGrid
-      rows={props.initialRows}
+      rows={props.initialRows.map((row) => ({ ...row, createdAt: formatDateTimeKst(row.createdAt) }))}
       columns={[
         { key: "createdAt", header: "시각", type: "readonly" },
         { key: "route", header: "경로", type: "readonly" },

@@ -1,4 +1,5 @@
 import { DataGrid } from "@/components/grid/DataGrid";
+import { formatDateTimeKst } from "@/lib/format-date-time";
 
 type Row = {
   id: string;
@@ -15,7 +16,7 @@ type Row = {
 export function AuditGridContainer(props: { initialRows: Row[]; total: number }) {
   return (
     <DataGrid
-      rows={props.initialRows}
+      rows={props.initialRows.map((row) => ({ ...row, createdAt: formatDateTimeKst(row.createdAt) }))}
       columns={[
         { key: "createdAt", header: "시각", type: "readonly" },
         { key: "action", header: "작업", type: "readonly" },

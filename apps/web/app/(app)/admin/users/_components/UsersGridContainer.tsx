@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DataGrid } from "@/components/grid/DataGrid";
 import { EditableSelectCell } from "@/components/grid/cells/EditableSelectCell";
 import { EditableTextCell } from "@/components/grid/cells/EditableTextCell";
+import { formatDateTimeKst } from "@/lib/format-date-time";
 import { ConfirmDeleteDialog } from "../../_components/ConfirmDeleteDialog";
 import { saveUsersAction } from "../actions";
 
@@ -71,7 +72,7 @@ export function UsersGridContainer(props: { initialRows: UserRow[]; total: numbe
       <Button onClick={() => void saveAll()}>저장</Button>
       {message ? <p role="status" className="text-sm text-[var(--fg-secondary)]">{message}</p> : null}
       <DataGrid
-        rows={rows}
+        rows={rows.map((row) => ({ ...row, updatedAt: formatDateTimeKst(row.updatedAt) }))}
         columns={[
           { key: "email", header: "이메일", type: "readonly" },
           { key: "displayName", header: "이름", type: "text", render: (row) => <EditableTextCell value={row.displayName} onCommit={(value) => patchRow(row.id, { displayName: value })} /> },

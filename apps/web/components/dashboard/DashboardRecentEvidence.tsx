@@ -2,8 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, BookOpenText, Clock3 } from "lucide-react";
 import type { WikiListItem } from "@/lib/server/wiki-page-loader";
 import { wikiPathToRoute } from "@/lib/server/wiki-page-loader";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" });
+import { formatDateTimeKst } from "@/lib/format-date-time";
 
 type EvidenceRow = WikiListItem & { typeLabel: string };
 
@@ -39,7 +38,7 @@ export function DashboardRecentEvidence({
                   <span aria-hidden="true">·</span>
                   <span className="flex items-center gap-1">
                     <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />
-                    {DATE_FORMAT.format(row.updatedAt)}
+                    {formatDateTimeKst(row.updatedAt)}
                   </span>
                 </span>
               </span>

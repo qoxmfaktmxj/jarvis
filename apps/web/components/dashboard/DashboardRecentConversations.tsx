@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Clock3, MessageSquareText } from "lucide-react";
 import type { ConversationSummary } from "@/lib/server/conversation-repository";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("ko-KR", { month: "short", day: "numeric" });
+import { formatDateTimeKst } from "@/lib/format-date-time";
 
 export function DashboardRecentConversations({
   rows,
@@ -32,7 +31,7 @@ export function DashboardRecentConversations({
               </span>
               <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--fg-muted)]">
                 <Clock3 aria-hidden="true" className="h-3.5 w-3.5" />
-                {DATE_FORMAT.format(row.updatedAt)}
+                {formatDateTimeKst(row.updatedAt)}
               </span>
             </Link>
           ))}

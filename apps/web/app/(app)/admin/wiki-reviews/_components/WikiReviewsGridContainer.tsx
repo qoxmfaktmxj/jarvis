@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DataGrid } from "@/components/grid/DataGrid";
+import { formatDateTimeKst } from "@/lib/format-date-time";
 import { resolveWikiReviewAction } from "../actions";
 
 type Row = {
@@ -28,7 +29,7 @@ export function WikiReviewsGridContainer(props: { initialRows: Row[]; total: num
 
   return (
     <DataGrid
-      rows={rows}
+      rows={rows.map((row) => ({ ...row, createdAt: formatDateTimeKst(row.createdAt) }))}
       columns={[
         { key: "kind", header: "검토 유형", type: "readonly" },
         { key: "status", header: "상태", type: "readonly" },
