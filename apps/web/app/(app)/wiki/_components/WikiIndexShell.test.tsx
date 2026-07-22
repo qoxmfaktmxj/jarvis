@@ -70,7 +70,7 @@ describe("WikiIndexShell", () => {
     const link = await renderShell();
 
     await act(async () => {
-      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 }));
       await Promise.resolve();
     });
 
@@ -86,7 +86,7 @@ describe("WikiIndexShell", () => {
     }))));
     const link = await renderShell();
     await act(async () => {
-      link.click();
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 }));
       await Promise.resolve();
     });
 
@@ -99,10 +99,10 @@ describe("WikiIndexShell", () => {
     const link = await renderShell();
 
     for (const event of [
-      new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true }),
-      new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true }),
-      new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey: true }),
-      new MouseEvent("click", { bubbles: true, cancelable: true, button: 1 }),
+      new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true, detail: 1 }),
+      new MouseEvent("click", { bubbles: true, cancelable: true, metaKey: true, detail: 1 }),
+      new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey: true, detail: 1 }),
+      new MouseEvent("click", { bubbles: true, cancelable: true, button: 1, detail: 1 }),
     ]) {
       let preventedByPanel = true;
       container.addEventListener("click", (clickEvent) => {
@@ -117,12 +117,43 @@ describe("WikiIndexShell", () => {
     expect(container.querySelector("aside")).toBeNull();
   });
 
+  it("keeps keyboard activation as a full-page link on desktop", async () => {
+    const link = await renderShell();
+    let preventedByPanel = true;
+    container.addEventListener("click", (event) => {
+      preventedByPanel = event.defaultPrevented;
+      event.preventDefault();
+    }, { once: true });
+
+    await act(async () => link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 0 })));
+
+    expect(preventedByPanel).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(container.querySelector("aside")).toBeNull();
+  });
+
+  it("keeps mobile pointer clicks as full-page links", async () => {
+    installMatchMedia(false);
+    const link = await renderShell();
+    let preventedByPanel = true;
+    container.addEventListener("click", (event) => {
+      preventedByPanel = event.defaultPrevented;
+      event.preventDefault();
+    }, { once: true });
+
+    await act(async () => link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 })));
+
+    expect(preventedByPanel).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(container.querySelector("aside")).toBeNull();
+  });
+
   it("shows an alert when the panel request fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })));
     const link = await renderShell();
 
     await act(async () => {
-      link.click();
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 }));
       await Promise.resolve();
     });
 

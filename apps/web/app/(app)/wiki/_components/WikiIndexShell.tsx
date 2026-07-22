@@ -71,7 +71,7 @@ export function WikiIndexShell({ rows, total, page, totalPages }: WikiIndexShell
 
   const panelOpen = isDesktop && selectedPath !== null;
   const handleCardClick = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
-    if (!isDesktop || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!isDesktop || event.detail !== 1 || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     setSelectedPath(path);
   };

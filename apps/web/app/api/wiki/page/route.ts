@@ -2,7 +2,7 @@ import { z } from "zod";
 import { GitRepo } from "@jarvis/wiki-fs";
 import { PERMISSIONS } from "@jarvis/shared";
 import { withApiPermission } from "@/lib/server/api-auth";
-import { loadWikiPage } from "@/lib/server/wiki-page-loader";
+import { loadPublishedWikiPage } from "@/lib/server/wiki-page-loader";
 
 const querySchema = z.object({
   path: z.string().trim().min(1).max(500),
@@ -22,7 +22,7 @@ export const GET = withApiPermission(PERMISSIONS.WIKI_READ, async (request, sess
     path: params.get("path"),
   });
   try {
-    const page = await loadWikiPage({
+    const page = await loadPublishedWikiPage({
       workspaceId: session.workspaceId,
       segments: parsed.path.replace(/\.md$/, "").split("/"),
       repo: new GitRepo(requireWikiRepoRoot()),

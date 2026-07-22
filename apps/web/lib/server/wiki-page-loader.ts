@@ -148,7 +148,29 @@ export async function loadWikiPage(input: {
   segments: string[];
   repo: Pick<GitRepo, "readBlob">;
 }): Promise<WikiPageDetail> {
+  return loadWikiPageByVisibility(input, false);
+}
+
+export async function loadPublishedWikiPage(input: {
+  workspaceId: string;
+  segments: string[];
+  repo: Pick<GitRepo, "readBlob">;
+}): Promise<WikiPageDetail> {
+  return loadWikiPageByVisibility(input, true);
+}
+
+async function loadWikiPageByVisibility(
+  input: {
+    workspaceId: string;
+    segments: string[];
+    repo: Pick<GitRepo, "readBlob">;
+  },
+  publishedOnly: boolean,
+): Promise<WikiPageDetail> {
   const path = normalizeWikiRoutePath(input.segments);
+  const predicate = publishedOnly
+    ? and(wikiPageListPredicate(input.workspaceId), eq(wikiPageIndex.path, path))
+    : and(eq(wikiPageIndex.workspaceId, input.workspaceId), eq(wikiPageIndex.path, path));
   const [page] = await db
     .select({
       id: wikiPageIndex.id,
@@ -163,7 +185,7 @@ export async function loadWikiPage(input: {
       stale: wikiPageIndex.stale,
     })
     .from(wikiPageIndex)
-    .where(and(eq(wikiPageIndex.workspaceId, input.workspaceId), eq(wikiPageIndex.path, path)))
+    .where(predicate)
     .limit(1);
   if (!page) {
     throw new Error("WIKI_PAGE_NOT_FOUND");

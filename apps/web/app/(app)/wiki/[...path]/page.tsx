@@ -6,7 +6,7 @@ import { PERMISSIONS } from "@jarvis/shared";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { PageShell } from "@/components/patterns/PageShell";
 import { SourceRefCard } from "@/components/ai/SourceRefCard";
-import { loadWikiPage } from "@/lib/server/wiki-page-loader";
+import { loadPublishedWikiPage } from "@/lib/server/wiki-page-loader";
 import { requirePagePermission } from "@/lib/server/page-auth";
 
 function requireWikiRepoRoot(): string {
@@ -22,7 +22,7 @@ export default async function WikiDetailPage(props: { params: Promise<{ path: st
   const params = await props.params;
 
   try {
-    const page = await loadWikiPage({
+    const page = await loadPublishedWikiPage({
       workspaceId: session.workspaceId,
       segments: params.path,
       repo: new GitRepo(requireWikiRepoRoot()),

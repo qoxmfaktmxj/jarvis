@@ -8,6 +8,19 @@ const queryMocks = vi.hoisted(() => ({
   offset: vi.fn(),
 }));
 
+const drizzleMocks = vi.hoisted(() => ({ and: vi.fn() }));
+
+vi.mock("drizzle-orm", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("drizzle-orm")>();
+  return {
+    ...actual,
+    and: (...args: any[]) => {
+      drizzleMocks.and(...args);
+      return actual.and(...args);
+    },
+  };
+});
+
 vi.mock("@jarvis/db", () => ({
   db: {
     select: queryMocks.select,
@@ -26,6 +39,7 @@ describe("wiki page loader", () => {
     queryMocks.rowsWhere.mockReset();
     queryMocks.limit.mockClear();
     queryMocks.offset.mockClear();
+    drizzleMocks.and.mockClear();
   });
 
   function mockPagedQueries(total: number, rows: unknown[] = []): void {
@@ -36,6 +50,13 @@ describe("wiki page loader", () => {
     queryMocks.select
       .mockReturnValueOnce({ from: vi.fn(() => ({ where: queryMocks.countWhere })) })
       .mockReturnValueOnce({ from: vi.fn(() => ({ where: queryMocks.rowsWhere })) });
+  }
+
+  function mockMissingWikiPage(): void {
+    queryMocks.limit.mockResolvedValue([]);
+    queryMocks.select.mockReturnValue({
+      from: vi.fn(() => ({ where: vi.fn(() => ({ limit: queryMocks.limit })) })),
+    });
   }
 
   it("rejects _system, _archive, index, and log paths", async () => {
@@ -50,6 +71,26 @@ describe("wiki page loader", () => {
     await expect(loadWikiPage({ workspaceId: crypto.randomUUID(), segments: ["index"], repo })).rejects.toThrow(
       "WIKI_PAGE_NOT_FOUND",
     );
+  });
+
+  it.each([
+    ["draft", ["manual", "draft-page"]],
+    ["archived", ["manual", "archived-page"]],
+    ["non-public zone", ["manual", "private-page"]],
+    ["excluded file", ["manual", "index"]],
+  ])("does not expose a %s page through the public loader", async (_kind, segments) => {
+    mockMissingWikiPage();
+    const { loadPublishedWikiPage } = await import("./wiki-page-loader");
+    const repo = { readBlob: vi.fn() };
+
+    await expect(loadPublishedWikiPage({ workspaceId: crypto.randomUUID(), segments, repo })).rejects.toThrow(
+      "WIKI_PAGE_NOT_FOUND",
+    );
+
+    expect(repo.readBlob).not.toHaveBeenCalled();
+    if (_kind !== "excluded file") {
+      expect(drizzleMocks.and.mock.calls.some((args) => args.length === 8)).toBe(true);
+    }
   });
 
   it("limits recent dashboard Wiki queries", async () => {
