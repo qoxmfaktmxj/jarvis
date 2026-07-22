@@ -1,0 +1,127 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { isAllowedRoutePath } from "@jarvis/shared/constants/routes";
+import type { MenuTreeItem } from "@/lib/server/menu-tree";
+import { getMenuIcon } from "./icon-map";
+
+type SidebarMode = "expanded" | "rail";
+
+const SIDEBAR_MODE_STORAGE_KEY = "jarvis.sidebar.mode";
+
+export type SidebarLabels = {
+  primary: string;
+  productName: string;
+  collapseSidebar: string;
+  expandSidebar: string;
+  goDashboard: string;
+};
+
+function readStoredMode(): SidebarMode {
+  try {
+    return window.localStorage.getItem(SIDEBAR_MODE_STORAGE_KEY) === "rail" ? "rail" : "expanded";
+  } catch {
+    return "expanded";
+  }
+}
+
+function MenuNode({ item, depth = 0, mode }: { item: MenuTreeItem; depth?: number; mode: SidebarMode }) {
+  const Icon = getMenuIcon(item.icon);
+  const isRail = mode === "rail";
+
+  if (isRail && item.kind === "group") {
+    return <>{item.children.map((child) => <MenuNode key={child.id} item={child} mode={mode} />)}</>;
+  }
+
+  const content = (
+    <span
+      className={`flex min-w-max items-center gap-2 ${isRail ? "lg:justify-center" : ""}`}
+      style={isRail ? undefined : { paddingLeft: `${depth * 12}px` }}
+    >
+      <Icon aria-hidden="true" className="h-4 w-4 shrink-0" />
+      <span className={isRail ? "lg:hidden" : ""}>{item.label}</span>
+    </span>
+  );
+
+  return (
+    <li>
+      {item.kind === "page" && isAllowedRoutePath(item.routePath) ? (
+        <Link
+          href={item.routePath}
+          aria-label={isRail ? item.label : undefined}
+          title={isRail ? item.label : undefined}
+          className={`block rounded-md px-3 py-2 text-sm text-[var(--fg-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--fg-primary)] ${isRail ? "lg:px-0 lg:text-center" : ""}`}
+        >
+          {content}
+        </Link>
+      ) : (
+        <div className={`px-3 py-2 text-xs font-semibold text-[var(--fg-muted)] ${isRail ? "lg:hidden" : ""}`}>{content}</div>
+      )}
+      {item.children.length > 0 && !isRail ? (
+        <ul className="space-y-1">
+          {item.children.map((child) => <MenuNode key={child.id} item={child} depth={depth + 1} mode={mode} />)}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
+export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels: SidebarLabels }) {
+  const pathname = usePathname();
+  const [mode, setMode] = useState<SidebarMode>("expanded");
+  const previousPathname = useRef<string | null>(null);
+  const isRail = mode === "rail";
+
+  const updateMode = (nextMode: SidebarMode) => {
+    setMode(nextMode);
+    try {
+      window.localStorage.setItem(SIDEBAR_MODE_STORAGE_KEY, nextMode);
+    } catch {
+      // Storage can be unavailable in private browsing; the current page still updates.
+    }
+  };
+
+  useEffect(() => {
+    setMode(readStoredMode());
+  }, []);
+
+  useEffect(() => {
+    if (pathname === "/ask" && previousPathname.current !== "/ask") {
+      updateMode("rail");
+    }
+    previousPathname.current = pathname;
+  }, [pathname]);
+
+  return (
+    <aside
+      className={`border-b border-[var(--border-default)] bg-[var(--bg-page)] transition-[width] lg:border-b-0 lg:border-r ${isRail ? "lg:w-[3.75rem]" : "lg:w-64"}`}
+    >
+      <div className={`flex items-center gap-1 px-4 py-4 ${isRail ? "lg:justify-center lg:px-2" : "lg:justify-between"}`}>
+        <Link
+          href="/dashboard"
+          aria-label={labels.goDashboard}
+          className={`text-base font-semibold text-[var(--fg-primary)] ${isRail ? "lg:hidden" : ""}`}
+        >
+          {labels.productName}
+        </Link>
+        <button
+          type="button"
+          onClick={() => updateMode(isRail ? "expanded" : "rail")}
+          aria-label={isRail ? labels.expandSidebar : labels.collapseSidebar}
+          title={isRail ? labels.expandSidebar : labels.collapseSidebar}
+          className="hidden rounded-md p-1 text-[var(--fg-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--fg-primary)] lg:inline-flex"
+        >
+          {isRail ? <PanelLeftOpen aria-hidden="true" className="h-4 w-4" /> : <PanelLeftClose aria-hidden="true" className="h-4 w-4" />}
+        </button>
+      </div>
+      <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:overflow-visible">
+        <ul className="flex gap-1 lg:block lg:space-y-1">
+          {items.map((item) => <MenuNode key={item.id} item={item} mode={mode} />)}
+        </ul>
+      </nav>
+    </aside>
+  );
+}

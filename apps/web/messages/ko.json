@@ -124,8 +124,11 @@
     }
   },
   "Navigation": {
-    "productName": "Jarvis HR Evidence Wiki",
+    "productName": "Jarvis",
     "primary": "주 메뉴",
+    "collapseSidebar": "사이드바 접기",
+    "expandSidebar": "사이드바 펼치기",
+    "goDashboard": "대시보드로 이동",
     "profile": "프로필",
     "logout": "로그아웃",
     "loggingOut": "로그아웃 중…",
