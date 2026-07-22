@@ -131,6 +131,20 @@
       "submit": "질문 전송",
       "submitting": "질문 처리 중",
       "failed": "질문 처리에 실패했습니다."
+    },
+    "Conversations": {
+      "title": "대화",
+      "new": "새 대화",
+      "untitled": "제목 없음"
+    },
+    "Empty": {
+      "eyebrow": "문서 기반 AI 어시스턴트",
+      "title": "무엇이 궁금하신가요?",
+      "description": "등록된 HR 문서와 공식 자료를 근거로 답변하고, 확인한 출처를 함께 보여드립니다."
+    },
+    "Timeline": {
+      "assistant": "Jarvis",
+      "thinking": "근거를 확인하고 있습니다"
     }
   },
   "Admin": {

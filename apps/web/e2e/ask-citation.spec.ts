@@ -44,3 +44,29 @@ test("Ask composer keeps Shift+Enter as a newline", async ({ page }) => {
   await expect(question).toHaveValue("첫 번째 줄\n두 번째 줄");
   expect(requestCount).toBe(0);
 });
+
+test("Ask timeline clears the composer and keeps the user turn before the answer", async ({ page }) => {
+  await loginAsReader(page);
+  await page.route("**/api/ask", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "text/event-stream; charset=utf-8",
+      body: [
+        'event: abstain\ndata: {"type":"abstain","reason":"근거를 확인할 수 없어 답변을 보류합니다."}\n',
+        'event: done\ndata: {"type":"done"}\n',
+      ].join("\n"),
+    });
+  });
+
+  await page.goto("/ask");
+  const composer = page.getByLabel("질문");
+  await composer.fill("HR 관련 질문 뭐할까?");
+  await composer.press("Enter");
+
+  await expect(composer).toHaveValue("");
+  const roles = await page
+    .getByTestId("ask-timeline")
+    .locator("[data-message-role]")
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-message-role")));
+  expect(roles).toEqual(["user", "assistant"]);
+});

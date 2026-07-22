@@ -9,7 +9,7 @@ export function AnswerCard(props: { text: string; sources: SourceRef[] }) {
   );
 
   return (
-    <section className="space-y-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-page)] p-4 shadow-[var(--shadow-soft)]">
+    <section className="space-y-4">
       <AnswerBody text={props.text} slugToPath={slugToPath} />
       {props.sources.length > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">

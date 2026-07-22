@@ -5,5 +5,5 @@ import { requirePagePermission } from "@/lib/server/page-auth";
 
 export default async function AskLayout({ children }: { children: ReactNode }) {
   await requirePagePermission(PERMISSIONS.ASK_USE, "/ask");
-  return <PageShellFit>{children}</PageShellFit>;
+  return <PageShellFit className="p-0 sm:p-0">{children}</PageShellFit>;
 }
