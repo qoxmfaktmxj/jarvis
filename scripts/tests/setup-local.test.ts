@@ -1,4 +1,4 @@
-import { access, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { constants } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -36,6 +36,7 @@ describe("setupLocal", () => {
     expect(await pathExists(join(sandbox, ".env.local"))).toBe(true);
     const first = await readFile(join(sandbox, ".env.local"), "utf8");
 
+    await mkdir(join(sandbox, ".runtime", "wiki-repo"), { recursive: true });
     await setupLocal({ env: { ...process.env }, cwd: sandbox, run: fakeRun });
     const second = await readFile(join(sandbox, ".env.local"), "utf8");
 
@@ -62,6 +63,8 @@ describe("setupLocal", () => {
     expect(fakeRun).toHaveBeenNthCalledWith(4, "pnpm", ["samples:ingest"], expect.objectContaining({ cwd: sandbox }));
     expect(fakeRun).toHaveBeenNthCalledWith(5, "pnpm", ["wiki:bootstrap"], expect.objectContaining({ cwd: sandbox }));
     expect(fakeRun).toHaveBeenNthCalledWith(6, "pnpm", ["wiki:project"], expect.objectContaining({ cwd: sandbox }));
+    expect(fakeRun).toHaveBeenNthCalledWith(11, "pnpm", ["wiki:sync-samples"], expect.objectContaining({ cwd: sandbox }));
+    expect(fakeRun).toHaveBeenNthCalledWith(12, "pnpm", ["wiki:project"], expect.objectContaining({ cwd: sandbox }));
     expect(fakeRun).not.toHaveBeenCalledWith("pnpm", ["admin:bootstrap"], expect.objectContaining({ cwd: sandbox }));
   });
 

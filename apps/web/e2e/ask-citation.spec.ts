@@ -17,7 +17,7 @@ test("Ask UI renders safe SSE answer and source locator", async ({ page }) => {
     });
   });
   await page.goto("/ask");
-  const question = page.getByLabel("질문");
+  const question = page.getByLabel("질문", { exact: true });
   await question.fill("평균임금이란?");
   await question.press("Enter");
 
@@ -36,7 +36,7 @@ test("Ask composer keeps Shift+Enter as a newline", async ({ page }) => {
   });
 
   await page.goto("/ask");
-  const question = page.getByLabel("질문");
+  const question = page.getByLabel("질문", { exact: true });
   await question.fill("첫 번째 줄");
   await question.press("Shift+Enter");
   await question.type("두 번째 줄");
@@ -59,7 +59,7 @@ test("Ask timeline clears the composer and keeps the user turn before the answer
   });
 
   await page.goto("/ask");
-  const composer = page.getByLabel("질문");
+  const composer = page.getByLabel("질문", { exact: true });
   await composer.fill("HR 관련 질문 뭐할까?");
   await composer.press("Enter");
 

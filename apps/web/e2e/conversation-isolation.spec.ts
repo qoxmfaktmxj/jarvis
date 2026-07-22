@@ -9,8 +9,9 @@ test("conversation ownership is isolated by workspaceId and userId", async ({ br
 
   await loginAsReader(ownerPage);
   await ownerPage.goto("/ask");
-  await ownerPage.getByLabel("질문").fill("연차휴가 사용촉진은?");
-  await ownerPage.getByRole("button", { name: "질문하기" }).click();
+  const question = ownerPage.getByLabel("질문", { exact: true });
+  await question.fill("연차휴가 사용촉진은?");
+  await question.press("Enter");
   await expect(ownerPage).toHaveURL(/\/ask\/[0-9a-f-]{36}$/);
   const conversationId = ownerPage.url().split("/").at(-1);
 

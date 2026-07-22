@@ -39,6 +39,9 @@ const FORBIDDEN_EXTENSIONS = new Set([
   ".xls", ".xlsx", ".db", ".sqlite", ".bak", ".dump", ".enc",
   ".png", ".jpg", ".jpeg", ".gif", ".pdf",
 ]);
+const ALLOWED_BINARY_PATHS = new Set([
+  "apps/web/public/capybara/basic.png",
+]);
 const FORBIDDEN_NAME_FRAGMENTS = [
   ["dev", "accounts"].join("-"),
   ["service", "desk"].join("-"),
@@ -77,6 +80,8 @@ export async function findForbiddenPaths(root: string): Promise<string[]> {
         continue;
       }
 
+      if (directory === root && entry.name === ".git" && entry.isFile()) continue;
+
       if (entry.isDirectory()) {
         if (IGNORED_DIRS.has(entry.name)) continue;
         const isApprovedCliProxy = displayPath === "infra/cliproxy";
@@ -108,6 +113,7 @@ export async function findForbiddenPaths(root: string): Promise<string[]> {
         hits.push(displayPath);
         continue;
       }
+      if (ALLOWED_BINARY_PATHS.has(displayPath)) continue;
       if (await isGeneratedWorkerJavaScript(displayPath, path)) {
         hits.push(displayPath);
         continue;

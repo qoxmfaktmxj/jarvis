@@ -6,6 +6,15 @@ import { describe, expect, it } from "vitest";
 import { findForbiddenPaths } from "./verify-clean-boundary.js";
 
 describe("findForbiddenPaths", () => {
+  it("allows a root worktree pointer and the approved capybara asset", async () => {
+    const root = await mkdtemp(join(tmpdir(), "jarvis-boundary-worktree-"));
+    await writeFile(join(root, ".git"), "gitdir: ../.git/worktrees/example\n");
+    await mkdir(join(root, "apps", "web", "public", "capybara"), { recursive: true });
+    await writeFile(join(root, "apps", "web", "public", "capybara", "basic.png"), "approved asset");
+
+    await expect(findForbiddenPaths(root)).resolves.toEqual([]);
+  });
+
   it("ignores generated directories and flags forbidden dirs, symlinks, env files, internal metadata, and risky binaries", async () => {
     const graphOutputDir = ["graph", "ify-out"].join("");
     const internalAccountFile = `${["dev", "accounts"].join("-")}.json`;

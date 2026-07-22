@@ -149,7 +149,10 @@ export async function setupLocal({
   await run("pnpm", ["db:migrate"], options);
   await run("pnpm", ["db:seed"], options);
   await run("pnpm", ["samples:ingest"], options);
-  await run("pnpm", ["wiki:bootstrap"], options);
+  const wikiCommand = await pathExists(localEnv.WIKI_REPO_ROOT!)
+    ? "wiki:sync-samples"
+    : "wiki:bootstrap";
+  await run("pnpm", [wikiCommand], options);
   await run("pnpm", ["wiki:project"], options);
 }
 
