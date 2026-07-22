@@ -126,6 +126,51 @@ export async function createConversation(input: {
   return conversation;
 }
 
+export async function renameOwnedConversation(input: {
+  workspaceId: string;
+  userId: string;
+  conversationId: string;
+  title: string;
+}): Promise<boolean> {
+  const title = input.title.trim();
+  if (!title || title.length > 200) {
+    return false;
+  }
+
+  const [conversation] = await db
+    .update(askConversation)
+    .set({ title, updatedAt: new Date() })
+    .where(
+      and(
+        eq(askConversation.workspaceId, input.workspaceId),
+        eq(askConversation.userId, input.userId),
+        eq(askConversation.id, input.conversationId),
+      ),
+    )
+    .returning({ id: askConversation.id });
+
+  return Boolean(conversation);
+}
+
+export async function deleteOwnedConversation(input: {
+  workspaceId: string;
+  userId: string;
+  conversationId: string;
+}): Promise<boolean> {
+  const [conversation] = await db
+    .delete(askConversation)
+    .where(
+      and(
+        eq(askConversation.workspaceId, input.workspaceId),
+        eq(askConversation.userId, input.userId),
+        eq(askConversation.id, input.conversationId),
+      ),
+    )
+    .returning({ id: askConversation.id });
+
+  return Boolean(conversation);
+}
+
 export async function appendUserMessage(input: {
   workspaceId: string;
   userId: string;

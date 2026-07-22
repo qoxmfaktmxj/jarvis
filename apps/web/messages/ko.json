@@ -161,7 +161,23 @@
     "Conversations": {
       "title": "대화",
       "new": "새 대화",
-      "untitled": "제목 없음"
+      "untitled": "제목 없음",
+      "menu": "대화 메뉴",
+      "rename": "이름 변경",
+      "renameTitle": "대화 이름 변경",
+      "renameLabel": "대화 이름",
+      "renameSave": "저장",
+      "delete": "삭제",
+      "deleteTitle": "대화를 삭제할까요?",
+      "deleteDescription": "이 작업은 되돌릴 수 없습니다.",
+      "deleteConfirm": "삭제",
+      "actionFailed": "작업을 완료하지 못했습니다. 다시 시도해 주세요."
+    },
+    "WikiPanel": {
+      "panelLabel": "위키 패널",
+      "panelLoading": "문서를 불러오는 중…",
+      "panelError": "문서를 불러오지 못했습니다.",
+      "panelClose": "패널 닫기"
     },
     "Empty": {
       "eyebrow": "문서 기반 AI 어시스턴트",

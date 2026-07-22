@@ -18,6 +18,7 @@ test("conversation ownership is isolated by workspaceId and userId", async ({ br
   await loginAsReader(intruderPage);
   await intruderPage.goto(`/ask/${conversationId}`);
   await expect(intruderPage.getByText("대화를 찾을 수 없습니다.")).toBeVisible();
+  await expect(intruderPage.getByRole("button", { name: "대화 메뉴" })).toHaveCount(0);
 
   const response = await intruderPage.request.post("/api/ask", {
     data: { conversationId, question: "침해 시도" },

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buildCitationHref } from "@/lib/official-links";
+import { WikiCitationLink } from "./AnswerBody";
 
 export type SourceRef = {
   kind: "wiki" | "source";
@@ -12,10 +13,9 @@ export type SourceRef = {
 };
 
 export function SourceRefCard({ source }: { source: SourceRef }) {
-  const href = buildCitationHref({
-    canonicalUrl: source.canonicalUrl ?? null,
-    wikiPath: source.wikiPath ?? null,
-  });
+  const href = source.wikiPath
+    ? buildCitationHref({ canonicalUrl: null, wikiPath: source.wikiPath })
+    : buildCitationHref({ canonicalUrl: source.canonicalUrl ?? null, wikiPath: null });
 
   const content = (
     <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] p-3 text-sm">
@@ -39,6 +39,10 @@ export function SourceRefCard({ source }: { source: SourceRef }) {
         {content}
       </a>
     );
+  }
+
+  if (source.wikiPath) {
+    return <WikiCitationLink path={source.wikiPath} className="block">{content}</WikiCitationLink>;
   }
 
   return (

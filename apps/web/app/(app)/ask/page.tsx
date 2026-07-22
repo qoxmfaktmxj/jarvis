@@ -1,6 +1,7 @@
 import { listOwnedConversations } from "@/lib/server/conversation-repository";
 import { requirePageSession } from "@/lib/server/page-auth";
 import { AskPanel } from "./_components/AskPanel";
+import { AskWorkspace } from "./_components/AskWorkspace";
 import { ConversationList } from "./_components/ConversationList";
 
 export default async function AskHomePage() {
@@ -11,9 +12,8 @@ export default async function AskHomePage() {
   });
 
   return (
-    <div className="grid h-full min-h-0 flex-1 md:grid-cols-[18rem_minmax(0,1fr)]">
-      <ConversationList rows={conversations} />
+    <AskWorkspace sidebar={<ConversationList rows={conversations} />}>
       <AskPanel key="new" />
-    </div>
+    </AskWorkspace>
   );
 }
