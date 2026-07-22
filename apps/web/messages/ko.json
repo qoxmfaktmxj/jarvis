@@ -173,6 +173,18 @@
       "thinking": "근거를 확인하고 있습니다"
     }
   },
+  "Wiki": {
+    "Index": {
+      "title": "HR Wiki",
+      "description": "조직의 HR 정책과 업무 지침을 확인합니다.",
+      "previous": "이전",
+      "next": "다음",
+      "pageStatus": "{page} / {totalPages} 페이지",
+      "panelLoading": "문서를 불러오는 중…",
+      "panelError": "문서를 불러오지 못했습니다.",
+      "panelClose": "패널 닫기"
+    }
+  },
   "Admin": {
     "Sources": {
       "title": "공식 출처",

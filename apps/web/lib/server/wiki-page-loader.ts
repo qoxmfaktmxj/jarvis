@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, inArray, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, notInArray, notLike, sql } from "drizzle-orm";
 import { db, sourceDocument, sourceRevision, wikiPageIndex, wikiPageSourceRef } from "@jarvis/db";
 import { GitRepo, normalizeRepoRelativePath, parseFrontmatter } from "@jarvis/wiki-fs";
 
@@ -25,6 +25,13 @@ export type WikiCitation = {
   effectiveFrom: string | null;
   title: string;
   canonicalUrl: string;
+};
+
+export type WikiPageListResult = {
+  rows: WikiListItem[];
+  total: number;
+  page: number;
+  totalPages: number;
 };
 
 export type WikiPageDetail = {
@@ -62,7 +69,35 @@ export function wikiPathToRoute(path: string): string {
   return `/wiki/${normalizeRepoRelativePath(path).replace(/\.md$/, "")}`;
 }
 
-export async function listWikiPages(input: { workspaceId: string }): Promise<WikiListItem[]> {
+function wikiPageListPredicate(workspaceId: string) {
+  return and(
+    eq(wikiPageIndex.workspaceId, workspaceId),
+    inArray(wikiPageIndex.zone, ["auto", "manual"]),
+    eq(wikiPageIndex.publishedStatus, "published"),
+    notInArray(wikiPageIndex.path, Array.from(EXCLUDED_FILES)),
+    notLike(wikiPageIndex.path, "auto/_system/%"),
+    notLike(wikiPageIndex.path, "auto/_archive/%"),
+    notLike(wikiPageIndex.path, "manual/_system/%"),
+    notLike(wikiPageIndex.path, "manual/_archive/%"),
+  );
+}
+
+export async function listWikiPages(input: {
+  workspaceId: string;
+  page: number;
+  limit: number;
+}): Promise<WikiPageListResult> {
+  const limit = Math.max(1, Math.trunc(input.limit));
+  const requestedPage = Number.isFinite(input.page) ? Math.max(1, Math.trunc(input.page)) : 1;
+  const predicate = wikiPageListPredicate(input.workspaceId);
+  const [count] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(wikiPageIndex)
+    .where(predicate);
+  const total = count?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const page = Math.min(requestedPage, totalPages);
+
   const rows = await db
     .select({
       id: wikiPageIndex.id,
@@ -76,17 +111,12 @@ export async function listWikiPages(input: { workspaceId: string }): Promise<Wik
       updatedAt: wikiPageIndex.updatedAt,
     })
     .from(wikiPageIndex)
-    .where(
-      and(
-        eq(wikiPageIndex.workspaceId, input.workspaceId),
-        inArray(wikiPageIndex.zone, ["auto", "manual"]),
-        eq(wikiPageIndex.publishedStatus, "published"),
-        notInArray(wikiPageIndex.path, Array.from(EXCLUDED_FILES)),
-      ),
-    )
-    .orderBy(asc(wikiPageIndex.zone), asc(wikiPageIndex.title));
+    .where(predicate)
+    .orderBy(asc(wikiPageIndex.zone), asc(wikiPageIndex.title))
+    .limit(limit)
+    .offset((page - 1) * limit);
 
-  return rows.filter((row) => !EXCLUDED_ROOTS.has(row.path.split("/")[1] ?? ""));
+  return { rows, total, page, totalPages };
 }
 
 export async function listRecentWikiPages(input: {
@@ -106,18 +136,11 @@ export async function listRecentWikiPages(input: {
       updatedAt: wikiPageIndex.updatedAt,
     })
     .from(wikiPageIndex)
-    .where(
-      and(
-        eq(wikiPageIndex.workspaceId, input.workspaceId),
-        inArray(wikiPageIndex.zone, ["auto", "manual"]),
-        eq(wikiPageIndex.publishedStatus, "published"),
-        notInArray(wikiPageIndex.path, Array.from(EXCLUDED_FILES)),
-      ),
-    )
+    .where(wikiPageListPredicate(input.workspaceId))
     .orderBy(desc(wikiPageIndex.updatedAt), asc(wikiPageIndex.title))
     .limit(input.limit);
 
-  return rows.filter((row) => !EXCLUDED_ROOTS.has(row.path.split("/")[1] ?? ""));
+  return rows;
 }
 
 export async function loadWikiPage(input: {

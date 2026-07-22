@@ -1,31 +1,39 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { PageShell } from "@/components/patterns/PageShell";
+import { PageShellFit } from "@/components/patterns/PageShell";
 import { listWikiPages, wikiPathToRoute } from "@/lib/server/wiki-page-loader";
 import { requirePagePermission } from "@/lib/server/page-auth";
+import { WikiIndexShell } from "./_components/WikiIndexShell";
 
-export default async function WikiIndexPage() {
+const WIKI_PAGE_SIZE = 20;
+
+export default async function WikiIndexPage(props: {
+  searchParams: Promise<{ page?: string | string[] }>;
+}) {
   const session = await requirePagePermission(PERMISSIONS.WIKI_READ, "/wiki");
-  const t = await getTranslations("Navigation");
-  const rows = await listWikiPages({ workspaceId: session.workspaceId });
+  const t = await getTranslations("Wiki.Index");
+  const searchParams = await props.searchParams;
+  const rawPage = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
+  const parsedPage = Number(rawPage);
+  const page = Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+  const result = await listWikiPages({ workspaceId: session.workspaceId, page, limit: WIKI_PAGE_SIZE });
 
   return (
-    <PageShell>
-      <PageHeader title="HR Wiki" description={t("productName")} />
-      <div className="grid gap-4">
-        {rows.map((row) => (
-          <Link
-            key={row.id}
-            href={wikiPathToRoute(row.path)}
-            className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-page)] p-4 shadow-[var(--shadow-soft)]"
-          >
-            <h2 className="font-medium">{row.title}</h2>
-            <p className="mt-2 text-sm text-[var(--fg-secondary)]">{row.snippet}</p>
-          </Link>
-        ))}
-      </div>
-    </PageShell>
+    <PageShellFit>
+      <PageHeader title={t("title")} description={t("description")} />
+      <WikiIndexShell
+        rows={result.rows.map((row) => ({
+          id: row.id,
+          title: row.title,
+          path: row.path,
+          href: wikiPathToRoute(row.path),
+          snippet: row.snippet,
+        }))}
+        total={result.total}
+        page={result.page}
+        totalPages={result.totalPages}
+      />
+    </PageShellFit>
   );
 }
