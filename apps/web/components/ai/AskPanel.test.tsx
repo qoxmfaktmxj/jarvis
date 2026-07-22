@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DASHBOARD_ASK_DRAFT_KEY } from "./ask-draft";
 import { AskPanel } from "./AskPanel";
 
 const router = vi.hoisted(() => ({ replace: vi.fn() }));
@@ -39,6 +40,7 @@ describe("AskPanel", () => {
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
+    sessionStorage.clear();
   });
 
   afterEach(async () => {
@@ -76,5 +78,37 @@ describe("AskPanel", () => {
     expect(
       [...container.querySelectorAll("[data-message-role]")].map((node) => node.getAttribute("data-message-role")),
     ).toEqual(["user", "assistant"]);
+  });
+
+  it("consumes a dashboard draft exactly once", async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(
+        [
+          'event: abstain\ndata: {"type":"abstain","reason":"근거를 확인할 수 없어 답변을 보류합니다."}\n',
+          'event: done\ndata: {"type":"done"}\n',
+        ].join("\n"),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "X-Conversation-Id": "550e8400-e29b-41d4-a716-446655440000",
+          },
+        },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    sessionStorage.setItem(DASHBOARD_ASK_DRAFT_KEY, "식대 비과세 한도는?");
+
+    await act(async () => {
+      root.render(<AskPanel />);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/ask",
+      expect.objectContaining({ body: JSON.stringify({ question: "식대 비과세 한도는?" }) }),
+    );
+    expect(sessionStorage.getItem(DASHBOARD_ASK_DRAFT_KEY)).toBeNull();
   });
 });

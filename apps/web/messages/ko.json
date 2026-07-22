@@ -62,8 +62,31 @@
     "Home": {
       "title": "HR 컴플라이언스 대시보드",
       "description": "공식 근거를 기준일과 함께 탐색합니다.",
-      "evidenceTitle": "근거 중심 지식 탐색",
-      "evidenceDescription": "Wiki, 통합 검색, Ask AI에서 법령·판례·행정해석·공식 가이드를 연결해 확인할 수 있습니다."
+      "eyebrow": "근거 기반 AI 어시스턴트",
+      "launcherTitle": "무엇을 확인할까요?",
+      "launcherDescription": "공식 근거와 기준일을 함께 찾아드립니다.",
+      "launcherLabel": "질문",
+      "launcherPlaceholder": "HR 관련 질문을 입력하세요…",
+      "launcherHint": "Enter 전송 · Shift+Enter 줄바꿈",
+      "launcherSubmit": "Ask AI에서 질문 시작",
+      "launcherStorageFailed": "질문을 전달할 수 없습니다. 다시 시도해 주세요.",
+      "suggestions": {
+        "meal": "식대 비과세 한도는?",
+        "retirement": "퇴직소득 원천징수 절차는?",
+        "dailyWorker": "일용근로자 지급명세서 제출기한은?",
+        "localTax": "종업원분 주민세 면세점은?"
+      },
+      "recentConversationsTitle": "최근 질문",
+      "recentConversationsEmpty": "첫 질문을 시작해 보세요.",
+      "recentEvidenceTitle": "최근 근거",
+      "recentEvidenceEmpty": "게시된 근거가 없습니다.",
+      "evidenceTypes": {
+        "source": "원문",
+        "concept": "개념",
+        "case": "사례",
+        "guide": "가이드",
+        "synthesis": "종합"
+      }
     }
   },
   "Profile": {

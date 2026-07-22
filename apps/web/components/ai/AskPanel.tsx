@@ -5,6 +5,7 @@ import { Loader2, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { DASHBOARD_ASK_DRAFT_KEY } from "./ask-draft";
 import { shouldSubmitQuestion } from "./ask-keyboard";
 import { AnswerCard } from "./AnswerCard";
 import type { SourceRef } from "./SourceRefCard";
@@ -74,13 +75,27 @@ export function AskPanel({
     bottomRef.current?.scrollIntoView?.({ block: "end" });
   }, [answer, error, localMessages, pending, sources]);
 
+  useEffect(() => {
+    if (conversationId) return;
+    try {
+      const dashboardDraft = sessionStorage.getItem(DASHBOARD_ASK_DRAFT_KEY)?.trim();
+      if (!dashboardDraft) return;
+      sessionStorage.removeItem(DASHBOARD_ASK_DRAFT_KEY);
+      void submit(dashboardDraft);
+    } catch {
+      // The dashboard reports storage failures before navigating here.
+    }
+    // The draft must be consumed only once when the new-conversation screen mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conversationId]);
+
   function nextLocalId(role: string): string {
     localId.current += 1;
     return `local-${role}-${localId.current}`;
   }
 
-  async function submit(): Promise<void> {
-    const submittedQuestion = question.trim();
+  async function submit(questionOverride?: string): Promise<void> {
+    const submittedQuestion = (questionOverride ?? question).trim();
     if (!submittedQuestion || pending) {
       return;
     }

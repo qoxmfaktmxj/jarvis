@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, eq, inArray, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, notInArray } from "drizzle-orm";
 import { db, sourceDocument, sourceRevision, wikiPageIndex, wikiPageSourceRef } from "@jarvis/db";
 import { GitRepo, normalizeRepoRelativePath, parseFrontmatter } from "@jarvis/wiki-fs";
 
@@ -16,6 +16,7 @@ export type WikiListItem = {
   pageType: "source" | "concept" | "case" | "guide" | "synthesis";
   snippet: string;
   stale: boolean;
+  updatedAt: Date;
 };
 
 export type WikiCitation = {
@@ -72,6 +73,7 @@ export async function listWikiPages(input: { workspaceId: string }): Promise<Wik
       pageType: wikiPageIndex.pageType,
       snippet: wikiPageIndex.snippet,
       stale: wikiPageIndex.stale,
+      updatedAt: wikiPageIndex.updatedAt,
     })
     .from(wikiPageIndex)
     .where(
@@ -83,6 +85,37 @@ export async function listWikiPages(input: { workspaceId: string }): Promise<Wik
       ),
     )
     .orderBy(asc(wikiPageIndex.zone), asc(wikiPageIndex.title));
+
+  return rows.filter((row) => !EXCLUDED_ROOTS.has(row.path.split("/")[1] ?? ""));
+}
+
+export async function listRecentWikiPages(input: {
+  workspaceId: string;
+  limit: number;
+}): Promise<WikiListItem[]> {
+  const rows = await db
+    .select({
+      id: wikiPageIndex.id,
+      title: wikiPageIndex.title,
+      slug: wikiPageIndex.slug,
+      path: wikiPageIndex.path,
+      zone: wikiPageIndex.zone,
+      pageType: wikiPageIndex.pageType,
+      snippet: wikiPageIndex.snippet,
+      stale: wikiPageIndex.stale,
+      updatedAt: wikiPageIndex.updatedAt,
+    })
+    .from(wikiPageIndex)
+    .where(
+      and(
+        eq(wikiPageIndex.workspaceId, input.workspaceId),
+        inArray(wikiPageIndex.zone, ["auto", "manual"]),
+        eq(wikiPageIndex.publishedStatus, "published"),
+        notInArray(wikiPageIndex.path, Array.from(EXCLUDED_FILES)),
+      ),
+    )
+    .orderBy(desc(wikiPageIndex.updatedAt), asc(wikiPageIndex.title))
+    .limit(input.limit);
 
   return rows.filter((row) => !EXCLUDED_ROOTS.has(row.path.split("/")[1] ?? ""));
 }

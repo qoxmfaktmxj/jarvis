@@ -41,8 +41,9 @@ export type EnrichedCitation = CitationSource & {
 export async function listOwnedConversations(input: {
   workspaceId: string;
   userId: string;
+  limit?: number;
 }): Promise<ConversationSummary[]> {
-  return db
+  const query = db
     .select({
       id: askConversation.id,
       title: askConversation.title,
@@ -51,6 +52,7 @@ export async function listOwnedConversations(input: {
     .from(askConversation)
     .where(and(eq(askConversation.workspaceId, input.workspaceId), eq(askConversation.userId, input.userId)))
     .orderBy(desc(askConversation.updatedAt));
+  return input.limit === undefined ? query : query.limit(input.limit);
 }
 
 export async function loadOwnedConversation(input: {
