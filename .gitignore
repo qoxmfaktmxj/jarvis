@@ -10,4 +10,6 @@ dist/
 coverage/
 test-results/
 /playwright-report/
+/.superpowers/
+/.worktrees/
 .DS_Store
