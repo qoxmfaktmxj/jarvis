@@ -2,9 +2,11 @@ import { getTranslations } from "next-intl/server";
 import type { AuthSession } from "@jarvis/auth";
 import { ThemeControls } from "./ThemeControls";
 import { UserMenu } from "./UserMenu";
+import { SearchCommandTrigger } from "../search/SearchCommandPaletteClient";
 
 export async function Topbar({ session }: { session: AuthSession }) {
   const t = await getTranslations("Navigation");
+  const search = await getTranslations("Search.Command");
   const roleLabel = {
     ADMIN: t("roles.admin"),
     EDITOR: t("roles.editor"),
@@ -13,6 +15,7 @@ export async function Topbar({ session }: { session: AuthSession }) {
 
   return (
     <header className="flex min-h-16 items-center justify-end gap-3 border-b border-[var(--border-default)] bg-[var(--bg-page)] px-4">
+      <SearchCommandTrigger labels={{ inputLabel: search("inputLabel"), shortcut: search("shortcut") }} />
       <ThemeControls />
       <UserMenu displayName={session.displayName} email={session.email} roleLabel={roleLabel} />
     </header>

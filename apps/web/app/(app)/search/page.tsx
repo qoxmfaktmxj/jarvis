@@ -1,15 +1,16 @@
 import { PERMISSIONS } from "@jarvis/shared";
 import { searchEvidence } from "@jarvis/search";
+import { getTranslations } from "next-intl/server";
 import { PageHeader } from "@/components/patterns/PageHeader";
 import { PageShell } from "@/components/patterns/PageShell";
 import { requirePagePermission } from "@/lib/server/page-auth";
-import { SearchFilters } from "./_components/SearchFilters";
-import { SearchResults } from "./_components/SearchResults";
+import { SearchExperience } from "./_components/SearchExperience";
 
 export default async function SearchPage(props: {
   searchParams: Promise<{ q?: string; asOf?: string; types?: string | string[] }>;
 }) {
   const session = await requirePagePermission(PERMISSIONS.WIKI_READ, "/search");
+  const t = await getTranslations("Search.Page");
   const searchParams = await props.searchParams;
   const q = typeof searchParams.q === "string" ? searchParams.q : "";
   const asOf = typeof searchParams.asOf === "string" ? searchParams.asOf : "";
@@ -37,11 +38,18 @@ export default async function SearchPage(props: {
 
   return (
     <PageShell>
-      <PageHeader title="통합 검색" description="Projection metadata 기반 검색" />
-      <SearchFilters q={q} asOf={asOf} types={types} />
-      <div className="mt-6">
-        <SearchResults rows={rows} />
-      </div>
+      <PageHeader title={t("title")} description={t("description")} />
+      <SearchExperience
+        initialQuery={q}
+        initialRows={rows}
+        labels={{
+          inputLabel: t("inputLabel"),
+          placeholder: t("placeholder"),
+          clear: t("clear"),
+          loading: t("loading"),
+          empty: t("empty"),
+        }}
+      />
     </PageShell>
   );
 }

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { EvidenceSearchHit } from "@jarvis/search";
 import { buildCitationHref } from "@/lib/official-links";

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { AuthSession } from "@jarvis/auth";
 import type { MenuTreeItem } from "@/lib/server/menu-tree";
 import { AppShellMain } from "./AppShellMain";
+import { SearchCommandPalette } from "../search/SearchCommandPalette";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
@@ -17,6 +18,7 @@ export function AppShell(props: {
         <Topbar session={props.session} />
         <AppShellMain>{props.children}</AppShellMain>
       </div>
+      <SearchCommandPalette />
     </div>
   );
 }
