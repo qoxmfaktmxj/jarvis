@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { buildCitationHref } from "@/lib/official-links";
 import { WikiCitationLink } from "./AnswerBody";
 
@@ -13,19 +16,21 @@ export type SourceRef = {
 };
 
 export function SourceRefCard({ source }: { source: SourceRef }) {
+  const t = useTranslations("Ask.Sources");
   const href = source.wikiPath
     ? buildCitationHref({ canonicalUrl: null, wikiPath: source.wikiPath })
     : buildCitationHref({ canonicalUrl: source.canonicalUrl ?? null, wikiPath: null });
 
   const content = (
     <div className="rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] p-3 text-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--brand-primary)]">
+        {source.kind === "wiki" ? t("wikiDocument") : t("sourceDocument")}
+      </p>
       <p className="font-medium text-[var(--fg-primary)]">{source.title ?? source.label}</p>
-      {source.locator ? (
-        <p data-testid="citation-locator" className="mt-1 text-xs text-[var(--fg-secondary)]">
-          {source.locator}
-        </p>
-      ) : null}
-      {source.effectiveFrom ? <p className="mt-1 text-xs text-[var(--fg-muted)]">{source.effectiveFrom}</p> : null}
+      <p className="mt-1 text-xs text-[var(--fg-secondary)]">
+        {source.effectiveFrom ? t("effectiveFrom", { date: formatDate(source.effectiveFrom) }) : t("openDocument")}
+      </p>
+      {href ? <p className="mt-2 text-xs font-medium text-[var(--brand-primary)]">{t("openDocument")} →</p> : null}
     </div>
   );
 
@@ -50,4 +55,10 @@ export function SourceRefCard({ source }: { source: SourceRef }) {
       {content}
     </Link>
   );
+}
+
+function formatDate(value: string): string {
+  const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  if (!year || !month || !day) return value;
+  return `${year}. ${month}. ${day}.`;
 }

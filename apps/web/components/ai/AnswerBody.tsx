@@ -5,30 +5,24 @@ import Link from "next/link";
 import { useAskWikiPanel } from "./AskWikiPanelContext";
 import { buildCitationHref } from "@/lib/official-links";
 
-const CITE = /\[\[([a-z0-9-]{1,240})\]\]/gi;
+const WIKI_CITATION = /\[\[[a-z0-9-]{1,240}\]\]/gi;
 const INTERNAL_SOURCE_CITATION = /(^|\s)(?:[a-z0-9][a-z0-9._-]{2,240}\s+)?\[source:[^\]\r\n]+\]/gim;
+const INTERNAL_FACT_ID = /\s*\b(?:[a-z][a-z0-9]+(?:-[a-z0-9]+){2,}-f-[a-z0-9]+|fact-f-[a-z0-9]+)\b/gi;
 
 export function stripInternalSourceCitations(text: string): string {
-  return text.replace(INTERNAL_SOURCE_CITATION, "$1").trimEnd();
+  return text
+    .replace(INTERNAL_SOURCE_CITATION, "$1")
+    .replace(WIKI_CITATION, "")
+    .replace(INTERNAL_FACT_ID, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +([,.;:!?])/g, "$1")
+    .trimEnd();
 }
 
-export function AnswerBody({ text, slugToPath }: { text: string; slugToPath: Record<string, string> }) {
-  const parts = stripInternalSourceCitations(text).split(CITE);
+export function AnswerBody({ text }: { text: string }) {
   return (
     <div data-testid="answer-text" className="space-y-3 whitespace-pre-wrap text-sm text-[var(--fg-primary)]">
-      {parts.map((part, index) => {
-        if (index % 2 === 1) {
-          const path = slugToPath[part];
-          return path ? (
-            <WikiCitationLink key={`${part}-${index}`} path={path} className="font-medium text-[var(--brand-primary)] underline">
-              {part}
-            </WikiCitationLink>
-          ) : (
-            `[[${part}]]`
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
+      {stripInternalSourceCitations(text)}
     </div>
   );
 }

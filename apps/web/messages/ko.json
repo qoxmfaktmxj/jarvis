@@ -209,6 +209,12 @@
     "Timeline": {
       "assistant": "Jarvis",
       "thinking": "근거를 확인하고 있습니다"
+    },
+    "Sources": {
+      "wikiDocument": "Wiki 문서",
+      "sourceDocument": "원문 근거",
+      "effectiveFrom": "기준일 {date}",
+      "openDocument": "문서 열기"
     }
   },
   "Wiki": {
