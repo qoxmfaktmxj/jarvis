@@ -188,7 +188,9 @@ export async function* askAgentStream(input: AskInput, deps: AskAgentDeps): Asyn
       continue;
     }
 
-    const toolResult = await TOOL_HANDLERS[name](deps, response.call.arguments);
+    const toolResult = await TOOL_HANDLERS[name](deps, name === "wiki_read"
+      ? { ...response.call.arguments, query: input.question }
+      : response.call.arguments);
     if (name === "wiki_read") {
       const result = toolResult as { slug: string };
       cited.set(`wiki:${result.slug}`, {

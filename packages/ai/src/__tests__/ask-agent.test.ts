@@ -180,6 +180,44 @@ describe("askAgentStream", () => {
     expect(readBlob).not.toHaveBeenCalled();
   });
 
+  it("passes the Ask AI question to wiki reads so only the matching section is retained", async () => {
+    let step = 0;
+    let wikiToolOutput = "";
+    const provider: AskAgentDeps["provider"] = {
+      providerName: "test",
+      model: "scripted",
+      async next(input) {
+        step += 1;
+        if (step === 1) {
+          return { kind: "tool", call: { id: "call-search", name: "wiki_search", arguments: { query: "식대" } } };
+        }
+        if (step === 2) {
+          return {
+            kind: "tool",
+            call: {
+              id: "call-read",
+              name: "wiki_read",
+              arguments: { slug: "average-wage", path: "auto/concepts/average-wage.md" },
+            },
+          };
+        }
+        wikiToolOutput = input.messages.at(-1)?.content ?? "";
+        return { kind: "final", text: "식대 한도입니다. [[average-wage]]" };
+      },
+    };
+    const deps = demoDeps({ provider });
+    deps.wikiRepo.readBlob = vi.fn(async () => [
+      "# 원천징수",
+      `\n\n## 평균임금\n${"평균임금 ".repeat(2_000)}`,
+      `\n\n## 식대 비과세\n현금 식대 비과세 한도는 월 20만원입니다.\n${"근거 ".repeat(2_000)}`,
+    ].join(""));
+
+    await collect(askAgentStream({ question: "현금 식대 비과세 한도는 얼마야?", conversationId: "conv-excerpt" }, deps));
+
+    expect(wikiToolOutput).toContain("현금 식대 비과세 한도는 월 20만원입니다.");
+    expect(wikiToolOutput).not.toContain("평균임금 평균임금");
+  });
+
   it("uses distinct idempotency keys for separate asks in the same conversation", async () => {
     const finalize = vi.fn(async (_input: Parameters<AskAgentDeps["budget"]["finalize"]>[0]) => undefined);
 

@@ -15,6 +15,7 @@ export const TOOL_HANDLERS: Record<ToolName, (deps: AskAgentDeps, input: Record<
   wiki_read: async (deps, input) => wikiRead(deps, {
     slug: String(input.slug ?? ""),
     path: String(input.path ?? ""),
+    ...(typeof input.query === "string" ? { query: input.query } : {}),
   }),
   source_read: async (deps, input) => sourceRead(deps, {
     source_revision_id: String(input.source_revision_id ?? ""),

@@ -3,8 +3,8 @@ import { locateSourceSegment } from "../agent/tools/source-read.js";
 
 describe("locateSourceSegment", () => {
   it("bounds paragraph slices", () => {
-    const long = `${"a".repeat(900)}\n\n두번째 문단`;
-    expect(locateSourceSegment(long, "paragraph:1")?.length).toBe(800);
+    const long = `${"a".repeat(2_500)}\n\n두번째 문단`;
+    expect(locateSourceSegment(long, "paragraph:1")?.length).toBe(2_000);
   });
 
   it("rejects oversized line ranges", () => {
@@ -13,11 +13,10 @@ describe("locateSourceSegment", () => {
     expect(locateSourceSegment("첫 문단", "paragraph:0")).toBeNull();
   });
 
-  it("finds a bounded paragraph by an exact legal locator", () => {
+  it("finds a paragraph and includes adjacent context for an exact legal locator", () => {
     const text = "근로기준법 제2조를 참고한 평균임금 합성 예시입니다.\n\n다른 문단";
-    expect(locateSourceSegment(text, "근로기준법 제2조")).toBe(
-      "근로기준법 제2조를 참고한 평균임금 합성 예시입니다.",
-    );
+    expect(locateSourceSegment(text, "근로기준법 제2조")).toContain("근로기준법 제2조를 참고한 평균임금 합성 예시입니다.");
+    expect(locateSourceSegment(text, "근로기준법 제2조")).toContain("다른 문단");
     expect(locateSourceSegment(text, ".*")).toBeNull();
   });
 });
