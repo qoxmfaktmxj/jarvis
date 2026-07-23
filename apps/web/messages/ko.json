@@ -196,15 +196,40 @@
       "previous": "이전",
       "next": "다음",
       "pageStatus": "{page} / {totalPages} 페이지",
+      "pageNav": "페이지 이동",
+      "pageNumber": "{page}페이지로 이동",
       "panelLoading": "문서를 불러오는 중…",
       "panelError": "문서를 불러오지 못했습니다.",
-      "panelClose": "패널 닫기"
+      "panelClose": "패널 닫기",
+      "panelLabel": "문서 미리보기"
     }
   },
   "Admin": {
     "Sources": {
       "title": "공식 출처",
-      "description": "공식 문서 수집과 최신 revision 상태를 관리합니다."
+      "description": "공식 문서 수집과 최신 revision 상태를 관리합니다.",
+      "provider": "제공처",
+      "providerPlaceholder": "제공처",
+      "externalIdPlaceholder": "외부 ID",
+      "queueIngest": "수집 예약",
+      "queueSuccess": "수집 작업이 예약되었습니다: {jobId}",
+      "documentTitle": "문서명",
+      "sourceType": "문서 유형",
+      "status": "상태",
+      "retrievedAt": "수집 시각",
+      "linkedWikiPages": "연결된 Wiki",
+      "linkedWikiCount": "Wiki {count}개",
+      "viewDocument": "문서 보기",
+      "previewDescription": "수집된 최신 원문과 이 원문을 근거로 만든 Wiki 페이지입니다.",
+      "previewFailed": "문서를 불러오지 못했습니다.",
+      "openOfficial": "공식 원문 열기",
+      "linkedWikiTitle": "연결된 Wiki 페이지",
+      "previewTruncated": "미리보기는 여기까지입니다.",
+      "statusLabels": {
+        "pending": "대기",
+        "parsed": "완료",
+        "failed": "실패"
+      }
     },
     "WikiReviews": {
       "title": "위키 검토 큐",

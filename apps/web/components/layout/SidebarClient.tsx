@@ -131,7 +131,7 @@ export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels
 
   return (
     <aside
-      className={`border-b border-[var(--border-default)] bg-[var(--bg-page)] transition-[width] lg:border-b-0 lg:border-r ${isRail ? "lg:w-[3.75rem]" : "lg:w-64"}`}
+      className={`border-b border-[var(--border-default)] bg-[var(--bg-page)] transition-[width] lg:sticky lg:top-0 lg:h-screen lg:self-start lg:border-b-0 lg:border-r ${isRail ? "lg:w-[3.75rem]" : "lg:w-64"}`}
     >
       <div className={`flex items-center gap-1 px-4 py-4 ${isRail ? "lg:justify-center lg:px-2" : "lg:justify-between"}`}>
         <Link
@@ -151,7 +151,7 @@ export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels
           {isRail ? <PanelLeftOpen aria-hidden="true" className="h-4 w-4" /> : <PanelLeftClose aria-hidden="true" className="h-4 w-4" />}
         </button>
       </div>
-      <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:overflow-visible">
+      <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:max-h-[calc(100vh-4.5rem)] lg:overflow-y-auto">
         <ul className="flex gap-1 lg:hidden">
           {items.map((item) => <MobileMenuNode key={item.id} item={item} />)}
         </ul>

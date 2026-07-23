@@ -16,6 +16,9 @@ vi.mock("next-intl", () => ({
       panelLoading: "문서를 불러오는 중…",
       panelError: "문서를 불러오지 못했습니다.",
       panelClose: "패널 닫기",
+      pageNav: "페이지 이동",
+      pageNumber: "{page}페이지로 이동",
+      panelLabel: "문서 미리보기",
     })[key] ?? key,
 }));
 
@@ -77,6 +80,13 @@ describe("WikiIndexShell", () => {
     expect(fetch).toHaveBeenCalledWith("/api/wiki/page?path=manual%2Fcontract.md");
     expect(container.querySelector("aside")).toHaveTextContent("근로계약");
     expect(container.querySelector("aside")).toHaveTextContent("본문");
+  });
+
+  it("shows title-only rows and direct page links", async () => {
+    await renderShell();
+
+    expect(container).not.toHaveTextContent("근로계약 관련 안내");
+    expect(container.querySelector('[aria-current="page"]')).toHaveTextContent("1");
   });
 
   it("closes an open split panel", async () => {

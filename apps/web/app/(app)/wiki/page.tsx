@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { PERMISSIONS } from "@jarvis/shared";
 import { PageHeader } from "@/components/patterns/PageHeader";
-import { PageShellFit } from "@/components/patterns/PageShell";
+import { PageShell } from "@/components/patterns/PageShell";
 import { listWikiPages, wikiPathToRoute } from "@/lib/server/wiki-page-loader";
 import { requirePagePermission } from "@/lib/server/page-auth";
 import { WikiIndexShell } from "./_components/WikiIndexShell";
@@ -20,7 +20,7 @@ export default async function WikiIndexPage(props: {
   const result = await listWikiPages({ workspaceId: session.workspaceId, page, limit: WIKI_PAGE_SIZE });
 
   return (
-    <PageShellFit>
+    <PageShell>
       <PageHeader title={t("title")} description={t("description")} />
       <WikiIndexShell
         rows={result.rows.map((row) => ({
@@ -28,12 +28,11 @@ export default async function WikiIndexPage(props: {
           title: row.title,
           path: row.path,
           href: wikiPathToRoute(row.path),
-          snippet: row.snippet,
         }))}
         total={result.total}
         page={result.page}
         totalPages={result.totalPages}
       />
-    </PageShellFit>
+    </PageShell>
   );
 }

@@ -6,9 +6,14 @@ import { useAskWikiPanel } from "./AskWikiPanelContext";
 import { buildCitationHref } from "@/lib/official-links";
 
 const CITE = /\[\[([a-z0-9-]{1,240})\]\]/gi;
+const INTERNAL_SOURCE_CITATION = /(^|\s)(?:[a-z0-9][a-z0-9._-]{2,240}\s+)?\[source:[^\]\r\n]+\]/gim;
+
+export function stripInternalSourceCitations(text: string): string {
+  return text.replace(INTERNAL_SOURCE_CITATION, "$1").trimEnd();
+}
 
 export function AnswerBody({ text, slugToPath }: { text: string; slugToPath: Record<string, string> }) {
-  const parts = text.split(CITE);
+  const parts = stripInternalSourceCitations(text).split(CITE);
   return (
     <div data-testid="answer-text" className="space-y-3 whitespace-pre-wrap text-sm text-[var(--fg-primary)]">
       {parts.map((part, index) => {

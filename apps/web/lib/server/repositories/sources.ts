@@ -1,6 +1,7 @@
 import PgBoss from "pg-boss";
-import { and, asc, count, eq, ilike, or, sql } from "drizzle-orm";
-import { auditLog, db, sourceDocument } from "@jarvis/db";
+import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { auditLog, db, sourceDocument, sourceRevision, wikiPageIndex, wikiPageSourceRef } from "@jarvis/db";
+import { createMinioObjectStoreFromEnv } from "@jarvis/storage";
 import { buildAuditRow } from "@jarvis/shared/audit";
 import { SOURCE_INGEST_QUEUE, sourceIngestPayloadSchema } from "@jarvis/shared/queues/wiki";
 import { z } from "zod";
@@ -16,6 +17,22 @@ const queueInputSchema = z.object({
   externalId: z.string().trim().min(1).max(180),
   retrievedAt: z.string().datetime().optional(),
 });
+
+const previewInputSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export type SourcePreview = {
+  title: string;
+  canonicalUrl: string;
+  sourceType: "law" | "case" | "interpretation" | "guide";
+  revisionKey: string;
+  effectiveFrom: string | null;
+  retrievedAt: string;
+  content: string;
+  truncated: boolean;
+  wikiPages: Array<{ title: string; path: string }>;
+};
 
 function requireDatabaseUrl(): string {
   const value = process.env.DATABASE_URL?.trim();
@@ -81,6 +98,17 @@ export async function listSources(context: { workspaceId: string }, raw: unknown
           and page.workspace_id = ${context.workspaceId}::uuid
           and page.stale = true
       )`,
+      linkedWikiPageCount: sql<number>`(
+        select count(distinct ref.page_id)::int
+        from wiki_page_source_ref ref
+        inner join source_revision sr on sr.id = ref.source_revision_id
+        inner join wiki_page_index page on page.id = ref.page_id
+        where ref.workspace_id = ${context.workspaceId}::uuid
+          and sr.workspace_id = ${context.workspaceId}::uuid
+          and sr.source_document_id = ${outerDocumentId}
+          and page.workspace_id = ${context.workspaceId}::uuid
+          and page.published_status = 'published'
+      )`,
     })
     .from(sourceDocument)
     .where(where)
@@ -97,8 +125,62 @@ export async function listSources(context: { workspaceId: string }, raw: unknown
       parseStatus: (row.parseStatus ?? "pending") as "pending" | "parsed" | "failed",
       retrievedAt: row.retrievedAt.toISOString(),
       stalePageCount: Number(row.stalePageCount ?? 0),
+      linkedWikiPageCount: Number(row.linkedWikiPageCount ?? 0),
     })),
     total: Number(totals[0]?.total ?? 0),
+  };
+}
+
+export async function getSourcePreview(context: { workspaceId: string }, raw: unknown): Promise<SourcePreview | null> {
+  const input = previewInputSchema.parse(raw);
+  const [revision] = await db
+    .select({
+      title: sourceDocument.title,
+      canonicalUrl: sourceDocument.canonicalUrl,
+      sourceType: sourceDocument.sourceType,
+      revisionKey: sourceRevision.revisionKey,
+      effectiveFrom: sourceRevision.effectiveFrom,
+      retrievedAt: sourceRevision.retrievedAt,
+      normalizedObjectKey: sourceRevision.normalizedObjectKey,
+      id: sourceRevision.id,
+    })
+    .from(sourceRevision)
+    .innerJoin(sourceDocument, eq(sourceDocument.id, sourceRevision.sourceDocumentId))
+    .where(and(
+      eq(sourceDocument.workspaceId, context.workspaceId),
+      eq(sourceDocument.id, input.id),
+      eq(sourceRevision.workspaceId, context.workspaceId),
+    ))
+    .orderBy(desc(sourceRevision.retrievedAt), desc(sourceRevision.id))
+    .limit(1);
+
+  if (!revision) return null;
+
+  const wikiPages = await db
+    .selectDistinct({ title: wikiPageIndex.title, path: wikiPageIndex.path })
+    .from(wikiPageSourceRef)
+    .innerJoin(wikiPageIndex, eq(wikiPageIndex.id, wikiPageSourceRef.pageId))
+    .where(and(
+      eq(wikiPageSourceRef.workspaceId, context.workspaceId),
+      eq(wikiPageSourceRef.sourceRevisionId, revision.id),
+      eq(wikiPageIndex.workspaceId, context.workspaceId),
+      eq(wikiPageIndex.publishedStatus, "published"),
+    ))
+    .orderBy(asc(wikiPageIndex.title));
+
+  const content = await createMinioObjectStoreFromEnv(process.env).getText(revision.normalizedObjectKey);
+  const maxLength = 12_000;
+
+  return {
+    title: revision.title,
+    canonicalUrl: revision.canonicalUrl,
+    sourceType: revision.sourceType,
+    revisionKey: revision.revisionKey,
+    effectiveFrom: revision.effectiveFrom?.toISOString() ?? null,
+    retrievedAt: revision.retrievedAt.toISOString(),
+    content: content.slice(0, maxLength),
+    truncated: content.length > maxLength,
+    wikiPages,
   };
 }
 

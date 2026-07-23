@@ -68,6 +68,7 @@ describe("ConversationListClient", () => {
   it("links the new conversation plus button to /ask and exposes a menu per row", async () => {
     await renderList();
 
+    expect(container.querySelectorAll('a[href="/ask"]')).toHaveLength(1);
     expect(container.querySelector('a[href="/ask"]')).toHaveAttribute("aria-label", "새 대화");
     expect(container.querySelector('button[aria-label="대화 메뉴"]')).toBeInTheDocument();
   });
