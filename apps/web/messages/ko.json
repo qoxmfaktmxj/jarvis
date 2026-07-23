@@ -237,7 +237,34 @@
     },
     "Users": {
       "title": "사용자",
-      "description": "공개 배포용 사용자 계정 상태와 역할을 관리합니다."
+      "description": "공개 배포용 사용자 계정 상태와 역할을 관리합니다.",
+      "email": "이메일",
+      "displayName": "이름",
+      "initialPassword": "임시 비밀번호",
+      "role": "역할",
+      "status": "상태",
+      "updatedAt": "수정 시각",
+      "create": "사용자 추가",
+      "save": "저장",
+      "delete": "삭제",
+      "deleteUser": "{email} 삭제",
+      "passwordHint": "임시 비밀번호: 영문과 숫자를 각각 포함해 12자 이상 입력하세요.",
+      "invalidInvite": "이메일, 이름, 임시 비밀번호를 확인해 주세요.",
+      "created": "사용자를 추가했습니다.",
+      "createFailed": "사용자를 추가하지 못했습니다. 이미 등록된 이메일인지 확인해 주세요.",
+      "saved": "저장되었습니다.",
+      "saveFailed": "저장하지 못했습니다.",
+      "deleted": "사용자를 삭제했습니다.",
+      "deleteFailed": "사용자를 삭제하지 못했습니다.",
+      "roles": {
+        "ADMIN": "관리자",
+        "EDITOR": "편집자",
+        "READER": "열람자"
+      },
+      "statusLabels": {
+        "active": "활성",
+        "disabled": "비활성"
+      }
     },
     "Menus": {
       "title": "메뉴",

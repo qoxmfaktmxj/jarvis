@@ -9,6 +9,7 @@ import { WikiReviewsGridContainer } from "./wiki-reviews/_components/WikiReviews
 vi.mock("./users/actions", () => ({ saveUsersAction: vi.fn() }));
 vi.mock("./wiki-reviews/actions", () => ({ resolveWikiReviewAction: vi.fn() }));
 vi.mock("next-intl", () => ({ useTranslations: () => (key: string) => key }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 const timestamp = "2026-07-22T06:01:02.999Z";
 const expectedTimestamp = "2026-07-22 15:01:02";
