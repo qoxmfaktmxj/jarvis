@@ -12,9 +12,9 @@ export function AppShell(props: {
   children: ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-transparent lg:flex">
+    <div className="flex h-screen flex-col overflow-hidden bg-transparent lg:flex-row">
       <Sidebar items={props.menu} />
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <Topbar session={props.session} />
         <AppShellMain>{props.children}</AppShellMain>
       </div>

@@ -50,6 +50,13 @@ describe("AskPanel", () => {
     router.replace.mockReset();
   });
 
+  it("scrolls only the answer timeline while keeping the composer fixed", async () => {
+    await act(async () => root.render(<AskPanel />));
+
+    expect(container.querySelector('[data-testid="ask-panel"]')).toHaveClass("h-full", "overflow-hidden");
+    expect(container.querySelector('[data-testid="ask-timeline"]')).toHaveClass("flex-1", "overflow-y-auto");
+  });
+
   it("clears the composer and renders the submitted question before the answer", async () => {
     vi.stubGlobal(
       "fetch",

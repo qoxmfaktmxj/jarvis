@@ -73,7 +73,7 @@ export function ConversationListClient({
   }
 
   return (
-    <aside className="hidden min-h-0 flex-col border-r border-[var(--border-default)] bg-[var(--bg-page)] md:flex">
+    <aside className="hidden h-full min-h-0 flex-col overflow-hidden border-r border-[var(--border-default)] bg-[var(--bg-page)] md:flex">
       <div className="border-b border-[var(--border-default)] p-4">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--fg-muted)]">{t("title")}</p>

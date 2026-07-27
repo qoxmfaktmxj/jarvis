@@ -63,6 +63,13 @@ describe("AskWorkspace", () => {
     });
   }
 
+  it("keeps the conversation list and answer pane inside separate scroll boundaries", async () => {
+    await renderWorkspace();
+
+    expect(container.querySelector('[data-testid="ask-workspace"]')).toHaveClass("h-full", "min-h-0", "overflow-hidden");
+    expect(container.querySelector('[data-testid="ask-answer-pane"]')).toHaveClass("h-full", "min-h-0", "overflow-hidden");
+  });
+
   it("opens an inline Wiki citation in the desktop split panel", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
       ok: true,
@@ -87,8 +94,7 @@ describe("AskWorkspace", () => {
       page: { title: "휴가 정책", path: "manual/vacation-policy.md", body: "본문" },
     }))));
     await renderWorkspace();
-    const links = container.querySelectorAll('a[href="/wiki/manual/vacation-policy"]');
-    const sourceLink = links.item(1) as HTMLAnchorElement;
+    const sourceLink = container.querySelector('a[href="/wiki/manual/vacation-policy"]') as HTMLAnchorElement;
 
     await act(async () => {
       sourceLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, button: 0, detail: 1 }));
