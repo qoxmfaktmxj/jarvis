@@ -20,4 +20,9 @@ describe("routes constants", () => {
     const menuRoutes = SYSTEM_MENUS.flatMap((menu) => (menu.routePath ? [menu.routePath] : []));
     expect(PUBLIC_ROUTE_ALLOWLIST).toEqual(expect.arrayContaining(menuRoutes));
   });
+
+  it("keeps redundant search and source screens out of the default navigation", () => {
+    expect(SYSTEM_MENUS.find((menu) => menu.code === "search")?.isVisible).toBe(false);
+    expect(SYSTEM_MENUS.find((menu) => menu.code === "sources")?.isVisible).toBe(false);
+  });
 });

@@ -13,5 +13,11 @@ export async function SearchCommandPalette() {
     close: t("close"),
     shortcut: t("shortcut"),
     keyboardHint: t("keyboardHint"),
+    resultCountSuffix: t("resultCountSuffix"),
+    resourceTypes: {
+      wiki: t("resourceTypes.wiki"),
+      source: t("resourceTypes.source"),
+      legalCase: t("resourceTypes.legalCase"),
+    },
   }} />;
 }

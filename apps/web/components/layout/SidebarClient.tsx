@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { isAllowedRoutePath } from "@jarvis/shared/constants/routes";
 import type { MenuTreeItem } from "@/lib/server/menu-tree";
 import { getMenuIcon } from "./icon-map";
+import { SearchCommandTrigger, type SearchCommandLabels } from "../search/SearchCommandPaletteClient";
 
 type SidebarMode = "expanded" | "rail";
 
@@ -103,7 +104,15 @@ function MobileMenuNode({ item, depth = 0 }: { item: MenuTreeItem; depth?: numbe
   );
 }
 
-export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels: SidebarLabels }) {
+export function SidebarClient({
+  items,
+  labels,
+  searchLabels,
+}: {
+  items: MenuTreeItem[];
+  labels: SidebarLabels;
+  searchLabels: Pick<SearchCommandLabels, "inputLabel" | "shortcut">;
+}) {
   const pathname = usePathname();
   const [mode, setMode] = useState<SidebarMode>("expanded");
   const previousPathname = useRef<string | null>(null);
@@ -151,7 +160,10 @@ export function SidebarClient({ items, labels }: { items: MenuTreeItem[]; labels
           {isRail ? <PanelLeftOpen aria-hidden="true" className="h-4 w-4" /> : <PanelLeftClose aria-hidden="true" className="h-4 w-4" />}
         </button>
       </div>
-      <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:max-h-[calc(100vh-4.5rem)] lg:overflow-y-auto">
+      <div className="px-2 pb-2">
+        <SearchCommandTrigger labels={searchLabels} collapsed={isRail} />
+      </div>
+      <nav aria-label={labels.primary} className="overflow-x-auto px-2 pb-3 lg:max-h-[calc(100vh-7.25rem)] lg:overflow-y-auto">
         <ul className="flex gap-1 lg:hidden">
           {items.map((item) => <MobileMenuNode key={item.id} item={item} />)}
         </ul>

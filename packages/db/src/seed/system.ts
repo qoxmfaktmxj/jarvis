@@ -105,13 +105,13 @@ export async function seedSystem(pool: Pool): Promise<{ workspaceId: string }> {
     }
 
     for (const menuDefinition of SYSTEM_MENUS) {
-      const { code, label, description, routePath, icon, sortOrder } = menuDefinition;
+      const { code, label, description, routePath, icon, sortOrder, isVisible } = menuDefinition;
       const permissionCode = menuDefinition.permissionCodes[0];
       const menu = await client.query<{ id: string }>(
         `
           INSERT INTO menu_item(
             workspace_id, code, label, description, kind, icon, route_path, sort_order, is_visible
-          ) VALUES ($1, $2, $3, $4, 'page', $5, $6, $7, true)
+          ) VALUES ($1, $2, $3, $4, 'page', $5, $6, $7, $8)
           ON CONFLICT (workspace_id, code) DO UPDATE
           SET label = EXCLUDED.label,
               description = EXCLUDED.description,
@@ -119,11 +119,10 @@ export async function seedSystem(pool: Pool): Promise<{ workspaceId: string }> {
               icon = EXCLUDED.icon,
               route_path = EXCLUDED.route_path,
               sort_order = EXCLUDED.sort_order,
-              is_visible = true,
               updated_at = now()
           RETURNING id
         `,
-        [workspaceId, code, label, description, icon, routePath, sortOrder],
+        [workspaceId, code, label, description, icon, routePath, sortOrder, isVisible],
       );
       const menuId = menu.rows[0]?.id;
       if (!menuId) {

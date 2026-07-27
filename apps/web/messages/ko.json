@@ -108,7 +108,13 @@
       "results": "검색 결과",
       "close": "검색 닫기",
       "shortcut": "Ctrl K",
-      "keyboardHint": "이동 · Enter 열기 · Esc 닫기"
+      "keyboardHint": "이동 · Enter 열기 · Esc 닫기",
+      "resultCountSuffix": "건",
+      "resourceTypes": {
+        "wiki": "HR Wiki",
+        "source": "공식 근거",
+        "legalCase": "판례·사례"
+      }
     }
   },
   "Profile": {
@@ -296,7 +302,23 @@
     },
     "Menus": {
       "title": "메뉴",
-      "description": "고정 allowlist 경로와 권한 상수만 사용해 메뉴를 관리합니다."
+      "description": "메뉴 이름·경로·순서·노출 여부를 관리합니다. 노출을 끄면 데이터는 유지되고 탐색 메뉴에서만 숨겨집니다.",
+      "save": "저장",
+      "saving": "저장 중…",
+      "saved": "메뉴 설정을 저장했습니다.",
+      "saveFailed": "메뉴 설정을 저장하지 못했습니다.",
+      "columns": {
+        "code": "코드",
+        "label": "메뉴명",
+        "kind": "유형",
+        "routePath": "경로",
+        "sortOrder": "정렬",
+        "isVisible": "노출"
+      },
+      "kinds": {
+        "group": "그룹",
+        "page": "페이지"
+      }
     },
     "Codes": {
       "title": "코드",

@@ -19,6 +19,7 @@ vi.mock("lucide-react", () => ({
   Circle: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="menu-icon" {...props} />,
   PanelLeftClose: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="panel-left-close" {...props} />,
   PanelLeftOpen: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="panel-left-open" {...props} />,
+  Search: (props: React.SVGProps<SVGSVGElement>) => <svg data-testid="search-icon" {...props} />,
 }));
 
 vi.mock("./icon-map", () => ({
@@ -63,6 +64,10 @@ const labels = {
   expandSidebar: "사이드바 펼치기",
   goDashboard: "대시보드로 이동",
 };
+const searchLabels = {
+  inputLabel: "전체 검색",
+  shortcut: "Ctrl K",
+};
 
 describe("SidebarClient", () => {
   let container: HTMLDivElement;
@@ -85,16 +90,17 @@ describe("SidebarClient", () => {
   });
 
   it("renders the exact Jarvis dashboard brand and a close toggle", async () => {
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
 
     const brand = container.querySelector('a[href="/dashboard"]');
     expect(brand).toHaveTextContent("Jarvis");
     expect(brand).toHaveAttribute("aria-label", "대시보드로 이동");
     expect(container.querySelector('[data-testid="panel-left-close"]')).toBeInTheDocument();
+    expect(container.querySelector('button[aria-label="전체 검색"]')).toHaveTextContent("Ctrl K");
   });
 
   it("switches to rail mode and persists the selection", async () => {
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
     const toggle = container.querySelector('button[aria-label="사이드바 접기"]') as HTMLButtonElement;
 
     await act(async () => toggle.click());
@@ -111,17 +117,17 @@ describe("SidebarClient", () => {
     pathname = "/ask/conversations/1";
     localStorage.setItem("jarvis.sidebar.mode", "expanded");
 
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
 
     expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("rail");
     expect(container.querySelector('[data-testid="panel-left-open"]')).toBeInTheDocument();
   });
 
   it("collapses when navigating from a non-Ask route to a nested Ask route", async () => {
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
     pathname = "/ask/conversations/1";
 
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
 
     expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("rail");
     expect(container.querySelector('[data-testid="panel-left-open"]')).toBeInTheDocument();
@@ -129,7 +135,7 @@ describe("SidebarClient", () => {
 
   it("keeps a manual reopen while the pathname remains /ask", async () => {
     pathname = "/ask";
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
     const toggle = container.querySelector('button[aria-label="사이드바 펼치기"]') as HTMLButtonElement;
 
     await act(async () => toggle.click());
@@ -140,19 +146,19 @@ describe("SidebarClient", () => {
 
   it("keeps a manual reopen while navigating within Ask routes", async () => {
     pathname = "/ask";
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
     const toggle = container.querySelector('button[aria-label="사이드바 펼치기"]') as HTMLButtonElement;
 
     await act(async () => toggle.click());
     pathname = "/ask/conversations/1";
-    await act(async () => root.render(<SidebarClient items={items} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={items} labels={labels} searchLabels={searchLabels} />));
 
     expect(localStorage.getItem("jarvis.sidebar.mode")).toBe("expanded");
     expect(container.querySelector('[data-testid="panel-left-close"]')).toBeInTheDocument();
   });
 
   it("keeps the grouped horizontal mobile menu when desktop is in rail mode", async () => {
-    await act(async () => root.render(<SidebarClient items={groupedItems} labels={labels} />));
+    await act(async () => root.render(<SidebarClient items={groupedItems} labels={labels} searchLabels={searchLabels} />));
     const toggle = container.querySelector('button[aria-label="사이드바 접기"]') as HTMLButtonElement;
     await act(async () => toggle.click());
 

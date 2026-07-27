@@ -20,6 +20,12 @@ export type SearchCommandLabels = {
   close: string;
   shortcut: string;
   keyboardHint: string;
+  resultCountSuffix: string;
+  resourceTypes: {
+    wiki: string;
+    source: string;
+    legalCase: string;
+  };
 };
 
 function resultHref(row: EvidenceSearchHit): string | null {
@@ -28,17 +34,43 @@ function resultHref(row: EvidenceSearchHit): string | null {
     : buildCitationHref({ canonicalUrl: row.canonicalUrl, wikiPath: row.path });
 }
 
-export function SearchCommandTrigger({ labels }: { labels: Pick<SearchCommandLabels, "inputLabel" | "shortcut"> }) {
+function highlightedText(text: string, query: string) {
+  const terms = [...new Set(query.trim().split(/\s+/).filter(Boolean))]
+    .sort((left, right) => right.length - left.length);
+  if (terms.length === 0) return text;
+  const pattern = new RegExp(`(${terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+  const matches = new Set(terms.map((term) => term.toLocaleLowerCase("ko")));
+  return text.split(pattern).map((part, index) =>
+    matches.has(part.toLocaleLowerCase("ko"))
+      ? <mark key={`${part}-${index}`} className="rounded-sm bg-[var(--brand-primary-bg)] px-0.5 text-inherit">{part}</mark>
+      : part,
+  );
+}
+
+function resourceTypeLabel(row: EvidenceSearchHit, labels: SearchCommandLabels): string {
+  if (row.resourceType === "wiki") return labels.resourceTypes.wiki;
+  if (row.resourceType === "source") return labels.resourceTypes.source;
+  return labels.resourceTypes.legalCase;
+}
+
+export function SearchCommandTrigger({
+  labels,
+  collapsed = false,
+}: {
+  labels: Pick<SearchCommandLabels, "inputLabel" | "shortcut">;
+  collapsed?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_SEARCH_EVENT))}
       aria-label={labels.inputLabel}
-      className="hidden h-9 w-80 items-center gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] px-3 text-left text-[13px] text-[var(--fg-muted)] hover:border-[var(--border-focus)] md:flex"
+      title={collapsed ? labels.inputLabel : undefined}
+      className={`flex h-9 w-full items-center gap-2 rounded-md border border-[var(--border-default)] bg-[var(--bg-page)] px-3 text-left text-[13px] text-[var(--fg-muted)] hover:border-[var(--border-focus)] hover:bg-[var(--bg-surface)] ${collapsed ? "lg:justify-center lg:px-0" : ""}`}
     >
       <Search aria-hidden="true" className="h-4 w-4 shrink-0" />
-      <span className="flex-1 truncate">{labels.inputLabel}</span>
-      <kbd className="rounded border border-[var(--border-default)] px-1.5 py-0.5 text-[11px] text-[var(--fg-secondary)]">{labels.shortcut}</kbd>
+      <span className={`flex-1 truncate ${collapsed ? "lg:hidden" : ""}`}>{labels.inputLabel}</span>
+      <kbd className={`rounded border border-[var(--border-default)] px-1.5 py-0.5 text-[11px] text-[var(--fg-secondary)] ${collapsed ? "lg:hidden" : ""}`}>{labels.shortcut}</kbd>
     </button>
   );
 }
@@ -46,6 +78,7 @@ export function SearchCommandTrigger({ labels }: { labels: Pick<SearchCommandLab
 export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLabels }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [rows, setRows] = useState<EvidenceSearchHit[]>([]);
@@ -65,7 +98,8 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        openPalette();
+        if (open) close();
+        else openPalette();
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -74,7 +108,7 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener(OPEN_SEARCH_EVENT, openPalette);
     };
-  }, [openPalette]);
+  }, [close, open, openPalette]);
 
   useEffect(() => {
     if (open) window.requestAnimationFrame(() => inputRef.current?.focus());
@@ -91,12 +125,12 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
     const timer = window.setTimeout(async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=${SEARCH_LIMIT}`, {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(term)}&limit=${SEARCH_LIMIT}&types=wiki&types=source`, {
           signal: controller.signal,
         });
         const payload = await response.json() as { rows?: EvidenceSearchHit[] };
         if (!response.ok) throw new Error("SEARCH_FAILED");
-        setRows(Array.isArray(payload.rows) ? payload.rows : []);
+        setRows(Array.isArray(payload.rows) ? payload.rows.filter((row) => resultHref(row) !== null) : []);
         setActiveIndex(0);
       } catch (error) {
         if (!(error instanceof DOMException && error.name === "AbortError")) setRows([]);
@@ -109,6 +143,10 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
       window.clearTimeout(timer);
     };
   }, [query]);
+
+  useEffect(() => {
+    resultRefs.current[activeIndex]?.scrollIntoView?.({ block: "nearest" });
+  }, [activeIndex]);
 
   const openResult = useCallback((row: EvidenceSearchHit) => {
     const href = resultHref(row);
@@ -127,7 +165,7 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
       close();
     } else if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActiveIndex((current) => Math.min(current + 1, rows.length - 1));
+      if (rows.length > 0) setActiveIndex((current) => Math.min(current + 1, rows.length - 1));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActiveIndex((current) => Math.max(current - 1, 0));
@@ -178,13 +216,19 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
               {rows.map((row, index) => (
                 <li key={`${row.resourceType}-${row.id}`} role="option" aria-selected={index === activeIndex}>
                   <button
+                    ref={(element) => {
+                      resultRefs.current[index] = element;
+                    }}
                     type="button"
                     onClick={() => openResult(row)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={`w-full rounded-lg px-3 py-2.5 text-left ${index === activeIndex ? "bg-[var(--brand-primary-bg)]" : "hover:bg-[var(--bg-surface)]"}`}
                   >
-                    <span className="block truncate text-sm font-medium text-[var(--fg-primary)]">{row.title}</span>
-                    <span className="mt-1 block line-clamp-2 text-[12px] text-[var(--fg-secondary)]">{row.snippet}</span>
+                    <span className="mb-1 inline-flex rounded-full border border-[var(--border-default)] px-2 py-0.5 text-[10px] font-medium text-[var(--fg-muted)]">
+                      {resourceTypeLabel(row, labels)}
+                    </span>
+                    <span className="block truncate text-sm font-medium text-[var(--fg-primary)]">{highlightedText(row.title, query)}</span>
+                    <span className="mt-1 block line-clamp-2 text-[12px] text-[var(--fg-secondary)]">{highlightedText(row.snippet, query)}</span>
                   </button>
                 </li>
               ))}
@@ -194,7 +238,10 @@ export function SearchCommandPaletteClient({ labels }: { labels: SearchCommandLa
 
         <footer className="flex items-center justify-between border-t border-[var(--border-default)] px-4 py-2 text-[11px] text-[var(--fg-muted)]">
           <span className="inline-flex items-center gap-1"><ArrowUp aria-hidden="true" className="h-3 w-3" /><ArrowDown aria-hidden="true" className="h-3 w-3" /><CornerDownLeft aria-hidden="true" className="ml-1 h-3 w-3" />{labels.keyboardHint}</span>
-          <kbd className="rounded border border-[var(--border-default)] px-1.5 py-0.5">Esc</kbd>
+          <span className="inline-flex items-center gap-3">
+            {rows.length > 0 ? <span>{rows.length}{labels.resultCountSuffix}</span> : null}
+            <kbd className="rounded border border-[var(--border-default)] px-1.5 py-0.5">Esc</kbd>
+          </span>
         </footer>
       </section>
     </div>
