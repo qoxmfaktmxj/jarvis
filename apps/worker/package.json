@@ -26,7 +26,7 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "@types/node": "22.19.17",
+    "@types/node": "26.1.1",
     "@types/pg": "8.15.6",
     "pg": "8.20.0",
     "tsx": "4.20.6",
